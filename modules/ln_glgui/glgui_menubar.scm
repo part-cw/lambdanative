@@ -1,3 +1,4 @@
+#|
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2013, University of British Columbia
 All rights reserved.
@@ -33,3 +34,72 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+|#
+
+(define glgui_menubar.raw (glCoreTextureCreate 4 64 '#u8(
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+133 133 133 0
+99 99 99 0
+97 97 97 0
+92 92 92 0
+88 88 88 0
+84 84 84 0
+81 81 81 0
+76 76 76 0
+74 74 74 0
+70 70 70 0
+66 66 66 0
+62 62 62 0
+59 59 59 0
+57 57 57 0
+53 53 53 0
+49 49 49 0
+47 47 47 0
+42 42 42 0
+41 41 41 0
+38 38 38 0
+34 34 34 0
+32 32 32 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+0 0 0 0
+38 38 38 0
+0 0 0 0
+)))
+(define glgui_menubar.img (list 3 45 glgui_menubar.raw 0. 1. .75000000000000000000 .29687500000000000000))

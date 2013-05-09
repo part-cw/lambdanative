@@ -1,0 +1,342 @@
+/*
+LambdaNative - a cross-platform Scheme framework
+Copyright (c) 2009-2013, University of British Columbia
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the
+following conditions are met:
+
+* Redistributions of source code must retain the above
+copyright notice, this list of conditions and the following
+disclaimer.
+
+* Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following
+disclaimer in the documentation and/or other materials
+provided with the distribution.
+
+* Neither the name of the University of British Columbia nor
+the names of its contributors may be used to endorse or
+promote products derived from this software without specific
+prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+package @SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@;
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+import android.app.Activity;
+import android.content.pm.ActivityInfo;
+import android.content.Context;
+import android.content.res.Configuration;
+import android.opengl.GLSurfaceView;
+import android.os.Bundle;
+import android.os.PowerManager;
+import android.view.MotionEvent;
+import android.view.KeyEvent;
+import android.view.Window;
+import android.view.Surface;
+import android.view.WindowManager;
+import android.content.res.AssetFileDescriptor;
+import android.media.AudioManager;
+import android.media.SoundPool;
+import android.media.MediaPlayer;
+import android.util.Log;
+
+public class @SYS_APPNAME@ extends Activity {
+//  private GLSurfaceView mGLView;
+  Thread thread;  // OpenSL
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Thread.setDefaultUncaughtExceptionHandler(
+          new Thread.UncaughtExceptionHandler() {
+            public void uncaughtException(Thread t, Throwable e) {
+             final String TAG = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@";
+             Log.e(TAG, "OMG OMG what just happened"); 
+             try { Thread.sleep(1000); } catch (Exception ex) { }
+             System.exit(1);
+          }
+        });
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE); 
+        // make sure volume controls control media
+        this.setVolumeControlStream(AudioManager.STREAM_MUSIC);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        // prevent sleep
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    //    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        mGLView = new xGLSurfaceView(this);
+        setContentView(mGLView);
+        AudioHelper.getInstance().setContext(this, new MediaPlayer());
+        // openSL
+        thread = new Thread() {
+          public void run() {
+            setPriority(Thread.MAX_PRIORITY);
+            nativeStartOpenSL();
+          }
+        };
+        thread.start();  
+  }
+  @Override 
+  protected void onDestroy() {
+    super.onDestroy();
+    nativeStopOpenSL();
+    try { thread.join(); }
+    catch (InterruptedException e) {
+      // e.printStackTrace();
+    }
+    thread = null;
+  }
+  @Override
+  protected void onPause() {
+        super.onPause();
+        mGLView.onPause();
+  }
+  @Override
+  protected void onResume() {
+        super.onResume();
+        mGLView.onResume();
+  }
+  @Override
+  public void onConfigurationChanged(Configuration newConfig) {
+    super.onConfigurationChanged(newConfig);
+    int orientation=1; // PORTRAIT
+    Context context = getApplicationContext();
+    final int rotation = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getOrientation();
+    switch (rotation) {
+      case Surface.ROTATION_0: orientation=1; break;
+      case Surface.ROTATION_90: orientation=2; break;
+      case Surface.ROTATION_180: orientation=4; break;
+      default: orientation=3;
+    } 
+// alternative implementation (can't do seascape/upsidedown)
+//   final int nCurrentOrientation = getResources().getConfiguration().orientation;
+//   final int orientation = (nCurrentOrientation==Configuration.ORIENTATION_LANDSCAPE?2:1);
+   final int o_dispatch=orientation;
+   nativeEvent(33,o_dispatch,0);   // EVENT_ORIENTATION
+  }
+  GLSurfaceView mGLView;
+  native void nativeStartOpenSL();
+  native void nativeStopOpenSL();
+  native void nativeEvent(int t, int x, int y);
+  static { System.loadLibrary("payloadshared"); }
+}
+
+class AudioHelper {
+  private static final int MAX_SOUND_STREAMS = 16;
+  private static String ResourceLocation = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@:raw/";
+  private Context context = null;
+  private SoundPool Sounds = null;
+  private static AudioHelper instance = null;
+  private AudioManager audioManager = null;
+  private MediaPlayer mediaPlayer = null;
+  private AudioHelper()
+  {	
+  }
+  void Initialise()
+  {     	
+     final String TAG = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@";
+     Sounds = new SoundPool(MAX_SOUND_STREAMS,  AudioManager.STREAM_MUSIC,0); 
+     if (Sounds==null) { 
+       Log.e(TAG,"SoundPool init failed");
+     } 
+  }	
+  public void finalize()
+  {		
+    if (Sounds != null) 
+    {
+      Sounds.release();
+      Sounds = null;
+    }
+  }
+  public void setContext(Context context, MediaPlayer mediaPlayer)
+  {
+    this.context = context;
+    this.audioManager = (AudioManager) context.getSystemService(Activity.AUDIO_SERVICE);
+    this.mediaPlayer = mediaPlayer; 
+  }
+  public static AudioHelper getInstance()
+  {
+    if (instance == null)
+    {
+       instance = new AudioHelper();
+       instance.Initialise();    		
+    }
+    return instance;
+  }
+  public int LoadSound(String filename, int Priority) {
+    final String TAG = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@";
+    int     SoundID;
+    String s = ResourceLocation + filename;
+    int resID = context.getResources().getIdentifier(s, null, null);
+    if (resID == 0) {
+      Log.e(TAG,"Failed to load sound resource=" + s);
+      return 0;
+    }
+    SoundID = Sounds.load(context, resID, Priority);
+    return SoundID;
+  } 
+  public int PlaySound(int SoundID, float lv, float rv, int priority, int loop, float rate) {
+    return Sounds.play(SoundID, lv, rv, priority, loop, rate); 
+  }
+  public boolean UnloadSound(int SoundID) {                                   
+    return Sounds.unload(SoundID); 
+  }
+  public boolean SetVolume(float volume)
+  {
+     int SYSTEM_MAX_VOLUME = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (int) (Math.ceil(SYSTEM_MAX_VOLUME*volume)),0);
+     float systemVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)/SYSTEM_MAX_VOLUME;
+     if (Math.abs(systemVolume-volume)*100 >= 1) {
+        float playerVolume = volume/systemVolume;
+        this.mediaPlayer.setVolume(playerVolume,playerVolume);
+     }
+     return true;
+  }
+  public boolean HeadphonePresent()
+  { 
+    // NOTE: this requires MODIFY_AUDIO_SETTINGS in manifest!
+    // final boolean res = AudioManager.isWiredHeadsetOn();
+    AudioManager tmp = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+    final boolean res = tmp.isWiredHeadsetOn();
+    return res;
+  }
+}
+
+class  xGLSurfaceView extends GLSurfaceView {
+  public xGLSurfaceView(Context context) {
+    super(context);
+    setFocusable(true); 
+    setFocusableInTouchMode(true);
+    renderer = new myRenderer();
+    setRenderer(renderer);
+  }
+  public void onResume() {
+    renderer.nativeEvent(17,0,0); // EVENT_RESUME
+  }
+  public void onPause() {
+    renderer.nativeEvent(16,0,0); // EVENT_SUSPEND
+  }
+  public void onDestroy() {
+    renderer.nativeEvent(14,0,0); // EVENT_CLOSE
+    renderer.nativeEvent(128,0,0); // EVENT_TERMINATE
+  }
+  public boolean onTouchEvent(final MotionEvent event) {
+    t=0;
+    x=(int)event.getX(); y=(int)event.getY();
+    switch (event.getAction()&MotionEvent.ACTION_MASK) {
+      case MotionEvent.ACTION_MOVE:  		t=1; break;
+      case MotionEvent.ACTION_DOWN:  		t=5; break;
+      case MotionEvent.ACTION_POINTER_DOWN:  	t=5; break;
+      case MotionEvent.ACTION_UP:  		t=4; break;
+      case MotionEvent.ACTION_POINTER_UP:    	t=4; break;
+    }
+    if (t>0) { 
+      final int n=event.getPointerCount();
+      final int t0=t;
+      final int id0=event.getPointerId(0);
+      final int x0=(int)event.getX(0);
+      final int y0=(int)event.getY(0);
+      if (n>1) { // MultiTouch
+        queueEvent(new Runnable(){ public void run() { renderer.pointerEvent(18,id0,0); }}); 
+      }
+      queueEvent(new Runnable(){ public void run() { renderer.pointerEvent(t0,x0,y0); }}); 
+      if (n>1) {  // MultiTouch
+        final int id1=event.getPointerId(1);
+        final int x1=(int)event.getX(1);
+        final int y1=(int)event.getY(1);
+        queueEvent(new Runnable(){ public void run() { renderer.pointerEvent(18,id1,0); }}); 
+        queueEvent(new Runnable(){ public void run() { renderer.pointerEvent(t0,x1,y1); }}); 
+      } 
+    }
+    return true;
+  }
+  public boolean onKeyDown(int keyCode, KeyEvent event) {
+    t=x=y=0;
+    switch (keyCode) {
+      case KeyEvent.KEYCODE_A: t=2; x='A'; break;
+      case KeyEvent.KEYCODE_B: t=2; x='B'; break;
+      case KeyEvent.KEYCODE_C: t=2; x='C'; break;
+      case KeyEvent.KEYCODE_D: t=2; x='D'; break;
+      case KeyEvent.KEYCODE_E: t=2; x='E'; break;
+      case KeyEvent.KEYCODE_F: t=2; x='F'; break;
+      case KeyEvent.KEYCODE_G: t=2; x='G'; break;
+      case KeyEvent.KEYCODE_H: t=2; x='H'; break;
+      case KeyEvent.KEYCODE_I: t=2; x='I'; break;
+      case KeyEvent.KEYCODE_J: t=2; x='J'; break;
+      case KeyEvent.KEYCODE_K: t=2; x='K'; break;
+      case KeyEvent.KEYCODE_L: t=2; x='L'; break;
+      case KeyEvent.KEYCODE_M: t=2; x='M'; break;
+      case KeyEvent.KEYCODE_N: t=2; x='N'; break;
+      case KeyEvent.KEYCODE_O: t=2; x='O'; break;
+      case KeyEvent.KEYCODE_P: t=2; x='P'; break;
+      case KeyEvent.KEYCODE_Q: t=2; x='Q'; break;
+      case KeyEvent.KEYCODE_R: t=2; x='R'; break;
+      case KeyEvent.KEYCODE_S: t=2; x='S'; break;
+      case KeyEvent.KEYCODE_T: t=2; x='T'; break;
+      case KeyEvent.KEYCODE_U: t=2; x='U'; break;
+      case KeyEvent.KEYCODE_V: t=2; x='V'; break;
+      case KeyEvent.KEYCODE_W: t=2; x='W'; break;
+      case KeyEvent.KEYCODE_X: t=2; x='X'; break;
+      case KeyEvent.KEYCODE_Y: t=2; x='Y'; break;
+      case KeyEvent.KEYCODE_Z: t=2; x='Z'; break;
+      case KeyEvent.KEYCODE_0: t=2; x='0'; break;
+      case KeyEvent.KEYCODE_1: t=2; x='1'; break;
+      case KeyEvent.KEYCODE_2: t=2; x='2'; break;
+      case KeyEvent.KEYCODE_3: t=2; x='3'; break;
+      case KeyEvent.KEYCODE_4: t=2; x='4'; break;
+      case KeyEvent.KEYCODE_5: t=2; x='5'; break;
+      case KeyEvent.KEYCODE_6: t=2; x='6'; break;
+      case KeyEvent.KEYCODE_7: t=2; x='7'; break;
+      case KeyEvent.KEYCODE_8: t=2; x='8'; break;
+      case KeyEvent.KEYCODE_9: t=2; x='9'; break;
+      case KeyEvent.KEYCODE_SPACE: t=2; x=' '; break; 
+      case KeyEvent.KEYCODE_ENTER: t=2; x=1; break;
+      case KeyEvent.KEYCODE_DPAD_CENTER: t=2; x=1; break;
+      case KeyEvent.KEYCODE_DPAD_UP: t=2; x=6; break;
+      case KeyEvent.KEYCODE_DPAD_DOWN: t=2; x=7; break;
+      case KeyEvent.KEYCODE_DPAD_LEFT: t=2; x=5; break;
+      case KeyEvent.KEYCODE_DPAD_RIGHT: t=2; x=4; break;
+      case KeyEvent.KEYCODE_BACK: t=2; x=8; break;
+    }
+    if (t>0) {
+      queueEvent(new Runnable(){ public void run() {
+        renderer.nativeEvent(t,x,y); }}); 
+    }
+    return true;
+  }
+  int t,x,y;
+  myRenderer renderer;
+}
+class myRenderer implements GLSurfaceView.Renderer {
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) { 
+    }
+    public void onSurfaceChanged(GL10 gl, int w, int h) {
+      gl.glViewport(0, 0, w, h);
+      width=(float)w; height=(float)h;
+      nativeEvent(127,w,h); // EVENT_INIT
+    }
+   public void onDrawFrame(GL10 gl) { 
+   nativeEvent(15,0,0);   // EVENT_REDRAW 
+   // sleep to lower frame rate and yield to input thread - looks unecessary!
+   // try { Thread.sleep(16); } catch (Exception e) { } 
+   // try { Thread.sleep(50); } catch (Exception e) { } 
+   }
+   public void pointerEvent(int t, int x, int y) { nativeEvent(t,x,(int)height-y); }
+   public float width,height;
+   native void nativeEvent(int t,int x,int y);
+}

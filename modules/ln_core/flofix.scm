@@ -1,3 +1,4 @@
+#|
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2013, University of British Columbia
 All rights reserved.
@@ -33,3 +34,28 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+|#
+;; type conversions used throughout to prevent FFI type errors 
+
+(define fix:fixnum-max-as-flonum (##fixnum->flonum ##max-fixnum))
+
+(define (fix n)
+  (declare (not safe))
+  (cond
+    ((##fixnum? n) n)
+    ((##bignum? n) n) 
+    ((##flonum? n) (if (##fl< n fix:fixnum-max-as-flonum)
+        (##flonum.->fixnum n) (##flonum.->exact-int n)))
+    ((##ratnum? n) (##floor n))
+    (else #f) ;; no complex numbers
+  ))
+
+(define (flo n)
+  (declare (not safe))
+  (cond
+    ((##flonum? n) n)
+    ((##fixnum? n) (##fixnum->flonum n))
+    (else (##exact->inexact n))
+  ))
+
+;; eof

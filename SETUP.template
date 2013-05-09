@@ -1,0 +1,22 @@
+## compiler setup
+## Christian Leth Petersen 2013
+## you may need to tweak this to match your system setup
+# ------------------------------------
+## location of android SDK and NDK (linux or mac)
+ANDROIDSDK=`find /usr/local/android-sdk-* -print -maxdepth 0 2> /dev/null | tail -n 1`
+ANDROIDNDK=`find /usr/local/android-ndk-* -print -maxdepth 0  2> /dev/null| tail -n 1`
+# minimum version to support (a matching target must be installed)
+ANDROIDAPI=10
+# ------------------------------------
+## Linux cross compiler (mac)
+LINUXSDK=`find /usr/local/i?86-linux-* -print -maxdepth 0 2> /dev/null | tail -n 1`
+# ------------------------------------
+## Windows cross compiler (linux or mac)
+WIN32SDK=`find /usr/local/i?86-mingw32-* -print -maxdepth 0 2> /dev/null | tail -n 1`
+# ------------------------------------
+## iOS SDK (mac)
+IOSSDK=`find /Developer/Platforms/iPhoneOS.platform/Developer/SDKs/* -print -maxdepth 0 2> /dev/null | tail -n 1`
+# minimum version to support
+IOSVERSION=3.2
+# ------------------------------------
+# eof

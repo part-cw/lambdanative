@@ -1,3 +1,4 @@
+/*
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2013, University of British Columbia
 All rights reserved.
@@ -33,3 +34,49 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+#import <UIKit/UIKit.h>
+#include <CONFIG.h>
+
+#import <Foundation/Foundation.h>
+
+#import "launcherAppDelegate.h"
+
+const char *iphone_directory;
+
+// there are two places to save files on a jailed iphone:
+// the application support directory and Documents directory
+// Documents is preferrable, since it allows file transfer through itunes with iOS 4+
+void find_iphone_appsupport_directory() {
+  NSString *path = nil;
+  NSArray *paths = NSSearchPathForDirectoriesInDomains(
+      NSCachesDirectory, NSUserDomainMask, YES);
+  if ([paths count])
+  {
+      NSString *bundleName =
+          [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleIdentifier"];
+      path = [[paths objectAtIndex:0] stringByAppendingPathComponent:bundleName];
+  }
+  iphone_directory=[path UTF8String]; 
+}
+
+void find_iphone_documents_directory() {
+  NSString *path = nil;
+  NSArray *paths = NSSearchPathForDirectoriesInDomains(
+      NSDocumentDirectory, NSUserDomainMask, YES);
+  if ([paths count]) { path = [paths objectAtIndex:0]; }
+  iphone_directory=[path UTF8String];
+}
+
+int main(int argc, char *argv[]) {
+  NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
+  find_iphone_documents_directory();
+//  int retVal = UIApplicationMain(argc, argv, nil, nil);
+  int retVal = UIApplicationMain(argc, argv, nil, @"launcherAppDelegate");
+  // is this ever reached?
+  ffi_event(EVENT_TERMINATE,0,0);
+  [pool release];
+  return retVal;
+}
+
+// eof

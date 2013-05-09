@@ -1,3 +1,4 @@
+#|
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2013, University of British Columbia
 All rights reserved.
@@ -33,3 +34,33 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+|#
+;; primitive modal widget
+
+(define (glgui:modal-draw g wgt)
+  (let ((w (glgui-width-get))(h (glgui-height-get))
+        (image (glgui-widget-get g wgt 'image))
+        (color (glgui-widget-get g wgt 'color)))
+    (glgui:draw-box 0 0 w h (color-fade Black 0.5))
+    (glgui:draw-pixmap-center 0 0 w h glgui_modal.img DimGray)
+    (if image (glgui:draw-pixmap-center 0 0 w h image color))
+  ))
+
+(define (glgui:modal-input g wgt type mx my)
+  (let ((callback (glgui-widget-get g wgt 'callback)))
+   (if (and (fx= type EVENT_BUTTON1DOWN) callback) 
+      (callback g wgt type mx my))
+   #f
+ ))
+
+(define (glgui-modal g img color)
+  (glgui-widget-add g
+     'callback #f
+     'draw-handle  glgui:modal-draw
+     'input-handle glgui:modal-input
+     'hidden #f
+     'modal #t
+     'image img
+     'color color))
+
+;; eof

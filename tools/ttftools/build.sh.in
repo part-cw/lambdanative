@@ -1,0 +1,25 @@
+
+COMMON_SRCS="texture-atlas.c texture-font.c vector.c"
+COMMON_OBJS=`echo "$COMMON_SRCS" | sed 's/\.c/\.o/g'`
+COMMON_HS=`echo "$COMMON_SRCS" | sed 's/\.c/\.h/g'`" vec234.h"
+FTINC=`freetype-config --cflags`
+FTLIB=`freetype-config --libs`
+
+if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
+  tgta=@SYS_HOSTPREFIX@/bin/ttffnt2scm@SYS_EXEFIX@
+  tgtb=@SYS_HOSTPREFIX@/bin/ttfstr2scm@SYS_EXEFIX@
+  if [ ! -x $tgta ]; then 
+    if [ "@SYS_PLATFORM@" = "macosx" ]; then
+      EXTRALD=-framework CoreServices -framework ApplicationServices
+    fi
+    echo " => $tgta.."
+    gcc -Wall $FTINC -c $COMMON_SRCS
+    gcc -o $tgta $COMMON_OBJS ttffnt2scm.c $EXTRALD $FTLIB -lm
+    rm *.o
+    echo " => $tgtb.."
+    gcc -O2  -DRENDERSTRING -Wall $FTINC -c $COMMON_SRCS
+    gcc -O2  -DRENDERSTRING -o $tgtb $COMMON_OBJS ttfstr2scm.c $EXTRALD $FTLIB -lm
+    rm *.o
+  fi
+fi
+	

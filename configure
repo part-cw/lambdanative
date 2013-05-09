@@ -1,0 +1,149 @@
+#!/bin/sh
+# LambdaNative - a cross-platform Scheme framework
+# Copyright (c) 2009-2013, University of British Columbia
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or
+# without modification, are permitted provided that the
+# following conditions are met:
+# 
+# * Redistributions of source code must retain the above
+# copyright notice, this list of conditions and the following
+# disclaimer.
+# 
+# * Redistributions in binary form must reproduce the above
+# copyright notice, this list of conditions and the following
+# disclaimer in the documentation and/or other materials
+# provided with the distribution.
+# 
+# * Neither the name of the University of British Columbia nor
+# the names of its contributors may be used to endorse or
+# promote products derived from this software without specific
+# prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# since os x doesn't have readlink -f
+function abspath()
+{
+  echo "$(cd $(dirname $1) 2> /dev/null; pwd)/$(basename $1)"
+}
+
+function locatefile()
+{
+  file=
+  dirs=$(echo "$SYS_PATH" | tr ":" "\n")
+  for dir in $dirs; do
+#    tmp=`readlink -f $dir/$1`
+    tmp=`abspath $dir/$1`
+    if [ ! "X$tmp" = "X" ]; then
+      if [ -e $tmp ]; then
+        file=$tmp
+      fi
+    fi
+  done
+  if [ "X$file" = "X" ]; then
+    echo "ERROR: file or directory not found [$1]"
+    exit 1
+  fi
+  if [ ! -e $file ]; then
+    echo "ERROR: file or directory not found [$1]"
+    exit 1
+  fi
+  echo $file
+}
+
+if [ "X$SYS_PATH" = "X" ]; then
+  SYS_PATH=`pwd`
+else
+  SYS_PATH="$SYS_PATH:"`pwd`
+#  SYS_PATH=`pwd`":$SYS_PATH"
+fi
+
+if [ "X$1$2$3" = "X" ]; then
+  echo "usage: ./configure <application> [platform] [release|debug]"
+  exit 1
+fi
+
+with_app=$1
+with_platform=$2
+with_mode=$3
+
+if [ "X$with_app" = "X" ]; then
+  echo "ERROR: application not specified"
+  exit 1
+fi 
+
+# search for application
+#echo locatefile "apps/$with_app" > /dev/null
+appdir=`locatefile "apps/$with_app"`
+
+SYS_APPNAME=$with_app
+
+# determine host platform
+hostsys=`sh ./config.guess`
+case "$hostsys" in
+i686-pc-mingw32*) 
+  SYS_HOSTPLATFORM="win32"
+;;
+*-linux-gnu*)
+  SYS_HOSTPLATFORM="linux"
+;;
+i386-apple-darwin*)
+  SYS_HOSTPLATFORM="macosx"
+;;
+i386-unknown-openbsd*)
+  SYS_HOSTPLATFORM="obsd"
+;;
+i386-unknown-netbsd*)
+  SYS_HOSTPLATFORM="nbsd"
+;;
+*)
+  echo "ERROR: this host platform is not supported."
+  exit 1
+;;
+esac
+
+# setup target platform
+case "$with_platform" in
+linux*|iphone*|macosx*|win32*|android*)
+  SYS_PLATFORM=$with_platform
+;;
+*)
+  if [ "X$with_platform" = "X" ]; then
+    SYS_PLATFORM=$SYS_HOSTPLATFORM
+  else
+    echo "ERROR: unknown platform specified [$with_platform]"
+    exit 1
+  fi
+;;
+esac
+
+if [ "X$with_mode" = "X" ]; then
+  with_mode=normal
+fi
+SYS_MODE=$with_mode
+
+echo "==> configured to build $SYS_APPNAME for $SYS_PLATFORM on $SYS_HOSTPLATFORM in $SYS_MODE mode"
+echo " == using source in $appdir"
+
+cat > config.cache << EOF
+SYS_PATH=$SYS_PATH
+SYS_APPNAME=$SYS_APPNAME
+SYS_HOSTPLATFORM=$SYS_HOSTPLATFORM
+SYS_PLATFORM=$SYS_PLATFORM
+SYS_MODE=$SYS_MODE
+EOF
+

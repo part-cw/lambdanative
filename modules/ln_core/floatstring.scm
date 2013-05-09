@@ -1,3 +1,4 @@
+#|
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2013, University of British Columbia
 All rights reserved.
@@ -33,3 +34,27 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+|#
+;; formatting of floating numbers
+
+(define (float->string x p)
+  (let* ((pe (flo (expt 10 (min 10 p))))
+         (s (number->string (fl/ (flfloor (fl+ (fl* (flo x) pe) 0.5)) pe)))
+         (sl (string-length s))
+         (b (substring s 0 1))
+         (e (substring s (- sl 1) sl)))
+    (string-append (if (string=? b ".") "0" "")
+       (if (string=? e ".") (substring s 0 (- sl 1)) s))))
+
+;; padstring 100 2 >  100.00
+
+(define (float->zeropaddedstring x p) 
+  (let* ((s (float->string x p))
+         (tmp (string-split s #\.))
+         (decimal? (= (length tmp) 2))
+         (decimals (if decimal? (cadr tmp) ""))
+         (missing  (- p (string-length decimals)))
+         (padding  (if (> missing 0) (make-string missing #\0) "")))
+    (string-append s (if (not decimal?) "." "") padding)))
+
+;; eof

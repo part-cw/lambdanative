@@ -1,0 +1,10 @@
+# descriptive profile name (will appear in build log)
+SYS_PROFILE="your profile name here"
+# organization identifiers, e.g. yourdomainhere.com:
+SYS_ORGTLD="com"
+SYS_ORGSLD="yourdomainhere"
+# iOS release (SYS_IOSRELCERT) and development (SYS_IOSDEVCERT) names:
+SYS_IOSRELCERT="iPhone Distribution: Your iOS identifier here"
+SYS_IOSDEVCERT="iPhone Developer: Your iOS identifier here (XXXXXXXXX)"
+# android keystore password
+SYS_ANDROIDPW="yoursecrethere"

@@ -1,3 +1,4 @@
+#|
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2013, University of British Columbia
 All rights reserved.
@@ -33,3 +34,24 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+|#
+;; container widget
+
+
+(define (glgui-container g x y w h)
+  (glgui-widget-add g
+    'x 0
+    'y 0
+    'w w
+    'h h
+    'xofs x
+    'yofs y
+    'widget-list '()
+    'widget-count 0
+    'container #t
+    'hidden #f
+    'draw-handle #f
+    'input-handle #f
+  ))
+
+;; eof 

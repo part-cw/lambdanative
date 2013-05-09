@@ -1,3 +1,4 @@
+#|
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2013, University of British Columbia
 All rights reserved.
@@ -33,3 +34,33 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+|#
+
+(include "glgui_button.scm")
+(include "glgui_keypad_delete.scm")
+(include "glgui_keypad_return.scm")
+(include "glgui_keypad_shift.scm")
+(include "glgui_keypad_toggle.scm")
+(include "glgui_modal.scm")
+(include "glgui_rounded_box.scm")
+(include "glgui_rounded_corner.scm")
+(include "glgui_sperm.scm")
+(include "glgui_menubar.scm")
+
+(include "primitives.scm")
+(include "glgui.scm")
+(include "widget.scm")
+(include "box.scm")
+(include "button.scm")
+(include "container.scm")
+(include "keypad.scm")
+(include "label.scm")
+(include "list.scm")
+(include "modal.scm")
+(include "pixmap.scm")
+(include "slider.scm")
+(include "sprite.scm")
+(include "trace.scm")
+(include "image.scm")
+(include "menubar.scm")
+

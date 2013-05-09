@@ -1,3 +1,4 @@
+#|
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2013, University of British Columbia
 All rights reserved.
@@ -33,3 +34,14 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+|#
+;; iphone style menubar
+
+(define glgui_menubar_trim.img (list 3 45 glgui_menubar.raw 0.2 1. .55000000000000000000 .29687500000000000000))
+
+(define (glgui-menubar g x y w h)
+  (let ((wgt (glgui-pixmap g x y glgui_menubar_trim.img w h)))
+    (glgui-widget-set! g wgt 'color Gray)
+    wgt))
+
+;; eof

@@ -1,0 +1,9 @@
+LOCAL_PATH:= $(call my-dir)
+include $(CLEAR_VARS)
+LOCAL_MODULE    := libpayloadshared
+LOCAL_SRC_FILES := bootstrap.c
+LOCAL_CFLAGS    := -DANDROID
+LOCAL_LDLIBS    := -lGLESv1_CM -lOpenSLES -ldl -llog
+LOCAL_STATIC_LIBRARIES := libpayload
+include $(BUILD_SHARED_LIBRARY)
+$(call import-module,libpayload)

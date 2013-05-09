@@ -1,3 +1,4 @@
+#|
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2013, University of British Columbia
 All rights reserved.
@@ -33,3 +34,8 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+|#
+;; Automatically generated. Do not edit.
+;; png2scm ver 2.0. type=3
+(define glgui_rounded_corner.raw (glCoreTextureCreate 8 8 '#u8(0 0 0 0 0 0 0 0 0 0 0 0 0 0 162 243 0 0 0 0 114 228 253 254 0 0 0 131 249 253 255 255 0 0 128 250 253 255 255 255 0 0 228 251 255 255 255 255 0 162 251 255 255 255 255 255 0 243 255 255 255 255 255 255 )))
+(define glgui_rounded_corner.img (list 8 8 glgui_rounded_corner.raw 0. 0. 1.000000 1.000000))

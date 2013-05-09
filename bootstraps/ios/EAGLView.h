@@ -1,3 +1,4 @@
+/*
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2013, University of British Columbia
 All rights reserved.
@@ -33,3 +34,36 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+#import <UIKit/UIKit.h>
+#import <OpenGLES/EAGL.h>
+#import <OpenGLES/ES1/gl.h>
+#import <OpenGLES/ES1/glext.h>
+
+@interface EAGLView : UIView<UIAccelerometerDelegate> {
+	
+@private
+	GLint backingWidth;
+	GLint backingHeight;
+	EAGLContext *context;
+	GLuint viewRenderbuffer, viewFramebuffer;
+	GLuint depthRenderbuffer;
+	NSTimer *animationTimer;
+	NSTimeInterval animationInterval;
+// 20100603: added battery feed
+        UIDevice *batterydev;
+        int batteryidx;
+	int render;
+    IBOutlet UILabel *label;
+}
+
+@property NSTimeInterval animationInterval;
+@property (nonatomic, retain) UILabel *label;
+                              
+- (void)startRender;
+- (void)stopRender;
+- (void)startAnimation;
+- (void)stopAnimation;
+- (void)drawView;
+
+@end

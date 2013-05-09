@@ -1,0 +1,72 @@
+#!/bin/sh
+
+# version of gambit to use:
+GAMBIT=gambc-v4_6_7.tgz
+
+src=@SYS_PREFIXROOT@/packages/$GAMBIT
+
+if [ ! -f $src -a `which wget` ]; then
+  echo "==> No source found, attempting to download.."
+  wget http://www.iro.umontreal.ca/~gambit/download/gambit/v4.6/source/$GAMBIT -O $src
+fi
+
+if [ ! -f $src ]; then
+  echo "ERROR: no source code found"
+  exit 1
+fi
+
+tmpdir=tmp_compile
+
+if [ -d $tmpdir ]; then
+rm -rf $tmpdir
+fi
+mkdir $tmpdir
+
+here=`pwd`
+cd $tmpdir
+echo "==> Extracting source..."
+tar -zxf $src 
+
+echo "==> Configuring source..."
+cd *
+case @SYS_PLATFORM@ in
+iphone*)
+  EXTRACONF=--host=arm
+;;
+android)
+  EXTRACONF=--host=arm-eabi
+;;
+win32*)
+  EXTRACONF=--host=i386-mingw32
+;;
+linux*)
+  EXTRACONF=--host=i386-linux
+;;
+*)
+  EXTRACONF=
+;;
+esac
+
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure --prefix="@SYS_PREFIX@" $EXTRACONF
+
+echo "==> Patching source..."
+patches=`ls -1 ../../*.patch`
+for p in $patches; do
+  patch -p0 < $p
+done
+
+echo "==> Compiling source..."
+AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make
+
+echo "==> Installing..."
+make install
+cp lib/libgambc.a @SYS_PREFIX@/lib
+cp include/gambit*.h @SYS_PREFIX@/include
+cd "$here"
+
+echo "==> Cleaning up..."
+rm -rf $tmpdir
+
+echo "==> All done."
+
+#eof

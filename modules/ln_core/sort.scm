@@ -1,3 +1,4 @@
+#|
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2013, University of British Columbia
 All rights reserved.
@@ -33,3 +34,36 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+|#
+;; sorting
+
+(define sort #f)
+(define merge #f)
+(let ()
+  (define dosort
+    (lambda (pred? ls n)
+      (cond
+        ((= n 1) (list (car ls)))
+        ((= n 2) (let ((x (car ls)) (y (cadr ls)))
+                   (if (pred? y x) (list y x) (list x y))))
+        (else
+         (let ((i (quotient n 2)))
+           (domerge pred?
+                    (dosort pred? ls i)
+                    (dosort pred? (list-tail ls i) (- n i))))))))
+  (define domerge
+    (lambda (pred? l1 l2)
+      (cond
+        ((null? l1) l2)
+        ((null? l2) l1)
+        ((pred? (car l2) (car l1))
+         (cons (car l2) (domerge pred? l1 (cdr l2))))
+        (else (cons (car l1) (domerge pred? (cdr l1) l2))))))
+  (set! sort
+    (lambda (l pred?) ;;changed arguments order here
+      (if (null? l) l (dosort pred? l (length l)))))
+  (set! merge
+    (lambda (pred? l1 l2)
+      (domerge pred? l1 l2))))
+
+;; eof

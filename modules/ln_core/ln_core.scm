@@ -1,3 +1,4 @@
+#|
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2013, University of British Columbia
 All rights reserved.
@@ -33,3 +34,17 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+|#
+
+(include "flofix.scm")
+(include "color.scm")
+(include "floatstring.scm")
+(include "list.scm")
+(include "string.scm")
+(include "u8vector.scm")
+(include "sort.scm")
+(include "math.scm")
+(include "list-stats.scm")
+(include "time.scm")
+(include "log.scm")
+

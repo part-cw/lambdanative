@@ -1,0 +1,139 @@
+/*
+LambdaNative - a cross-platform Scheme framework
+Copyright (c) 2009-2013, University of British Columbia
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or
+without modification, are permitted provided that the
+following conditions are met:
+
+* Redistributions of source code must retain the above
+copyright notice, this list of conditions and the following
+disclaimer.
+
+* Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following
+disclaimer in the documentation and/or other materials
+provided with the distribution.
+
+* Neither the name of the University of British Columbia nor
+the names of its contributors may be used to endorse or
+promote products derived from this software without specific
+prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#ifndef __platform_h__
+#define __platform_h__
+
+// events
+#define EVENT_MOTION      1
+#define EVENT_KEYPRESS    2
+#define EVENT_KEYRELEASE  3
+#define EVENT_BUTTON1UP   4
+#define EVENT_BUTTON1DOWN 5
+#define EVENT_BUTTON2UP   6
+#define EVENT_BUTTON2DOWN 7
+#define EVENT_BUTTON3UP   8       
+#define EVENT_BUTTON3DOWN 9
+#define EVENT_CLOSE       14
+#define EVENT_REDRAW      15
+
+#define EVENT_SUSPEND     16
+#define EVENT_RESUME      17
+
+#define EVENT_MULTITOUCH  18
+
+#define EVENT_BATTERY	  32
+#define EVENT_ORIENTATION 33
+
+#define EVENT_INIT        127
+#define EVENT_TERMINATE   128
+
+// special keys
+#define EVENT_KEYENTER            1
+#define EVENT_KEYTAB              2
+#define EVENT_KEYBACKSPACE        3
+#define EVENT_KEYRIGHT            4
+#define EVENT_KEYLEFT             5
+#define EVENT_KEYUP               6
+#define EVENT_KEYDOWN             7
+#define EVENT_KEYESCAPE           8
+
+#define GUI_PORTRAIT   1
+#define GUI_LANDSCAPE  2 
+#define GUI_SEASCAPE   3
+#define GUI_UPSIDEDOWN 4
+
+// scheme prototypes
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef STANDALONE
+
+int  scm_runflag();
+void scm_event(int,int,int);
+int  scm_width();
+int  scm_height(); 
+int  scm_screenwidth();
+int  scm_screenheight(); 
+
+// hook prototype (performs scheme init)
+void ffi_event(int,int,int);
+
+// C prototypes
+// these are used by the desktop platforms
+void microgl_hook(int,int,int);
+void microgl_swapbuffers();
+void microgl_close();
+void microgl_init();
+int microgl_window(int,int);
+int microgl_fullscreen(int,int);
+void microgl_pollevents();
+void microgl_refresh();
+int microgl_screenwidth();
+int microgl_screenheight();
+
+#endif // STANDALONE
+
+#ifdef __cplusplus
+} 
+#endif
+
+// output of configure script
+#define SYS_APPNAME "@SYS_APPNAME@"
+#define SYS_APPVERSION "@SYS_APPVERSION@"
+#define SYS_PLATFORM "@SYS_PLATFORM@"
+#define SYS_HOSTPLATFORM "@SYS_HOSTPLATFORM@"
+#define SYS_PREFIX "@SYS_PREFIX@"
+#define SYS_PREFIXROOT "@SYS_PREFIXROOT@"
+#define SYS_HOSTPREFIX "@SYS_HOSTPREFIX@"
+#define SYS_CC "@SYS_CC@"
+#define SYS_AR "@SYS_AR@"
+#define SYS_WINDRES "@SYS_WINDRES@"
+#define SYS_RANLIB "@SYS_RANLIB@"
+#define SYS_STRIP "@SYS_STRIP@"
+#define SYS_GSC "@SYS_GSC@"
+#define SYS_EXEFIX "@SYS_EXEFIX@"
+#define SYS_APPFIX "@SYS_APPFIX@"
+#define SYS_CFLAGS "@SYS_CFLAGS@"
+#define SYS_CPPFLAGS "@SYS_CPPFLAGS@"
+#define SYS_LDFLAGS "@SYS_LDFLAGS@"
+#define SYS_LIBS "@SYS_LIBS@"
+
+#endif // __platform_h__

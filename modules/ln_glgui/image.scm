@@ -1,3 +1,4 @@
+#|
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2013, University of British Columbia
 All rights reserved.
@@ -33,3 +34,50 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+|#
+;; image widget
+
+(define (glgui:image-draw g wgt)
+  (let ((x (glgui-widget-get-dyn g wgt 'x))
+        (y (glgui-widget-get-dyn g wgt 'y))
+        (w (glgui-widget-get-dyn g wgt 'w))
+        (h (glgui-widget-get-dyn g wgt 'h))
+        (color (glgui-widget-get-dyn g wgt 'color))
+        (bgcolor (glgui-widget-get-dyn g wgt 'bgcolor))
+        (img (glgui-widget-get g wgt 'image))
+        (align (glgui-widget-get g wgt 'align)))
+    (if bgcolor (glgui:draw-box x y w h bgcolor))
+    (if img
+     ((cond ((= align GUI_ALIGNLEFT) glgui:draw-pixmap-left)
+            ((= align GUI_ALIGNRIGHT) glgui:draw-pixmap-right)
+            (else glgui:draw-pixmap-center)) x y w h img color))
+  ))
+
+(define (glgui:image-input g wgt type mx my)
+  (let* ((x (glgui-widget-get-dyn g wgt 'x))
+         (y (glgui-widget-get-dyn g wgt 'y))
+         (w (glgui-widget-get-dyn g wgt 'w))
+         (h (glgui-widget-get-dyn g wgt 'h))
+         (cb (glgui-widget-get g wgt 'callback))
+         (inside (and (> mx x) (< mx (+ x w)) (> my y) (< my (+ y h)))))
+   (if (and inside cb (= type EVENT_BUTTON1UP)) (cb g wgt))
+  inside
+))
+
+(define (glgui-image g x y w h image color . bgcolor)
+  (glgui-widget-add g
+     'x x
+     'y y
+     'w w 
+     'h h
+     'image image
+     'callback #f
+     'color color
+     'hidden #f
+     'bgcolor (if (fx= (length bgcolor) 1) (car bgcolor) #f)
+     'align GUI_ALIGNCENTER
+     'draw-handle  glgui:image-draw
+     'input-handle glgui:image-input
+  ))
+
+;; eof
