@@ -48,7 +48,7 @@ Please ensure that these are installed on your system:
 ## SETUP and PROFILE
 
 Use the provided `SETUP.template` and `PROFILE.template` to
-create files `SETUP` and `PROFILE` in your current
+create files `SETUP` and `PROFILE` in the framework
 directory matching your setup.
 
 ## First build
@@ -70,20 +70,21 @@ On a suitably configured platform, you can now do:
     ./configure DemoHelloWorld iphone
     make
 
-and binaries for the specified platforms will by build and
+and binaries for the specified platforms will be built and
 packaged.
 
 ## Directory structure
 
-    apps/			applications
-    libraries/			supporting libraries
-    modules/			application modules
-    modules/config		application configuration
-    modules/eventloop		event handling for GUI applications
-    modules/core		general supporting functions
-    modules/glcore      	low level OpenGL wrapper
-    modules/glgui     		widget based GUI
-    bootstraps/			platform launchers
-    tools/pngtools		png texture generator
-    tools/ttftools		ttf texture generator
+    apps/                       applications
+    libraries/                  supporting libraries
+    modules/                    application modules
+    modules/config              application configuration
+    modules/eventloop           event handling for GUI applications
+    modules/ln_core             general supporting functions
+    modules/ln_glcore           low level OpenGL wrapper
+    modules/ln_glgui            widget based GUI
+    modules/ln_audio            cross-platform audio handling
+    bootstraps/                 platform launchers
+    tools/pngtools              png texture generator
+    tools/ttftools              ttf texture generator
 
