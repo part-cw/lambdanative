@@ -1,7 +1,7 @@
 #!/bin/sh
 
-PKGSRC=pa_stable_v19_20111121.tgz
-#PKGSRC=pa_snapshot.tgz
+#PKGSRC=pa_stable_v19_20111121.tgz
+PKGSRC=pa_snapshot.tgz
 
 src=@SYS_PREFIXROOT@/packages/$PKGSRC
 
@@ -50,7 +50,7 @@ linux*)
 ;;
 esac
 
-CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure --prefix="@SYS_PREFIX@" $EXTRACONF --enable-static --disable-shared
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure --prefix="@SYS_PREFIX@" $EXTRACONF --enable-static --disable-shared --with-jack=no
 
 mv Makefile tmp
 cat tmp | sed "s/-arch i386//g;s/-arch x86_64//" > Makefile
