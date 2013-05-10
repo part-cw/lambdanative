@@ -67,10 +67,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define USE_PORTAUDIO
 #endif
 
-static void (*rtaudio_initcb)(int)=0;
-static void (*rtaudio_inputcb)(float)=0;
-static void (*rtaudio_outputcb)(float*,float*)=0;
-static void (*rtaudio_closecb)(void)=0;
+void (*rtaudio_initcb)(int)=0;
+void (*rtaudio_inputcb)(float)=0;
+void (*rtaudio_outputcb)(float*,float*)=0;
+void (*rtaudio_closecb)(void)=0;
 
 void rtaudio_register(void (*initcb)(int), void (*inputcb)(float), void (*outputcb)(float*,float*), void (*closecb)(void))
 {

@@ -806,11 +806,17 @@ void destroyThreadLock(void *lock)
   free(p);
 }
 
+#define RT_SRATE 8000
 #define BUFFERFRAMES 512
 #define BUFSIZE 512
 
 static OPENSL_STREAM  *p;
 int opensl_on=0;
+
+extern void (*rtaudio_initcb)(int);
+extern void (*rtaudio_inputcb)(float);
+extern void (*rtaudio_outputcb)(float*,float*);
+extern void (*rtaudio_closecb)(void);
 
 void start_opensl()
 {
