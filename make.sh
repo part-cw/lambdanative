@@ -527,7 +527,7 @@ function make_fonts()
         sizes=`echo "$fline" | cut -f 3 -d " "`
         name=`echo "$fline" | cut -f 4 -d " "`
         scmfile=$tgtdir/${name}.scm
-        if [ `isnewer $srcfile $scmfile` ]; then
+        if [ `isnewer $srcfile $scmfile` = "yes" ]; then
            echo " => $name.."
            $SYS_HOSTPREFIX/bin/ttffnt2scm $font $bits $sizes $name > $scmfile
         fi
@@ -558,7 +558,7 @@ function make_strings()
         label=`eval "getparam 3 $fline"`
         name=`eval "getparam 4 $fline"`
         scmfile=$tgtdir/${name}.scm
-        if [ `isnewer $srcfile $scmfile` ]; then
+        if [ `isnewer $srcfile $scmfile` = "yes" ]; then
            echo " => $name.."
 #           echo "$SYS_HOSTPREFIX/bin/ttfstr2scm $font $size \"$label\" $name > $scmfile"
            $SYS_HOSTPREFIX/bin/ttfstr2scm $font $size "$label" $name > $scmfile
@@ -831,7 +831,8 @@ android)
   cp $SYS_PREFIX/lib/libpayload.a $tmpmoddir/libpayload
   echo " => preparing JNI.."
   mkdir $tmpdir/jni
-  if [ `has_module rtaudio` = yes ]; then
+  # opensl was introduced at api 10
+  if [ `echo "$ANDROIDAPI > 9" | bc` = 1 ]; then
     cp bootstraps/android/Android.mk.jni $tmpdir/jni/Android.mk
   else
     cat bootstraps/android/Android.mk.jni | sed 's/-lOpenSLES//' > $tmpdir/jni/Android.mk
