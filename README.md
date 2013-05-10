@@ -42,6 +42,7 @@ Please ensure that these are installed on your system:
 * `freetype` for rendering vector fonts
 * `netpbm` and `ImageMagick` for misc pixmap manipulation
 * `ghostscript` for converting vector artwork
+* `cmake` for generating XCode projects
 * `tgif` for editing vector artwork (optional)
 * `fruitstrap` for installing iphone apps (optional)
 
