@@ -362,11 +362,14 @@ end-of-c-declare
              (string-append (system-directory) (system-pathseparator) "sounds" (system-pathseparator) name ".wav"))
           ((string=? (system-platform) "android") (string-downcase name))
           (else #f))))
-  (if (or (string=? (system-platform) "android") (file-exists? file)) (begin
-    (log-system "audiofile: loading " file)
-    ((c-lambda (char-string) int "audiofile_load") file))
-    (log-system "audiofile: file " file " not found"))))
+  (if (or (string=? (system-platform) "android") (file-exists? file)) 
+    (begin
+      (log-system "audiofile: loading " file)
+      ((c-lambda (char-string) int "audiofile_load") file))
+    (begin 
+      (log-system "audiofile: file " file " not found") 
+      #f))))
 
-(define audiofile-play (c-lambda (int) void "audiofile_play"))
+(define (audiofile-play id) (if id ((c-lambda (int) void "audiofile_play") id)))
 
 ;;eof
