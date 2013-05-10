@@ -57,4 +57,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (padding  (if (> missing 0) (make-string missing #\0) "")))
     (string-append s (if (not decimal?) "." "") padding)))
 
+
+(c-declare  #<<end-of-c-declare
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+static char valstr[16];
+
+static char *double_to_choppedstring(double val, int precision)
+{
+  memset(valstr,0,16);
+  snprintf(valstr,16,"%f",val);
+  int p=precision;
+  if (val<0) p++;
+  valstr[p]=0;
+  if (valstr[p-1]=='.') valstr[p-1]=0;
+  return valstr;
+}
+
+end-of-c-declare
+)
+
+(define (float->choppedstring v p) ((c-lambda (double int) char-string "double_to_choppedstring") (flo v) p))
+
 ;; eof
