@@ -181,7 +181,7 @@ function locatefile()
 
 function wildcard_dir()
 {
-  find $1 -print -maxdepth 0 |sort -r| head -n 1
+  find $1 -maxdepth 0 -print |sort -r| head -n 1
 }
 
 ac_sedsub=
