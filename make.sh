@@ -473,8 +473,10 @@ function make_artwork()
 function make_textures()
 {
   echo "==> creating textures needed for $SYS_APPNAME.."
-  srcdir=`locatefile apps/$SYS_APPNAME/textures`
-  assertfile $srcdir
+  srcdir=`locatefile apps/$SYS_APPNAME/textures silent`
+  if [ "X" == "X$srcdir" ]; then 
+    return 
+  fi
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/textures
   mkdir -p $tgtdir
   incfile=$tgtdir/textures_include.scm
@@ -609,8 +611,8 @@ function make_setup()
   buildsys=$SYS_PLATFORM"_"$SYS_HOSTPLATFORM
   case "$buildsys" in
     win32_macosx|win32_linux)
-      SDKROOT=$WIN32SDK/i?86-mingw32
-      CROSS=$WIN32SDK/bin/i?86-mingw32-
+      SDKROOT=$WIN32SDK/i?86*-mingw32
+      CROSS=$WIN32SDK/bin/i?86*-mingw32-
       SYS_CC=$CROSS"gcc $SYS_DEBUGFLAG -isysroot $SDKROOT -DWIN32"
       SYS_AR=$CROSS"ar"
       SYS_RANLIB=$CROSS"ranlib"
@@ -1018,9 +1020,10 @@ linux)
   if [ -d "$sounddir" ]; then
     echo " => transferring sounds..."
     snds=`ls -1 $sounddir/*.wav`
+    mkdir -p $appdir/sounds
     for snd in $snds; do
        echo "   $snd.."
-       cp $snd $appdir
+       cp $snd $appdir/sounds
     done
   fi
   echo " => compiling application.."
@@ -1029,12 +1032,12 @@ linux)
     $SYS_CC -I$SYS_PREFIX/include \
       x11_microgl.c main.c -o $tgt \
       -L/usr/local/linux/i686-linux/lib \
-      -L$SYS_PREFIX/lib -lpayload -lGL -lXext -lX11 -lrt -lutil -lpthread -ldl -lm
+      -L$SYS_PREFIX/lib -lpayload -lGL -lXext -lX11 -lasound -lrt -lutil -lpthread -ldl -lm
   else
     $SYS_CC -I$SYS_PREFIX/include \
       -DUSECONSOLE main.c -o $tgt \
       -L/usr/local/linux/i686-linux/lib \
-      -L$SYS_PREFIX/lib -lpayload -lrt -lutil -lpthread -ldl -lm
+      -L$SYS_PREFIX/lib -lpayload -lrt -lasound -lutil -lpthread -ldl -lm
   fi
   asserterror $?
   assertfile $tgt
