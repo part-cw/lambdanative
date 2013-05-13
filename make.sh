@@ -611,8 +611,8 @@ function make_setup()
   buildsys=$SYS_PLATFORM"_"$SYS_HOSTPLATFORM
   case "$buildsys" in
     win32_macosx|win32_linux)
-      SDKROOT=$WIN32SDK/i?86-mingw32
-      CROSS=$WIN32SDK/bin/i?86-mingw32-
+      SDKROOT=$WIN32SDK/i?86*-mingw32
+      CROSS=$WIN32SDK/bin/i?86*-mingw32-
       SYS_CC=$CROSS"gcc $SYS_DEBUGFLAG -isysroot $SDKROOT -DWIN32"
       SYS_AR=$CROSS"ar"
       SYS_RANLIB=$CROSS"ranlib"
