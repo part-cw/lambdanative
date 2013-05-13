@@ -643,10 +643,7 @@ function make_setup()
       SYS_APPFIX=
     ;;
     macosx_macosx)
-      SYS_CC=`ls -1 /opt/local/bin/i686-apple-darwin*-gcc-* 2>/dev/null| head -n 1 | rev | cut -f 1 -d "/" | rev`
-      if `test "X$SYS_CC" = "X"`; then
-        SYS_CC=`ls -1 /Developer/usr/bin/i686-apple-darwin*-gcc-* 2>/dev/null| head -n 1 | rev | cut -f 1 -d "/" | rev`
-      fi
+      SYS_CC=gcc
       SYS_CC="$SYS_CC $SYS_DEBUGFLAG -m32 -DMACOSX"
       SYS_AR=ar
       SYS_RANLIB=ranlib
@@ -658,11 +655,15 @@ function make_setup()
     iphone_macosx)
       SYS_IOSSDK=`basename $IOSSDK`
       SYS_IOSVERSION=$IOSVERSION
-      CROSS=/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin
+      CROSS=$IOSROOT/usr/bin
       SYS_CC=`ls -1 $CROSS/arm-apple-darwin*-gcc-* | sort -r | sed '/llvm/d' | head -n 1`
       if [ "X$SYS_CC" = "X" ]; then
         SYS_CC=`ls -1 $CROSS/arm-apple-darwin*-gcc-* | sort -r | head -n 1`
       fi
+      if [ "X$SYS_CC" = "X" ]; then
+        SYS_CC=`ls -1 $CROSS/arm-apple-darwin*-llvm-* | sort -r | head -n 1`
+      fi
+      assertfile $SYS_CC
       SYS_CC="$SYS_CC $SYS_DEBUGFLAG -isysroot $IOSSDK -DIPHONE -miphoneos-version-min=$SYS_IOSVERSION"
       SYS_CC="$SYS_CC -fPIC -fsigned-char -fomit-frame-pointer -fforce-addr"
       SYS_AR="$CROSS/ar"
