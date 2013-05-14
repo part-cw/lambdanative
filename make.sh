@@ -513,63 +513,71 @@ function make_textures()
 function make_fonts()
 {
   echo "==> creating fonts needed for $SYS_APPNAME.."
-  srcfile=`locatefile apps/$SYS_APPNAME/FONTS`
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/fonts
   mkdir -p $tgtdir
-  incfile=$tgtdir/fonts_include.scm
-  if [ `isnewer $srcfile $incfile` = "yes" ]; then
-    echo ";; Automatically generated. Do not edit."  > $incfile
-    while read line; do
-      fline=`echo "$line" | sed '/^#/d'`
-      if [ "$fline" ]; then 
-        fontname=`echo "$fline" | cut -f 1 -d " "`
-        font=`locatefile fonts/$fontname`
-        assertfile $font 
-        bits=`echo "$fline" | cut -f 2 -d " "`
-        sizes=`echo "$fline" | cut -f 3 -d " "`
-        name=`echo "$fline" | cut -f 4 -d " "`
-        scmfile=$tgtdir/${name}.scm
-        if [ `isnewer $srcfile $scmfile` = "yes" ]; then
-           echo " => $name.."
-           $SYS_HOSTPREFIX/bin/ttffnt2scm $font $bits $sizes $name > $scmfile
+  srcfile=`locatefile apps/$SYS_APPNAME/FONTS silent`
+  if [ "X$srcfile" = "X" ]; then
+    touch $tgtdir/fonts_include.scm
+  else
+    incfile=$tgtdir/fonts_include.scm
+    if [ `isnewer $srcfile $incfile` = "yes" ]; then
+      echo ";; Automatically generated. Do not edit."  > $incfile
+      while read line; do
+        fline=`echo "$line" | sed '/^#/d'`
+        if [ "$fline" ]; then 
+          fontname=`echo "$fline" | cut -f 1 -d " "`
+          font=`locatefile fonts/$fontname`
+          assertfile $font 
+          bits=`echo "$fline" | cut -f 2 -d " "`
+          sizes=`echo "$fline" | cut -f 3 -d " "`
+          name=`echo "$fline" | cut -f 4 -d " "`
+          scmfile=$tgtdir/${name}.scm
+          if [ `isnewer $srcfile $scmfile` = "yes" ]; then
+             echo " => $name.."
+             $SYS_HOSTPREFIX/bin/ttffnt2scm $font $bits $sizes $name > $scmfile
+          fi
+          echo "(include \"$scmfile\")" >> $incfile
         fi
-        echo "(include \"$scmfile\")" >> $incfile
-      fi
-    done < $srcfile
-    echo ";; eof" >> $incfile
+      done < $srcfile
+      echo ";; eof" >> $incfile
+    fi
   fi
 }
 
 function make_strings()
 {
   echo "==> creating strings needed for $SYS_APPNAME.."
-  srcfile=`locatefile apps/$SYS_APPNAME/STRINGS`
-  assertfile $srcfile
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/strings
   mkdir -p $tgtdir
   incfile=$tgtdir/strings_include.scm
-  if [ `isnewer $srcfile $incfile` = "yes" ]; then
-    echo ";; Automatically generated. Do not edit."  > $incfile
-    while read line; do
-      fline=`echo "$line" | sed '/^#/d'`
-      if [ "$fline" ]; then 
-        fontname=`eval "getparam 1 $fline"`
-        font=`locatefile fonts/$fontname`
-        assertfile $font
-        size=`eval "getparam 2 $fline"`
-        label=`eval "getparam 3 $fline"`
-        name=`eval "getparam 4 $fline"`
-        scmfile=$tgtdir/${name}.scm
-        if [ `isnewer $srcfile $scmfile` = "yes" ]; then
-           echo " => $name.."
-#           echo "$SYS_HOSTPREFIX/bin/ttfstr2scm $font $size \"$label\" $name > $scmfile"
-           $SYS_HOSTPREFIX/bin/ttfstr2scm $font $size "$label" $name > $scmfile
+  srcfile=`locatefile apps/$SYS_APPNAME/STRINGS silent`
+  if [ "X$srcfile" = "X" ]; then
+    touch $incfile
+  else
+    assertfile $srcfile
+    if [ `isnewer $srcfile $incfile` = "yes" ]; then
+      echo ";; Automatically generated. Do not edit."  > $incfile
+      while read line; do
+        fline=`echo "$line" | sed '/^#/d'`
+        if [ "$fline" ]; then 
+          fontname=`eval "getparam 1 $fline"`
+          font=`locatefile fonts/$fontname`
+          assertfile $font
+          size=`eval "getparam 2 $fline"`
+          label=`eval "getparam 3 $fline"`
+          name=`eval "getparam 4 $fline"`
+          scmfile=$tgtdir/${name}.scm
+          if [ `isnewer $srcfile $scmfile` = "yes" ]; then
+             echo " => $name.."
+  #           echo "$SYS_HOSTPREFIX/bin/ttfstr2scm $font $size \"$label\" $name > $scmfile"
+             $SYS_HOSTPREFIX/bin/ttfstr2scm $font $size "$label" $name > $scmfile
+          fi
+          echo "(include \"$scmfile\")" >> $incfile
         fi
-        echo "(include \"$scmfile\")" >> $incfile
-      fi
-    done < $srcfile
-    echo ";; eof" >> $incfile
-  fi 
+      done < $srcfile
+      echo ";; eof" >> $incfile
+    fi 
+  fi
 }
 
 ###################################
@@ -1177,6 +1185,7 @@ function make_package()
     zip -9 -y -r $pkgfile $SYS_APPNAME$SYS_APPFIX
     cd $here
     assertfile $pkgfile
+    echo " === $pkgfile"
   ;;
   iphone)
 #  an ipa is not needed anymore? 
@@ -1203,9 +1212,13 @@ function make_package()
     cd $SYS_PREFIX
     zip -q -y -r $pkgfile ${SYS_APPNAME}.app
     cd $here
+    assertfile $pkgfile
+    echo " === $pkgfile"
   ;;
   android)
-    echo " => android apk archive already made, nothing to do"
+    pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).apk"
+    assertfile $pkgfile
+    echo " === $pkgfile"
   ;;
   *)
     echo " => no packaging setup for this platform ($SYS_PLATFORM)"
