@@ -30,7 +30,7 @@ tar -zxf $src
 echo "==> Configuring source..."
 cd *
 case @SYS_PLATFORM@ in
-iphone*)
+ios)
   EXTRACONF=--host=arm
 ;;
 android)

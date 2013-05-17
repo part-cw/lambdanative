@@ -118,7 +118,7 @@ esac
 
 # setup target platform
 case "$with_platform" in
-linux*|iphone*|macosx*|win32*|android*)
+linux*|ios|macosx*|win32*|android*)
   SYS_PLATFORM=$with_platform
 ;;
 *)

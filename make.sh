@@ -660,7 +660,7 @@ function make_setup()
       SYS_EXEFIX=
       SYS_APPFIX=.app
     ;;
-    iphone_macosx)
+    ios_macosx)
       SYS_IOSSDK=`basename $IOSSDK`
       SYS_IOSVERSION=$IOSVERSION
       CROSS=$IOSROOT/usr/bin
@@ -672,7 +672,7 @@ function make_setup()
         SYS_CC=`ls -1 $CROSS/arm-apple-darwin*-llvm-* | sort -r | head -n 1`
       fi
       assertfile $SYS_CC
-      SYS_CC="$SYS_CC $SYS_DEBUGFLAG -isysroot $IOSSDK -DIPHONE -miphoneos-version-min=$SYS_IOSVERSION"
+      SYS_CC="$SYS_CC $SYS_DEBUGFLAG -isysroot $IOSSDK -DIOS -DIPHONE -miphoneos-version-min=$SYS_IOSVERSION"
       SYS_CC="$SYS_CC -fPIC -fsigned-char -fomit-frame-pointer -fforce-addr"
       SYS_AR="$CROSS/ar"
       SYS_RANLIB="$CROSS/ranlib"
@@ -732,7 +732,7 @@ function make_bootstrap()
   echo "==> creating $SYS_PLATFORM bootstrap needed for $SYS_APPNAME.."
   case $SYS_PLATFORM in
 ################################
-iphone)
+ios)
   tgtdir="$SYS_PREFIX/$SYS_APPNAME$SYS_APPFIX"
   srcdir=`pwd`"/bootstraps/ios"
   cmakedir=`mktemp -d tmp.XXXXXX`
@@ -1130,8 +1130,8 @@ function make_scrub()
 function make_install()
 {
   case $SYS_PLATFORM in
-  iphone*)
-    echo "==> attempting to install iphone application $SYS_APPNAME.."
+  ios)
+    echo "==> attempting to install $SYS_PLATFORM application $SYS_APPNAME.."
     havefruit="X"`which fruitstrap`
     if [ ! $havefruit = "X" ]; then 
       fruitstrap -b $SYS_PREFIX/$SYS_APPNAME$SYS_APPFIX
@@ -1139,7 +1139,7 @@ function make_install()
       echo "Fruitstrap not found, must install manually"
     fi
   ;;
-  android*)
+  android)
     echo "==> attempting to install android application $SYS_APPNAME.."
     adb=`$ANDROIDSDK/platform-tools/adb devices | sed -n '/device\$/p'`
     if [ ! "X$adb" = "X" ]; then
@@ -1187,7 +1187,7 @@ function make_package()
     assertfile $pkgfile
     echo " === $pkgfile"
   ;;
-  iphone)
+  ios)
 #  an ipa is not needed anymore? 
 #    echo " => making iphone ipa archive.."
 #    tmpdir=`mktemp -d tmp.XXXXXX`
@@ -1204,8 +1204,8 @@ function make_package()
 #    cd $here
 #    assertfile $pkgfile
 #    rm -rf $tmpdir
-    echo " => making iphone zip archive.."
-    pkgfile=$SYS_PREFIXROOT/packages/$SYS_APPNAME-$SYS_APPVERSION-iphone.zip
+    echo " => making $SYS_PLATFORM zip archive.."
+    pkgfile=$SYS_PREFIXROOT/packages/$SYS_APPNAME-$SYS_APPVERSION-$SYS_PLATFORM.zip
     if [ -f $pkgfile ]; then
       rm $pkgfile
     fi

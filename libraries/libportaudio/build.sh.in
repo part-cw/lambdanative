@@ -38,10 +38,7 @@ autoconf
 
 echo "==> Configuring source..."
 case @SYS_PLATFORM@ in
-iphonesim)
-  EXTRACONF=--host=i386-apple-darwin9.8.0
-;;
-iphone)
+ios)
   EXTRACONF=--host=arm
 ;;
 android)

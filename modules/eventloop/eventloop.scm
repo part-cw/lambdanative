@@ -172,7 +172,7 @@ end-of-c-declare
         (yscale (/ (flo h) (flo app:screenheight))))
   (set! app:width w) 
   (set! app:height h)
-  (if (or (string=? (system-platform) "iphone")
+  (if (or (string=? (system-platform) "ios")
           (string=? (system-platform) "android")) (begin
     (set! app:xscale xscale)
     (set! app:yscale yscale)

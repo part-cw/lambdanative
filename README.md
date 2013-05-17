@@ -44,7 +44,7 @@ Please ensure that these are installed on your system:
 * `ghostscript` for converting vector artwork
 * `cmake` for generating XCode projects
 * `tgif` for editing vector artwork (optional)
-* `fruitstrap` for installing iphone apps (optional)
+* `fruitstrap` for installing iOS apps (optional)
 
 ## SETUP and PROFILE
 
@@ -68,7 +68,7 @@ On a suitably configured platform, you can now do:
     ./configure DemoHelloWorld android
     make
 
-    ./configure DemoHelloWorld iphone
+    ./configure DemoHelloWorld ios
     make
 
 and binaries for the specified platforms will be built and

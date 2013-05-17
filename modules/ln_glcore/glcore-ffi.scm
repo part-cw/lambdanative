@@ -48,7 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <AGL/agl.h>
 #endif
 
-#if defined(IPHONE) || defined(IPHONESIM)
+#if defined(IOS)
 #include <OpenGLES/ES1/gl.h>
 #endif
 
@@ -115,7 +115,7 @@ ___result = GL_CLAMP_TO_EDGE;
 ;; glOrtho is different in OpenGL and GLES. Why, thanks dudes!
 (define (glOrtho arg1 arg2 arg3 arg4 arg5 arg6) 
   ((c-lambda (float float float float float float) void 
-   "#if defined(IPHONE)||defined(IPHONESIM)||defined(ANDROID)||defined(SYMBIAN)
+   "#if defined(IOS)||defined(ANDROID)
      glOrthof(___arg1,___arg2,___arg3,___arg4,___arg5,___arg6);
    #else
      glOrtho(___arg1,___arg2,___arg3,___arg4,___arg5,___arg6);

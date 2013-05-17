@@ -91,10 +91,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    
 // 20100603: battery hack
   batterydev=[UIDevice currentDevice];
-#ifdef IPHONE
-// NOTE: this doesn't work on the simulator
   [batterydev setBatteryMonitoringEnabled:YES];
-#endif
   batteryidx=0;
 
 #ifdef USE_MULTITOUCH
@@ -157,11 +154,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // 20100603: battery update
      if (batteryidx==0) {
-#ifdef IPHONE
        ffi_event(EVENT_BATTERY,(int)(100.*[batterydev batteryLevel]),0);
-#else
-       ffi_event(EVENT_BATTERY,100,0);
-#endif
      }
      if (batteryidx++==100) batteryidx=0;
 

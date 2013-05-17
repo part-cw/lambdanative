@@ -46,13 +46,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "CONFIG.h"
 
-#if defined(MACOSX) || defined(IPHONE) || defined(IPHONESIM)
+#if defined(MACOSX) || defined(IOS)
 #include <CoreFoundation/CoreFoundation.h>
 #endif
 
 #ifndef USECONSOLE
 
-#if  defined(IPHONE) || defined(IPHONESIM)
+#if  defined(IOS)
 extern char* iphone_directory;
 #endif
 
@@ -65,7 +65,7 @@ char *cmd_arg1;
 
 //#include "CONFIG.h"
 
-#if defined(IPHONE) || defined(IPHONESIM) || defined(MACOSX)
+#if defined(IOS) || defined(MACOSX)
 static char *macosx_directory=0;
 void find_macosx_app_directory() 
 {
@@ -91,7 +91,7 @@ static void system_init(void)
 #ifndef USECONSOLE
 
 // get system path on the iphone
-#if defined(IPHONE) || defined(IPHONESIM)
+#if defined(IOS)
   find_macosx_app_directory();
   // check for jail break
   // XXX does this violate app store requirements?

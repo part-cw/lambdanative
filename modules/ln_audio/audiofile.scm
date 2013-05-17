@@ -52,9 +52,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define USE_PORTAUDIO
 #endif
 
-#if defined(IPHONE) || defined(IPHONESIM)
+#if defined(IOS)
 //#define USE_APPLE_NATIVE
-#define USE_IPHONE_REALTIME
+#define USE_IOS_REALTIME
 #endif
 
 #ifdef ANDROID
@@ -71,7 +71,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 // %%%%%%%%%%%%%%%%%%%%%%
-#if defined(USE_PORTAUDIO) || defined(USE_IPHONE_REALTIME)
+#if defined(USE_PORTAUDIO) || defined(USE_IOS_REALTIME)
 
 static int data_idx=0;
 static int data_len=0;
@@ -167,7 +167,7 @@ static int wavdata_load(const char *fname)
 
 
 // %%%%%%%%%%%%%%%%%%%%%%
-#ifdef USE_IPHONE_REALTIME
+#ifdef USE_IOS_REALTIME
 
 #define SHORT2FLOAT(x) ((float)(x)/32767.)
 
@@ -307,7 +307,7 @@ void audiofile_init(void) {
 #ifdef USE_PORTAUDIO
   portaudio_init();
 #endif
-#ifdef USE_IPHONE_REALTIME
+#ifdef USE_IOS_REALTIME
   iphone_realtime_init();
 #endif
 }
@@ -324,7 +324,7 @@ int audiofile_load(char *name)
   AudioServicesCreateSystemSoundID (soundFileURLRefClick, &sid);
   return (int)sid;
   #endif
-  #if defined(USE_PORTAUDIO)|| defined(USE_IPHONE_REALTIME)
+  #if defined(USE_PORTAUDIO)|| defined(USE_IOS_REALTIME)
     return wavdata_load(name);
   #endif
 }
@@ -334,7 +334,7 @@ void audiofile_play(int id)
 #ifdef USE_ANDROID_NATIVE
  SoundPoolPlaySound(id,1.0,1.0,0,0,1.);
 #endif
-#ifdef USE_IPHONE_REALTIME
+#ifdef USE_IOS_REALTIME
  iphone_realtime_play(id);
 #endif
 #ifdef USE_APPLE_NATIVE
@@ -356,7 +356,7 @@ end-of-c-declare
 
 (define (audiofile-load name)
   (let ((file  (cond
-          ((string=? (system-platform) "iphone") 
+          ((string=? (system-platform) "ios") 
              (string-append (system-appdirectory) (system-pathseparator) name ".wav"))
           ((member (system-platform) '("win32" "linux" "macosx")) 
              (string-append (system-directory) (system-pathseparator) "sounds" (system-pathseparator) name ".wav"))

@@ -51,8 +51,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define USE_PORTAUDIO
 #endif
 
-#ifdef IPHONE
-#define USE_IPHONEAUDIO
+#ifdef IOS
+#define USE_IOSAUDIO
 #endif
 
 #ifdef ANDROID
@@ -81,7 +81,7 @@ void rtaudio_register(void (*initcb)(int), void (*inputcb)(float), void (*output
 }
 
 // %%%%%%%%%%%%%%%%%%%%%%%%
-#ifdef USE_IPHONEAUDIO
+#ifdef USE_IOSAUDIO
 
 #define RT_FRAMESIZE 128
 
@@ -122,7 +122,7 @@ static void rtaudio_stop(void) {
   iphone_realtime_audio_stop();
 }
 
-#endif // USE_IPHONEAUDIO
+#endif // USE_IOSAUDIO
 
 // %%%%%%%%%%%%%%%%%%%%%%%%
 #ifdef USE_PORTAUDIO
