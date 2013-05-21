@@ -1044,7 +1044,7 @@ linux)
       -L$SYS_PREFIX/lib -lpayload -lGL -lXext -lX11 -lasound -lrt -lutil -lpthread -ldl -lm
   else
     $SYS_CC -I$SYS_PREFIX/include \
-      -DUSECONSOLE main.c -o $tgt \
+      -DSTANDALONE -DUSECONSOLE main.c -o $tgt \
       -L/usr/local/linux/i686-linux/lib \
       -L$SYS_PREFIX/lib -lpayload -lrt -lasound -lutil -lpthread -ldl -lm
   fi
