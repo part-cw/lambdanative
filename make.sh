@@ -699,6 +699,10 @@ function make_setup()
   esac
   SYS_LOCASEAPPNAME=`echo $SYS_APPNAME | tr A-Z a-z`
   SYS_ANDROIDAPI=$ANDROIDAPI 
+  SYS_BUILDHASH=`git log --pretty=format:"%h" -1`
+  SYS_BUILDEPOCH=`date +"%s"`
+  # Adding BUILD info requires rebuilding of config module
+  touch modules/config/config.scm
   ac_subst SYS_ORGTLD
   ac_subst SYS_ORGSLD
   ac_subst SYS_APPNAME
@@ -722,6 +726,8 @@ function make_setup()
   ac_subst SYS_APPVERSION
   ac_subst SYS_APPVERSIONCODE
   ac_subst SYS_ANDROIDAPI
+  ac_subst SYS_BUILDHASH
+  ac_subst SYS_BUILDEPOCH
   ac_output CONFIG.h $SYS_PREFIX/include/CONFIG.h
 }
 
@@ -1044,7 +1050,7 @@ linux)
       -L$SYS_PREFIX/lib -lpayload -lGL -lXext -lX11 -lasound -lrt -lutil -lpthread -ldl -lm
   else
     $SYS_CC -I$SYS_PREFIX/include \
-      -DSTANDALONE -DUSECONSOLE main.c -o $tgt \
+      -DUSECONSOLE -o $tgt \
       -L/usr/local/linux/i686-linux/lib \
       -L$SYS_PREFIX/lib -lpayload -lrt -lasound -lutil -lpthread -ldl -lm
   fi

@@ -138,8 +138,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (log-folder-cleanup)
 
 ;; let's say hello to ourselves
-;;(log-system "Application " (system-appname) " built " (system-builddatetime))
-;;(log-system "Repository " (system-repository) " created " (system-repositorydate))
-;;(log-system "Git hash " (system-buildhash))
+(log-system "Application " (system-appname) " built " (system-builddatetime))
+(log-system "Git hash " (system-buildhash))
 
 ;; eof

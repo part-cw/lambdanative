@@ -130,6 +130,8 @@ static void system_init(void)
 
   sys_platform=strdup(SYS_PLATFORM);
   sys_appname=strdup(SYS_APPNAME);
+  sys_buildhash=strdup(SYS_BUILDHASH);
+  sys_buildepoch=SYS_BUILDEPOCH;
 }
 
 // report the path separator
@@ -146,6 +148,8 @@ static char *system_appdir(void) { return sys_appdir; }
 static char *system_platform(void) { return sys_platform; }
 static char *system_appname(void) { return sys_appname; }
 static char *system_cmdarg(void) { return cmd_arg1; }
+static char *system_buildhash(void) { return sys_buildhash; }
+static unsigned int system_buildepoch(void) { return sys_buildepoch; }
 
 void force_terminate()
 {
@@ -168,12 +172,13 @@ end-of-c-declare
 
 (define (system-directory) ((c-lambda () char-string "system_dir")))
 (define (system-appdirectory) ((c-lambda () char-string "system_appdir")))
-
 (define (system-platform) ((c-lambda () char-string "system_platform")))
-
 (define (system-appname) ((c-lambda () char-string "system_appname")))
-
 (define (system-cmdarg) ((c-lambda () char-string "system_cmdarg")))
+(define (system-buildhash) ((c-lambda () char-string "system_buildhash")))
+(define (system-buildepoch) ((c-lambda () unsigned-int "system_buildepoch")))
+(define (system-builddate) (seconds->string (system-buildepoch) "%Y-%m-%d"))
+(define (system-builddatetime) (seconds->string (system-buildepoch) "%Y-%m-%d %H:%M:%S"))
 
 (define force-terminate (c-lambda () void "force_terminate"))
 

@@ -135,5 +135,7 @@ int microgl_screenheight();
 #define SYS_CPPFLAGS "@SYS_CPPFLAGS@"
 #define SYS_LDFLAGS "@SYS_LDFLAGS@"
 #define SYS_LIBS "@SYS_LIBS@"
+#define SYS_BUILDHASH "@SYS_BUILDHASH@"
+#define SYS_BUILDEPOCH @SYS_BUILDEPOCH@
 
 #endif // __platform_h__
