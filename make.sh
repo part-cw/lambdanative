@@ -220,12 +220,12 @@ function has_module()
 
 function is_gui_app()
 {
-  has_module glcore
+  has_module ln_glcore
 }
 
 function is_standalone_app()
 {
-  neg=`has_module glcore`
+  neg=`has_module eventloop`
   if [ $neg = no ]; then
     neg=yes
   else
@@ -968,7 +968,9 @@ win32)
   if [ `is_gui_app` = yes ]; then
     cp bootstraps/win32/win32_microgl.c $tmpdir
   fi
-  cp bootstraps/common/main.c $tmpdir
+  if [ `is_standalone_app` = "no" ]; then
+    cp bootstraps/common/main.c $tmpdir
+  fi
   cd $tmpdir
   sounddir=`locatefile apps/$SYS_APPNAME/sounds silent`
   if [ -d "$sounddir" ]; then
@@ -1003,14 +1005,20 @@ win32)
   fi
   echo " => compiling application.."
   tgt=$appdir/$SYS_APPNAME$SYS_EXEFIX
-  if [ `is_gui_app` = yes ]; then
+  if [ `is_standalone_app` = "yes" ]; then
     $SYS_CC -I$SYS_PREFIX/include \
-       -mwindows win32_microgl.c main.c icon.o -o $tgt \
-       -L$SYS_PREFIX/lib -lpayload -lglu32 -lopengl32 -lgdi32 -lwinmm -lwsock32 -lws2_32 -lm
-  else 
-    $SYS_CC -I$SYS_PREFIX/include \
-       -DUSECONSOLE main.c -o $tgt \
-       -L$SYS_PREFIX/lib -lpayload -lgdi32 -lwinmm -lwsock32 -lws2_32 -lm
+      -DUSECONSOLE -o $tgt \
+      -L$SYS_PREFIX/lib -lpayload -lgdi32 -lwinmm -lwsock32 -lws2_32 -lm
+  else
+    if [ `is_gui_app` = yes ]; then
+      $SYS_CC -I$SYS_PREFIX/include \
+        -mwindows win32_microgl.c main.c icon.o -o $tgt \
+        -L$SYS_PREFIX/lib -lpayload -lglu32 -lopengl32 -lgdi32 -lwinmm -lwsock32 -lws2_32 -lm
+    else
+      $SYS_CC -I$SYS_PREFIX/include \
+        -DUSECONSOLE main.c -o $tgt \
+        -L$SYS_PREFIX/lib -lpayload -lgdi32 -lwinmm -lwsock32 -lws2_32 -lm
+    fi
   fi
   asserterror $?
   assertfile $tgt
@@ -1029,7 +1037,9 @@ linux)
   if [ `is_gui_app` = yes ]; then
     cp bootstraps/x11/x11_microgl.c $tmpdir 
   fi
-  cp bootstraps/common/main.c $tmpdir
+  if [ `is_standalone_app` = "no" ]; then
+    cp bootstraps/common/main.c $tmpdir
+  fi
   cd $tmpdir
   sounddir=`locatefile apps/$SYS_APPNAME/sounds`
   if [ -d "$sounddir" ]; then
@@ -1043,16 +1053,23 @@ linux)
   fi
   echo " => compiling application.."
   tgt=$appdir/$SYS_APPNAME$SYS_EXEFIX
-  if [ `is_gui_app` = yes ]; then
-    $SYS_CC -I$SYS_PREFIX/include \
-      x11_microgl.c main.c -o $tgt \
-      -L/usr/local/linux/i686-linux/lib \
-      -L$SYS_PREFIX/lib -lpayload -lGL -lXext -lX11 -lasound -lrt -lutil -lpthread -ldl -lm
+  if [ `is_standalone_app` = "yes" ]; then
+      $SYS_CC -I$SYS_PREFIX/include \
+        -DUSECONSOLE -o $tgt \
+        -L/usr/local/linux/i686-linux/lib \
+        -L$SYS_PREFIX/lib -lpayload -lrt -lutil -lpthread -ldl -lm
   else
-    $SYS_CC -I$SYS_PREFIX/include \
-      -DUSECONSOLE -o $tgt \
-      -L/usr/local/linux/i686-linux/lib \
-      -L$SYS_PREFIX/lib -lpayload -lrt -lasound -lutil -lpthread -ldl -lm
+    if [ `is_gui_app` = yes ]; then
+      $SYS_CC -I$SYS_PREFIX/include \
+        x11_microgl.c main.c -o $tgt \
+        -L/usr/local/linux/i686-linux/lib \
+        -L$SYS_PREFIX/lib -lpayload -lGL -lXext -lX11 -lasound -lrt -lutil -lpthread -ldl -lm
+    else
+      $SYS_CC -I$SYS_PREFIX/include \
+        -DUSECONSOLE main.c -o $tgt \
+        -L/usr/local/linux/i686-linux/lib \
+        -L$SYS_PREFIX/lib -lpayload -lrt -lasound -lutil -lpthread -ldl -lm
+    fi
   fi
   asserterror $?
   assertfile $tgt
