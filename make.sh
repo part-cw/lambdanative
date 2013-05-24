@@ -987,7 +987,7 @@ win32)
     assertfile $srcimg
     if [ ! -e $tgtimg ]; then
       echo " => preparing icon.."
-      pngtopnm $srcimg > icon.ppm
+      pngtopnm $srcimg | pnmquant 256 > icon.ppm
       asserterror $?
       assertfile icon.ppm
       pngtopnm -alpha $srcimg > icon.pgm
