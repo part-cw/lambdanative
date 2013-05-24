@@ -47,7 +47,7 @@ linux*)
 ;;
 esac
 
-CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure --prefix="@SYS_PREFIX@" $EXTRACONF
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure --quiet --prefix="@SYS_PREFIX@" $EXTRACONF
 
 echo "==> Patching source..."
 patches=`ls -1 ../../*.patch`
@@ -56,10 +56,10 @@ for p in $patches; do
 done
 
 echo "==> Compiling source..."
-AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make
+AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make -s
 
 echo "==> Installing..."
-make install
+make install -s
 cp lib/libgambc.a @SYS_PREFIX@/lib
 cp include/gambit*.h @SYS_PREFIX@/include
 cd "$here"

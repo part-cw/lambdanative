@@ -813,7 +813,7 @@ android)
   else
     echo " => using target $ANDROIDSDKTARGET [API $ANDROIDAPI]"
   fi
-  $ANDROIDSDK/tools/android create project \
+  $ANDROIDSDK/tools/android --silent create project \
     --target $ANDROIDSDKTARGET --name $SYS_APPNAME --path $tmpdir \
     --activity $SYS_APPNAME --package $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME
   echo " => preparing icons.."
@@ -863,7 +863,7 @@ android)
     NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build NDK_LOG=1 NDK_DEBUG=1
   else
    echo " => compiling payload module.."
-   NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build
+   NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build --silent
   fi
   asserterror $?
   echo " => compiling application.."
@@ -883,12 +883,12 @@ android)
     asserterror $?
   fi
   echo " => signing application with keystore $keystore"
-  jarsigner -verbose -sigalg MD5withRSA -digestalg SHA1 -keystore $keystore -keypass "$SYS_ANDROIDPW" -storepass "$SYS_ANDROIDPW" $fnlfile $SYS_ORGSLD
+  jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore $keystore -keypass "$SYS_ANDROIDPW" -storepass "$SYS_ANDROIDPW" $fnlfile $SYS_ORGSLD
   asserterror $?
   echo " => zipaligning.."
   assertfile $fnlfile
   mv $fnlfile tmp.apk
-  $ANDROIDSDK/tools/zipalign -f -v 4 tmp.apk $fnlfile
+  $ANDROIDSDK/tools/zipalign -f 4 tmp.apk $fnlfile
   asserterror $?
   rmifexists tmp.apk
   echo " => cleaning up.."

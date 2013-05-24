@@ -55,16 +55,16 @@ linux*)
 ;;
 esac
 
-CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure --prefix="@SYS_PREFIX@" $EXTRACONF --enable-static --disable-shared --with-jack=no
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure --quiet --prefix="@SYS_PREFIX@" $EXTRACONF --enable-static --disable-shared --with-jack=no
 
 mv Makefile tmp
 cat tmp | sed "s/-arch i386//g;s/-arch x86_64//" > Makefile
 
 echo "==> Compiling source..."
-CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make -s
 
 echo "==> Installing..."
-make install
+make install -s
 cd "$here"
 
 echo "==> Cleaning up..."
