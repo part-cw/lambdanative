@@ -1,0 +1,75 @@
+#!/bin/sh
+
+PKGSRC=libharu-2.2.1.tar.gz
+
+src=@SYS_PREFIXROOT@/packages/$PKGSRC
+
+if [ ! -f $src -a `which wget` ]; then
+  echo "==> No source found, attempting to download.."
+  wget http://libharu.org/files/$PKGSRC -O $src
+fi
+
+if [ ! -f $src ]; then
+  echo "==> ERROR: Unable to proceed. Please obtain $src first."
+  exit 1
+fi
+
+tmpdir=tmp_compile
+
+if [ -d $tmpdir ]; then
+  rm -rf $tmpdir
+fi
+mkdir $tmpdir
+
+here=`pwd`
+cd $tmpdir
+echo "==> Extracting source..."
+tar -zxf $src 
+
+cd *
+
+echo "==> Patching source..."
+patches=`ls -1 ../../*.patch`
+for p in $patches; do
+  if [ $p ]; then
+    echo "==> applying patches from $p"
+    patch -p0 < $p
+  fi
+done
+autoconf
+
+echo "==> Configuring source..."
+case @SYS_PLATFORM@ in
+ios)
+  EXTRACONF=--host=arm
+;;
+android)
+  EXTRACONF=--host=arm-eabi
+;;
+win32*)
+  EXTRACONF=--host=i386-mingw32
+;;
+linux*)
+  EXTRACONF=--host=i386-linux
+;;
+*)
+  EXTRACONF=
+;;
+esac
+
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure --quiet --prefix="@SYS_PREFIX@" $EXTRACONF  --without-zlib --without-png --disable-shared
+
+mv Makefile tmp
+cat tmp | sed "s/-arch i386//g;s/-arch x86_64/-m32/" > Makefile
+
+echo "==> Compiling source..."
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make -s
+
+echo "==> Installing..."
+make install -s
+cd "$here"
+
+echo "==> Cleaning up..."
+rm -rf $tmpdir
+
+echo "==> All done."
