@@ -38,8 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; minimal code for https support
 ;; This does not support multiple concurrent connections
 
-(include "../s-optimize.inc")
-
 (c-declare  #<<end-of-c-declare
 
 #include <stdio.h>
