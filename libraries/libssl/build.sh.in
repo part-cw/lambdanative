@@ -31,9 +31,11 @@ cd *
 echo "==> Patching source..."
 patches=`ls -1 ../../*.patch`
 for p in $patches; do
+if [ $p ]; then
+  echo "==> applying patches from $p"
   patch -p0 < $p
+fi
 done
-autoconf
 
 echo "==> Configuring source..."
 case @SYS_PLATFORM@ in
@@ -47,8 +49,9 @@ esac
 
 CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" MAKE="make -s" ./Configure --openssldir="@SYS_PREFIX@" $EXTRACONF no-shared no-threads no-zlib no-asm no-dso no-sse2
 
+# we are not using the gcc wrapper, so platform flags won't work
 mv Makefile tmp
-cat tmp | sed "s/-arch i386//g;s/-arch x86_64//" > Makefile
+cat tmp | sed "s/-arch i386//g;s/-arch x86_64/-m32/" > Makefile
 
 echo "==> Compiling source..."
 CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make -s build_ssl build_crypto

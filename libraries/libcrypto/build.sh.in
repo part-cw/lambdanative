@@ -1,0 +1,2 @@
+#!/bin/sh
+# this is just a dummy, the crypto library is part of openssl!
