@@ -104,4 +104,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
 )
 
+(define (list-pos lst element)
+  (if (and (not (null? lst)) (member element lst))
+    (fx- (length lst) (length (member element lst)))
+    #f
+  ))
 ;; eof
