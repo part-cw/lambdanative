@@ -58,11 +58,6 @@ static int run_flag=1;
 
 #ifndef USECONSOLE
 
-#if defined(MAEMO) || defined(MAEMOSIM)
-#include <GLES/gl.h>
-#include <GLES/egl.h>
-#endif
-
 #ifdef MACOSX
 #include <OpenGL/OpenGL.h>
 #endif
@@ -79,12 +74,7 @@ void microgl_hook(int t, int x, int y)
       glClearColor(0.0, 0.0, 0.0, 0.0);
       glMatrixMode(GL_PROJECTION);	
       glLoadIdentity();
-#if defined(MAEMO)  || defined (MAEMOSIM)
-      glOrthof(0.,scm_width(),0.,scm_height(),-1.,1.);
-#else
       glOrtho(0.,scm_width(),0.,scm_height(),-1.,1.);
-#endif
-// 20100322: subtle.. without GL_MODELVIEW maemo rendering is off
       glMatrixMode(GL_MODELVIEW);	
       glLoadIdentity();
       glClear(GL_COLOR_BUFFER_BIT);

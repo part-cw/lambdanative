@@ -52,7 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <OpenGLES/ES1/gl.h>
 #endif
 
-#if defined(MAEMO) || defined(MAEMOSIM) || defined(ANDROID)
+#if defined(ANDROID)
 #define GL_API
 #define GL_APIENTRY
 #include <GLES/gl.h>

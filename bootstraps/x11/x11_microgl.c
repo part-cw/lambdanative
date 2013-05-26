@@ -48,10 +48,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define USE_GLX 1
 #endif
 
-#if defined(MAEMO) || defined(MAEMOSIM)
-#define USE_EGL 1
-#endif
-
 #ifdef USE_GLX
 #include <GL/glx.h>
 #include <GL/gl.h>
@@ -344,22 +340,6 @@ int microgl_open(int w, int h, int fs)
     win.CX = glXCreateContext( Dpy, win.VI, 0, GL_TRUE );
     glXMakeCurrent( Dpy, win.Win, win.CX );
   }
-#endif
-
-#ifdef XXXMAEMO  // is this necessary???
-  {
-    XEvent xev;
-    Atom wm_state = XInternAtom(Dpy,"_NET_WM_STATE", False);
-    Atom fullscreen = XInternAtom(Dpy,"_NET_WM_STATE_FULLSCREEN", False);
-    memset(&xev,0,sizeof(xev));
-    xev.type=ClientMessage;
-    xev.xclient.window=win.Win;
-    xev.xclient.message_type=wm_state;
-    xev.xclient.format = 32;
-    xev.xclient.data.l[0]=1;
-    xev.xclient.data.l[1]=fullscreen;
-    XSendEvent(Dpy,DefaultRootWindow(Dpy),False,SubstructureNotifyMask,&xev);
-  } 
 #endif
 
 #ifdef USE_EGL

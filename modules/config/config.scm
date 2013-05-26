@@ -114,7 +114,7 @@ static void system_init(void)
 
 #endif // !USECONSOLE
 
-#if defined(LINUX) || defined(OPENBSD) || defined(NETBSD) || defined(MAEMO) || defined(MAEMOSIM)|| defined(WIN32) || defined(USECONSOLE)
+#if defined(LINUX) || defined(OPENBSD) || defined(NETBSD) || defined(WIN32) || defined(USECONSOLE)
   // application path on unixy systems
   char path[1024];
   getcwd(path,1024);
