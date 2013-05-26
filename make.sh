@@ -1170,6 +1170,8 @@ function make_install()
       assertfile $pkgfile
       echo "==> Found device, installing android application $SYS_APPNAME.."
       $ANDROIDSDK/platform-tools/adb install -r $pkgfile
+      echo "==> Starting application.."
+      $ANDROIDSDK/platform-tools/adb shell am start -S $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME/.$SYS_APPNAME
     fi
   ;;
   default)
