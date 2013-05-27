@@ -73,6 +73,14 @@ extern "C" void iphone_setvolume(double v)
   [[MPMusicPlayerController applicationMusicPlayer] setVolume:v];
 }
 
+extern "C" double iphone_getvolume()
+{
+  Float32 volume=0;
+  UInt32 dataSize = sizeof(Float32);
+  AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareOutputVolume,&dataSize,&volume);
+  return (double)volume;
+}
+
 extern "C" int iphone_headphonepresent()
 {
   UInt32 routeSize = sizeof (CFStringRef);

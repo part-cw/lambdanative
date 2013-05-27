@@ -179,6 +179,7 @@ int iphone_realtime_audio_init(double,unsigned int);
 int iphone_realtime_audio_start(void (*)(float*,unsigned int, void*));
 int iphone_realtime_audio_stop();
 void iphone_setvolume(double);
+double iphone_getvolume();
 
 static void iphone_realtime_callback( float *buffer, unsigned int framesize, void* userData)
 {
@@ -349,6 +350,15 @@ void audiofile_play(int id)
 #endif
 }
 
+// don't ever allow them to silence us for critical alerts
+void audiofile_forceplay(int id)
+{
+#ifdef USE_IOS_REALTIME
+  if (iphone_getvolume()==0.) iphone_setvolume(0.1);
+#endif
+  audiofile_play(id);
+}
+
 end-of-c-declare
 )
 
@@ -371,5 +381,6 @@ end-of-c-declare
       #f))))
 
 (define (audiofile-play id) (if id ((c-lambda (int) void "audiofile_play") id)))
+(define (audiofile-forceplay id) (if id ((c-lambda (int) void "audiofile_forceplay") id)))
 
 ;;eof
