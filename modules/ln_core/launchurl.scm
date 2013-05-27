@@ -36,21 +36,72 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(include "flofix.scm")
-(include "color.scm")
-(include "floatstring.scm")
-(include "list.scm")
-(include "string.scm")
-(include "u8vector.scm")
-(include "sort.scm")
-(include "math.scm")
-(include "list-stats.scm")
-(include "time.scm")
-(include "log.scm")
-(include "ipaddr.scm")
-(include "launchurl.scm")
-(include "csv.scm")
-(include "u8vector-crcs.scm")
-(include "u8vector-compress.scm")
-(include "file-compress.scm")
+;; Launch a URL in a browser window
 
+(c-declare  #<<end-of-c-declare
+
+#ifdef IOS
+#import <UIKit/UIKit.h>
+static void ios_launch_url(char *urlchar){
+  NSString* urlString = [NSString stringWithUTF8String: urlchar];
+  NSURL *url = [NSURL URLWithString:urlString];
+  [[UIApplication sharedApplication] openURL:url];
+}
+#endif
+
+#ifdef WIN32
+#include <windows.h>
+#endif
+
+#ifdef MACOSX
+#import <ApplicationServices/ApplicationServices.h>
+static void macosx_launch_url(char *urlstring){
+  CFStringRef cfurlstring = CFStringCreateWithCString(NULL,urlstring,0);
+  CFURLRef url = CFURLCreateWithString ( kCFAllocatorDefault, cfurlstring, NULL );
+  if (url) LSOpenCFURLRef(url,NULL);
+  CFRelease(url);
+  CFRelease(cfurlstring);
+}
+#endif
+
+#ifdef ANDROID
+// Actual code has to be in Java, so glued using JNI
+void android_launch_url(char *urlstring);
+#endif
+
+#ifdef LINUX
+#include <unistd.h>
+#include <stdlib.h>
+static void linux_launch_url(char *url){
+  int pid=fork();
+  if (pid == 0) {
+    execl("/usr/bin/xdg-open", "xdg-open", url, (char *)0);
+    exit(1);
+  }
+}
+#endif
+
+static void launch_url(char *urlstring){
+  #if defined(WIN32)
+    ShellExecute(NULL,"open",urlstring,NULL,NULL,SW_SHOWDEFAULT);
+  #endif
+  #ifdef IOS
+    ios_launch_url(urlstring);
+  #endif
+  #if defined(MACOSX)
+    macosx_launch_url(urlstring);
+  #endif
+  #if defined(LINUX)
+    linux_launch_url(urlstring);
+  #endif
+  #ifdef ANDROID
+    android_launch_url(urlstring);
+  #endif
+}
+
+end-of-c-declare
+)
+
+(define launch-url (c-lambda (char-string) void "launch_url"))
+
+;; eof

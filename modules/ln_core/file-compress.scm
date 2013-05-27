@@ -36,21 +36,36 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(include "flofix.scm")
-(include "color.scm")
-(include "floatstring.scm")
-(include "list.scm")
-(include "string.scm")
-(include "u8vector.scm")
-(include "sort.scm")
-(include "math.scm")
-(include "list-stats.scm")
-(include "time.scm")
-(include "log.scm")
-(include "ipaddr.scm")
-(include "launchurl.scm")
-(include "csv.scm")
-(include "u8vector-crcs.scm")
-(include "u8vector-compress.scm")
-(include "file-compress.scm")
+;; FastLZ based compression for files
+;; It allows for very fast compression and decompression but files are about 33% larger than zip.
 
+(define (compress:helper src dst compress?)
+  (if (file-exists? src)
+    (let* ((filesize (file-info-size (file-info src)))
+           (data (let ((content (if filesize (make-u8vector filesize) #f)))
+             (if content
+               (begin
+                 (with-input-from-file src (lambda () (read-subu8vector content 0 filesize)))
+                 content
+              )
+              (u8vector)))))
+      (let ((datacomp ((if compress? u8vector-compress u8vector-decompress) data)))
+        (with-output-to-file dst (lambda () (write-subu8vector datacomp 0 (u8vector-length datacomp))))
+      )
+    )))
+
+(define (compress-file src dst)
+  (compress:helper src dst #t)
+)
+
+(define (decompress-file src dst)
+  (compress:helper src dst #f)
+)
+
+(define (quick-compress src)
+  (compress-file src (string-append src ".flz"))
+  (if (file-exists? (string-append src ".flz")) (delete-file src)))
+
+(define (quick-decompress src)
+  (decompress-file (string-append src ".flz") src)
+  (if (file-exists? src) (delete-file (string-append src ".flz"))))

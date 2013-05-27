@@ -36,21 +36,19 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(include "flofix.scm")
-(include "color.scm")
-(include "floatstring.scm")
-(include "list.scm")
-(include "string.scm")
-(include "u8vector.scm")
-(include "sort.scm")
-(include "math.scm")
-(include "list-stats.scm")
-(include "time.scm")
-(include "log.scm")
-(include "ipaddr.scm")
-(include "launchurl.scm")
-(include "csv.scm")
-(include "u8vector-crcs.scm")
-(include "u8vector-compress.scm")
-(include "file-compress.scm")
+;; IP address convenience functions
+(define (host-ipaddr . name)
+  ;; First try to connect to Google - since this also works on Linux
+  (let* ((p (with-exception-catcher (lambda (e) #f) (lambda () (open-tcp-client "www.google.com:80"))))
+         (addr (if p (socket-info-address (tcp-client-self-socket-info p)) #f)))
+    (if p (close-port p))
+    (if addr addr
+      ;; If no address obtained, try getting the host info as a backup
+      (let ((info (with-exception-catcher (lambda (e) #f) (lambda () (host-info (if (fx= (length name) 1) (car name) (host-name)))))))
+        (if info (car (host-info-addresses info)) #f)))
+  ))
 
+(define (ipaddr->string addr)
+  (if addr (string-mapconcat (u8vector->list addr) "." number->string) #f))
+
+;; eof

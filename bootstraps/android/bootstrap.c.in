@@ -47,18 +47,49 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "CONFIG.h"
 
 // event hook
-
-void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_myRenderer_nativeEvent(JNIEnv* e, jobject o, jint t, jint x, jint y) 
-
-{  
+void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_myRenderer_nativeEvent(JNIEnv* e, jobject o, jint t, jint x, jint y){
    if ((*e)->ExceptionCheck(e)) return;
    ffi_event((int)t,(int)x,(int)y); 
 }
 
-void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_nativeEvent(JNIEnv* e, jobject o, jint t, jint x, jint y) 
-{ 
+void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_nativeEvent(JNIEnv* e, jobject o, jint t, jint x, jint y){
   if ((*e)->ExceptionCheck(e)) return;
   ffi_event((int)t,(int)x,(int)y); 
+}
+
+
+// JNI Hooks and Global Objects
+static jobject globalObj=NULL;
+static JavaVM* s_vm = NULL;
+
+void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_nativeInstanceInit(JNIEnv* env, jobject thiz){
+  globalObj = (*env)->NewGlobalRef(env,thiz); 
+}
+
+jint JNI_OnLoad(JavaVM* vm, void* reserved){
+  JNIEnv *env;
+  s_vm=vm;
+//  if ((*s_vm)->GetEnv(s_vm,(void**) &env, JNI_VERSION_1_4) != JNI_OK) return -1;
+  return JNI_VERSION_1_4;
+}
+
+JNIEnv* GetJNIEnv(){
+  int error=0;
+  JNIEnv* env = NULL;
+  if (s_vm) error=(*s_vm)->AttachCurrentThread(s_vm, &env, NULL);
+  if (!error&&(*env)->ExceptionCheck(env)) return NULL;
+  return (error?NULL:env);
+}
+
+// url launcher ffi
+void android_launch_url(char* urlstring){
+  JNIEnv *env = GetJNIEnv();
+  jstring jurlstring = (*env)->NewStringUTF(env,urlstring);
+  if (env&&globalObj) {
+    jclass cls = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+    jmethodID method = (*env)->GetMethodID(env, cls, "openURL", "(Ljava/lang/String;)V");
+    (*env)->CallVoidMethod(env, globalObj, method, jurlstring);
+  }
 }
 
 #ifdef RTAUDIO
@@ -84,29 +115,7 @@ void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_nativeStop
 #endif
 }
 
-// auxilary functions to support soundpool ffi
-
-static JavaVM* s_vm = NULL;
-
-jint JNI_OnLoad(JavaVM* vm, void* reserved)
-{
-  JNIEnv *env;
-  s_vm=vm;
-//  if ((*s_vm)->GetEnv(s_vm,(void**) &env, JNI_VERSION_1_4) != JNI_OK) return -1;
-  return JNI_VERSION_1_4;
-}
-
-JNIEnv* GetJNIEnv()
-{
-  int error=0;
-  JNIEnv* env = NULL;
-  if (s_vm) error=(*s_vm)->AttachCurrentThread(s_vm, &env, NULL);
-  if (!error&&(*env)->ExceptionCheck(env)) return NULL;
-  return (error?NULL:env);
-}
-
 // soundpool ffi
-
 static jobject s_globalThiz=NULL;
 static jclass soundpool_class=NULL;
 static jmethodID s_load=NULL;
