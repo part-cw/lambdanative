@@ -1099,6 +1099,10 @@ function make_payload()
   if [ -f "$appdir/MODULES" ]; then
     modules=`cat $appdir/MODULES`
   fi
+  plugins=
+  if [ -f "$appdir/PLUGINS" ]; then
+    plugins=`cat $appdir/PLUGINS`
+  fi
   libraries=
   if [ -f "$appdir/LIBRARIES" ]; then
     libraries=`cat $appdir/LIBRARIES`
@@ -1119,6 +1123,10 @@ function make_payload()
   for m in $modules; do
     modsrc=`locatefile modules/$m/$m.scm`
     srcs="$srcs $modsrc"
+  done
+  for p in $plugins; do
+    plugsrc=`locatefile plugins/$p/$p.scm`
+    srcs="$srcs $plugsrc"
   done
   # note: textures, fonts and strings can't go before glcore!
   srcs="$srcs $textures $fonts $strings $appdir/main.scm"
