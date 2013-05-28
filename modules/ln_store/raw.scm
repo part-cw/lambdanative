@@ -46,9 +46,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (let ((oldlist (table-ref t 'IdList '())))
             (table-set! t 'IdList (append oldlist (list id))))))))
 
-(define (store-raw-clear store id)
+(define (store-raw-clear store . auxid)
   (let* ((t (store-rawtable store))
-         (idlist (table-ref t 'IdList '())))
+         (idlist (table-ref t 'IdList '()))
+         (id (if (fx= (length auxid) 1) (car auxid) #f)))
     (table-set! t 'IdList
        (if id
          (let loop ((ids idlist)(out '()))
