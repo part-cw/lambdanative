@@ -65,11 +65,17 @@ function locatefile()
   echo $file
 }
 
+# Allow use of a permanently overlay by declaring $OVERLAY_PATH in SETUP file
+. ./SETUP
+if [ ! "X$OVERLAY_PATH" = "X" ]; then
+  SYS_PATH="$OVERLAY_PATH"
+fi
+
 if [ "X$SYS_PATH" = "X" ]; then
   SYS_PATH=`pwd`
 else
-  SYS_PATH="$SYS_PATH:"`pwd`
-#  SYS_PATH=`pwd`":$SYS_PATH"
+#  SYS_PATH="$SYS_PATH:"`pwd`
+  SYS_PATH=`pwd`":$SYS_PATH"
 fi
 
 if [ "X$1$2$3" = "X" ]; then
