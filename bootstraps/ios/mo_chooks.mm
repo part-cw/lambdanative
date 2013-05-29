@@ -123,7 +123,7 @@ extern "C" double iphone_location_getlongitude()
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%
 // launch url
 
-extern "C" void iphone_launch_url(char *urlchar)
+extern "C" void ios_launch_url(char *urlchar)
 {
   NSString* urlString = [NSString stringWithUTF8String: urlchar];
   NSURL *url = [NSURL URLWithString:urlString];

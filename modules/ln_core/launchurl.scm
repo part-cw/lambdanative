@@ -41,12 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (c-declare  #<<end-of-c-declare
 
 #ifdef IOS
-#import <UIKit/UIKit.h>
-static void ios_launch_url(char *urlchar){
-  NSString* urlString = [NSString stringWithUTF8String: urlchar];
-  NSURL *url = [NSURL URLWithString:urlString];
-  [[UIApplication sharedApplication] openURL:url];
-}
+void ios_launch_url(char *);
 #endif
 
 #ifdef WIN32

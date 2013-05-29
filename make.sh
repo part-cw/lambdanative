@@ -782,10 +782,11 @@ ios)
   xcodedir=`abspath $xcodedir`
   cd $here
   cd $xcodedir
-  cmake -GXcode $cmakedir
+  cmake -GXcode $cmakedir > /dev/null
   asserterror $?
-  xcodebuild -configuration Release
-  asserterror $?
+  xcodebuild -configuration Release | grep -A 2 error
+# asserterror will fail here because of the grep
+#  asserterror $?
   cd $here
   assertfile $xcodedir/Release-iphoneos/$SYS_APPNAME$SYS_APPFIX
   echo " => verifying application.."
