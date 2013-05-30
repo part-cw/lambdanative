@@ -41,8 +41,6 @@
 
 . ./SETUP
 
-VERBOSE=
-
 #########################
 # general functions
 
@@ -52,9 +50,19 @@ if [ "X"`which md5sum` = "X" ]; then
   md5summer="md5 -r"
 fi
 
+function veval()
+{
+  if [ $SYS_VERBOSE ]; then 
+    echo "$1"
+    eval $1
+  else 
+    eval $1 > /dev/null
+  fi
+}
+
 function vecho()
 {
-  if [ $VERBOSE ]; then 
+  if [ $SYS_VERBOSE ]; then 
     echo "$1"
   fi
 }
@@ -71,7 +79,7 @@ function rmifexists()
 {
   if [ "$1" ]; then
     if [ -e "$1" ]; then
-#      echo " => removing old $1.."
+      vecho " => removing old $1.."
       rm -rf "$1"
     fi
   fi
@@ -262,12 +270,10 @@ function compile()
   cd $path
   rmifexists "$ctgt"
   echo " => $src.." 
-  vecho "$SYS_GSC -c -o $ctgt $src"
-  $SYS_GSC -prelude "$opts" -c -o $ctgt $src
+  veval "$SYS_GSC -prelude \"$opts\" -c -o $ctgt $src"
   assertfile "$ctgt"
   rmifexists "$otgt"
-  vecho "$SYS_CC $optc $SYS_CPPFLAGS $SYS_CFLAGS $defs -c -o $otgt $ctgt -I$SYS_PREFIX/include"
-  $SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -c -o $otgt $ctgt -I$SYS_PREFIX/include
+  veval "$SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -c -o $otgt $ctgt -I$SYS_PREFIX/include"
   assertfile "$otgt"
   cd $here
 }
@@ -312,8 +318,7 @@ function compile_payload()
     vecho "$SYS_GSC -link $csrcs"
     $SYS_GSC -link $csrcs 
     assertfile $lctgt
-    vecho "$SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -c $lctgt -I$SYS_PREFIX/include"
-    $SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -o $lotgt -c $lctgt -I$SYS_PREFIX/include
+    veval "$SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -o $lotgt -c $lctgt -I$SYS_PREFIX/include"
     assertfile $lotgt
   fi
   objs="$objs $lotgt"
@@ -376,8 +381,7 @@ _EOF
     if [ `is_standalone_app` = "yes" ]; then
       defs="$defs -DSTANDALONE"
     fi
-    vecho "$SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -c -o $hotgt $hctgt -I$SYS_PREFIX/include"
-    $SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -c -o $hotgt $hctgt -I$SYS_PREFIX/include
+    veval "$SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -c -o $hotgt $hctgt -I$SYS_PREFIX/include"
     assertfile $hotgt
   fi
   objs="$objs $hotgt"
@@ -771,7 +775,7 @@ ios)
 #      locasesnd=`basename $snd | tr A-Z a-z`
 #     echo " => $locasesnd.."
 #     cp $snd $cmakedir/$locasesnd
-      echo "  > $snd.."
+      vecho "  > $snd.."
       cp $snd $cmakedir
     done
  fi
@@ -834,11 +838,11 @@ android)
     mkdir -p $tmpdir/res/raw
     for snd in $snds; do
       locasesnd=`basename $snd | tr A-Z a-z`
-      echo " => $locasesnd.."
+      vecho " => $locasesnd.."
       cp $snd $tmpdir/res/raw/$locasesnd
     done
   fi
-  echo " => transfering java hook.."
+  echo " => transferring java hook.."
   ac_output bootstraps/android/bootstrap.java $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
   echo " => preparing manifest.."
   configsrc=`locatefile apps/$SYS_APPNAME`"/CONFIG_ANDROID.in"
@@ -880,7 +884,7 @@ android)
   cd $here
   pkgfile="$tmpdir/bin/$(echo $SYS_APPNAME)-release-unsigned.apk"
   assertfile "$pkgfile"
-  echo " => transfering application.."
+  echo " => transferring application.."
   fnlfile=$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-android.apk
   cp $pkgfile $fnlfile
   assertfile $fnlfile
@@ -943,7 +947,7 @@ macosx)
     snds=`ls -1 $sounddir/*.wav`
     mkdir -p $appdir/sounds
     for snd in $snds; do
-       echo "   $snd.."
+       vecho "   $snd.."
        cp $snd $appdir/sounds
     done
   fi
@@ -951,16 +955,16 @@ macosx)
   echo " => compiling application.."
   if [ `is_standalone_app` = "yes" ]; then
     cd "$tmpdir"
-    $SYS_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $appdir/$SYS_APPNAME $SYS_LDFLAGS -lpayload
+    veval "$SYS_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $appdir/$SYS_APPNAME $SYS_LDFLAGS -lpayload"
   else
     if [ `is_gui_app` = "yes" ]; then
       cp bootstraps/macosx/*.[mh] $tmpdir
       cd "$tmpdir"
-      $SYS_CC -framework OpenGL -framework Cocoa -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -x objective-c -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -o $appdir/$SYS_APPNAME $SYS_LDFLAGS -lpayload main.m SimpleOpenGLView.m
+      veval "$SYS_CC -framework OpenGL -framework Cocoa -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -x objective-c -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -o $appdir/$SYS_APPNAME $SYS_LDFLAGS -lpayload main.m SimpleOpenGLView.m"
     else
       cp bootstraps/common/main.c $tmpdir
       cd "$tmpdir"
-      $SYS_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $appdir/$SYS_APPNAME $SYS_LDFLAGS -lpayload main.c 
+      veval "$SYS_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $appdir/$SYS_APPNAME $SYS_LDFLAGS -lpayload main.c"
     fi
   fi
   cd $here
@@ -985,7 +989,7 @@ win32)
     echo " => transferring sounds..."
     snds=`ls -1 $sounddir/*.wav`
     for snd in $snds; do
-       echo "   $snd.."
+       vecho "   $snd.."
        cp $snd $appdir
     done
   fi
@@ -1014,18 +1018,18 @@ win32)
   echo " => compiling application.."
   tgt=$appdir/$SYS_APPNAME$SYS_EXEFIX
   if [ `is_standalone_app` = "yes" ]; then
-    $SYS_CC -I$SYS_PREFIX/include \
+    veval "$SYS_CC -I$SYS_PREFIX/include \
       -DUSECONSOLE -o $tgt \
-      -L$SYS_PREFIX/lib -lpayload -lgdi32 -lwinmm -lwsock32 -lws2_32 -lm
+      -L$SYS_PREFIX/lib -lpayload -lgdi32 -lwinmm -lwsock32 -lws2_32 -lm"
   else
     if [ `is_gui_app` = yes ]; then
-      $SYS_CC -I$SYS_PREFIX/include \
+      veval "$SYS_CC -I$SYS_PREFIX/include \
         -mwindows win32_microgl.c main.c icon.o -o $tgt \
-        -L$SYS_PREFIX/lib -lpayload -lglu32 -lopengl32 -lgdi32 -lwinmm -lwsock32 -lws2_32 -lm
+        -L$SYS_PREFIX/lib -lpayload -lglu32 -lopengl32 -lgdi32 -lwinmm -lwsock32 -lws2_32 -lm"
     else
-      $SYS_CC -I$SYS_PREFIX/include \
+      veval "$SYS_CC -I$SYS_PREFIX/include \
         -DUSECONSOLE main.c -o $tgt \
-        -L$SYS_PREFIX/lib -lpayload -lgdi32 -lwinmm -lwsock32 -lws2_32 -lm
+        -L$SYS_PREFIX/lib -lpayload -lgdi32 -lwinmm -lwsock32 -lws2_32 -lm"
     fi
   fi
   asserterror $?
@@ -1055,28 +1059,28 @@ linux)
     snds=`ls -1 $sounddir/*.wav`
     mkdir -p $appdir/sounds
     for snd in $snds; do
-       echo "   $snd.."
+       vecho "   $snd.."
        cp $snd $appdir/sounds
     done
   fi
   echo " => compiling application.."
   tgt=$appdir/$SYS_APPNAME$SYS_EXEFIX
   if [ `is_standalone_app` = "yes" ]; then
-      $SYS_CC -I$SYS_PREFIX/include \
+      veval "$SYS_CC -I$SYS_PREFIX/include \
         -DUSECONSOLE -o $tgt \
         -L/usr/local/linux/i686-linux/lib \
-        -L$SYS_PREFIX/lib -lpayload -lrt -lutil -lpthread -ldl -lm
+        -L$SYS_PREFIX/lib -lpayload -lrt -lutil -lpthread -ldl -lm"
   else
     if [ `is_gui_app` = yes ]; then
-      $SYS_CC -I$SYS_PREFIX/include \
+      veval "$SYS_CC -I$SYS_PREFIX/include \
         x11_microgl.c main.c -o $tgt \
         -L/usr/local/linux/i686-linux/lib \
-        -L$SYS_PREFIX/lib -lpayload -lGL -lXext -lX11 -lasound -lrt -lutil -lpthread -ldl -lm
+        -L$SYS_PREFIX/lib -lpayload -lGL -lXext -lX11 -lasound -lrt -lutil -lpthread -ldl -lm"
     else
-      $SYS_CC -I$SYS_PREFIX/include \
+      veval "$SYS_CC -I$SYS_PREFIX/include \
         -DUSECONSOLE main.c -o $tgt \
         -L/usr/local/linux/i686-linux/lib \
-        -L$SYS_PREFIX/lib -lpayload -lrt -lasound -lutil -lpthread -ldl -lm
+        -L$SYS_PREFIX/lib -lpayload -lrt -lasound -lutil -lpthread -ldl -lm"
     fi
   fi
   asserterror $?
@@ -1200,15 +1204,9 @@ function make_executable()
 {
   if [ ! "$SYS_MODULES" ]; then
     make_bootstrap
-#    echo "==> making bootstrapped executable for $SYS_APPNAME.."
-#    here=`pwd`
-#    cd bootstraps/$SYS_PLATFORM
-#    make
-#    cd $here
   else
     echo "==> making standalone executable for $SYS_APPNAME.."
-    echo "$SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS -o $SYS_PREFIX/bin/$SYS_APPNAME$SYS_EXEFIX $SYS_PREFIX/lib/libpayload.a"
-    $SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS -o $SYS_PREFIX/bin/$SYS_APPNAME$SYS_EXEFIX $SYS_PREFIX/lib/libpayload.a
+    veval "$SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS -o $SYS_PREFIX/bin/$SYS_APPNAME$SYS_EXEFIX $SYS_PREFIX/lib/libpayload.a"
     assertfile $SYS_PREFIX/bin/$SYS_APPNAME$SYS_EXEFIX
   fi
 }
@@ -1223,10 +1221,10 @@ function make_package()
     rmifexists $pkgfile
     echo " => making generic zip archive $pkgfile.."
     cd $SYS_PREFIX
-    zip -9 -y -r $pkgfile $SYS_APPNAME$SYS_APPFIX
+    veval "zip -9 -y -r $pkgfile $SYS_APPNAME$SYS_APPFIX"
     cd $here
     assertfile $pkgfile
-    echo " === $pkgfile"
+    echo "=== $pkgfile"
   ;;
   ios)
 #  an ipa is not needed anymore? 
@@ -1251,18 +1249,18 @@ function make_package()
       rm $pkgfile
     fi
     cd $SYS_PREFIX
-    zip -q -y -r $pkgfile ${SYS_APPNAME}.app
+    veval "zip -q -y -r $pkgfile ${SYS_APPNAME}.app"
     cd $here
     assertfile $pkgfile
-    echo " === $pkgfile"
+    echo "=== $pkgfile"
   ;;
   android)
     pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).apk"
     assertfile $pkgfile
-    echo " === $pkgfile"
+    echo "=== $pkgfile"
   ;;
   *)
-    echo " => no packaging setup for this platform ($SYS_PLATFORM)"
+    echo "=== no packaging setup for this platform ($SYS_PLATFORM)"
   ;;
   esac
 }

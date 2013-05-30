@@ -35,33 +35,18 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# since os x doesn't have readlink -f
-function abspath()
-{
-  echo "$(cd $(dirname $1) 2> /dev/null; pwd)/$(basename $1)"
-}
-
 function locatefile()
 {
   file=
   dirs=$(echo "$SYS_PATH" | tr ":" "\n")
   for dir in $dirs; do
-#    tmp=`readlink -f $dir/$1`
-    tmp=`abspath $dir/$1`
+    tmp="$dir/$1"
     if [ ! "X$tmp" = "X" ]; then
       if [ -e $tmp ]; then
         file=$tmp
       fi
     fi
   done
-  if [ "X$file" = "X" ]; then
-    echo "ERROR: file or directory not found [$1]"
-    exit 1
-  fi
-  if [ ! -e $file ]; then
-    echo "ERROR: file or directory not found [$1]"
-    exit 1
-  fi
   echo $file
 }
 
@@ -78,14 +63,44 @@ else
   SYS_PATH=`pwd`":$SYS_PATH"
 fi
 
-if [ "X$1$2$3" = "X" ]; then
-  echo "usage: ./configure <application> [platform] [release|debug]"
+if [ "X$1$2$3$4" = "X" ]; then
+  echo "usage: ./configure <application> [platform] [release|debug] [verbose]"
   exit 1
 fi
 
 with_app=$1
-with_platform=$2
-with_mode=$3
+
+platforms="android ios linux win32 macosx"
+with_platform=
+for platform in $platforms; do
+  if [ ! "X"`echo "$@" | cut -f 2- -d " " | grep $platform | cut -c 1` = "X" ]; then
+    if [ "X"$with_platform = "X" ]; then
+      with_platform=$platform
+    else 
+      echo "ERROR: multiple platforms specified [$platform and $with_platform]"
+      exit 1
+    fi
+  fi
+done
+
+with_mode=
+if [ ! "X"`echo "$@" | cut -f 2- -d " " | grep release | cut -c 1` = "X" ]; then
+  with_mode=release
+fi
+if [ ! "X"`echo "$@" | cut -f 2- -d " " | grep debug | cut -c 1` = "X" ]; then
+  if [ "X"$with_mode = "X" ]; then
+    with_mode=debug
+  else 
+     echo "ERROR: release and debug modes are mutually exclusive"
+     exit 1
+  fi
+fi
+
+with_verbose=
+if [ ! "X"`echo "$@" | grep verbose | cut -c 1` = "X" ]; then 
+  with_verbose="verbose "
+fi
+SYS_VERBOSE=$with_verbose
 
 if [ "X$with_app" = "X" ]; then
   echo "ERROR: application not specified"
@@ -93,8 +108,11 @@ if [ "X$with_app" = "X" ]; then
 fi 
 
 # search for application
-#echo locatefile "apps/$with_app" > /dev/null
 appdir=`locatefile "apps/$with_app"`
+if [ ! -d "$appdir" ]; then
+  echo "ERROR: application $with_app not found"
+  exit 1
+fi
 
 SYS_APPNAME=$with_app
 
@@ -124,7 +142,7 @@ esac
 
 # setup target platform
 case "$with_platform" in
-linux*|ios|macosx*|win32*|android*)
+linux|ios|macosx|win32|android)
   SYS_PLATFORM=$with_platform
 ;;
 *)
@@ -142,7 +160,7 @@ if [ "X$with_mode" = "X" ]; then
 fi
 SYS_MODE=$with_mode
 
-echo "==> configured to build $SYS_APPNAME for $SYS_PLATFORM on $SYS_HOSTPLATFORM in $SYS_MODE mode"
+echo "==> configured to build $SYS_APPNAME for $SYS_PLATFORM in $SYS_MODE ${SYS_VERBOSE}mode"
 echo " == using source in $appdir"
 
 cat > config.cache << EOF
@@ -151,5 +169,6 @@ SYS_APPNAME=$SYS_APPNAME
 SYS_HOSTPLATFORM=$SYS_HOSTPLATFORM
 SYS_PLATFORM=$SYS_PLATFORM
 SYS_MODE=$SYS_MODE
+SYS_VERBOSE=$SYS_VERBOSE
 EOF
 
