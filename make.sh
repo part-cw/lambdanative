@@ -143,40 +143,47 @@ function newerindir()
   echo $result
 }
 
-# since os x doesn't have readlink -f 
-function abspath()
-{
-  echo "$(cd $(dirname $1) 2> /dev/null; pwd)/$(basename $1)"
-}
-
-function locatefile()
+function locatetest()
 {
   here=`pwd`
   file=
   dirs=$(echo "$SYS_PATH" | tr ":" "\n")
   for dir in $dirs; do
-#    tmp=`readlink -f $dir/$1`
-    tmp=`abspath $dir/$1`
+    tmp="$dir/$2"
     if [ ! "X$tmp" = "X" ]; then
-      if [ -e $tmp ]; then
+      if [ $1 $tmp ]; then
         if [ "X$file" = "X" ]; then
           file=$tmp
+        else
+          if [ ! "X$3" = "Xsilent" ]; then
+             echo "WARNING: $file shadows $tmp" 1>&2
+          fi
         fi
       fi
     fi 
   done
   if [ "X$file" = "X" ]; then
-    if [ ! "X$2" = "Xsilent" ]; then
-      echo "WARNING: file not found [$1]" 1>&2
+    if [ ! "X$3" = "Xsilent" ]; then
+      echo "WARNING: [$2] not found" 1>&2
     fi
   fi
   if [ ! -e $file ]; then
-    if [ ! "X$2" = "Xsilent" ]; then
-      echo "WARNING: file not found [$1]" 1>&2
+    if [ ! "X$3" = "Xsilent" ]; then
+      echo "WARNING: [$2] not found" 1>&2
     fi
   fi
   cd "$here"
   echo $file
+}
+
+function locatedir()
+{
+  locatetest "-d" $@
+}
+
+function locatefile()
+{
+  locatetest "-f" $@
 }
 
 function wildcard_dir()
@@ -473,7 +480,7 @@ function make_artwork()
 function make_textures()
 {
   echo "==> creating textures needed for $SYS_APPNAME.."
-  srcdir=`locatefile apps/$SYS_APPNAME/textures silent`
+  srcdir=`locatedir apps/$SYS_APPNAME/textures silent`
   if [ "X" == "X$srcdir" ]; then 
     return 
   fi
@@ -742,7 +749,7 @@ ios)
   tgtdir="$SYS_PREFIX/$SYS_APPNAME$SYS_APPFIX"
   srcdir=`pwd`"/bootstraps/ios"
   cmakedir=`mktemp -d tmp.XXXXXX`
-  cmakedir=`abspath $cmakedir`
+  cmakedir=`pwd`"/$cmakedir"
   cd $here
   ac_output $srcdir/CMakeLists.txt $cmakedir/CMakeLists.txt
   cp $srcdir/*.m $cmakedir
@@ -756,7 +763,7 @@ ios)
   # go full screen on retina displays!
   cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/retina.png" "$cmakedir/Default-568h@2x.png"
 
-  snddir=`locatefile apps/$SYS_APPNAME/sounds silent`
+  snddir=`locatedir apps/$SYS_APPNAME/sounds silent`
   if [ -d "$snddir" ]; then
     echo " => transferring sounds..."
     snds=`ls -1 $snddir/*.wav`
@@ -770,7 +777,7 @@ ios)
  fi
 
  echo " => preparing plist.."
-  configsrc=`locatefile apps/$SYS_APPNAME`"/CONFIG_IOS.in"
+  configsrc=`locatedir apps/$SYS_APPNAME`"/CONFIG_IOS.in"
   configtgt=$SYS_PREFIXROOT/build/$SYS_APPNAME/CONFIG_IOS
   ac_output $configsrc $configtgt
   assertfile $configtgt
@@ -779,7 +786,7 @@ ios)
   cat $configtgt | sed -n '/^#+/p' | cut -f 2- -d "+" >> "$cmakedir/config.h"
   echo " => building bootstrap.."
   xcodedir=`mktemp -d tmp.XXXXXX`
-  xcodedir=`abspath $xcodedir`
+  xcodedir=`pwd`"/$xcodedir"
   cd $here
   cd $xcodedir
   cmake -GXcode $cmakedir > /dev/null
@@ -805,7 +812,7 @@ ios)
 android)
   echo " => creating android project.."
   tmpdir=`mktemp -d tmp.XXXXXX`
-  tmpdir=`abspath $tmpdir`
+  tmpdir=`pwd`"/$tmpdir"
   cd $here
   ANDROIDSDKTARGET=`$ANDROIDSDK/tools/android list targets | grep "^id:" | grep "android-$ANDROIDAPI" | cut -f 2 -d " "`
   if [ "X$ANDROIDSDKTARGET" = "X" ]; then
@@ -820,7 +827,7 @@ android)
   echo " => preparing icons.."
   mkdir -p $tmpdir/res/drawable
   cp $SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-72.png $tmpdir/res/drawable/icon.png
-  snddir=`locatefile apps/$SYS_APPNAME/sounds silent`
+  snddir=`locatedir apps/$SYS_APPNAME/sounds silent`
   if [ -d "$snddir" ]; then
     echo " => transferring sounds..."
     snds=`ls -1 $snddir/*.wav`
@@ -843,7 +850,7 @@ android)
   echo " => creating payload module.."
   cd $here
   tmpmoddir=`mktemp -d tmp.XXXXXX`
-  tmpmoddir=`abspath $tmpmoddir`
+  tmpmoddir=`pwd`"/$tmpmoddir"
   mkdir $tmpmoddir/libpayload
   cp bootstraps/android/Android.mk.module $tmpmoddir/libpayload/Android.mk
   cp $SYS_PREFIX/lib/libpayload.a $tmpmoddir/libpayload
@@ -930,7 +937,7 @@ macosx)
     echo " => preparing plist.."
     cp bootstraps/macosx/Info.plist $appdir
   fi
-  sounddir=`locatefile apps/$SYS_APPNAME/sounds silent`
+  sounddir=`locatedir apps/$SYS_APPNAME/sounds silent`
   if [ -d "$sounddir" ]; then
     echo " => transferring sounds..."
     snds=`ls -1 $sounddir/*.wav`
@@ -973,7 +980,7 @@ win32)
     cp bootstraps/common/main.c $tmpdir
   fi
   cd $tmpdir
-  sounddir=`locatefile apps/$SYS_APPNAME/sounds silent`
+  sounddir=`locatedir apps/$SYS_APPNAME/sounds silent`
   if [ -d "$sounddir" ]; then
     echo " => transferring sounds..."
     snds=`ls -1 $sounddir/*.wav`
@@ -1042,7 +1049,7 @@ linux)
     cp bootstraps/common/main.c $tmpdir
   fi
   cd $tmpdir
-  sounddir=`locatefile apps/$SYS_APPNAME/sounds`
+  sounddir=`locatedir apps/$SYS_APPNAME/sounds`
   if [ -d "$sounddir" ]; then
     echo " => transferring sounds..."
     snds=`ls -1 $sounddir/*.wav`
@@ -1095,7 +1102,7 @@ function make_payload()
 {
   name=$SYS_APPNAME
   here=`pwd`
-  appdir=`locatefile apps/$name`
+  appdir=`locatedir apps/$name`
   modules=
   if [ -f "$appdir/MODULES" ]; then
     modules=`cat $appdir/MODULES`
@@ -1264,6 +1271,7 @@ function make_libraries()
 {
   echo "==> creating libraries needed for $SYS_APPNAME.."
   libfile=`locatefile apps/$SYS_APPNAME/LIBRARIES` 
+  assertfile $libfile
   libraries=
   if [ -f "$libfile" ]; then
     libraries=`cat $libfile`
@@ -1275,7 +1283,7 @@ function make_libraries()
     excluded=`echo "$excludes" | grep $SYS_PLATFORM`
     if [ "X$excluded" = "X" ]; then    
       libfile="$SYS_PREFIX/lib/$libname.a"
-      libdir=`locatefile libraries/$libname`
+      libdir=`locatedir libraries/$libname`
       assertfile $libdir
       if [ `newerindir $libdir $libfile` = "yes" ]; then
         echo " => $libname.."
