@@ -429,11 +429,13 @@ function make_artwork()
 {
   echo "==> creating artwork needed for $SYS_APPNAME.."
   objsrc=`locatefile "apps/$SYS_APPNAME/artwork.obj"`
-  epssrc=`echo "$objsrc" | sed 's/obj$/eps/'`
+  epssrc=`locatefile "apps/$SYS_APPNAME/artwork.eps"`
   if [ `isnewer $objsrc $epssrc` = "yes" ]; then
-    assertfile $objsrc
-    echo " => generating eps artwork.."
-    tgif -print -stdout -eps -color $objsrc > $epssrc
+    if [ ! "X$objsrc" = "X" ]; then
+      assertfile $objsrc
+      echo " => generating eps artwork.."
+      veval "tgif -print -stdout -eps -color $objsrc > $epssrc"
+    fi
   fi
   assertfile $epssrc
   mkdir -p "$SYS_PREFIX/build"
@@ -442,9 +444,9 @@ function make_artwork()
   tmpfile="$SYS_PREFIXROOT/build/$SYS_APPNAME/tmp.png"
   if [ `isnewer $epssrc $pngsrc` = "yes" ]; then
     echo " => generating master pixmap.."
-    gs -r600 -dNOPAUSE -sDEVICE=png16m -sOutputFile=$tmpfile $epssrc quit.ps 2,1> /dev/null
+    veval "gs -r600 -dNOPAUSE -sDEVICE=png16m -sOutputFile=$tmpfile $epssrc quit.ps"
     assertfile $tmpfile
-    convert $tmpfile -trim -transparent "#00ff00" $pngsrc
+    veval "convert $tmpfile -trim -transparent \"#00ff00\" $pngsrc"
     rm $tmpfile
   fi
   assertfile $pngsrc
