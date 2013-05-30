@@ -775,7 +775,7 @@ ios)
 #      locasesnd=`basename $snd | tr A-Z a-z`
 #     echo " => $locasesnd.."
 #     cp $snd $cmakedir/$locasesnd
-      vecho "  > $snd.."
+      vecho " => $snd.."
       cp $snd $cmakedir
     done
  fi
@@ -793,11 +793,11 @@ ios)
   xcodedir=`pwd`"/$xcodedir"
   cd $here
   cd $xcodedir
-  cmake -GXcode $cmakedir > /dev/null
+  veval "cmake -GXcode $cmakedir"
   asserterror $?
-  xcodebuild -configuration Release | grep -A 2 error
-# asserterror will fail here because of the grep
-#  asserterror $?
+#  xcodebuild -configuration Release | grep -A 2 error
+  veval "xcodebuild -configuration Release"
+  asserterror $?
   cd $here
   assertfile $xcodedir/Release-iphoneos/$SYS_APPNAME$SYS_APPFIX
   echo " => verifying application.."
@@ -845,7 +845,7 @@ android)
   echo " => transferring java hook.."
   ac_output bootstraps/android/bootstrap.java $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
   echo " => preparing manifest.."
-  configsrc=`locatefile apps/$SYS_APPNAME`"/CONFIG_ANDROID.in"
+  configsrc=`locatedir apps/$SYS_APPNAME`"/CONFIG_ANDROID.in"
   assertfile $configsrc
   configtgt=$SYS_PREFIXROOT/build/$SYS_APPNAME/CONFIG_ANDROID
   ac_output $configsrc $configtgt
@@ -872,14 +872,14 @@ android)
   cd $tmpdir
   if [ $SYS_MODE = "debug" ]; then
     echo " => compiling payload module with debug options.."
-    NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build NDK_LOG=1 NDK_DEBUG=1
+    veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build NDK_LOG=1 NDK_DEBUG=1"
   else
    echo " => compiling payload module.."
-   NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build --silent
+   veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build --silent"
   fi
   asserterror $?
   echo " => compiling application.."
-  ant -quiet release 
+  veval "ant -quiet release"
   asserterror $?
   cd $here
   pkgfile="$tmpdir/bin/$(echo $SYS_APPNAME)-release-unsigned.apk"
@@ -947,7 +947,7 @@ macosx)
     snds=`ls -1 $sounddir/*.wav`
     mkdir -p $appdir/sounds
     for snd in $snds; do
-       vecho "   $snd.."
+       vecho " => $snd.."
        cp $snd $appdir/sounds
     done
   fi
@@ -989,7 +989,7 @@ win32)
     echo " => transferring sounds..."
     snds=`ls -1 $sounddir/*.wav`
     for snd in $snds; do
-       vecho "   $snd.."
+       vecho " => $snd.."
        cp $snd $appdir
     done
   fi
@@ -1059,7 +1059,7 @@ linux)
     snds=`ls -1 $sounddir/*.wav`
     mkdir -p $appdir/sounds
     for snd in $snds; do
-       vecho "   $snd.."
+       vecho " => $snd.."
        cp $snd $appdir/sounds
     done
   fi
