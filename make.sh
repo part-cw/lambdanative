@@ -1100,7 +1100,7 @@ linux)
     cp bootstraps/common/main.c $tmpdir
   fi
   cd $tmpdir
-  sounddir=`locatedir apps/$SYS_APPNAME/sounds`
+  sounddir=`locatedir apps/$SYS_APPNAME/sounds silent`
   if [ -d "$sounddir" ]; then
     echo " => transferring sounds..."
     snds=`ls -1 $sounddir/*.wav`
