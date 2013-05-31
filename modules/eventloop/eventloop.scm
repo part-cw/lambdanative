@@ -72,6 +72,8 @@ end-of-c-declare
 (define EVENT_KEYUP ((c-lambda () int "___result = EVENT_KEYUP;")))
 (define EVENT_KEYDOWN ((c-lambda () int "___result = EVENT_KEYDOWN;")))
 (define EVENT_KEYESCAPE ((c-lambda () int "___result = EVENT_KEYESCAPE;")))
+(define EVENT_KEYBACK ((c-lambda () int "___result = EVENT_KEYBACK;")))
+(define EVENT_KEYMENU ((c-lambda () int "___result = EVENT_KEYMENU;")))
 
 ;; orientation
 (define GUI_LANDSCAPE ((c-lambda () int "___result = GUI_LANDSCAPE;")))

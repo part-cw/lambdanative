@@ -358,7 +358,8 @@ class  xGLSurfaceView extends GLSurfaceView {
       case KeyEvent.KEYCODE_DPAD_DOWN: t=2; x=7; break;
       case KeyEvent.KEYCODE_DPAD_LEFT: t=2; x=5; break;
       case KeyEvent.KEYCODE_DPAD_RIGHT: t=2; x=4; break;
-      case KeyEvent.KEYCODE_BACK: t=2; x=8; break;
+      case KeyEvent.KEYCODE_BACK: t=2; x=10; break;
+      case KeyEvent.KEYCODE_MENU: t=2; x=9; break;
     }
     if (t>0) {
       queueEvent(new Runnable(){ public void run() {
