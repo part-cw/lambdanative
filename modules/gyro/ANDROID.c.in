@@ -1,0 +1,16 @@
+// FFI for getting Gyroscope sensor data to Scheme
+static double gyro_x, gyro_y, gyro_z;
+void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_gyroEvent(JNIEnv* e, jobject o, jdouble x, jdouble y, jdouble z) { 
+  gyro_x=(double)x;
+  gyro_y=(double)y;
+  gyro_z=(double)z;
+}
+double android_gyro_yaw(){
+  return gyro_z;
+}
+double android_gyro_pitch(){
+  return gyro_x;
+}
+double android_gyro_roll(){
+  return gyro_y;
+}
