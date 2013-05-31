@@ -1,0 +1,18 @@
+ANDROID_IMPORTS=""
+
+ANDROID_VARIABLES="private Sensor mPressure;"
+
+ANDROID_ONCREATE="mPressure = mSensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE);\
+mSensorManager.registerListener(this, mPressure, SensorManager.SENSOR_DELAY_NORMAL);"
+
+ANDROID_ONPAUSE=""
+
+ANDROID_ONRESUME="mSensorManager.registerListener(this, mPressure, SensorManager.SENSOR_DELAY_NORMAL);"
+
+ANDROID_ONSENSORCHANGED="if(event.sensor.getType()==Sensor.TYPE_PRESSURE) {\
+  pressureEvent((double)event.values[0]);\
+}"
+
+ANDROID_ACTIVITYADDITIONS="native void pressureEvent(double p);"
+
+ANDROID_PERMISSIONS="<uses-feature android:name=\"android.hardware.sensor.pressure\" />"

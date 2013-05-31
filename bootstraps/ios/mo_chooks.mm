@@ -48,41 +48,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int iphone_audioroute = 0;
 
-extern "C" int iphone_realtime_audio_init(double srate, unsigned int framesize)
-{
+extern "C" int iphone_realtime_audio_init(double srate, unsigned int framesize){
   bool result;
   result = MoAudio::init(srate, framesize, 2);
   return (!result?0:1);
 }
 
-extern "C" int iphone_realtime_audio_start(MoCallback cb)
-{
+extern "C" int iphone_realtime_audio_start(MoCallback cb){
   bool result;
   result = MoAudio::start(cb, NULL);
   return (!result?0:1);
 }
 
-extern "C" int iphone_realtime_audio_stop()
-{
+extern "C" int iphone_realtime_audio_stop(){
   MoAudio::stop();
   return 1;
 }
 
-extern "C" void iphone_setvolume(double v)
-{
+extern "C" void iphone_setvolume(double v){
   [[MPMusicPlayerController applicationMusicPlayer] setVolume:v];
 }
 
-extern "C" double iphone_getvolume()
-{
+extern "C" double iphone_getvolume(){
   Float32 volume=0;
   UInt32 dataSize = sizeof(Float32);
   AudioSessionGetProperty(kAudioSessionProperty_CurrentHardwareOutputVolume,&dataSize,&volume);
   return (double)volume;
 }
 
-extern "C" int iphone_headphonepresent()
-{
+extern "C" int iphone_headphonepresent(){
   UInt32 routeSize = sizeof (CFStringRef);
   CFStringRef route;
   OSStatus error = AudioSessionGetProperty (kAudioSessionProperty_AudioRoute, &routeSize, &route);
@@ -99,32 +93,29 @@ extern "C" int iphone_headphonepresent()
 
 #import "mo_accel.h"
 
-extern "C" double iphone_accel_getx() { return MoAccel::getX(); }
-extern "C" double iphone_accel_gety() { return MoAccel::getY(); }
-extern "C" double iphone_accel_getz() { return MoAccel::getZ(); }
+extern "C" double ios_accel_getx() { return MoAccel::getX(); }
+extern "C" double ios_accel_gety() { return MoAccel::getY(); }
+extern "C" double ios_accel_getz() { return MoAccel::getZ(); }
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%
 // location
 
 #import "mo_location.h"
 
-extern "C" double iphone_location_getlatitude()
-{
+extern "C" double ios_location_getlatitude(){
   CLLocation *tmp = MoLocation::getLocation();
-  return tmp.coordinate.latitude;  
+  return tmp.coordinate.latitude;
 }
 
-extern "C" double iphone_location_getlongitude()
-{
+extern "C" double ios_location_getlongitude(){
   CLLocation *tmp = MoLocation::getLocation();
-  return tmp.coordinate.longitude;  
+  return tmp.coordinate.longitude;
 }
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%
 // launch url
 
-extern "C" void ios_launch_url(char *urlchar)
-{
+extern "C" void ios_launch_url(char *urlchar){
   NSString* urlString = [NSString stringWithUTF8String: urlchar];
   NSURL *url = [NSURL URLWithString:urlString];
   [[UIApplication sharedApplication] openURL:url];
@@ -137,7 +128,7 @@ extern "C" void ios_launch_url(char *urlchar)
 #import <CoreMotion/CoreMotion.h>
 #endif
 
-static double iphone_gyro(int idx)
+static double ios_gyro(int idx)
 {
   double value=1.0;
 #ifdef USE_GYROSCOPE
@@ -160,16 +151,15 @@ static double iphone_gyro(int idx)
   return value;
 }
 
-extern "C" double iphone_gyro_yaw() { return iphone_gyro(0); }
-extern "C" double iphone_gyro_pitch() { return iphone_gyro(1); }
-extern "C" double iphone_gyro_roll() { return iphone_gyro(2); }
+extern "C" double ios_gyro_yaw() { return ios_gyro(0); }
+extern "C" double ios_gyro_pitch() { return ios_gyro(1); }
+extern "C" double ios_gyro_roll() { return ios_gyro(2); }
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%
 // device orientation
 
 /*
-extern "C" int iphone_device_orientation()
-{
+extern "C" int iphone_device_orientation(){
   static int orientation=0;
   static int start_flag=1;
    UIDevice *dev = [UIDevice currentDevice];
