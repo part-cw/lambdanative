@@ -1,0 +1,8 @@
+// FFI for getting GPS data to Scheme
+static double gps_lon, gps_lat;
+void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_gpsEvent(JNIEnv* e, jobject o, jdouble lat, jdouble lon) {
+  gps_lat=(double)lat;
+  gps_lon=(double)lon;
+}
+android_location_getlatitude(){ return gps_lat; }
+android_location_getlongitude(){ return gps_lon; }

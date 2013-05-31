@@ -1,0 +1,35 @@
+ANDROID_IMPORTS="import android.location.Criteria;\
+import android.location.Location;\
+import android.location.LocationListener;\
+import android.location.LocationManager;"
+
+ANDROID_VARIABLES="private LocationManager locationManager;\
+private String provider;"
+
+ANDROID_ONCREATE="locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);\
+Criteria criteria = new Criteria();\
+provider = locationManager.getBestProvider(criteria, false);\
+Location location = locationManager.getLastKnownLocation(provider);"
+
+ANDROID_ONPAUSE="locationManager.removeUpdates(this);"
+
+ANDROID_ONRESUME="locationManager.requestLocationUpdates(provider, 1000, 1, this);"
+
+ANDROID_ACTIVITYADDITIONS="native void gpsEvent(double lat, double lon);\
+@Override\
+public void onLocationChanged(Location location) {\
+  gpsEvent(location.getLatitude(),location.getLongitude());\
+}\
+@Override\
+public void onProviderDisabled(String provider) {\
+}\
+@Override\
+public void onProviderEnabled(String provider) {\
+}\
+@Override\
+public void onStatusChanged(String provider, int status, Bundle extras) {\
+}"
+
+ANDROID_PERMISSIONS="<uses-feature android:name=\"android.location\" />\
+<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" />\
+<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\" />"
