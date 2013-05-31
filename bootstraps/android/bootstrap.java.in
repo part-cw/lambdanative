@@ -57,10 +57,21 @@ import android.media.SoundPool;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.util.Log;
+import android.location.LocationListener;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+// Imports needed for modules, e.g. gps
+@ANDROID_IMPORTS@
 
-public class @SYS_APPNAME@ extends Activity {
+public class @SYS_APPNAME@ extends Activity implements LocationListener, SensorEventListener{
 //  private GLSurfaceView mGLView;
   Thread thread;  // OpenSL
+  private SensorManager mSensorManager;
+  //Variable declarations needed for modules, e.g. gps
+  @ANDROID_VARIABLES@
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -84,6 +95,10 @@ public class @SYS_APPNAME@ extends Activity {
     mGLView = new xGLSurfaceView(this);
     setContentView(mGLView);
     AudioHelper.getInstance().setContext(this, new MediaPlayer());
+    mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+    // Additions needed by modules, e.g. gps
+    @ANDROID_ONCREATE@
+    
     // openSL
     thread = new Thread() {
       public void run() {
@@ -106,13 +121,17 @@ public class @SYS_APPNAME@ extends Activity {
   }
   @Override
   protected void onPause() {
-        super.onPause();
-        mGLView.onPause();
+    super.onPause();
+    // Additions needed by modules, e.g. gps
+    @ANDROID_ONPAUSE@
+    mGLView.onPause();
   }
   @Override
   protected void onResume() {
-        super.onResume();
-        mGLView.onResume();
+    super.onResume();
+    // Additions needed by modules, e.g. gps
+    @ANDROID_ONRESUME@
+    mGLView.onResume();
   }
   @Override
   public void onConfigurationChanged(Configuration newConfig) {
@@ -132,6 +151,19 @@ public class @SYS_APPNAME@ extends Activity {
    final int o_dispatch=orientation;
    nativeEvent(33,o_dispatch,0);   // EVENT_ORIENTATION
   }
+  @Override
+  public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    // can be safely ignored here?
+  }
+  @Override
+  public void onSensorChanged(SensorEvent event) {
+    // Extra function calls needed by modules, e.g. gyro
+    @ANDROID_ONSENSORCHANGED@
+  }
+  // Extra functions calls needed by modules, e.g. gps
+  @ANDROID_ACTIVITYADDITIONS@
+
+  // OpenSL bindings
   GLSurfaceView mGLView;
   native void nativeStartOpenSL();
   native void nativeStopOpenSL();

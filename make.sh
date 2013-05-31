@@ -845,7 +845,32 @@ android)
     done
   fi
   echo " => transferring java hook.."
-  ac_output bootstraps/android/bootstrap.java $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
+  hookfile=$tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
+  ac_output bootstraps/android/bootstrap.java $hookfile
+  # Helper for adding module specific Java code to app
+  ac_java_sedsub=
+  function ac_java_subst(){
+    newcmd="echo \"s|@${1}@|\$${1}\n@${1}@|g;\""
+    newsub=`eval $newcmd`
+    ac_java_sedsub="${ac_java_sedsub}${newsub}"
+  }
+
+  for m in $modules; do
+    javaincfile=`locatefile modules/$m/ANDROID.java.in silent`
+    if [ -f "$javaincfile" ]; then
+      . $javaincfile
+      ac_java_sedsub=
+      ac_java_subst ANDROID_IMPORTS
+      ac_java_subst ANDROID_VARIABLES
+      ac_java_subst ANDROID_ONCREATE
+      ac_java_subst ANDROID_ONPAUSE
+      ac_java_subst ANDROID_ONRESUME
+      ac_java_subst ANDROID_ONSENSORCHANGED
+      ac_java_subst ANDROID_ACTIVITYADDITIONS
+      sed -i "$ac_java_sedsub" $hookfile
+    fi
+  done
+  sed -i 's/@ANDROID_[A-Z]*@//' $hookfile
   echo " => preparing manifest.."
   configsrc=`locatedir apps/$SYS_APPNAME`"/CONFIG_ANDROID.in"
   assertfile $configsrc
@@ -853,6 +878,17 @@ android)
   ac_output $configsrc $configtgt
   assertfile $configtgt
   cat $configtgt | sed '/^#/d' > "$tmpdir/AndroidManifest.xml"
+  oldtail=`tail -n 1 "$tmpdir/AndroidManifest.xml"`
+  head -n -1 "$tmpdir/AndroidManifest.xml" > "$tmpdir/AndroidManifest.xml2"
+  mv "$tmpdir/AndroidManifest.xml2" "$tmpdir/AndroidManifest.xml"
+  for m in $modules; do
+    javaincfile=`locatefile modules/$m/ANDROID.java.in silent`
+    if [ -f "$javaincfile" ]; then
+      . $javaincfile
+      echo "$ANDROID_PERMISSIONS" >> "$tmpdir/AndroidManifest.xml"
+    fi
+  done
+  echo $oldtail >> "$tmpdir/AndroidManifest.xml"
   echo " => creating payload module.."
   cd $here
   tmpmoddir=`mktemp -d tmp.XXXXXX`
@@ -871,6 +907,14 @@ android)
   cp $SYS_PREFIX/include/CONFIG.h $tmpdir/jni
   cat $configtgt | sed -n '/^#+/p' | cut -f 2- -d "+" > "$tmpdir/jni/config.h"
   ac_output bootstraps/android/bootstrap.c $tmpdir/jni/bootstrap.c
+  # Add module specific C code to end of file
+  for m in $modules; do
+    jnifile=`locatefile modules/$m/ANDROID.c.in silent`
+    if [ -f "$jnifile" ]; then
+      cat $jnifile >> $tmpdir/jni/bootstrap.c
+      sed -i "$ac_sedsub" $tmpdir/jni/bootstrap.c
+    fi
+  done
   cd $tmpdir
   if [ $SYS_MODE = "debug" ]; then
     echo " => compiling payload module with debug options.."
@@ -881,7 +925,8 @@ android)
   fi
   asserterror $?
   echo " => compiling application.."
-  veval "ant -quiet release"
+  #don't use veval here otherwise all error messages are lost
+  ant -quiet release
   asserterror $?
   cd $here
   pkgfile="$tmpdir/bin/$(echo $SYS_APPNAME)-release-unsigned.apk"
@@ -893,11 +938,11 @@ android)
   keystore=`locatefile PROFILE | sed 's/PROFILE$/android\.keystore/'`
   if [ ! -e $keystore ]; then
     echo " => generating keystore [$keystore].."
-    keytool -genkey -v -keystore $keystore -dname "CN=$SYS_ORGSLD" -alias "$SYS_ORGSLD" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$SYS_ANDROIDPW" -keypass "$SYS_ANDROIDPW"
+    keytool -genkey -v -keystore $keystore -dname "CN=$SYS_ORGTLD.$SYS_ORGSLD" -alias "$SYS_ORGSLD" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$SYS_ANDROIDPW" -keypass "$SYS_ANDROIDPW"
     asserterror $?
   fi
   echo " => signing application with keystore $keystore"
-  jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore $keystore -keypass "$SYS_ANDROIDPW" -storepass "$SYS_ANDROIDPW" $fnlfile $SYS_ORGSLD
+  jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore $keystore -keypass "$SYS_ANDROIDPW" -storepass "$SYS_ANDROIDPW" $fnlfile $SYS_ORGTLD.$SYS_ORGSLD
   asserterror $?
   echo " => zipaligning.."
   assertfile $fnlfile

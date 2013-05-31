@@ -860,3 +860,4 @@ void stop_opensl()
 
 #endif // RTAUDIO
 
+// Add code here if needed for modules, such as GPS.
