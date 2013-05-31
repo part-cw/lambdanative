@@ -1,0 +1,18 @@
+ANDROID_IMPORTS=""
+
+ANDROID_VARIABLES="private Sensor mAccelerometer;"
+
+ANDROID_ONCREATE="mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);\
+mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_GAME);"
+
+ANDROID_ONPAUSE=""
+
+ANDROID_ONRESUME="mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_GAME);"
+
+ANDROID_ONSENSORCHANGED="if (event.sensor.getType()==Sensor.TYPE_ACCELEROMETER) {\
+  accelEvent((double)event.values[0], (double)event.values[1], (double)event.values[2]);\
+}"
+
+ANDROID_ACTIVITYADDITIONS="native void accelEvent(double x, double y, double z);"
+
+ANDROID_PERMISSIONS="<uses-feature android:name=\"android.hardware.sensor.accelerometer\" />"

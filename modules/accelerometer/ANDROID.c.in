@@ -1,0 +1,16 @@
+// FFI for getting Accelerometer sensor data to Scheme
+static double accel_x, accel_y, accel_z;
+void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_accelEvent(JNIEnv* e, jobject o, jdouble x, jdouble y, jdouble z) { 
+  accel_x=(double)x;
+  accel_y=(double)y;
+  accel_z=(double)z;
+}
+double android_accel_getx(){
+  return -0.1*accel_x; 
+}
+double android_accel_gety(){
+  return -0.1*accel_y; 
+}
+double android_accel_getz(){
+  return -0.1*accel_z; 
+}
