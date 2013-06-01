@@ -3,6 +3,8 @@ import android.location.Location;\
 import android.location.LocationListener;\
 import android.location.LocationManager;"
 
+ANDROID_IMPLEMENTS="LocationListener,"
+
 ANDROID_VARIABLES="private LocationManager locationManager;\
 private String provider;"
 

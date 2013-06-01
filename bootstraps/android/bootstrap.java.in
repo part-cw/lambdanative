@@ -65,7 +65,7 @@ import android.hardware.SensorManager;
 // Imports needed for modules, e.g. gps
 @ANDROID_IMPORTS@
 
-public class @SYS_APPNAME@ extends Activity implements LocationListener, SensorEventListener{
+public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ SensorEventListener{
 //  private GLSurfaceView mGLView;
   Thread thread;  // OpenSL
   private SensorManager mSensorManager;

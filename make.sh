@@ -861,6 +861,7 @@ android)
       . $javaincfile
       ac_java_sedsub=
       ac_java_subst ANDROID_IMPORTS
+      ac_java_subst ANDROID_IMPLEMENTS
       ac_java_subst ANDROID_VARIABLES
       ac_java_subst ANDROID_ONCREATE
       ac_java_subst ANDROID_ONPAUSE
@@ -868,6 +869,7 @@ android)
       ac_java_subst ANDROID_ONSENSORCHANGED
       ac_java_subst ANDROID_ACTIVITYADDITIONS
       sed -i "$ac_java_sedsub" $hookfile
+      ANDROID_IMPLEMENTS=
     fi
   done
   sed -i 's/@ANDROID_[A-Z]*@//' $hookfile
