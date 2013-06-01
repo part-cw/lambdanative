@@ -79,7 +79,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ Sens
       new Thread.UncaughtExceptionHandler() {
         public void uncaughtException(Thread t, Throwable e) {
         final String TAG = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@";
-        Log.e(TAG, "OMG OMG what just happened"); 
+        Log.e(TAG, e.toString()); 
         try { Thread.sleep(1000); } catch (Exception ex) { }
           System.exit(1);
         }

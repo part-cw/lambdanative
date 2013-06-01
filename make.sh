@@ -926,6 +926,12 @@ android)
    veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build --silent"
   fi
   asserterror $?
+  echo " => adding precompiled libaries.."
+  for lib in $libs; do
+    if [ -f "$SYS_PREFIXROOT/android/lib/$lib.jar" ]; then
+      cp $SYS_PREFIXROOT/android/lib/$lib.jar $tmpdir/libs/
+    fi
+  done
   echo " => compiling application.."
   #don't use veval here otherwise all error messages are lost
   ant -quiet release
