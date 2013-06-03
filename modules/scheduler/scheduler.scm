@@ -249,4 +249,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     )
   ))
 
+;; All rolling logfiles at start of cases.. useful for a separate log of each case
+(define log:lastrolled 0.)
+(define log:lastcaseid #f)
+(define (log-rollcase store)
+  (let ((caseid (store-ref store "CaseID" #f)))
+    (if (fl> (- ##now log:lastrolled) 1.0) (begin
+      (if (not (equal? caseid log:lastcaseid)) (begin
+        (set! log:file (string-append log:path (system-pathseparator) "log_"
+          (if caseid caseid (time->string (current-time) "%Y%m%d_%H%M%S")) ".txt"))
+        (log-system "Application " (system-appname) " built " (system-builddatetime))
+        (log-system "Git hash " (system-buildhash))
+        (log-system "Log file rolled at " (if caseid "start" "end") " of case: " caseid)
+      ))
+      (set! log:lastrolled ##now)
+      (set! log:lastcaseid caseid)
+    ))
+  ))
+
 ;; eof
