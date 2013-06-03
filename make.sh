@@ -449,7 +449,7 @@ function make_artwork()
   tmpfile="$SYS_PREFIXROOT/build/$SYS_APPNAME/tmp.png"
   if [ `isnewer $epssrc $pngsrc` = "yes" ]; then
     echo " => generating master pixmap.."
-    veval "gs -r600 -dNOPAUSE -sDEVICE=png16m -sOutputFile=$tmpfile $epssrc quit.ps"
+    veval "gs -r600 -dNOPAUSE -sDEVICE=png16m -dEPSCrop -sOutputFile=$tmpfile $epssrc quit.ps"
     assertfile $tmpfile
     veval "convert $tmpfile -trim -transparent \"#00ff00\" $pngsrc"
     rm $tmpfile
