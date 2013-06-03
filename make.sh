@@ -759,7 +759,18 @@ function make_setup()
   esac
   SYS_LOCASEAPPNAME=`echo $SYS_APPNAME | tr A-Z a-z`
   SYS_ANDROIDAPI=$ANDROIDAPI 
-  SYS_BUILDHASH=`git log --pretty=format:"%h" -1`
+  # Add git path for overlay, additional paths, and the lambdanative path
+  here=`pwd`
+  SYS_BUILDHASH=
+  for p in $(echo "$SYS_PATH" | tr ":" "\n"); do
+    cd $p
+    if [ -d "$p/.git" ]; then
+      SYS_BUILDHASH="$SYS_BUILDHASH"`basename $p`": "`git log --pretty=format:"%h" -1`","
+    fi
+    cd $here
+  done
+  SYS_BUILDHASH=`echo "$SYS_BUILDHASH" | sed 's/,$//'`
+  echo $SYS_BUILDHASH
   SYS_BUILDEPOCH=`date +"%s"`
   # Adding BUILD info requires rebuilding of config module
   touch modules/config/config.scm
