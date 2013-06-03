@@ -6,20 +6,30 @@ FTINC=`freetype-config --cflags`
 FTLIB=`freetype-config --libs`
 
 if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
-  tgta=@SYS_HOSTPREFIX@/bin/ttffnt2scm@SYS_EXEFIX@
-  tgtb=@SYS_HOSTPREFIX@/bin/ttfstr2scm@SYS_EXEFIX@
-  if [ ! -x $tgta ]; then 
-    if [ "@SYS_PLATFORM@" = "macosx" ]; then
-      EXTRALD=-framework CoreServices -framework ApplicationServices
-    fi
-    echo " => $tgta.."
+  if [ "@SYS_PLATFORM@" = "macosx" ]; then
+    EXTRALD="-framework CoreServices -framework ApplicationServices"
+  fi
+  tgt=@SYS_HOSTPREFIX@/bin/ttffnt2scm@SYS_EXEFIX@
+  src=ttffnt2scm.c
+  if [ $src -nt $tgt ]; then
+    echo " => $tgt.."
     gcc -Wall $FTINC -c $COMMON_SRCS
-    gcc -o $tgta $COMMON_OBJS ttffnt2scm.c $EXTRALD $FTLIB -lm
+    gcc -o $tgt $COMMON_OBJS $src $EXTRALD $FTLIB -lm
     rm *.o
-    echo " => $tgtb.."
-    gcc -O2  -DRENDERSTRING -Wall $FTINC -c $COMMON_SRCS
-    gcc -O2  -DRENDERSTRING -o $tgtb $COMMON_OBJS ttfstr2scm.c $EXTRALD $FTLIB -lm
+  fi
+  tgt=@SYS_HOSTPREFIX@/bin/ttfstr2scm@SYS_EXEFIX@
+  src=ttfstr2scm.c
+  if [ $src -nt $tgt ]; then
+    echo " => $tgt.."
+    gcc -O2 -DRENDERSTRING -Wall $FTINC -c $COMMON_SRCS
+    gcc -O2 -DRENDERSTRING -o $tgt $COMMON_OBJS $src $EXTRALD $FTLIB -lm
     rm *.o
+  fi
+  tgt=@SYS_HOSTPREFIX@/bin/ttfname@SYS_EXEFIX@
+  src=ttfname.c
+  if [ $src -nt $tgt ]; then
+    echo " => $tgt.."
+    gcc -O2 -Wall -o $tgt $src $FTINC $EXTRALD $FTLIB -lm
   fi
 fi
 	

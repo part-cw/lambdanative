@@ -73,6 +73,7 @@ getparam()
   if [ "$1" = "2" ]; then echo "$3"; fi
   if [ "$1" = "3" ]; then echo "$4"; fi
   if [ "$1" = "4" ]; then echo "$5"; fi
+  if [ "$1" = "5" ]; then echo "$6"; fi
 }
 
 function rmifexists()
@@ -557,6 +558,49 @@ function make_fonts()
   fi
 }
 
+function make_string_aux()
+{
+  oldpath=`pwd`
+  newpath=`mktemp -d tmp.XXXXXX`
+  cd $newpath
+  srcfont=$1
+  fontname=`$SYS_HOSTPREFIX/bin/ttfname $srcfont`
+  tgtfont="$fontname".ttf
+  cp $srcfont $tgtfont
+  fontpath=`pwd`"/"
+  size=$2
+  string="$3"
+  name=$4
+  opt="$5"
+cat > tmp.tex << __EOF
+\documentclass{article}
+\makeatletter 
+\renewcommand{\Large}{\@setfontsize\Large{$size}{$size}} 
+\makeatother 
+\usepackage{fontspec}
+\usepackage{xunicode}
+\fontspec [ Path = $fontpath ]{$fontname}
+\setmainfont[$opt]{$fontname}
+\usepackage[margin=0.1in, paperwidth=40in, paperheight=2in]{geometry}
+\begin{document}
+\thispagestyle{empty}
+\noindent \Large
+$string
+\end{document}
+__EOF
+  xelatex tmp.tex > /dev/null 2> /dev/null
+  assertfile tmp.pdf
+  pdftops tmp.pdf > /dev/null 2> /dev/null
+  assertfile tmp.ps
+  ps2eps -B -C tmp.ps > /dev/null 2> /dev/null
+  gs -r300 -dNOPAUSE -sDEVICE=pnggray -dEPSCrop -sOutputFile=$name.png tmp.eps quit.ps > /dev/null  2> /dev/null
+  assertfile $name.png
+  convert $name.png  -bordercolor White -border 5x5 -negate -scale 25% $name.png
+  $SYS_HOSTPREFIX/bin/png2scm $name.png 
+  cd $oldpath
+  rm -rf $newpath
+}
+
 function make_strings()
 {
   echo "==> creating strings needed for $SYS_APPNAME.."
@@ -569,25 +613,28 @@ function make_strings()
   else
     assertfile $srcfile
     if [ `isnewer $srcfile $incfile` = "yes" ]; then
+      cat $srcfile | sed '/^#/d' > $tgtdir/STRINGS
       echo ";; Automatically generated. Do not edit."  > $incfile
-      while read line; do
-        fline=`echo "$line" | sed '/^#/d'`
+      while read -r fline; do
+#        fline=`echo "$line" | sed '/^#/d'`
         if [ "$fline" ]; then 
           fontname=`eval "getparam 1 $fline"`
           font=`locatefile fonts/$fontname`
           assertfile $font
           size=`eval "getparam 2 $fline"`
-          label=`eval "getparam 3 $fline"`
+          label=`eval "getparam 3 $fline" | sed 's:/:\\\\:g'`
           name=`eval "getparam 4 $fline"`
+          opt=`eval "getparam 5 $fline"`
           scmfile=$tgtdir/${name}.scm
           if [ `isnewer $srcfile $scmfile` = "yes" ]; then
              echo " => $name.."
-  #           echo "$SYS_HOSTPREFIX/bin/ttfstr2scm $font $size \"$label\" $name > $scmfile"
-             $SYS_HOSTPREFIX/bin/ttfstr2scm $font $size "$label" $name > $scmfile
+#           echo "$SYS_HOSTPREFIX/bin/ttfstr2scm $font $size \"$label\" $name > $scmfile"
+#             $SYS_HOSTPREFIX/bin/ttfstr2scm $font $size "$label" $name > $scmfile
+             make_string_aux $font $size "$label" $name $opt > $scmfile
           fi
           echo "(include \"$scmfile\")" >> $incfile
         fi
-      done < $srcfile
+      done < $tgtdir/STRINGS
       echo ";; eof" >> $incfile
     fi 
   fi
