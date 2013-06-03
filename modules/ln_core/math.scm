@@ -138,4 +138,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (- (/ x y)
           (floor (/ x y))))))
 
+(define (round-decimal num place) (/ (round (* num (expt 10 place))) (expt 10 place)))
+
 ;; eof
