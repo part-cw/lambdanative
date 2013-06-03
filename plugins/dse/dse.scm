@@ -51,7 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (dse:check-weak-fact store fact)
   (if (and (list? fact) (> (length fact) 2))
-    (let* ((op (car fact)
+    (let* ((op (car fact))
            (v1 (if (string? (cadr fact)) ((if (eq? op '=) store-ref store-timedref) store (cadr fact) #f) (cadr fact)))
            (v2 (if (string? (caddr fact)) (store-ref store (caddr fact) #f) (caddr fact)))
            (v3 (if (> (length fact) 3) (if (string? (cadddr fact)) (store-ref store (cadddr fact) #f) (cadddr fact)) #f)))
