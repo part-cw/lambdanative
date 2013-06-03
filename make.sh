@@ -238,8 +238,9 @@ function is_gui_app()
 {
   res=`has_module ln_glcore`
   if [ "$res" = "no" ]; then
-    has_module glcore
+    res=`has_module glcore`
   fi
+  echo "$res"
 }
 
 function is_standalone_app()
