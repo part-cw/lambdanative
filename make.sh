@@ -236,7 +236,10 @@ function has_module()
 
 function is_gui_app()
 {
-  has_module ln_glcore
+  res=`has_module ln_glcore`
+  if [ "$res" = "no" ]; then
+    has_module glcore
+  fi
 }
 
 function is_standalone_app()
@@ -859,16 +862,20 @@ ios)
   veval "xcodebuild -configuration Release"
   asserterror $?
   cd $here
-  assertfile $xcodedir/Release-iphoneos/$SYS_APPNAME$SYS_APPFIX
+  tmpappdir=$xcodedir/Release-iphoneos/$SYS_APPNAME$SYS_APPFIX
+  if [ ! -d $tmpappdir ]; then
+    tmpappdir=$xcodedir/Release/$SYS_APPNAME$SYS_APPFIX
+  fi
+  assertfile $tmpappdir
   echo " => verifying application.."
-  checkfail=`codesign --verify $xcodedir/Release-iphoneos/$SYS_APPNAME$SYS_APPFIX 2>&1`
+  checkfail=`codesign --verify $tmpappdir 2>&1`
   if [ "$checkfail" ]; then
     echo "ERROR: $SYS_APPNAME build was not successful"
     exit 1
   fi
   echo " => relocating application.."
   rmifexists "$tgtdir"
-  cp -R $xcodedir/Release-iphoneos/$SYS_APPNAME.app $tgtdir
+  cp -R $tmpappdir $tgtdir
   echo " => cleaning up.."
   rm -rf "$cmakedir" "$xcodedir" 2> /dev/null
 ;;
