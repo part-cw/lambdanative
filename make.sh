@@ -947,7 +947,7 @@ android)
   assertfile $configtgt
   cat $configtgt | sed '/^#/d' > "$tmpdir/AndroidManifest.xml"
   oldtail=`tail -n 1 "$tmpdir/AndroidManifest.xml"`
-  head -n -1 "$tmpdir/AndroidManifest.xml" > "$tmpdir/AndroidManifest.xml2"
+  head -n $(( `wc -l < "$tmpdir/AndroidManifest.xml"` - 1)) "$tmpdir/AndroidManifest.xml" > "$tmpdir/AndroidManifest.xml2"
   mv "$tmpdir/AndroidManifest.xml2" "$tmpdir/AndroidManifest.xml"
   for m in $modules; do
     javaincfile=`locatefile modules/$m/ANDROID.java.in silent`
