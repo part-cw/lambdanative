@@ -1014,7 +1014,7 @@ android)
   keystore=`locatefile PROFILE | sed 's/PROFILE$/android\.keystore/'`
   if [ ! -e $keystore ]; then
     echo " => generating keystore [$keystore].."
-    keytool -genkey -v -keystore $keystore -dname "CN=$SYS_ORGTLD.$SYS_ORGSLD" -alias "$SYS_ORGSLD" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$SYS_ANDROIDPW" -keypass "$SYS_ANDROIDPW"
+    keytool -genkey -v -keystore $keystore -dname "CN=$SYS_ORGTLD.$SYS_ORGSLD" -alias "$SYS_ORGTLD.$SYS_ORGSLD" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$SYS_ANDROIDPW" -keypass "$SYS_ANDROIDPW"
     asserterror $?
   fi
   echo " => signing application with keystore $keystore"
