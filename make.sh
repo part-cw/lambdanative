@@ -938,7 +938,9 @@ android)
       ANDROID_IMPLEMENTS=
     fi
   done
-  sed -i 's/@ANDROID_[A-Z]*@//' $hookfile
+  tmphookfile=$hookfile.tmp
+  sed -e 's/@ANDROID_[A-Z]*@//' $hookfile > $tmphookfile
+  mv $tmphookfile $hookfile
   echo " => preparing manifest.."
   configsrc=`locatedir apps/$SYS_APPNAME`"/CONFIG_ANDROID.in"
   assertfile $configsrc
