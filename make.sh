@@ -340,7 +340,7 @@ cat > $hctgt  << _EOF
 // automatically generated. Do not edit.
 #include <stdlib.h>
 #include <CONFIG.h>
-#define ___VERSION 406009
+#define ___VERSION 406007
 #include <gambit.h>
 #define LINKER ____20_$linker
 ___BEGIN_C_LINKAGE
@@ -1289,9 +1289,11 @@ function make_clean()
 function make_scrub()
 {
   echo "==> removing entire build cache.."
-  rmifexists $SYS_PREFIX
+  platforms="ios macosx android win32 linux"
+  for platform in $platforms; do
+    rmifexists $SYS_PREFIXROOT/$platform
+  done
 }
-
 
 function make_install()
 {
