@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define glgui:verticalnumberwheel_ttop (- 1. (/ 140. 255.)))
 
 (define (glgui:verticalnumberwheel-draw g wgt)
-  (define (val->str v) (float->autostring v 1))
+  (define (val->str v) (float->string v 1))
   (let* ((x (glgui-widget-get-dyn g wgt 'x))
          (y (glgui-widget-get-dyn g wgt 'y))
          (w (glgui-widget-get-dyn g wgt 'w))
