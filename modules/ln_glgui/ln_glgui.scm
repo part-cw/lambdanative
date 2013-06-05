@@ -77,3 +77,4 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "chat.scm")
 (include "numberwheel.scm")
 (include "verticalnumberwheel.scm")
+(include "lockpane.scm")
