@@ -36,44 +36,35 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(include "glgui_button.scm")
-(include "glgui_keypad_delete.scm")
-(include "glgui_keypad_return.scm")
-(include "glgui_keypad_shift.scm")
-(include "glgui_keypad_toggle.scm")
-(include "glgui_modal.scm")
-(include "glgui_rounded_box.scm")
-(include "glgui_rounded_corner.scm")
-(include "glgui_sperm.scm")
-(include "glgui_menubar.scm")
-(include "glgui_battery.scm")
-(include "glgui_screenindicator_empty.scm")
-(include "glgui_screenindicator_selected.scm")
-(include "glgui_button_arrow.scm")
-(include "glgui_numberwheel.scm")
-(include "glgui_verticalnumberwheel.scm")
+;; value with unit label (right aligned value, left aligned unit label)
+;; ----------------
 
-(include "primitives.scm")
-(include "glgui.scm")
-(include "widget.scm")
-(include "box.scm")
-(include "button.scm")
-(include "container.scm")
-(include "keypad.scm")
-(include "label.scm")
-(include "valuelabel.scm")
-(include "verticalvaluelabel.scm")
-(include "list.scm")
-(include "modal.scm")
-(include "pixmap.scm")
-(include "slider.scm")
-(include "sprite.scm")
-(include "trace.scm")
-(include "image.scm")
-(include "menubar.scm")
-(include "battery.scm")
-(include "button-arrow.scm")
-(include "screenindicator.scm")
-(include "chat.scm")
-(include "numberwheel.scm")
-(include "verticalnumberwheel.scm")
+(define (glgui:valuelabel-draw g wgt)
+  (let* ((x (glgui-widget-get-dyn g wgt 'x))
+         (y (glgui-widget-get-dyn g wgt 'y))
+         (c (glgui-widget-get-dyn g wgt 'color))
+         (tc (glgui-widget-get-dyn g wgt 'titlecolor))
+         (label (glgui-widget-get g wgt 'label))
+         (fnt (glgui-widget-get g wgt 'font))
+         (img (glgui-widget-get g wgt 'image))
+         (sh (if img (cadr img) (cadr (cadr (car fnt))))))
+    (if label (glgui:draw-text-right (- x 2 225) y 225 sh label fnt c))
+    (glgui:draw-pixmap-left (+ x 2) y 100 sh img (if label tc (color-fade tc 0.5)))
+  ))
+
+(define (glgui-valuelabel g x y img fnt color)
+  (glgui-widget-add g
+     'x x
+     'y y
+     'font fnt
+     'label #f
+     'image img
+     'callback #f
+     'color color
+     'titlecolor White
+     'hidden #f
+     'draw-handle  glgui:valuelabel-draw
+     'input-handle #f
+  ))
+
+;; eof

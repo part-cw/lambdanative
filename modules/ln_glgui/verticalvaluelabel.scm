@@ -36,44 +36,39 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(include "glgui_button.scm")
-(include "glgui_keypad_delete.scm")
-(include "glgui_keypad_return.scm")
-(include "glgui_keypad_shift.scm")
-(include "glgui_keypad_toggle.scm")
-(include "glgui_modal.scm")
-(include "glgui_rounded_box.scm")
-(include "glgui_rounded_corner.scm")
-(include "glgui_sperm.scm")
-(include "glgui_menubar.scm")
-(include "glgui_battery.scm")
-(include "glgui_screenindicator_empty.scm")
-(include "glgui_screenindicator_selected.scm")
-(include "glgui_button_arrow.scm")
-(include "glgui_numberwheel.scm")
-(include "glgui_verticalnumberwheel.scm")
+;; vertical value label (right aligned value, with right aligned label below)
+;; ----------------
 
-(include "primitives.scm")
-(include "glgui.scm")
-(include "widget.scm")
-(include "box.scm")
-(include "button.scm")
-(include "container.scm")
-(include "keypad.scm")
-(include "label.scm")
-(include "valuelabel.scm")
-(include "verticalvaluelabel.scm")
-(include "list.scm")
-(include "modal.scm")
-(include "pixmap.scm")
-(include "slider.scm")
-(include "sprite.scm")
-(include "trace.scm")
-(include "image.scm")
-(include "menubar.scm")
-(include "battery.scm")
-(include "button-arrow.scm")
-(include "screenindicator.scm")
-(include "chat.scm")
-(include "numberwheel.scm")
-(include "verticalnumberwheel.scm")
+(define (glgui:verticalvaluelabel-draw g wgt)
+  (let* ((x (glgui-widget-get-dyn g wgt 'x))
+         (y (glgui-widget-get-dyn g wgt 'y))
+         (c (glgui-widget-get-dyn g wgt 'color))
+         (tc (glgui-widget-get-dyn g wgt 'titlecolor))
+         (label (glgui-widget-get g wgt 'label))
+         (fnt (glgui-widget-get g wgt 'font))
+         (img (glgui-widget-get g wgt 'image))
+         (ih (cadr img))
+         (fh 0))
+;;         (fh (if label (cadr (glgui:stringheight label fnt)) (glgui:fontheight fnt)))
+;;         (fh (cadr (cadr (car fnt))))
+    (if label (glgui:draw-text-right (- x 200) y 200 fh label fnt c))
+    (glgui:draw-pixmap-right  (- x 200) (- y ih) 200 ih img (if label tc (color-fade tc 0.5)))
+  ))
+
+;M @deffn {procedure} glgui-verticalvaluelabel g x y img fnt color
+(define (glgui-verticalvaluelabel g x y img fnt color)
+  (glgui-widget-add g
+     'x x
+     'y y
+     'font fnt
+     'label #f
+     'image img
+     'callback #f
+     'color color
+     'titlecolor White
+     'hidden #f
+     'draw-handle  glgui:verticalvaluelabel-draw
+     'input-handle #f
+  ))
+
+;; eof

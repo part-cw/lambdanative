@@ -36,7 +36,6 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(include "glgui_battery.scm")
 ;; If the image gets redone these x,y,w,h need replacing!
 (define glgui:battery-inner-box '(8 3 28 12))
 

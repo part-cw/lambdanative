@@ -35,7 +35,6 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
-(include "glgui_button_arrow.scm")
 
 (define (glgui:button-arrow-draw g wgt)
   (let ((_x (glgui-widget-get-dyn g wgt 'x))
