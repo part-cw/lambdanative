@@ -36,38 +36,22 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(include "glgui_button.scm")
-(include "glgui_keypad_delete.scm")
-(include "glgui_keypad_return.scm")
-(include "glgui_keypad_shift.scm")
-(include "glgui_keypad_toggle.scm")
-(include "glgui_modal.scm")
-(include "glgui_rounded_box.scm")
-(include "glgui_rounded_corner.scm")
-(include "glgui_sperm.scm")
-(include "glgui_menubar.scm")
-(include "glgui_battery.scm")
-(include "glgui_screenindicator_empty.scm")
-(include "glgui_screenindicator_selected.scm")
-(include "glgui_button_arrow.scm")
-
-(include "primitives.scm")
-(include "glgui.scm")
-(include "widget.scm")
-(include "box.scm")
-(include "button.scm")
-(include "container.scm")
-(include "keypad.scm")
-(include "label.scm")
-(include "list.scm")
-(include "modal.scm")
-(include "pixmap.scm")
-(include "slider.scm")
-(include "sprite.scm")
-(include "trace.scm")
-(include "image.scm")
-(include "menubar.scm")
-(include "battery.scm")
-(include "button-arrow.scm")
-(include "screenindicator.scm")
-(include "chat.scm")
+(define glgui_screenindicator_selected.raw (glCoreTextureCreate 16 16 '#u8(
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+0 0 0 0 0 255 255 255 255 255 0 0 0 0 0 0 
+0 0 0 0 255 0 0 0 0 0 255 0 0 0 0 0 
+0 0 0 255 0 0 255 255 255 0 0 255 0 0 0 0 
+0 0 255 0 255 255 255 255 255 255 255 0 255 0 0 0 
+0 0 255 0 255 255 255 255 255 255 255 0 255 0 0 0 
+0 255 0 255 255 255 255 255 255 255 255 255 0 255 0 0 
+0 255 0 255 255 255 255 255 255 255 255 255 0 255 0 0 
+0 255 0 255 255 255 255 255 255 255 255 255 0 255 0 0 
+0 0 255 0 255 255 255 255 255 255 255 0 255 0 0 0 
+0 0 255 0 255 255 255 255 255 255 255 0 255 0 0 0 
+0 0 0 255 0 0 255 255 255 0 0 255 0 0 0 0 
+0 0 0 0 255 0 0 0 0 0 255 0 0 0 0 0 
+0 0 0 0 0 255 255 255 255 255 0 0 0 0 0 0 
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+)))
+(define glgui_screenindicator_selected.img (list 15 15 glgui_screenindicator_selected.raw 0. 1. .93750000000000000000 .06250000000000000000))
