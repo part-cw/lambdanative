@@ -626,7 +626,7 @@ function make_strings()
           font=`locatefile fonts/$fontname`
           assertfile $font
           size=`eval "getparam 2 $fline"`
-          label=`eval "getparam 3 $fline" | sed 's:/:\\\\:g'`
+          label=`eval "getparam 3 $fline" | sed 's:_/:@TMP@:g;s:/:\\\\:g;s:@TMP@:/:g'`
           name=`eval "getparam 4 $fline"`
           opt=`eval "getparam 5 $fline"`
           scmfile=$tgtdir/${name}.scm
