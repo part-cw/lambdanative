@@ -107,12 +107,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (store:setlocal! store listlabel (append curlist (list name)))
         (loop (cdr ps))))))
 
-(define (store:setfifo! store x)
-  (apply store:setlocal! store x)
-  (let loop ((fifos (store-ref store (string-append (car x) ":fifoexportlist") '())))
+(define (store:setfifo! store id val . category)
+  (apply store:setlocal! store id val category)
+  (let loop ((fifos (store-ref store (string-append id ":fifoexportlist") '())))
     (if (fx> (length fifos) 0)
       (begin
-        (fifo-write (car fifos) x)
+        (fifo-write (car fifos) (list id val))
         (loop (cdr fifos))
       ))
   ))
