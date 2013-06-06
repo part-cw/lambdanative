@@ -82,7 +82,7 @@ void find_macosx_app_directory()
 
 // store the program info
 static unsigned int sys_buildepoch;
-static char *sys_dir, *sys_appdir, *sys_platform, *sys_appname, *sys_cmdarg;
+static char *sys_dir, *sys_appdir, *sys_platform, *sys_appname, *sys_appversion, *sys_cmdarg;
 static char *sys_buildhash;
 static char *sys_repository, *sys_repositorydate;
 static void system_init(void)
@@ -130,6 +130,7 @@ static void system_init(void)
 
   sys_platform=strdup(SYS_PLATFORM);
   sys_appname=strdup(SYS_APPNAME);
+  sys_appversion=strdup(SYS_APPVERSION);
   sys_buildhash=strdup(SYS_BUILDHASH);
   sys_buildepoch=SYS_BUILDEPOCH;
 }
@@ -147,6 +148,7 @@ char *system_dir(void) { return sys_dir; }
 static char *system_appdir(void) { return sys_appdir; }
 static char *system_platform(void) { return sys_platform; }
 static char *system_appname(void) { return sys_appname; }
+static char *system_appversion(void) { return sys_appversion; }
 static char *system_cmdarg(void) { return cmd_arg1; }
 static char *system_buildhash(void) { return sys_buildhash; }
 static unsigned int system_buildepoch(void) { return sys_buildepoch; }
@@ -174,6 +176,7 @@ end-of-c-declare
 (define (system-appdirectory) ((c-lambda () char-string "system_appdir")))
 (define (system-platform) ((c-lambda () char-string "system_platform")))
 (define (system-appname) ((c-lambda () char-string "system_appname")))
+(define (system-appversion) ((c-lambda () char-string "system_appversion")))
 (define (system-cmdarg) ((c-lambda () char-string "system_cmdarg")))
 (define (system-buildhash) ((c-lambda () char-string "system_buildhash")))
 (define (system-buildepoch) ((c-lambda () unsigned-int "system_buildepoch")))
