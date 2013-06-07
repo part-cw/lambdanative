@@ -78,3 +78,5 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "numberwheel.scm")
 (include "verticalnumberwheel.scm")
 (include "lockpane.scm")
+(include "timewheels.scm")
+(include "datewheels.scm")
