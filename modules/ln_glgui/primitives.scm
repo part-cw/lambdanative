@@ -147,7 +147,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (y0 (+ y (/ (- h sh) 2)))
          (x0 (+ x w (- sw))))
     (glCoreColor color)
-    (apply glCoreTextureDraw  (append (list x0 y0) img (list 0.)))))
+    (apply glCoreTextureDraw (append (list x0 y0) img (list 0.)))))
+
+(define (glgui:draw-pixmap-stretch x y w h img color)
+  (glCoreColor color)
+  (apply glCoreTextureDraw (append (list x y w h) (cddr img) (list 0.))))
 
 ;; ----------
 ;; strings (aka pixmap lists)
