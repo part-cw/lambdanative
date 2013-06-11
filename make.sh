@@ -434,12 +434,12 @@ function make_artwork()
 {
   echo "==> creating artwork needed for $SYS_APPNAME.."
   objsrc=`locatefile "apps/$SYS_APPNAME/artwork.obj"`
-  epssrc=`locatefile "apps/$SYS_APPNAME/artwork.eps"`
+  epssrc=`echo "$objsrc" | sed 's/obj$/eps/'`
   if [ `isnewer $objsrc $epssrc` = "yes" ]; then
     if [ ! "X$objsrc" = "X" ]; then
       assertfile $objsrc
       echo " => generating eps artwork.."
-      veval "tgif -print -stdout -eps -color $objsrc > $epssrc"
+      tgif -print -stdout -eps -color $objsrc > $epssrc
     fi
   fi
   assertfile $epssrc
