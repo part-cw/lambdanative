@@ -112,6 +112,21 @@ extern "C" double ios_location_getlongitude(){
   return tmp.coordinate.longitude;
 }
 
+extern "C" double ios_location_getaltitude(){
+  CLLocation *tmp = MoLocation::getLocation();
+  return tmp.coordinate.altitude;
+}
+
+extern "C" double ios_location_getaccuracy(){
+  CLLocation *tmp = MoLocation::getLocation();
+  return tmp.horizontalAccuracy;
+}
+
+extern "C" int ios_location_gettimestamp(){
+  CLLocation *tmp = MoLocation::getLocation();
+  return (int)[tmp.timestamp timeIntervalSince1970];
+}
+
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%
 // launch url
 

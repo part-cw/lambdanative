@@ -17,10 +17,10 @@ ANDROID_ONPAUSE="locationManager.removeUpdates(this);"
 
 ANDROID_ONRESUME="locationManager.requestLocationUpdates(provider, 1000, 1, this);"
 
-ANDROID_ACTIVITYADDITIONS="native void gpsEvent(double lat, double lon);\
+ANDROID_ACTIVITYADDITIONS="native void gpsEvent(double lat, double lon, double altitude, double accuracy, long timestamp);\
 @Override\
 public void onLocationChanged(Location location) {\
-  gpsEvent(location.getLatitude(),location.getLongitude());\
+  gpsEvent(location.getLatitude(),location.getLongitude(),location.getAltitude(),location.getAccuracy(),location.getTime());\
 }\
 @Override\
 public void onProviderDisabled(String provider) {\
