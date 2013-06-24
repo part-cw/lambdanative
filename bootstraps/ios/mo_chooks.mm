@@ -114,7 +114,7 @@ extern "C" double ios_location_getlongitude(){
 
 extern "C" double ios_location_getaltitude(){
   CLLocation *tmp = MoLocation::getLocation();
-  return tmp.coordinate.altitude;
+  return tmp.altitude;
 }
 
 extern "C" double ios_location_getaccuracy(){
