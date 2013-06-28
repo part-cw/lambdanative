@@ -1,5 +1,22 @@
 #!/bin/sh
 
+# check for a local library
+# this allows us to pull in a patched version (on openbsd in particular)
+if [ @SYS_PLATFORM@ = @SYS_HOSTPLATFORM@ ]; then
+  echo "==> checking for local installed library.."
+  for dir in /usr /usr/local ; do
+    if [ -f $dir/lib/libportaudio.a ]; then
+      if [ -f $dir/include/portaudio.h ]; then
+        echo " => using portaudio from $dir"
+        cp $dir/lib/libportaudio.a @SYS_PREFIX@/lib
+        cp $dir/include/portaudio.h @SYS_PREFIX@/include
+        # we are done
+        exit
+      fi
+    fi 
+  done
+fi
+
 #PKGSRC=pa_stable_v19_20111121.tgz
 PKGSRC=pa_snapshot.tgz
 
@@ -34,6 +51,9 @@ patches=`ls -1 ../../*.patch`
 for p in $patches; do
   patch -p0 < $p
 done
+
+# openbsd needs this
+export AUTOCONF_VERSION=2.69
 autoconf
 
 echo "==> Configuring source..."
@@ -61,7 +81,12 @@ mv Makefile tmp
 cat tmp | sed "s/-arch i386//g;s/-arch x86_64//" > Makefile
 
 echo "==> Compiling source..."
-CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make -s
+MAKE=make
+if [ ! "X"`which gmake 2> /dev/null` = "X" ]; then
+echo " == found gmake, use instead of make"
+MAKE=gmake
+fi
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" $MAKE
 
 echo "==> Installing..."
 make install -s

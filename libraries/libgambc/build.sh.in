@@ -2,13 +2,14 @@
 
 # version of gambit to use:
 #GAMBIT=gambc-v4_6_9.tgz
-GAMBIT=gambc-v4_6_7.tgz
+#GAMBIT=gambc-v4_6_7.tgz
+GAMBIT=gambc-v4_7_0.tgz
 
 src=@SYS_PREFIXROOT@/packages/$GAMBIT
 
 if [ ! -f $src -a `which wget` ]; then
   echo "==> No source found, attempting to download.."
-  wget http://www.iro.umontreal.ca/~gambit/download/gambit/v4.6/source/$GAMBIT -O $src
+  wget http://www.iro.umontreal.ca/~gambit/download/gambit/v4.7/source/$GAMBIT -O $src
 fi
 
 if [ ! -f $src ]; then

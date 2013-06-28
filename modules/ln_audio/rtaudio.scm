@@ -67,6 +67,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define USE_PORTAUDIO
 #endif
 
+#ifdef OPENBSD
+#define USE_PORTAUDIO
+#endif
+
 void (*rtaudio_initcb)(int)=0;
 void (*rtaudio_inputcb)(float)=0;
 void (*rtaudio_outputcb)(float*,float*)=0;
