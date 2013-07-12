@@ -1,2 +1,70 @@
 #!/bin/sh
-# this is just a dummy, the crypto library is part of openssl!
+
+PKGSRC=openssl-1.0.1e.tar.gz
+
+src=@SYS_PREFIXROOT@/packages/$PKGSRC
+
+if [ ! -f $src -a `which wget` ]; then
+  echo "==> No source found, attempting to download.."
+  wget http://www.openssl.org/source/$PKGSRC -O $src
+fi
+
+if [ ! -f $src ]; then
+  echo "==> ERROR: Unable to proceed. Please obtain $src first."
+  exit 1
+fi
+
+tmpdir=tmp_compile
+
+if [ -d $tmpdir ]; then
+rm -rf $tmpdir
+fi
+mkdir $tmpdir
+
+here=`pwd`
+cd $tmpdir
+echo "==> Extracting source..."
+tar -zxf $src 
+
+cd *
+
+echo "==> Patching source..."
+patches=`ls -1 ../../*.patch`
+for p in $patches; do
+if [ $p ]; then
+  echo "==> applying patches from $p"
+  patch -p0 < $p
+fi
+done
+
+echo "==> Configuring source..."
+case @SYS_PLATFORM@ in
+win32*)
+  EXTRACONF=mingw
+;;
+linux*)
+  EXTRACONF=linux-generic32
+;;
+*)
+  EXTRACONF=BSD-generic32
+;;
+esac
+
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" MAKE="make -s" ./Configure --openssldir="@SYS_PREFIX@" $EXTRACONF no-shared no-threads no-zlib no-asm no-dso no-sse2
+
+# we are not using the gcc wrapper, so platform flags won't work
+mv Makefile tmp
+cat tmp | sed "s/-arch i386//g;s/-arch x86_64/-m32/" > Makefile
+
+echo "==> Compiling source..."
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make -s build_ssl build_crypto
+
+echo "==> Installing..."
+cp *.a @SYS_PREFIX@/lib
+cp -L -R include/openssl @SYS_PREFIX@/include
+cd "$here"
+
+echo "==> Cleaning up..."
+rm -rf $tmpdir
+
+echo "==> All done."
