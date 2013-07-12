@@ -86,7 +86,7 @@ if [ ! "X"`which gmake 2> /dev/null` = "X" ]; then
 echo " == found gmake, use instead of make"
 MAKE=gmake
 fi
-CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" $MAKE
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" $MAKE -s
 
 echo "==> Installing..."
 make install -s
