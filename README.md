@@ -19,7 +19,7 @@ Africa, in >10 separate clinical studies:
 
 If you use the LambdaNative framework for your own work, please reference this paper.
 
-A slideshow describing of the LambdaNative framework is available [here](https://github.com/part-cw/lambdanative/blob/master/docs/LambdaNative.pdf?raw=true).
+A slideshow describing the LambdaNative framework is available [here](https://github.com/part-cw/lambdanative/blob/master/docs/LambdaNative.pdf?raw=true).
 
 `uSquish`, the simple example game included in the LambdaNative repository,
 is available as a free download on the Apple and Google stores:
