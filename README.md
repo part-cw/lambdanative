@@ -43,6 +43,7 @@ Please ensure that these are installed on your system:
 * `netpbm` and `ImageMagick` for misc pixmap manipulation
 * `ghostscript` for converting vector artwork
 * `cmake` for generating XCode projects
+* `latex` for generating string textures (actually uses the unicode `xelatex`)
 * `tgif` for editing vector artwork (optional)
 * `fruitstrap` for installing iOS apps (optional)
 
