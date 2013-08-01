@@ -1110,10 +1110,11 @@ win32)
   sounddir=`locatedir apps/$SYS_APPNAME/sounds silent`
   if [ -d "$sounddir" ]; then
     echo " => transferring sounds..."
+    mkdir -p $appdir/sounds
     snds=`ls -1 $sounddir/*.wav`
     for snd in $snds; do
        vecho " => $snd.."
-       cp $snd $appdir
+       cp $snd $appdir/sounds
     done
   fi
   if [ `is_gui_app` = yes ]; then
