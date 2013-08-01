@@ -1,4 +1,3 @@
-
 # Introduction
 
 LambdaNative is an open-source (BSD licensed) cross-platform
@@ -12,7 +11,7 @@ applications, including mission-critical embedded drug
 delivery systems and telemonitoring apps for iPhone
 and Android smartphones.  LambdaNative-based applications
 have been used in clinical trials on >10,000 subjects in
-Canada, France, France, India, Uganda, Bangladesh, and South
+Canada, France, India, Uganda, Bangladesh, and South
 Africa, in >10 separate clinical studies:
 
 [Petersen CL, Görges M, Dunsmuir D, Ansermino JM, Dumont GA. "Experience Report: Functional Programming of mHealth Applications". The 18th ACM SIGPLAN International Conference on Functional Programming, ICFP'13, Boston, MA, USA](http://ecem.ece.ubc.ca/~cpetersen/lambdanative_icfp13.pdf)
