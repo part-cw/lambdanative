@@ -43,9 +43,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef IOS
   double ios_location_getlatitude(void);
   double ios_location_getlongitude(void);
+  double ios_location_getaltitude(void);
+  double ios_location_getaccuracy(void);
+  double ios_location_gettimestamp(void);
 #elif ANDROID
   double android_location_getlatitude(void);
   double android_location_getlongitude(void);
+  double android_location_getlongitude(void);
+  double android_location_getaccuracy(void);
+  double android_location_gettimestamp(void);
 #endif
 
 static double longitude(void){
@@ -68,9 +74,43 @@ static double latitude(void){
 #endif
 }
 
+static double altitude(void){
+#ifdef IOS
+   return ios_location_getaltitude();
+#elif ANDROID
+   return android_location_getaltitude();
+#else
+   return 0;
+#endif
+}
+
+static double accuracy(void){
+#ifdef IOS
+   return ios_location_getaccuracy();
+#elif ANDROID
+   return android_location_getaccuracy();
+#else
+   return 0;
+#endif
+}
+
+static int timestamp(void){
+#ifdef IOS
+   return ios_location_gettimestamp();
+#elif ANDROID
+   return android_location_gettimestamp();
+#else
+   return 0;
+#endif
+}
+
+
 end-of-c-declare
 )
 
-(define latitude (c-lambda () double "latitude"))
-(define longitude (c-lambda () double "longitude"))
+(define gps-latitude (c-lambda () double "latitude"))
+(define gps-longitude (c-lambda () double "longitude"))
+(define gps-accuracy (c-lambda () double "accuracy"))
+(define gps-altitude (c-lambda () double "altitude"))
+(define gps-timestamp (c-lambda () int "timestamp"))
 ;; eof

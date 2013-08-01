@@ -46,11 +46,11 @@
 
 # since os x doesn't have md5sum
 md5summer=md5sum
-if [ "X"`which md5sum` = "X" ]; then
+if [ "X"`which md5sum 2> /dev/null` = "X" ]; then
   md5summer="md5 -r"
 fi
 
-function veval()
+veval()
 {
   if [ $SYS_VERBOSE ]; then 
     echo "$1"
@@ -60,7 +60,7 @@ function veval()
   fi
 }
 
-function vecho()
+vecho()
 {
   if [ $SYS_VERBOSE ]; then 
     echo "$1"
@@ -76,7 +76,7 @@ getparam()
   if [ "$1" = "5" ]; then echo "$6"; fi
 }
 
-function rmifexists()
+rmifexists()
 {
   if [ "$1" ]; then
     if [ -e "$1" ]; then
@@ -86,7 +86,7 @@ function rmifexists()
   fi
 }
 
-function assertfile()
+assertfile()
 {
   if [ ! -e "$1" ]; then
     echo "ERROR: failed on file $1" 1>&2
@@ -94,7 +94,7 @@ function assertfile()
   fi
 }
 
-function asserterror()
+asserterror()
 {
   if [ ! $1 = 0 ]; then
     echo "ERROR: failed with exit code $1" 1>&2
@@ -102,12 +102,12 @@ function asserterror()
   fi
 }
 
-function stringhash()
+stringhash()
 {
   echo "$1" | $md5summer | cut -f 1 -d " "
 }
 
-function isnewer()
+isnewer()
 {
   result=no
   if [ ! -e "$2" ]; then
@@ -120,7 +120,7 @@ function isnewer()
   echo $result
 }
 
-function newersourceindir()
+newersourceindir()
 {
   result="no"
   tgt="$2"
@@ -134,7 +134,7 @@ function newersourceindir()
   echo $result
 }
 
-function newerindir()
+newerindir()
 {
   result="no"
   tgt="$2"
@@ -152,7 +152,7 @@ function newerindir()
   echo $result
 }
 
-function locatetest()
+locatetest()
 {
   here=`pwd`
   file=
@@ -185,31 +185,31 @@ function locatetest()
   echo $file
 }
 
-function locatedir()
+locatedir()
 {
   locatetest "-d" $@
 }
 
-function locatefile()
+locatefile()
 {
   locatetest "-f" $@
 }
 
-function wildcard_dir()
+wildcard_dir()
 {
   find $1 -maxdepth 0 -print |sort -r| head -n 1
 }
 
 ac_sedsub=
 
-function ac_subst()
+ac_subst()
 {
   newcmd="echo \"s|@${1}@|\$${1}|g;\""
   newsub=`eval $newcmd`
   ac_sedsub="${ac_sedsub}${newsub}"
 }
 
-function ac_output()
+ac_output()
 {
   infile=`echo "${1}" | sed 's/\.in$//'`.in
   if [ "X$2" = "X" ]; then
@@ -222,7 +222,7 @@ function ac_output()
   assertfile $outfile
 }
 
-function has_module()
+has_module()
 {
   res=no
   modfile=`locatefile apps/$SYS_APPNAME/MODULES`
@@ -234,7 +234,7 @@ function has_module()
   echo $res
 }
 
-function is_gui_app()
+is_gui_app()
 {
   res=`has_module ln_glcore`
   if [ "$res" = "no" ]; then
@@ -243,7 +243,7 @@ function is_gui_app()
   echo "$res"
 }
 
-function is_standalone_app()
+is_standalone_app()
 {
   neg=`has_module eventloop`
   if [ $neg = no ]; then
@@ -257,7 +257,7 @@ function is_standalone_app()
 ###########################
 # general compiler functions
 
-function compile()
+compile()
 {
   if [ $SYS_MODE = "debug" ]; then
     opts="(declare (block)(not safe)(debug)(debug-location))"
@@ -283,7 +283,7 @@ function compile()
   cd $here
 }
 
-function compile_payload()
+compile_payload()
 {
   name=$1
   srcs="$2"
@@ -340,7 +340,7 @@ cat > $hctgt  << _EOF
 // automatically generated. Do not edit.
 #include <stdlib.h>
 #include <CONFIG.h>
-#define ___VERSION 406007
+#define ___VERSION 407000
 #include <gambit.h>
 #define LINKER ____20_$linker
 ___BEGIN_C_LINKAGE
@@ -410,7 +410,7 @@ _EOF
 ##################################
 # extract object files from static library
 
-function explode_library()
+explode_library()
 {
   libname=$1
   libfile="$SYS_PREFIX/lib/$libname.a"
@@ -430,7 +430,7 @@ function explode_library()
 ###################################
 # artwork & texture generation
 
-function make_artwork()
+make_artwork()
 {
   echo "==> creating artwork needed for $SYS_APPNAME.."
   objsrc=`locatefile "apps/$SYS_APPNAME/artwork.obj"`
@@ -488,7 +488,7 @@ function make_artwork()
   assertfile $tgt
 }
 
-function make_textures()
+make_textures()
 {
   echo "==> creating textures needed for $SYS_APPNAME.."
   srcdir=`locatedir apps/$SYS_APPNAME/textures silent`
@@ -528,7 +528,7 @@ function make_textures()
   fi
 }
 
-function make_fonts()
+make_fonts()
 {
   echo "==> creating fonts needed for $SYS_APPNAME.."
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/fonts
@@ -562,7 +562,7 @@ function make_fonts()
   fi
 }
 
-function make_string_aux()
+make_string_aux()
 {
   oldpath=`pwd`
   newpath=`mktemp -d tmp.XXXXXX`
@@ -594,18 +594,23 @@ $string
 __EOF
   xelatex tmp.tex > /dev/null 2> /dev/null
   assertfile tmp.pdf
-  pdftops tmp.pdf > /dev/null 2> /dev/null
+  if [ "X"`which pdftops 2> /dev/null` = "X" ]; then
+    pdf2ps tmp.pdf > /dev/null 2> /dev/null
+  else
+    pdftops tmp.pdf > /dev/null 2> /dev/null
+  fi
   assertfile tmp.ps
   ps2eps -B -C tmp.ps > /dev/null 2> /dev/null
-  gs -r300 -dNOPAUSE -sDEVICE=pnggray -dEPSCrop -sOutputFile=$name.png tmp.eps quit.ps > /dev/null  2> /dev/null
+  assertfile tmp.eps
+  gs -r300 -dNOPAUSE -sDEVICE=pnggray -dEPSCrop -sOutputFile=$name.png tmp.eps quit.ps > /dev/null 2> /dev/null
   assertfile $name.png
-  convert $name.png  -bordercolor White -border 5x5 -negate -scale 25% $name.png
-  $SYS_HOSTPREFIX/bin/png2scm $name.png 
+  convert $name.png  -bordercolor White -border 5x5 -negate -scale 25% $name.png > /dev/null 2> /dev/null
+  $SYS_HOSTPREFIX/bin/png2scm $name.png
   cd $oldpath
   rm -rf $newpath
 }
 
-function make_strings()
+make_strings()
 {
   echo "==> creating strings needed for $SYS_APPNAME.."
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/strings
@@ -647,7 +652,7 @@ function make_strings()
 ###################################
 # platform specific stuff
 
-function make_setup()
+make_setup()
 {
   profile=`locatefile PROFILE`
   assertfile "$profile"
@@ -714,6 +719,15 @@ function make_setup()
       SYS_EXEFIX=
       SYS_APPFIX=
     ;;
+    openbsd_openbsd)
+      SYS_CC="gcc $SYS_DEBUGFLAG -DOPENBSD -I/usr/X11R6/include"
+      SYS_AR=ar
+      SYS_RANLIB=ranlib
+      SYS_STRIP=strip
+      SYS_WINDRES=
+      SYS_EXEFIX=
+      SYS_APPFIX=
+    ;;
     macosx_macosx)
       SYS_CC=gcc
       SYS_CC="$SYS_CC $SYS_DEBUGFLAG -m32 -DMACOSX"
@@ -747,9 +761,14 @@ function make_setup()
    ;;
    android_macosx|android_linux)
 #     TOOLCHAIN=`echo $ANDROIDNDK/toolchains/arm-*/prebuilt/*-x86`
-     TOOLCHAIN=`wildcard_dir $ANDROIDNDK/toolchains/arm-*/prebuilt/*-x86`
+     TOOLCHAIN=`wildcard_dir $ANDROIDNDK/toolchains/arm-*/prebuilt/*-x86 2> /dev/null`
+     if [ "X$TOOLCHAIN" = "X" ]; then
+       TOOLCHAIN=`wildcard_dir $ANDROIDNDK/toolchains/arm-*/prebuilt/*-x86_64 2> /dev/null`
+     fi 
+     assertfile "$TOOLCHAIN"
 #     SYSROOT=`wildcard_dir $ANDROIDNDK/platforms/android-*/arch-arm`
      SYSROOT=`echo $ANDROIDNDK/platforms/android-9/arch-arm`
+     assertfile "$SYSROOT"
      CROSS="$TOOLCHAIN/bin/arm-linux-androideabi-"
      # the linker gunk is just to fool gambit's configure into thinking the gcc can make binaries
      SYS_CC=$CROSS"gcc $SYS_DEBUGFLAG -DANDROID -isysroot $SYSROOT -fno-short-enums -nostdlib -I$SYSROOT/usr/include -L$SYSROOT/usr/lib -lstdc++ -lc -ldl -lgcc"
@@ -806,7 +825,7 @@ function make_setup()
   ac_output CONFIG.h $SYS_PREFIX/include/CONFIG.h
 }
 
-function make_bootstrap()
+make_bootstrap()
 { 
   locaseappname=`echo $SYS_APPNAME | tr A-Z a-z`
   here=`pwd`
@@ -915,7 +934,7 @@ android)
   ac_output bootstraps/android/bootstrap.java $hookfile
   # Helper for adding module specific Java code to app
   ac_java_sedsub=
-  function ac_java_subst(){
+  ac_java_subst(){
     newcmd="echo \"s|@${1}@|\$${1}\n@${1}@|g;\""
     newsub=`eval $newcmd`
     ac_java_sedsub="${ac_java_sedsub}${newsub}"
@@ -1216,6 +1235,55 @@ linux)
   rm -rf "$tmpdir"
 ;;
 #####################################
+openbsd)
+  appdir="$SYS_PREFIX/$SYS_APPNAME"
+  rmifexists "$appdir"
+  mkdir "$appdir"
+  tmpdir=`mktemp -d tmp.XXXXXX`
+  if [ `is_gui_app` = yes ]; then
+    cp bootstraps/x11/x11_microgl.c $tmpdir 
+  fi
+  if [ `is_standalone_app` = "no" ]; then
+    cp bootstraps/common/main.c $tmpdir
+  fi
+  cd $tmpdir
+  sounddir=`locatedir apps/$SYS_APPNAME/sounds silent`
+  if [ -d "$sounddir" ]; then
+    echo " => transferring sounds..."
+    snds=`ls -1 $sounddir/*.wav`
+    mkdir -p $appdir/sounds
+    for snd in $snds; do
+       vecho " => $snd.."
+       cp $snd $appdir/sounds
+    done
+  fi
+  echo " => compiling application.."
+  tgt=$appdir/$SYS_APPNAME$SYS_EXEFIX
+  if [ `is_standalone_app` = "yes" ]; then
+      veval "$SYS_CC -I$SYS_PREFIX/include \
+        -DUSECONSOLE -o $tgt \
+        -L$SYS_PREFIX/lib -lpayload -lsndio -lutil -lpthread -lm"
+  else
+    if [ `is_gui_app` = yes ]; then
+      veval "$SYS_CC -I$SYS_PREFIX/include \
+        x11_microgl.c main.c -o $tgt \
+        -L/usr/X11R6/lib \
+        -L$SYS_PREFIX/lib -lpayload -lGL -lXext -lX11 -lsndio -lutil -lpthread -lm"
+    else
+      veval "$SYS_CC -I$SYS_PREFIX/include \
+        -DUSECONSOLE main.c -o $tgt \
+        -L$SYS_PREFIX/lib -lpayload -lsndio -lutil -lpthread -lm"
+    fi
+  fi
+  asserterror $?
+  assertfile $tgt
+  $SYS_STRIP $tgt
+  asserterror $?
+  cd $here
+  echo " => cleaning up.."
+  rm -rf "$tmpdir"
+;;
+#####################################
 *)
   echo "ERROR: Don't know how to make the bootstrap!"
   exit 1
@@ -1226,7 +1294,7 @@ esac
 ###################################
 # high level make functions
 
-function make_payload()
+make_payload()
 {
   name=$SYS_APPNAME
   here=`pwd`
@@ -1278,7 +1346,7 @@ function make_payload()
   compile_payload $name "$srcs" "$libs"
 }
 
-function make_clean()
+make_clean()
 {
   echo "==> cleaning up build files.."
   rmifexists $SYS_PREFIX/lib/libpayload.a
@@ -1287,16 +1355,16 @@ function make_clean()
   rmifexists $SYS_PREFIX/build
 }
 
-function make_scrub()
+make_scrub()
 {
   echo "==> removing entire build cache.."
-  platforms="ios macosx android win32 linux"
+  platforms="ios macosx android win32 linux openbsd"
   for platform in $platforms; do
     rmifexists $SYS_PREFIXROOT/$platform
   done
 }
 
-function make_install()
+make_install()
 {
   case $SYS_PLATFORM in
   ios)
@@ -1317,7 +1385,7 @@ function make_install()
       echo "==> Found device, installing android application $SYS_APPNAME.."
       $ANDROIDSDK/platform-tools/adb install -r $pkgfile
       echo "==> Starting application.."
-      $ANDROIDSDK/platform-tools/adb shell am start -S $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME/.$SYS_APPNAME
+      $ANDROIDSDK/platform-tools/adb shell am start -n $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME/.$SYS_APPNAME
     fi
   ;;
   default)
@@ -1326,7 +1394,7 @@ function make_install()
   esac
 }
 
-function make_executable()
+make_executable()
 {
   if [ ! "$SYS_MODULES" ]; then
     make_bootstrap
@@ -1337,12 +1405,12 @@ function make_executable()
   fi
 }
 
-function make_package()
+make_package()
 {
   here=`pwd`
   echo "==> making package.."
   case $SYS_PLATFORM in
-  win32|linux|macosx)
+  win32|linux|openbsd|macosx)
     pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).zip"
     rmifexists $pkgfile
     echo " => making generic zip archive $pkgfile.."
@@ -1391,7 +1459,7 @@ function make_package()
   esac
 }
 
-function make_libraries()
+make_libraries()
 {
   echo "==> creating libraries needed for $SYS_APPNAME.."
   libfile=`locatefile apps/$SYS_APPNAME/LIBRARIES` 
@@ -1422,7 +1490,7 @@ function make_libraries()
   done
 }
 
-function make_tools()
+make_tools()
 {
   echo "==> creating tools needed for $SYS_APPNAME.."
   tools=`ls -1 tools`
@@ -1439,7 +1507,7 @@ function make_tools()
   done
 }
 
-function make_info()
+make_info()
 {
   echo " => Application	: $SYS_APPNAME"
   echo " => Version	: $SYS_APPVERSION"
@@ -1448,7 +1516,7 @@ function make_info()
   exit 1
 }
 
-function usage()
+usage()
 {
   echo "usage: make.sh <clean|tools|resources|libraries|payload|executable|all|install|package|info>"
   exit 0;

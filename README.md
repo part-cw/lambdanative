@@ -1,9 +1,31 @@
-
 # Introduction
 
-LambdaNative is a cross-platform development environment
-written in Scheme, supporting Android, iOS, OS X, Linux
-and Windows.
+LambdaNative is an open-source (BSD licensed) cross-platform
+development environment written in Scheme (Gambit-C), supporting
+Android, iOS, OS X, Linux, Windows and OpenBSD.
+
+LambdaNative is actively developed and used at the
+University of British Columbia by the Pediatric Anesthesia
+Research Team for production of clinical mHealth
+applications, including mission-critical embedded drug
+delivery systems and telemonitoring apps for iPhone
+and Android smartphones.  LambdaNative-based applications
+have been used in clinical trials on >10,000 subjects in
+Canada, France, India, Uganda, Bangladesh, and South
+Africa, in >10 separate clinical studies:
+
+[Petersen CL, Görges M, Dunsmuir D, Ansermino JM, Dumont GA. "Experience Report: Functional Programming of mHealth Applications". The 18th ACM SIGPLAN International Conference on Functional Programming, ICFP'13, Boston, MA, USA](http://ecem.ece.ubc.ca/~cpetersen/lambdanative_icfp13.pdf)
+
+If you use the LambdaNative framework for your own work, please reference this paper.
+
+A slideshow describing the LambdaNative framework is available [here](https://github.com/part-cw/lambdanative/blob/master/docs/LambdaNative.pdf?raw=true).
+
+`uSquish`, the simple example game included in the LambdaNative repository,
+is available as a free download on the Apple and Google stores:
+
+[uSquish for iOS](https://itunes.apple.com/us/app/usquish/id647308142)
+
+[uSquish for Android](https://play.google.com/store/apps/details?id=ca.bccw.usquish)
 
 # Getting started
 
@@ -43,6 +65,7 @@ Please ensure that these are installed on your system:
 * `netpbm` and `ImageMagick` for misc pixmap manipulation
 * `ghostscript` for converting vector artwork
 * `cmake` for generating XCode projects
+* `latex` for generating string textures (actually uses the unicode `xelatex`)
 * `tgif` for editing vector artwork (optional)
 * `fruitstrap` for installing iOS apps (optional)
 

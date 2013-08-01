@@ -57,7 +57,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     IBOutlet UILabel *label;
 }
 
-@property NSTimeInterval animationInterval;
+@property (nonatomic) NSTimeInterval animationInterval;
 @property (nonatomic, retain) UILabel *label;
                               
 - (void)startRender;

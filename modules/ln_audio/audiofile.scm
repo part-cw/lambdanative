@@ -70,6 +70,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define USE_PORTAUDIO
 #endif
 
+#ifdef OPENBSD
+#define USE_PORTAUDIO
+#endif
+
 // %%%%%%%%%%%%%%%%%%%%%%
 #if defined(USE_PORTAUDIO) || defined(USE_IOS_REALTIME)
 
@@ -368,7 +372,7 @@ end-of-c-declare
   (let ((file  (cond
           ((string=? (system-platform) "ios") 
              (string-append (system-appdirectory) (system-pathseparator) name ".wav"))
-          ((member (system-platform) '("win32" "linux" "macosx")) 
+          ((member (system-platform) '("win32" "linux" "macosx" "openbsd")) 
              (string-append (system-directory) (system-pathseparator) "sounds" (system-pathseparator) name ".wav"))
           ((string=? (system-platform) "android") (string-downcase name))
           (else #f))))
