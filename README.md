@@ -56,11 +56,11 @@ distribution. For XCode versions newer than 4.5 you also
 need to install the matching "Command Line Tools". These
 downloads can be found under "Downloads for Apple
 Developers" in the iOS Dev Center.
-2. Follow the standard procedures to create an iOS
+2. Follow the standard online procedures to create an iOS
 Development Certificate, and, optionally, an iOS
 Distribution Certificate, and register your device(s) for 
 development.
-3. Use XCode to create and sync a provisiong profile onto
+3. Use XCode to create and sync a Provisioning Profile onto
 your device(s). The XCode build chain will not work properly
 if you do this step outside of XCode.
 
