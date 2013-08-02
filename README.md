@@ -27,7 +27,7 @@ is available as a free download on the Apple and Google stores:
 
 [uSquish for Android](https://play.google.com/store/apps/details?id=ca.bccw.usquish)
 
-# [ LambdaNative Documentation Wiki ](./wiki/Home)
+# [ LambdaNative Documentation Wiki ](../../wiki/Home)
 
 # Getting started
 
