@@ -67,7 +67,7 @@ static   SSL_CTX *ctx=0;
 #define bcopy(a, b, c) memmove(b, a, c)
 #endif
 
-static int httpsclient_open(char *host){
+static int httpsclient_open(char *host, int port, int use_keys, char *cert, char *key, char *pwd){
   int ret,flags;
   struct hostent *servhost; 
   struct sockaddr_in server;
@@ -78,7 +78,7 @@ static int httpsclient_open(char *host){
   bzero((char *)&server, sizeof(server));
   server.sin_family = AF_INET;
   bcopy(servhost->h_addr, (char *)&server.sin_addr.s_addr, servhost->h_length);
-  server.sin_port = htons(443);
+  server.sin_port = htons(port);
   if (connect(s, (struct sockaddr*) &server, sizeof(server)) == -1 ) {
     if (errno==EINTR) {
       #ifndef WIN32
@@ -100,10 +100,22 @@ static int httpsclient_open(char *host){
   SSL_library_init();
   ctx = SSL_CTX_new(SSLv23_client_method());
   if ( ctx == NULL ) { return 0; }
+  SSL_CTX_set_options(ctx,SSL_OP_NO_SSLv2); //disable SSLv2
+
+  // If we want to use key for authentication.
+  if (use_keys == 1) {
+    ret = SSL_CTX_use_certificate_file(ctx, cert, SSL_FILETYPE_PEM);
+    if (ret <= 0) { return 0; }
+    SSL_CTX_set_default_passwd_cb_userdata(ctx,pwd);
+    ret = SSL_CTX_use_PrivateKey_file(ctx, key, SSL_FILETYPE_PEM);
+    if (ret <= 0) { return 0; }
+  }
+
   ssl = SSL_new(ctx);
   if ( ssl == NULL ){ return 0; }
   ret = SSL_set_fd(ssl, s);
   if ( ret == 0 ){ return 0; }
+
   RAND_poll();
   while ( RAND_status() == 0 ){
     unsigned short rand_ret = rand() % 65536;
@@ -137,7 +149,17 @@ int SSL_retryread(SSL *ssl, void *buf, int num){
 end-of-c-declare
 )
 
-(define httpsclient-open (c-lambda (char-string) int "httpsclient_open"))
+(define (httpsclient-open host . port)
+  (if (fx= (length port) 1)
+    (httpsclient-key-open host "" "" "" (car port))
+    (httpsclient-key-open host "" "" "")
+  ))
+
+(define (httpsclient-key-open host certchain key password . port)
+  ((c-lambda (char-string int int char-string char-string char-string) int
+    "httpsclient_open")
+    host (if (fx= (length port) 1) (car port) 443)
+    (if (string=? key "") 0 1) certchain key password))
 
 (define (httpsclient-send buf)
   ((c-lambda (scheme-object int) int
