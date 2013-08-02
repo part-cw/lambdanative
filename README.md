@@ -37,11 +37,32 @@ cross-compilation requires installation of the appropriate
 environments:
 
 ### Android (mac or linux) 
-Install the android SDK and NDK
-under `/usr/local` and the API that you want to develop for.
+1. Install the android SDK and NDK under `/usr/local` and the
+API that you want to develop for.  You will need the "SDK
+Tools", not the "ADT Bundle".  Once SDK and NDK are
+installed, you should have an `android-sdk-*` and
+`android-ndk-*` directory.  Make sure to set proper
+permissions on the directories to allow your development
+account full access.
+2. Run `android` to install the APIs (minimum supported API is
+8 (Android 2.2) without real-time audio, and API 10 (Android
+2.3.3) with real-time audio).
+3. Run `android avd` to setup an android virtual device with
+your desired API.
 
 ### iOS (mac)
-Install the iOS SDK under `/Developer` to develop iOS applications.
+1. Install the iOS SDK. The iOS SDK is part of the Xcode
+distribution. For XCode versions newer than 4.5 you also
+need to install the matching "Command Line Tools". These
+downloads can be found under "Downloads for Apple
+Developers" in the iOS Dev Center.
+2. Follow the standard procedures to create an iOS
+Development Certificate, and, optionally, an iOS
+Distribution Certificate, and register your device(s) for 
+development.
+3. Use XCode to create and sync a provisiong profile onto
+your device(s). The XCode build chain will not work properly
+if you do this step outside of XCode.
 
 ### Linux cross-compilation (mac)
 Install a linux cross-compiler under `/usr/local` to create
