@@ -761,9 +761,14 @@ make_setup()
    ;;
    android_macosx|android_linux)
 #     TOOLCHAIN=`echo $ANDROIDNDK/toolchains/arm-*/prebuilt/*-x86`
-     TOOLCHAIN=`wildcard_dir $ANDROIDNDK/toolchains/arm-*/prebuilt/*-x86`
+     TOOLCHAIN=`wildcard_dir $ANDROIDNDK/toolchains/arm-*/prebuilt/*-x86 2> /dev/null`
+     if [ "X$TOOLCHAIN" = "X" ]; then
+       TOOLCHAIN=`wildcard_dir $ANDROIDNDK/toolchains/arm-*/prebuilt/*-x86_64 2> /dev/null`
+     fi 
+     assertfile "$TOOLCHAIN"
 #     SYSROOT=`wildcard_dir $ANDROIDNDK/platforms/android-*/arch-arm`
      SYSROOT=`echo $ANDROIDNDK/platforms/android-9/arch-arm`
+     assertfile "$SYSROOT"
      CROSS="$TOOLCHAIN/bin/arm-linux-androideabi-"
      # the linker gunk is just to fool gambit's configure into thinking the gcc can make binaries
      SYS_CC=$CROSS"gcc $SYS_DEBUGFLAG -DANDROID -isysroot $SYSROOT -fno-short-enums -nostdlib -I$SYSROOT/usr/include -L$SYSROOT/usr/lib -lstdc++ -lc -ldl -lgcc"
@@ -1124,10 +1129,11 @@ win32)
   sounddir=`locatedir apps/$SYS_APPNAME/sounds silent`
   if [ -d "$sounddir" ]; then
     echo " => transferring sounds..."
+    mkdir -p $appdir/sounds
     snds=`ls -1 $sounddir/*.wav`
     for snd in $snds; do
        vecho " => $snd.."
-       cp $snd $appdir
+       cp $snd $appdir/sounds
     done
   fi
   if [ `is_gui_app` = yes ]; then
