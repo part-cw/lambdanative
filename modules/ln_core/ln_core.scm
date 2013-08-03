@@ -48,10 +48,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "log.scm")
 (include "ipaddr.scm")
 (include "launchurl.scm")
-(include "csv.scm")
 (include "u8vector.scm")
 (include "u8data.scm")
 (include "u8vector-crcs.scm")
 (include "u8vector-compress.scm")
 (include "file-compress.scm")
-
