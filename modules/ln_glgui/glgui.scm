@@ -183,7 +183,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (glPopMatrix)
 )
 
-(define (glgui-inputloop t x0 y0 . gs)
+(define (glgui:inputloop t x0 y0 . gs)
     (let loop0 ((guis gs))
       (if (fx= (length guis) 0) #f
         (let* ((gui (car guis))
@@ -215,9 +215,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                       (p (glgui-widget-get gui wgt 'input-handle))
                       (container? (glgui-widget-get gui wgt 'container))
                       (r (if (and glgui:modalstate (or m minput) (not h))
-                            (if (procedure? p) (p gui wgt t x y) (if container? (glgui-inputloop t x0 y0 wgt) #f))
+                            (if (procedure? p) (p gui wgt t x y) (if container? (glgui:inputloop t x0 y0 wgt) #f))
                           (if (and (not glgui:modalstate) (not m) (not h))
-                            (if (procedure? p) (p gui wgt t x y) (if container? (glgui-inputloop t x0 y0 wgt) #f)) #f))))
+                            (if (procedure? p) (p gui wgt t x y) (if container? (glgui:inputloop t x0 y0 wgt) #f)) #f))))
          ;;         (log-system "input loop on widget " wgt " =" r)
                   (loop (cdr wl) (and (not (or (fx= t EVENT_BUTTON1UP) propagate glgui:propagate)) r)))))
           (loop0 (cdr guis))))))
@@ -229,7 +229,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (if glgui:active 
   (let ((gs (if (list? guis) guis (list guis))))
   (if (fx= t EVENT_REDRAW) (apply glgui:render gs)
-    (apply glgui-inputloop (append (list t x0 y0) gs)))
+    (apply glgui:inputloop (append (list t x0 y0) gs)))
  )))
 
 ;; eof
