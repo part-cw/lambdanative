@@ -1,7 +1,7 @@
 # Introduction
 
 LambdaNative is an open-source (BSD licensed) cross-platform
-development environment written in Scheme (Gambit-C), supporting
+development environment written in Scheme ([Gambit-C](https://github.com/feeley/gambit)), supporting
 Android, iOS, OS X, Linux, Windows and OpenBSD.
 
 LambdaNative is actively developed and used at the
