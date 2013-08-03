@@ -55,7 +55,7 @@ end-of-c-declare
 )
 
 (define pressure-mBar (c-lambda () double "pressure_mBar"))
-(define pressure-mmHg (* 0.750063755 (pressure-mBar)))
-(define pressure-kPa (/ (pressure-mBar) 10))
+(define (pressure-mmHg) (* 0.750063755 (pressure-mBar)))
+(define (pressure-kPa) (/ (pressure-mBar) 10))
 
 ;; eof
