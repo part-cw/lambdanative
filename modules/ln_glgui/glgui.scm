@@ -130,7 +130,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define GUI_BGSELECT DimGray)
 
-(define (glgui-renderloop g1 . gx)
+(define (glgui:renderloop g1 . gx)
   (let ((guis (append (list g1) gx)))
     (let gloop ((gs guis))
       (if (fx> (length gs) 0)
@@ -154,7 +154,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                (w (glgui-get wgt 'w #f))
                                (h (glgui-get wgt 'h #f)))
                            (glCoreClipPush 0 0 w h)
-                           (glgui-renderloop wgt)
+                           (glgui:renderloop wgt)
                            (glCoreClipPop)
                       ))))
                   (loop (cdr wl)))))
@@ -163,7 +163,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; render one or more guis to a window
 ;; 20100804: support gui offset
-(define (glgui-render g1 . gx)
+(define (glgui:render g1 . gx)
   (glCoreInit)  ;; setup the OpenGL pipeline
   (glPushMatrix)
   (cond 
@@ -179,7 +179,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (glTranslatef (flo (- app:width)) (flo (- app:height)) 0.))
 ;;  ------ 
   )
-  (apply glgui-renderloop (append (list g1) gx))
+  (apply glgui:renderloop (append (list g1) gx))
   (glPopMatrix)
 )
 
@@ -228,7 +228,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui-event guis t x0 y0)
   (if glgui:active 
   (let ((gs (if (list? guis) guis (list guis))))
-  (if (fx= t EVENT_REDRAW) (apply glgui-render gs)
+  (if (fx= t EVENT_REDRAW) (apply glgui:render gs)
     (apply glgui-inputloop (append (list t x0 y0) gs)))
  )))
 
