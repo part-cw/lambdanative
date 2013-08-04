@@ -80,11 +80,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       ))
   ))
 
-(define (waveoutput-init store instance)
+(define (waveoutput:init store instance)
   (instance-setvar! store instance "Handle" #f)
   #t)
 
-(define (waveoutput-caseinit store instance)
+(define (waveoutput:caseinit store instance)
   (if (store-ref store "CaseID" #f) (begin
     (let* ((opath (instance-refvar store instance "OutputPath" scheduler:outputpath))
            (casepath (string-append opath (system-pathseparator) (store-ref store "CaseID" #f))))
@@ -95,7 +95,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (waveoutput:start store instance))
   ))
 
-(define (waveoutput-run store instance)
+(define (waveoutput:run store instance)
   (if (and (store-ref store "CaseID" #f)
            ;; forget disk space for now
            #t ;; (> (store-ref store "DiskSpace" 0) 0)
@@ -104,16 +104,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
   #t)
 
-(define (waveoutput-caseend store instance)
+(define (waveoutput:caseend store instance)
   (if (instance-refvar store instance "Handle" #f) (waveoutput:run store instance))
   (waveoutput:stop store instance)
   #t)
 
-(define (waveoutput-end store instance)
+(define (waveoutput:end store instance)
   (if (instance-refvar store instance "Handle" #f) (waveoutput:stop store instance))
   #t)
 
-(plugin-register "waveoutput" waveoutput-init waveoutput-caseinit waveoutput-run 
-                 waveoutput-caseend waveoutput-end 'output)
+(plugin-register "waveoutput" waveoutput:init waveoutput:caseinit waveoutput:run 
+                 waveoutput:caseend waveoutput:end 'output)
 
 ;; eof

@@ -68,11 +68,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ))
 
 ;; plugin hooks
-(define (rawoutput-init store instance)
+(define (rawoutput:init store instance)
   (instance-setvar! store instance "Handle" #f)
   #t)
 
-(define (rawoutput-caseinit store instance)
+(define (rawoutput:caseinit store instance)
   (if (store-ref store "CaseID" #f) (begin
     (let* ((opath (instance-refvar store instance "OutputPath" scheduler:outputpath))
            (casepath (string-append opath (system-pathseparator) (store-ref store "CaseID" #f))))
@@ -83,7 +83,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (rawoutput:start store instance)
   )))
 
-(define (rawoutput-run store instance)
+(define (rawoutput:run store instance)
   (if (and (store-ref store "CaseID" #f) 
            #t ;;  (> (store-ref store "DiskSpace" 0) 0) ;; forget disk space for now
       )
@@ -91,17 +91,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
   #t)
 
-(define (rawoutput-caseend store instance)
+(define (rawoutput:caseend store instance)
   (if (instance-refvar store instance "Handle" #f) (rawoutput:run store instance))
   (rawoutput:stop store instance)
   #t)
 
-(define (rawoutput-end store instance)
+(define (rawoutput:end store instance)
   (if (instance-refvar store instance "Handle" #f) (rawoutput:stop store instance))
   #t)
 
 ;; register the plugin
-(plugin-register "rawoutput" rawoutput-init rawoutput-caseinit rawoutput-run 
-                 rawoutput-caseend rawoutput-end 'output)
+(plugin-register "rawoutput" rawoutput:init rawoutput:caseinit rawoutput:run 
+                 rawoutput:caseend rawoutput:end 'output)
 
 ;; eof

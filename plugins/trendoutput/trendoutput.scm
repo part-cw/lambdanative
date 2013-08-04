@@ -106,11 +106,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ))
 
 ;; plugin hooks
-(define (trendoutput-init store instance)
+(define (trendoutput:init store instance)
   (instance-setvar! store instance "Handle" #f)
   #t)
 
-(define (trendoutput-caseinit store instance)
+(define (trendoutput:caseinit store instance)
   (if (store-ref store "CaseID" #f) (begin
     (let* ((opath (instance-refvar store instance "OutputPath" scheduler:outputpath))
            (casepath (string-append opath (system-pathseparator) (store-ref store "CaseID" #f))))
@@ -121,7 +121,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (trendoutput:start store instance)
   )))
 
-(define (trendoutput-run store instance)
+(define (trendoutput:run store instance)
   (if (and (store-ref store "CaseID" #f)
            ;; forget disk space for now
            #t ;; (> (store-ref store "DiskSpace" 0) 0)
@@ -130,20 +130,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
   #t)
 
-(define (trendoutput-caseend store instance)
+(define (trendoutput:caseend store instance)
   (if (instance-refvar store instance "Handle" #f)
     (trendoutput:run store instance)
     (trendoutput:stop store instance)
   )
   #t)
 
-(define (trendoutput-end store instance)
+(define (trendoutput:end store instance)
   (if (instance-refvar store instance "Handle" #f)
     (trendoutput:stop store instance))
   #t)
 
 ;; register the plugin
-(plugin-register "trendoutput" trendoutput-init trendoutput-caseinit trendoutput-run 
-                 trendoutput-caseend trendoutput-end 'output)
+(plugin-register "trendoutput" trendoutput:init trendoutput:caseinit trendoutput:run 
+                 trendoutput:caseend trendoutput:end 'output)
 
 ;; eof

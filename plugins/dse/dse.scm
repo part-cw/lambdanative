@@ -107,15 +107,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ))
 
 ;; ---- plugin hooks
-(define (dse-init store instance)
+(define (dse:init store instance)
   #t)
 
-(define (dse-caseinit store instance)
+(define (dse:caseinit store instance)
   (instance-setvar! store instance "FactList" '())
   (instance-setvar! store instance "RepeatFactList" '())
 )
 
-(define (dse-run store instance)
+(define (dse:run store instance)
   (define (dse:outerloop continue?)
     (if continue? 
       (dse:outerloop (dse:innerloop (instance-refvar store instance "Rules"))) 
@@ -159,9 +159,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (instance-setvar! store instance "FactList" '())
   #t)
 
-(define (dse-caseend store instance) #t)
-(define (dse-end store instance) #t)
+(define (dse:caseend store instance) #t)
+(define (dse:end store instance) #t)
 
-(plugin-register "dse" dse-init dse-caseinit dse-run dse-caseend dse-end 'dse)
+(plugin-register "dse" dse:init dse:caseinit dse:run dse:caseend dse:end 'dse)
 
 ;; eof
