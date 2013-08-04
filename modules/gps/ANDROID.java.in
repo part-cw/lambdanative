@@ -10,7 +10,8 @@ private String provider;"
 
 ANDROID_ONCREATE="locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);\
 Criteria criteria = new Criteria();\
-provider = locationManager.getBestProvider(criteria, false);\
+criteria.setAccuracy(Criteria.ACCURACY_FINE);\
+provider = locationManager.getBestProvider(criteria, true);\
 Location location = locationManager.getLastKnownLocation(provider);"
 
 ANDROID_ONPAUSE="locationManager.removeUpdates(this);"
