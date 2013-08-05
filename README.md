@@ -21,11 +21,7 @@ If you use the LambdaNative framework for your own work, please reference this p
 A slideshow describing the LambdaNative framework is available [here](https://github.com/part-cw/lambdanative/blob/master/docs/LambdaNative.pdf?raw=true).
 
 `uSquish`, the simple example game included in the LambdaNative repository,
-is available as a free download on the Apple and Google stores:
-
-[uSquish for iOS](https://itunes.apple.com/us/app/usquish/id647308142)
-
-[uSquish for Android](https://play.google.com/store/apps/details?id=ca.bccw.usquish)
+is available as a free download on the Apple and Google stores: [uSquish for iOS](https://itunes.apple.com/us/app/usquish/id647308142) and [uSquish for Android](https://play.google.com/store/apps/details?id=ca.bccw.usquish)
 
 # [ LambdaNative Documentation Wiki ](../../wiki/Home)
 
