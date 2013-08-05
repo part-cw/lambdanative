@@ -24,4 +24,6 @@ A slideshow describing the LambdaNative framework is available [here](https://gi
 is available as a free download on the Apple and Google stores: [uSquish for iOS](https://itunes.apple.com/us/app/usquish/id647308142) and [uSquish for Android](https://play.google.com/store/apps/details?id=ca.bccw.usquish)
 
 # [ LambdaNative Documentation Wiki ](../../wiki/Home)
+Instructions for "Getting started" and the "LambdaNative Function APIs" can be found in the LambdaNative [wiki](../../wiki/Home). 
 
+Please bear with us as we complete the LambdaNative 450+ API wiki entries over the next few days.
