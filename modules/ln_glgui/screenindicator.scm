@@ -36,9 +36,6 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(include "glgui_screenindicator_selected.scm")
-(include "glgui_screenindicator_empty.scm")
-
 (define (glgui:screenindicator-draw g wgt)
   (let ((y (glgui-widget-get-dyn g wgt 'y))
         (w (glgui-widget-get-dyn g wgt 'w))

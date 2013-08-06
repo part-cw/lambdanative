@@ -36,49 +36,22 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(include "glgui_button.scm")
-(include "glgui_keypad_delete.scm")
-(include "glgui_keypad_return.scm")
-(include "glgui_keypad_shift.scm")
-(include "glgui_keypad_toggle.scm")
-(include "glgui_modal.scm")
-(include "glgui_rounded_box.scm")
-(include "glgui_rounded_corner.scm")
-(include "glgui_sperm.scm")
-(include "glgui_menubar.scm")
-(include "glgui_battery.scm")
-(include "glgui_screenindicator_empty.scm")
-(include "glgui_screenindicator_selected.scm")
-(include "glgui_button_arrow.scm")
-(include "glgui_numberwheel.scm")
-(include "glgui_verticalnumberwheel.scm")
-(include "glgui_dropdownbox_downarrow.scm")
-
-(include "primitives.scm")
-(include "glgui.scm")
-(include "widget.scm")
-(include "box.scm")
-(include "button.scm")
-(include "container.scm")
-(include "keypad.scm")
-(include "label.scm")
-(include "valuelabel.scm")
-(include "verticalvaluelabel.scm")
-(include "list.scm")
-(include "modal.scm")
-(include "pixmap.scm")
-(include "slider.scm")
-(include "sprite.scm")
-(include "trace.scm")
-(include "image.scm")
-(include "menubar.scm")
-(include "battery.scm")
-(include "button-arrow.scm")
-(include "screenindicator.scm")
-(include "chat.scm")
-(include "numberwheel.scm")
-(include "verticalnumberwheel.scm")
-(include "lockpane.scm")
-(include "timewheels.scm")
-(include "datewheels.scm")
-(include "dropdownbox.scm")
+(define glgui_dropdownbox_downarrow.raw (glCoreTextureCreate 16 16 '#u8(
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 63 0 0 0 0 0 0 0 0 0 0 0 0 66 0
+51 210 170 0 0 0 0 0 0 0 0 0 0 168 206 49
+201 214 213 172 3 0 0 0 0 0 0 0 174 215 214 201
+83 218 223 217 179 0 0 0 0 0 0 180 220 219 220 82
+0 68 212 225 226 184 0 0 0 0 187 219 227 210 69 0
+0 0 42 214 232 230 216 44 40 217 230 232 217 42 0 0
+0 0 0 45 219 238 237 218 224 237 234 223 41 0 0 0
+0 0 0 0 32 195 242 240 239 245 195 29 0 0 0 0
+0 0 0 0 0 5 195 252 244 198 0 0 0 0 0 0
+0 0 0 0 0 0 0 203 209 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+)))
+(define glgui_dropdownbox_downarrow.img (list 16 16 glgui_dropdownbox_downarrow.raw 0. 1. 1.00000000000000000000 0))
