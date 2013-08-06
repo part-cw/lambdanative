@@ -38,8 +38,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; simple load/save of store parameters
 
-(define (store->file store fname . params)
-  (let loop ((ps params)(res '()))
+(define (store->file store fname params)
+  (let loop ((ps (if (list? params) params (list params)))(res '()))
     (if (fx= (length ps) 0)
       (with-output-to-file fname (lambda () (write res)))
     (loop (cdr ps) (append res (list (list (car ps) (store-ref store (car ps) #f))))))))
