@@ -89,7 +89,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define scheduler:pendingend '())
 
 (define (scheduler-startcase store name)
-  (store-event-clear store)
+  (store-event-clear! store)
   (scheduler:log 1 "startcase " name)
   (store-set! store "CaseStartPending" name)
   (set! scheduler:pendingstart (append scheduler:pendingstart (list (list store name)))))

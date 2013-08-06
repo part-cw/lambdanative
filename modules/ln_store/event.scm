@@ -79,7 +79,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        )
       )))
 
-(define (store-event-clear store)
+(define (store-event-clear! store)
   (store-set! store "EventList" '())
   (store-clearcat! store "event"))
 
