@@ -90,10 +90,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         ) (loop0 (cdr is)))))
 )
 
-;M @deffn {procedure} store-clearexpired! store timeout idlist [thunk]
-;M @strong{Description:}@*
-;M Clear entries in the datastore if the timestamp differ from wall time by more than timeout.
-;M @end deffn
 (define (store-clearexpired! store timeout ids . thunk)
   (let ((cb (if (fx= (length thunk) 1) (car thunk) #f)))
     (let loop ((is (if (list? ids) ids (list ids))))
@@ -141,7 +137,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 ;; note that this doesn't clear the store, just the category field
-(define (store-clearcat store category)
+(define (store-clearcat! store category)
   (let ((ct (store:categorytable store)))
      (table-set! ct category '())))
 

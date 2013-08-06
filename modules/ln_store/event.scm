@@ -81,7 +81,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (store-event-clear store)
   (store-set! store "EventList" '())
-  (store-clearcat store "event"))
+  (store-clearcat! store "event"))
 
 (define (store-event-listnew store . tstamp)
   (let ((t (if (fx= (length tstamp) 1) (car tstamp) 0.)))

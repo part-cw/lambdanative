@@ -62,7 +62,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((t (store:wscalingtable store)))
      (table-set! t id lst)))
 
-(define (store-waveform-clear store . auxid)
+(define (store-waveform-clear! store . auxid)
   (let* ((t (store:wdatatable store))
          (idlist (table-ref t 'IdList '()))
          (id (if (fx= (length auxid) 1) (car auxid) #f)))
@@ -110,7 +110,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (store-clear! store (map car (store-listcat store c)))
     (let loop ((ids (table-ref tdata 'IdList '())))
       (if (= (length ids) 0)
-        (store-waveform-clear store)
+        (store-waveform-clear! store)
         (let ((scaling (table-ref tscaling (car ids) (list 0 0 0 0)))
               (data (table-ref tdata (car ids) #f)))
           (if (list? data) (store-set! store (car ids) (waveform:scale data scaling) c))

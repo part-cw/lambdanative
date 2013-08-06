@@ -46,7 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (let ((oldlist (table-ref t 'IdList '())))
             (table-set! t 'IdList (append oldlist (list id))))))))
 
-(define (store-raw-clear store . auxid)
+(define (store-raw-clear! store . auxid)
   (let* ((t (store:rawtable store))
          (idlist (table-ref t 'IdList '()))
          (id (if (fx= (length auxid) 1) (car auxid) #f)))
@@ -66,7 +66,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((c (if (fx= (length category) 1) (car category) "raw"))
         (tdata (store:rawtable store)))
     (let loop ((ids (table-ref tdata 'IdList '())))
-      (if (= (length ids) 0) (store-raw-clear store)
+      (if (= (length ids) 0) (store-raw-clear! store)
          (let ((data (table-ref tdata (car ids) #f)))
             (if (u8vector? data) (store-set! store (car ids) data c))
             (loop (cdr ids)))))))
