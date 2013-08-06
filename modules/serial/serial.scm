@@ -407,8 +407,8 @@ int serial_timeout(void) { return _serial_notready; }
 end-of-c-declare
 )
 
-(define serial-open (c-lambda (char-string int int int int) int "serial_open"))
-(define serial-openfile (c-lambda (char-string) int "serial_openfile"))
+(define serial:open (c-lambda (char-string int int int int) int "serial_open"))
+(define serial:openfile (c-lambda (char-string) int "serial_openfile"))
 (define serial-close (c-lambda (int) void "serial_close"))
 
 (define serial-readchar (c-lambda (int) int "serial_readchar"))
@@ -437,7 +437,7 @@ end-of-c-declare
 ))
 
 (define (serial-try devname baudrate databits parity stopbits testproc)
-  (let ((dev (serial-open devname baudrate databits parity stopbits)))
+  (let ((dev (serial:open devname baudrate databits parity stopbits)))
     (if (or (serial-error) (serial-timeout)) 
       #f
       (if testproc
@@ -451,7 +451,7 @@ end-of-c-declare
   ))
 
 (define (serial-tryfile filepath)
-  (let ((dev (serial-openfile filepath)))
+  (let ((dev (serial:openfile filepath)))
      (if (or (serial-error) (serial-timeout)) #f
         dev)))
 
