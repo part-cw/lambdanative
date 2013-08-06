@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; temporary storage for raw binary data
 (define (store-raw-append store id data)
-  (let ((t (store-rawtable store)))
+  (let ((t (store:rawtable store)))
      (let ((appendit  (member id (table-ref t 'IdList '())))
            (olddata   (table-ref t id #f)))
        (table-set! t id (if (and appendit (u8vector? olddata)) (u8vector-append olddata data) data))
@@ -47,7 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (table-set! t 'IdList (append oldlist (list id))))))))
 
 (define (store-raw-clear store . auxid)
-  (let* ((t (store-rawtable store))
+  (let* ((t (store:rawtable store))
          (idlist (table-ref t 'IdList '()))
          (id (if (fx= (length auxid) 1) (car auxid) #f)))
     (table-set! t 'IdList
@@ -64,7 +64,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (store-raw-dispatch store . category)
   (let ((c (if (fx= (length category) 1) (car category) "raw"))
-        (tdata (store-rawtable store)))
+        (tdata (store:rawtable store)))
     (let loop ((ids (table-ref tdata 'IdList '())))
       (if (= (length ids) 0) (store-raw-clear store)
          (let ((data (table-ref tdata (car ids) #f)))
@@ -72,7 +72,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (loop (cdr ids)))))))
 
 (define (store-raw-length store id)
-  (let* ((t (store-rawtable store))
+  (let* ((t (store:rawtable store))
         (appendit  (member id (table-ref t 'IdList '())))
         (data   (table-ref t id #f)))
      (if (and appendit (u8vector? data)) (u8vector-length data) 0)))

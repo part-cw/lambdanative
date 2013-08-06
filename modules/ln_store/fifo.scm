@@ -45,7 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (fifo:log level . x) 
   (if (fx>= fifo:loglevel level) (apply log-system (append (list "fifo: ") x))))
 
-(define (fifo-write name data)
+(define (fifo:write name data)
   (let ((p (open-file name)))
     (if (port? p) (begin
       (with-exception-catcher (lambda (e) #f)
@@ -59,7 +59,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define fifo:table (make-table))
 
-(define (fifo-read name)
+(define (fifo:read name)
   (let* ((p0 (table-ref fifo:table name #f))
          (p (if p0 p0 (open-input-file name))))
     (if (port? p) (begin
@@ -70,10 +70,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;        (close-port p)
         data)) #f)))
 
-(define (fifo-reader! name proc pause)
+(define (fifo:reader! name proc pause)
   (thread-start! (make-safe-thread (lambda ()
     (let loop () 
-      (let loop2 ((data (fifo-read name)))
+      (let loop2 ((data (fifo:read name)))
         (if (fx> (length data) 0) (begin
           (apply proc (car data))
           (loop2 (cdr data)))))
@@ -81,7 +81,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (loop))))))
 
 (define (store-fifo-import! store name)
-  (fifo-reader! name 
+  (fifo:reader! name 
     (lambda (k . v) 
       (let ((kl (string-length k)))
         (fifo:log 1 "import: " k " " v)
@@ -112,7 +112,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let loop ((fifos (store-ref store (string-append id ":fifoexportlist") '())))
     (if (fx> (length fifos) 0)
       (begin
-        (fifo-write (car fifos) (list id val))
+        (fifo:write (car fifos) (list id val))
         (loop (cdr fifos))
       ))
   ))

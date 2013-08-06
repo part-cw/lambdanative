@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; temporary storage for waveform data (lists or f32vectors)
 (define (store-waveform-append store id data)
-  (let ((t (store-wdatatable store)))
+  (let ((t (store:wdatatable store)))
      (let ((appendit  (member id (table-ref t 'IdList '())))
            (olddata   (table-ref t id #f)))
        (table-set! t id
@@ -59,11 +59,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; [imin imax] = input range
 ;; [omin omax] = output range
 (define (store-waveform-scale store id lst)
-  (let ((t (store-wscalingtable store)))
+  (let ((t (store:wscalingtable store)))
      (table-set! t id lst)))
 
 (define (store-waveform-clear store . auxid)
-  (let* ((t (store-wdatatable store))
+  (let* ((t (store:wdatatable store))
          (idlist (table-ref t 'IdList '()))
          (id (if (fx= (length auxid) 1) (car auxid) #f)))
     (table-set! t 'IdList
@@ -105,8 +105,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; dispatch waveforms with scaling
 (define (store-waveform-dispatch store . category)
   (let ((c (if (fx= (length category) 1) (car category) "waveform"))
-        (tdata (store-wdatatable store))
-        (tscaling (store-wscalingtable store)))
+        (tdata (store:wdatatable store))
+        (tscaling (store:wscalingtable store)))
     (store-clear! store (map car (store-listcat store c)))
     (let loop ((ids (table-ref tdata 'IdList '())))
       (if (= (length ids) 0)

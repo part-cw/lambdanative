@@ -54,7 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (let loop3 ((fifos (store-ref store (string-append (car is) ":fifoexportlist") '())))
               (if (fx> (length fifos) 0)
                 (begin
-                  (fifo-write (car fifos) (list (car is)))
+                  (fifo:write (car fifos) (list (car is)))
                   (loop3 (cdr fifos))
                 )))
             (loop2 (cdr is))
@@ -66,8 +66,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let loop0 ((is (if (list? ids) ids (list ids))))
     (if (fx> (length is) 0)
       (let ((id (car is)))
-        (let ((t (store-datatable store))
-              (ct (store-categorytable store)))
+        (let ((t (store:datatable store))
+              (ct (store:categorytable store)))
           (if (table? t) (begin
             (store:grab!)
             (table-set! t id)
@@ -109,9 +109,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (store:setlocal! store id val . category)
   (if (not val)
     (store-clear! store id)
-    (let* ((t (store-datatable store))
+    (let* ((t (store:datatable store))
            (c (if (fx= (length category) 1) (car category) #f))
-           (ct (store-categorytable store))
+           (ct (store:categorytable store))
            (cl (if ct (table-ref ct c '()) #f)))
       (if (table? t)
         (begin
@@ -142,12 +142,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; note that this doesn't clear the store, just the category field
 (define (store-clearcat store category)
-  (let ((ct (store-categorytable store)))
+  (let ((ct (store:categorytable store)))
      (table-set! ct category '())))
 
 (define (store-listcat store category)
-  (let ((t (store-datatable store))
-        (ct (store-categorytable store)))
+  (let ((t (store:datatable store))
+        (ct (store:categorytable store)))
     (let loop ((cl (table-ref ct category '()))(res '()))
       (if (fx= (length cl) 0)
         res
@@ -158,7 +158,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;  store-ref uses the fallback ONLY when a parameter is not defined (not if the value is set to #f)
 (define (store-ref store id . fback)
   (let ((fallback (if (= (length fback) 1) (car fback) #f))
-        (t (store-datatable store)))
+        (t (store:datatable store)))
     (if (table? t)
       (begin
         (store:grab!)
@@ -178,7 +178,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; lookup volatile store with user-specified timeout period
 (define (store-timedrefsec store id tout . fback)
   (let ((fallback (if (= (length fback) 1) (car fback) #f))
-        (t (store-datatable store)))
+        (t (store:datatable store)))
     (if (table? t)
       (begin
         (store:grab!)
@@ -192,7 +192,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       #f)))
 
 (define (store-timestamp store id)
-  (let ((t (store-datatable store)))
+  (let ((t (store:datatable store)))
     (if (table? t)
       (begin
         (store:grab!)

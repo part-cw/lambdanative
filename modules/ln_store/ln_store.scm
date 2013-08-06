@@ -67,27 +67,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (destroy-store! name) (table-set! store:list name))
 
-(define (store-datatable name)
+(define (store:datatable name)
   (let ((p (table-ref store:list name #f)))
     (if p (vector-ref p 0) #f)))
 
-(define (store-categorytable name)
+(define (store:categorytable name)
   (let ((p (table-ref store:list name #f)))
     (if p (vector-ref p 1) #f)))
 
-(define (store-wdatatable name)
+(define (store:wdatatable name)
   (let ((p (table-ref store:list name #f)))
     (if p (vector-ref p 2) #f)))
 
-(define (store-wscalingtable name)
+(define (store:wscalingtable name)
   (let ((p (table-ref store:list name #f)))
     (if p (vector-ref p 3) #f)))
 
-(define (store-instancetable name)
+(define (store:instancetable name)
   (let ((p (table-ref store:list name #f)))
     (if p (vector-ref p 4) #f)))
 
-(define (store-rawtable name)
+(define (store:rawtable name)
   (let ((p (table-ref store:list name #f)))
     (if p (vector-ref p 5) #f)))
 
