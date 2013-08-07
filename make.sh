@@ -41,6 +41,12 @@
 
 . ./SETUP
 
+if [ -f eval.log ]; then
+  rm eval.log
+fi
+
+state=
+
 #########################
 # general functions
 
@@ -56,7 +62,8 @@ veval()
     echo "$1"
     eval $1
   else 
-    eval $1 > /dev/null
+    echo "$1" > eval.log
+    eval $1 >> eval.log 2>&1
   fi
 }
 
@@ -86,9 +93,41 @@ rmifexists()
   fi
 }
 
+# try to prevent a failed build from contaminating next make
+resetstate()
+{
+  if [ ! "X$state" = "X" ]; then
+    case $state in
+      ARTWORK)
+       file=`locatefile apps/$SYS_APPNAME/artwork.eps silent`
+       if [ -f $file ]; then
+         touch $file
+       fi
+      ;;
+      STRINGS)
+       file=$SYS_PREFIXROOT/build/$SYS_APPNAME/strings/strings_include.scm
+       rmifexists $file
+       ;;
+      FONTS)
+       file=$SYS_PREFIXROOT/build/$SYS_APPNAME/fonts/fonts_include.scm
+       rmifexists $file
+       ;;
+      TEXTURES)
+       file=$SYS_PREFIXROOT/build/$SYS_APPNAME/textures/textures_include.scm
+       rmifexists $file
+       ;;
+    esac
+  fi
+  state=
+} 
+
 assertfile()
 {
   if [ ! -e "$1" ]; then
+    if [ -f eval.log ]; then
+      cat eval.log | sed '/^$/d'
+    fi
+    resetstate
     echo "ERROR: failed on file $1" 1>&2
     exit 1
   fi
@@ -97,6 +136,10 @@ assertfile()
 asserterror()
 {
   if [ ! $1 = 0 ]; then
+    if [ -f eval.log ]; then
+      cat eval.log | sed '/^$/d'
+    fi
+    resetstate
     echo "ERROR: failed with exit code $1" 1>&2
     exit 1
   fi
@@ -434,6 +477,7 @@ explode_library()
 
 make_artwork()
 {
+  state=ARTWORK
   echo "==> creating artwork needed for $SYS_APPNAME.."
   objsrc=`locatefile "apps/$SYS_APPNAME/artwork.obj"`
   epssrc=`echo "$objsrc" | sed 's/obj$/eps/'`
@@ -488,10 +532,12 @@ make_artwork()
     convert -size 640x1136 xc:black $tgt
   fi
   assertfile $tgt
+  state=
 }
 
 make_textures()
 {
+  state=TEXTURES
   echo "==> creating textures needed for $SYS_APPNAME.."
   srcdir=`locatedir apps/$SYS_APPNAME/textures silent`
   if [ "X" == "X$srcdir" ]; then 
@@ -528,10 +574,12 @@ make_textures()
       touch $incfile
     fi
   fi
+  state=
 }
 
 make_fonts()
 {
+  state=FONTS
   echo "==> creating fonts needed for $SYS_APPNAME.."
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/fonts
   mkdir -p $tgtdir
@@ -562,6 +610,7 @@ make_fonts()
       echo ";; eof" >> $incfile
     fi
   fi
+  state=
 }
 
 make_string_aux()
@@ -614,6 +663,7 @@ __EOF
 
 make_strings()
 {
+  state=STRINGS
   echo "==> creating strings needed for $SYS_APPNAME.."
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/strings
   mkdir -p $tgtdir
@@ -649,6 +699,7 @@ make_strings()
       echo ";; eof" >> $incfile
     fi 
   fi
+  state=
 }
 
 ###################################
@@ -656,6 +707,7 @@ make_strings()
 
 make_setup()
 {
+  state=SETUP
   profile=`locatefile PROFILE`
   assertfile "$profile"
   . "$profile"
@@ -825,10 +877,12 @@ make_setup()
   ac_subst SYS_BUILDHASH
   ac_subst SYS_BUILDEPOCH
   ac_output CONFIG.h $SYS_PREFIX/include/CONFIG.h
+  state=
 }
 
 make_bootstrap()
 { 
+  state=BOOTSTRAP
   locaseappname=`echo $SYS_APPNAME | tr A-Z a-z`
   here=`pwd`
   echo "==> creating $SYS_PLATFORM bootstrap needed for $SYS_APPNAME.."
@@ -1022,8 +1076,7 @@ android)
     fi
   done
   echo " => compiling application.."
-  #don't use veval here otherwise all error messages are lost
-  ant -quiet release
+  veval "ant -quiet release"
   asserterror $?
   cd $here
   pkgfile="$tmpdir/bin/$(echo $SYS_APPNAME)-release-unsigned.apk"
@@ -1291,6 +1344,7 @@ openbsd)
   exit 1
 esac
   echo "=== $SYS_PREFIX/$SYS_APPNAME$SYS_APPFIX" 
+  state=
 }
 
 ###################################
@@ -1298,6 +1352,7 @@ esac
 
 make_payload()
 {
+  state=PAYLOAD
   name=$SYS_APPNAME
   here=`pwd`
   appdir=`locatedir apps/$name`
@@ -1346,6 +1401,7 @@ make_payload()
     fi
   done
   compile_payload $name "$srcs" "$libs"
+  state=
 }
 
 make_clean()
@@ -1587,5 +1643,9 @@ info)
   usage
 ;;
 esac
+
+if [ -f eval.log ]; then
+  rm eval.log
+fi
 
 #eof
