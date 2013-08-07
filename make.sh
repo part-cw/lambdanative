@@ -997,7 +997,7 @@ android)
   # Helper for adding module specific Java code to app
   ac_java_sedsub=
   ac_java_subst(){
-    newcmd="echo \"s|@${1}@|\$${1}\n@${1}@|g;\""
+    newcmd="echo \"s|@${1}@|\$${1}@${1}@|g;\""
     newsub=`eval $newcmd`
     ac_java_sedsub="${ac_java_sedsub}${newsub}"
   }
@@ -1015,7 +1015,9 @@ android)
       ac_java_subst ANDROID_ONRESUME
       ac_java_subst ANDROID_ONSENSORCHANGED
       ac_java_subst ANDROID_ACTIVITYADDITIONS
-      sed -i "$ac_java_sedsub" $hookfile
+      tmphookfile=$hookfile.tmp
+      sed -e "$ac_java_sedsub" $hookfile > $tmphookfile
+      mv $tmphookfile $hookfile
       ANDROID_IMPLEMENTS=
     fi
   done
@@ -1063,7 +1065,9 @@ android)
     jnifile=`locatefile modules/$m/ANDROID.c.in silent`
     if [ -f "$jnifile" ]; then
       cat $jnifile >> $tmpdir/jni/bootstrap.c
-      sed -i "$ac_sedsub" $tmpdir/jni/bootstrap.c
+      tmpbootstrap=bootstrap.tmp 
+      sed -e "$ac_sedsub" $tmpdir/jni/bootstrap.c > $tmpbootstrap
+      mv $tmpbootstrap $tmpdir/jni/bootstrap.c
     fi
   done
   cd $tmpdir
