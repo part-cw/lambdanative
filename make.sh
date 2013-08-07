@@ -41,8 +41,10 @@
 
 . ./SETUP
 
-if [ -f eval.log ]; then
-  rm eval.log
+evallog=`pwd`"/eval.log"
+
+if [ -f $evallog ]; then
+  rm $evallog
 fi
 
 state=
@@ -62,8 +64,8 @@ veval()
     echo "$1"
     eval $1
   else 
-    echo "$1" > eval.log
-    eval $1 >> eval.log 2>&1
+    echo "$1" > $evallog
+    eval $1 >> $evallog 2>&1
   fi
 }
 
@@ -124,8 +126,8 @@ resetstate()
 assertfile()
 {
   if [ ! -e "$1" ]; then
-    if [ -f eval.log ]; then
-      cat eval.log | sed '/^$/d'
+    if [ -f $evallog ]; then
+      cat $evallog | sed '/^$/d'
     fi
     resetstate
     echo "ERROR: failed on file $1" 1>&2
@@ -136,8 +138,8 @@ assertfile()
 asserterror()
 {
   if [ ! $1 = 0 ]; then
-    if [ -f eval.log ]; then
-      cat eval.log | sed '/^$/d'
+    if [ -f $evallog ]; then
+      cat $evallog | sed '/^$/d'
     fi
     resetstate
     echo "ERROR: failed with exit code $1" 1>&2
@@ -1648,8 +1650,8 @@ info)
 ;;
 esac
 
-if [ -f eval.log ]; then
-  rm eval.log
+if [ -f $evallog ]; then
+  rm $evallog
 fi
 
 #eof
