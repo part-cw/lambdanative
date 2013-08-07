@@ -121,7 +121,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (trendoutput:start store instance)
   )))
 
-(define (trendoutput:run store instance)
+(define (trendoutput:caserun store instance)
   (if (and (store-ref store "CaseID" #f)
            ;; forget disk space for now
            #t ;; (> (store-ref store "DiskSpace" 0) 0)
@@ -143,7 +143,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   #t)
 
 ;; register the plugin
-(plugin-register "trendoutput" trendoutput:init trendoutput:caseinit trendoutput:run 
+(plugin-register "trendoutput" trendoutput:init trendoutput:caseinit trendoutput:caserun 
                  trendoutput:caseend trendoutput:end 'output)
 
 ;; eof

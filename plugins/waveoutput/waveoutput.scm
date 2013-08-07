@@ -95,7 +95,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (waveoutput:start store instance))
   ))
 
-(define (waveoutput:run store instance)
+(define (waveoutput:caserun store instance)
   (if (and (store-ref store "CaseID" #f)
            ;; forget disk space for now
            #t ;; (> (store-ref store "DiskSpace" 0) 0)
@@ -113,7 +113,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (if (instance-refvar store instance "Handle" #f) (waveoutput:stop store instance))
   #t)
 
-(plugin-register "waveoutput" waveoutput:init waveoutput:caseinit waveoutput:run 
+(plugin-register "waveoutput" waveoutput:init waveoutput:caseinit waveoutput:caserun 
                  waveoutput:caseend waveoutput:end 'output)
 
 ;; eof
