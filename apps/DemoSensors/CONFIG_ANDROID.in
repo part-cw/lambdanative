@@ -1,11 +1,6 @@
 # android manifest
-# Christian Leth Petersen 2012
-# -----
 # 
-# enable real-time audio (OpenSL based)
-# if enabled, must include rtaudio module!
-# #define RTAUDIO 1
-#
+# Note: sensor permissions are automatically appended to the manifest
 #
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -25,10 +20,5 @@
             </intent-filter>
         </activity>
     </application>
-#    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-#    <uses-permission android:name="android.permission.INTERNET"/>
-#    <uses-permission android:name="android.permission.BATTERY_STATS" />
-#    <uses-permission android:name="android.permission.WAVE_LOCK" />
-#    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 </manifest> 
 # eof

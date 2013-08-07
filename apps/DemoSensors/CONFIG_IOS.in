@@ -1,22 +1,10 @@
 # iphone options for plist and bootstrap)
 # To activate, uncomment (plist) or add + after hash (bootstrap)
 ########################
-#
 # bootstrap options
 #
 # don't allow the screen to lock
 #+ #define USE_NOLOCK
-#
-# load last image on startup
-# #define USE_CAMERAROLL
-#
-# execute audioinit at startup
-# #define USE_AUDIOINIT
-# beef volume to max at startup (sensor related)
-# #define USE_AUDIOVOLUMEINIT
-#
-# generate device orientation events
-# #define USE_ORIENTATION
 #
 #+ #define USE_GYROSCOPE
 #
@@ -71,30 +59,15 @@
 ### hide top status bar
 <key>UIStatusBarHidden</key>
 <true/>
-### prevent auto-shading of icon
-#<key>UIPrerenderedIcon</key>
-#<true/>
 ### allow files to be accessed from iTunes
 <key>UIFileSharingEnabled</key>
 <true/>
-### allow wifi when asleep
-#<key>UIRequiresPersistentWiFi</key>
-#<true/>
-### allow wifi/audio when in background 
-#<key>UIBackgroundModes</key>
-#<array>
-#<string>voip</string>
-#<string>audio</string>
-#</array>
 ### require specific hardware
 <key>UIRequiredDeviceCapabilities</key> 
 <array> 
 <string>accelerometer</string> 
 <string>gyroscope</string> 
 </array>
-### yes, exit on exit, really 
-#<key>UIApplicationExitsOnSuspend</key> 
-#<true/>
 </dict>
 </plist>
 #eof
