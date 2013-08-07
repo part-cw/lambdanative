@@ -479,8 +479,12 @@ make_artwork()
 {
   state=ARTWORK
   echo "==> creating artwork needed for $SYS_APPNAME.."
-  objsrc=`locatefile "apps/$SYS_APPNAME/artwork.obj"`
-  epssrc=`echo "$objsrc" | sed 's/obj$/eps/'`
+  objsrc=`locatefile "apps/$SYS_APPNAME/artwork.obj" silent`
+  epssrc=`locatefile "apps/$SYS_APPNAME/artwork.eps" silent`
+  if [ "X$epssrc" = "X" ]; then
+    assertfile $objsrc
+    epssrc=`echo $objsrc | sed 's/obj$/eps/'`
+  fi
   if [ `isnewer $objsrc $epssrc` = "yes" ]; then
     if [ ! "X$objsrc" = "X" ]; then
       assertfile $objsrc
