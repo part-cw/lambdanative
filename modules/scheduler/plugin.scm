@@ -53,27 +53,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     )
   ))
 
-(define (plugin-start name)
+(define (plugin:start name)
   (let ((p (assoc name plugin:list)))
     (if (list? p) (list-ref p 1) #f)))
 
-(define (plugin-casestart name)
+(define (plugin:casestart name)
   (let ((p (assoc name plugin:list)))
     (if (list? p) (list-ref p 2) #f)))
 
-(define (plugin-run name)
+(define (plugin:run name)
   (let ((p (assoc name plugin:list)))
     (if (list? p) (list-ref p 3) #f)))
 
-(define (plugin-caseend name)
+(define (plugin:caseend name)
   (let ((p (assoc name plugin:list)))
     (if (list? p) (list-ref p 4) #f)))
 
-(define (plugin-end name)
+(define (plugin:end name)
   (let ((p (assoc name plugin:list)))
     (if (list? p) (list-ref p 5) #f)))
 
-(define (plugin-type name)
+(define (plugin:type name)
   (let ((p (assoc name plugin:list)))
     (if (list? p) (list-ref p 6) #f)))
 

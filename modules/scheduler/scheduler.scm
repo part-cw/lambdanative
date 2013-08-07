@@ -75,10 +75,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (= (length sl) 0)
       ret
       (loop (cdr sl) (and ret
-        (let loop2 ((is (instance-allinputs (car sl)))(ret2 #t))
+        (let loop2 ((is (instance:allinputs (car sl)))(ret2 #t))
           (if (= (length is) 0)
             ret2
-            (loop2 (cdr is) (and ret2 (instance-run (car sl) (car is))))
+            (loop2 (cdr is) (and ret2 (instance:run (car sl) (car is))))
           )
         )
       ))
@@ -110,9 +110,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (store-set! s "CaseID" n)
          (store-set! s "Start" now)
          (store-set! s "StartStr" nowstr)
-         (let loop2 ((is (instance-all s)))
+         (let loop2 ((is (instance:all s)))
            (if (> (length is) 0) (begin
-             (instance-caseinit s (car is))
+             (instance:caseinit s (car is))
              (loop2 (cdr is))
            ))
          )
@@ -127,9 +127,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (= (length sl) 0)
       (set! scheduler:pendingend '())
       (begin
-        (let loop2 ((is (instance-all (car sl))))
+        (let loop2 ((is (instance:all (car sl))))
           (if (> (length is) 0) (begin
-            (instance-caseend (car sl) (car is))
+            (instance:caseend (car sl) (car is))
             (loop2 (cdr is))
           ))
         )
@@ -155,9 +155,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (scheduler:log 2 "initializing all instances")
   (let loop ((sl (store-list)))
     (if (> (length sl) 0) (begin
-      (let loop2 ((is (instance-all (car sl))))
+      (let loop2 ((is (instance:all (car sl))))
          (if (> (length is) 0) (begin
-           (instance-init (car sl) (car is))
+           (instance:init (car sl) (car is))
            (loop2 (cdr is))
          ))
       )
@@ -197,24 +197,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (if (= (length guiwaveproc) 1) ((car guiwaveproc)))
 
             ;; run all algorithms, even if case not active
-            (let algloop ((is (instance-allalgs (car sl))))
+            (let algloop ((is (instance:allalgs (car sl))))
               (if (> (length is) 0) (begin
-                (instance-run (car sl) (car is))
+                (instance:run (car sl) (car is))
                 (algloop (cdr is))
               ))
             )
             (if (store-ref (car sl) "CaseID" #f) (begin
               ;; run all dse instances
-              (let dseloop ((is (instance-alldses (car sl))))
+              (let dseloop ((is (instance:alldses (car sl))))
                 (if (> (length is) 0) (begin
-                  (instance-run (car sl) (car is))
+                  (instance:run (car sl) (car is))
                   (dseloop (cdr is))
                 ))
               )
               ;; run all output instances
-              (let outloop ((is (instance-alloutputs (car sl))))
+              (let outloop ((is (instance:alloutputs (car sl))))
                 (if (> (length is) 0) (begin
-                  (instance-run (car sl) (car is))
+                  (instance:run (car sl) (car is))
                   (outloop (cdr is))
                 ))
               )
@@ -236,10 +236,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let loop ((sl (store-list)))
     (if (> (length sl) 0)
       (begin
-        (let loop2 ((is (instance-all (car sl))))
+        (let loop2 ((is (instance:all (car sl))))
           (if (> (length is) 0)
             (begin
-              (instance-end (car sl) (car is))
+              (instance:end (car sl) (car is))
               (loop2 (cdr is))
             )
           )
