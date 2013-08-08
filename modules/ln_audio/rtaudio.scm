@@ -196,8 +196,8 @@ error:
   return;
 }
 
-void rtaudio_stop(void) 
-{ 
+void rtaudio_stop(void) { 
+  if (rtaudio_closecb) rtaudio_closecb();
   Pa_StopStream( stream );
 }
 
@@ -220,8 +220,8 @@ void rtaudio_start(int s2, double volume)
   if (rtaudio_initcb) rtaudio_initcb(s2);
 }
 
-void rtaudio_stop(void) 
-{ 
+void rtaudio_stop(void) { 
+if (rtaudio_closecb) rtaudio_closecb();
 #ifdef RTAUDIO
   opensl_on = 0;
 #endif
