@@ -47,8 +47,6 @@ if [ -f $evallog ]; then
   rm $evallog
 fi
 
-state=
-
 #########################
 # general functions
 
@@ -95,10 +93,25 @@ rmifexists()
   fi
 }
 
-# try to prevent a failed build from contaminating next make
+###############################
+# keep track of state to reset partial builds
+
+statefile=`pwd`"/make.state"
+
+setstate()
+{
+  echo "state=$1" > $statefile
+}
+
 resetstate()
 {
+  state=
+  if [ -f $statefile ]; then
+    . $statefile
+    rm $statefile
+  fi
   if [ ! "X$state" = "X" ]; then
+    echo " ** WARNING: previous build aborted unexpectantly in state: $state"
     case $state in
       ARTWORK)
        file=`locatefile apps/$SYS_APPNAME/artwork.eps silent`
@@ -107,21 +120,23 @@ resetstate()
        fi
       ;;
       STRINGS)
-       file=$SYS_PREFIXROOT/build/$SYS_APPNAME/strings/strings_include.scm
+       file="$SYS_PREFIXROOT/build/$SYS_APPNAME/strings/strings_include.scm"
        rmifexists $file
        ;;
       FONTS)
-       file=$SYS_PREFIXROOT/build/$SYS_APPNAME/fonts/fonts_include.scm
+       file="$SYS_PREFIXROOT/build/$SYS_APPNAME/fonts/fonts_include.scm"
        rmifexists $file
        ;;
       TEXTURES)
-       file=$SYS_PREFIXROOT/build/$SYS_APPNAME/textures/textures_include.scm
+       file="$SYS_PREFIXROOT/build/$SYS_APPNAME/textures/textures_include.scm"
        rmifexists $file
        ;;
     esac
   fi
-  state=
 } 
+
+#################################
+# abort on missing files and errors
 
 assertfile()
 {
@@ -129,7 +144,6 @@ assertfile()
     if [ -f $evallog ]; then
       cat $evallog | sed '/^$/d'
     fi
-    resetstate
     echo "ERROR: failed on file $1" 1>&2
     exit 1
   fi
@@ -141,11 +155,13 @@ asserterror()
     if [ -f $evallog ]; then
       cat $evallog | sed '/^$/d'
     fi
-    resetstate
     echo "ERROR: failed with exit code $1" 1>&2
     exit 1
   fi
 }
+
+#################################
+# misc file and directory support
 
 stringhash()
 {
@@ -245,6 +261,9 @@ wildcard_dir()
   find $1 -maxdepth 0 -print |sort -r| head -n 1
 }
 
+#################################
+# autoconf-like parameter substitution
+
 ac_sedsub=
 
 ac_subst()
@@ -266,6 +285,9 @@ ac_output()
   cat $infile | sed "$ac_sedsub" > $outfile
   assertfile $outfile
 }
+
+#################################
+# misc source code checks
 
 has_module()
 {
@@ -479,7 +501,7 @@ explode_library()
 
 make_artwork()
 {
-  state=ARTWORK
+  setstate ARTWORK
   echo "==> creating artwork needed for $SYS_APPNAME.."
   objsrc=`locatefile "apps/$SYS_APPNAME/artwork.obj" silent`
   epssrc=`locatefile "apps/$SYS_APPNAME/artwork.eps" silent`
@@ -538,12 +560,12 @@ make_artwork()
     convert -size 640x1136 xc:black $tgt
   fi
   assertfile $tgt
-  state=
+  setstate
 }
 
 make_textures()
 {
-  state=TEXTURES
+  setstate TEXTURES
   echo "==> creating textures needed for $SYS_APPNAME.."
   srcdir=`locatedir apps/$SYS_APPNAME/textures silent`
   if [ "X" == "X$srcdir" ]; then 
@@ -580,12 +602,12 @@ make_textures()
       touch $incfile
     fi
   fi
-  state=
+  setstate
 }
 
 make_fonts()
 {
-  state=FONTS
+  setstate FONTS
   echo "==> creating fonts needed for $SYS_APPNAME.."
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/fonts
   mkdir -p $tgtdir
@@ -616,7 +638,7 @@ make_fonts()
       echo ";; eof" >> $incfile
     fi
   fi
-  state=
+  setstate
 }
 
 make_string_aux()
@@ -669,7 +691,7 @@ __EOF
 
 make_strings()
 {
-  state=STRINGS
+  setstate STRINGS
   echo "==> creating strings needed for $SYS_APPNAME.."
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/strings
   mkdir -p $tgtdir
@@ -705,7 +727,7 @@ make_strings()
       echo ";; eof" >> $incfile
     fi 
   fi
-  state=
+  setstate
 }
 
 ###################################
@@ -713,7 +735,6 @@ make_strings()
 
 make_setup()
 {
-  state=SETUP
   profile=`locatefile PROFILE`
   assertfile "$profile"
   . "$profile"
@@ -883,12 +904,11 @@ make_setup()
   ac_subst SYS_BUILDHASH
   ac_subst SYS_BUILDEPOCH
   ac_output CONFIG.h $SYS_PREFIX/include/CONFIG.h
-  state=
 }
 
 make_bootstrap()
 { 
-  state=BOOTSTRAP
+  setstate BOOTSTRAP
   locaseappname=`echo $SYS_APPNAME | tr A-Z a-z`
   here=`pwd`
   echo "==> creating $SYS_PLATFORM bootstrap needed for $SYS_APPNAME.."
@@ -1354,7 +1374,7 @@ openbsd)
   exit 1
 esac
   echo "=== $SYS_PREFIX/$SYS_APPNAME$SYS_APPFIX" 
-  state=
+  setstate
 }
 
 ###################################
@@ -1362,7 +1382,7 @@ esac
 
 make_payload()
 {
-  state=PAYLOAD
+  setstate PAYLOAD
   name=$SYS_APPNAME
   here=`pwd`
   appdir=`locatedir apps/$name`
@@ -1411,7 +1431,7 @@ make_payload()
     fi
   done
   compile_payload $name "$srcs" "$libs"
-  state=
+  setstate
 }
 
 make_clean()
@@ -1593,8 +1613,11 @@ usage()
 ##############################
 # main dispatcher
 
-
 make_setup
+
+# try to prevent a failed build from contaminating next make
+# this has to be called after make_setup
+resetstate
 
 case "$1" in
 clean) 
@@ -1657,5 +1680,8 @@ esac
 if [ -f $evallog ]; then
   rm $evallog
 fi
+
+# all is well if we got here, so clear the state cache
+resetstate
 
 #eof
