@@ -1,0 +1,102 @@
+# iphone options for plist and bootstrap)
+# To activate, uncomment (plist) or add + after hash (bootstrap)
+########################
+#
+# bootstrap options
+#
+# don't allow the screen to lock
+#+ #define USE_NOLOCK
+#
+# load last image on startup
+# #define USE_CAMERAROLL
+#
+# execute audioinit at startup
+# #define USE_AUDIOINIT
+# beef volume to max at startup (sensor related)
+# #define USE_AUDIOVOLUMEINIT
+#
+# generate device orientation events
+# #define USE_ORIENTATION
+#
+#+ #define USE_MULTITOUCH
+#
+# #define USE_GYROSCOPE
+#
+#########################
+#
+# plist
+#
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+<key>CFBundleDevelopmentRegion</key>
+<string>English</string>
+<key>CFBundleExecutable</key>
+<string>@SYS_APPNAME@</string>
+<key>CFBundleIdentifier</key>
+<string>@SYS_ORGID@.@SYS_APPNAME@</string>
+<key>CFBundleInfoDictionaryVersion</key>
+<string>6.0</string>
+<key>CFBundleLongVersionString</key>
+<string></string>
+<key>CFBundlePackageType</key>
+<string>APPL</string>
+<key>CFBundleResourceSpecification</key>
+<string>ResourceRules.plist</string>
+<key>CFBundleSignature</key>
+<string>????</string>
+<key>CFBundleSupportedPlatforms</key>
+<array>
+<string>iPhoneOS</string>
+</array>
+<key>CFBundleVersion</key>
+<string>@SYS_APPVERSION@</string>
+# note: CFBundleDisplayName is REQUIRED for file sharing to work!
+<key>CFBundleDisplayName</key>
+<string>@SYS_APPNAME@</string>
+<key>CSResourcesFileMapped</key>
+<true/>
+<key>LSRequiresCarbon</key>
+<true/>
+<key>MinimumOSVersion</key>
+<string>4.3</string>
+<key>NSHumanReadableCopyright</key>
+<string></string>
+<key>CFBundleIconFiles</key>
+<array>
+<string>Icon.png</string>
+<string>Icon@2x.png</string>
+<string>Icon-72.png</string>
+<string>Icon-72@2x.png</string>
+</array>
+### hide top status bar
+<key>UIStatusBarHidden</key>
+<true/>
+### prevent auto-shading of icon
+#<key>UIPrerenderedIcon</key>
+#<true/>
+### allow files to be accessed from iTunes
+<key>UIFileSharingEnabled</key>
+<true/>
+### allow wifi when asleep
+#<key>UIRequiresPersistentWiFi</key>
+#<true/>
+### allow wifi/audio when in background 
+#<key>UIBackgroundModes</key>
+#<array>
+#<string>voip</string>
+#<string>audio</string>
+#</array>
+### require specific hardware
+<key>UIRequiredDeviceCapabilities</key> 
+<array> 
+<string>accelerometer</string> 
+<string>gyroscope</string> 
+</array>
+### yes, exit on exit, really 
+#<key>UIApplicationExitsOnSuspend</key> 
+#<true/>
+</dict>
+</plist>
+#eof
