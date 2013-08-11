@@ -11,7 +11,7 @@ if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
   fi
   tgt=@SYS_HOSTPREFIX@/bin/ttffnt2scm@SYS_EXEFIX@
   src=ttffnt2scm.c
-  if [ $src -nt $tgt ]; then
+  if [ ! -e $tgt ] || [ $src -nt $tgt ]; then
     echo " => $tgt.."
     gcc -Wall $FTINC -c $COMMON_SRCS
     gcc -o $tgt $COMMON_OBJS $src $EXTRALD $FTLIB -lm
@@ -19,7 +19,7 @@ if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
   fi
   tgt=@SYS_HOSTPREFIX@/bin/ttfstr2scm@SYS_EXEFIX@
   src=ttfstr2scm.c
-  if [ $src -nt $tgt ]; then
+  if [ ! -e $tgt ] || [ $src -nt $tgt ]; then
     echo " => $tgt.."
     gcc -O2 -DRENDERSTRING -Wall $FTINC -c $COMMON_SRCS
     gcc -O2 -DRENDERSTRING -o $tgt $COMMON_OBJS $src $EXTRALD $FTLIB -lm
@@ -27,7 +27,7 @@ if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
   fi
   tgt=@SYS_HOSTPREFIX@/bin/ttfname@SYS_EXEFIX@
   src=ttfname.c
-  if [ $src -nt $tgt ]; then
+  if [ ! -e $tgt ] || [ $src -nt $tgt ]; then
     echo " => $tgt.."
     gcc -O2 -Wall -o $tgt $src $FTINC $EXTRALD $FTLIB -lm
   fi
