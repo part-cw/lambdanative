@@ -198,18 +198,22 @@ newersourceindir()
 newerindir()
 {
   result="no"
-  tgt="$2"
-  if [ -d $1 ]; then
-    dir=$1
+  if [ ! -e "$2" ]; then
+    result=yes
   else
-    dir=`dirname $1`
-  fi
-  srcfiles=`ls -1 $dir/*`
-  for src in $srcfiles; do
-    if `test "$src" -nt "$tgt"`; then
-      result="yes"
+    tgt="$2"
+    if [ -d $1 ]; then
+      dir=$1
+    else
+      dir=`dirname $1`
     fi
-  done
+    srcfiles=`ls -1 $dir/*`
+    for src in $srcfiles; do
+      if `test "$src" -nt "$tgt"`; then
+        result="yes"
+      fi
+    done
+  fi
   echo $result
 }
 
