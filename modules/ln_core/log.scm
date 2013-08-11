@@ -77,7 +77,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (log-warning  s . x) (apply log:submit (append (list "WARNING" s) x)))
 
 (define (log-debug  s v . x) 
-  (if (fx>= log:verbose v) (apply log:submit (append (list "DEBUG" s) x))))
+  (if (fx>= v log:verbose) (apply log:submit (append (list "DEBUG" s) x))))
 
 (define (log-folder-cleanup)
   (if log:on (begin
