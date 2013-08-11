@@ -1450,6 +1450,7 @@ make_scrub()
   for platform in $platforms; do
     rmifexists $SYS_PREFIXROOT/$platform
   done
+  rmifexists $SYS_PREFIXROOT/build
 }
 
 make_install()
