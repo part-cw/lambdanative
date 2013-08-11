@@ -120,18 +120,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (tmp (string-split str #\newline)))
     (string-mapconcat (reverse tmp) ": ")))
 
-(define (exception-handler e)
+(define (log:exception-handler e)
   (log-error (thread-name (current-thread)) ": "(exception->string e))
   (log-trace (current-thread))
   (log-error "HALT")
   (exit))
 
 ;; catch primordial thread exceptions
-(current-exception-handler exception-handler)
+(current-exception-handler log:exception-handler)
 
 ;; catch exceptions in threads
 (define (make-safe-thread p . name)
-  (let ((p2 (lambda () (current-exception-handler exception-handler) (p))))
+  (let ((p2 (lambda () (current-exception-handler log:exception-handler) (p))))
     (make-thread p2 (if (fx= (length name) 1) (car name) 'unnamed_thread))))
 
 ;; trim files in log directory
