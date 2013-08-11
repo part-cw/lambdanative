@@ -140,7 +140,7 @@ resetstate()
 
 assertfile()
 {
-  if [ ! -e "$1" ]; then
+  if [ ! -s "$1" ]; then
     if [ -f $evallog ]; then
       cat $evallog | sed '/^$/d'
     fi
@@ -631,6 +631,7 @@ make_fonts()
           if [ `isnewer $srcfile $scmfile` = "yes" ]; then
              echo " => $name.."
              $SYS_HOSTPREFIX/bin/ttffnt2scm $font $bits $sizes $name > $scmfile
+             assertfile $scmfile
           fi
           echo "(include \"$scmfile\")" >> $incfile
         fi
@@ -720,6 +721,7 @@ make_strings()
 #           echo "$SYS_HOSTPREFIX/bin/ttfstr2scm $font $size \"$label\" $name > $scmfile"
 #             $SYS_HOSTPREFIX/bin/ttfstr2scm $font $size "$label" $name > $scmfile
              make_string_aux $font $size "$label" $name $opt > $scmfile
+             assertfile $scmfile
           fi
           echo "(include \"$scmfile\")" >> $incfile
         fi
