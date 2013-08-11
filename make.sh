@@ -659,7 +659,8 @@ make_string_aux()
   size=$2
   string="$3"
   name=$4
-  opt="$5"
+  scmfile="$5"
+  opt="$6"
 cat > tmp.tex << __EOF
 \documentclass{article}
 \makeatletter 
@@ -676,20 +677,20 @@ cat > tmp.tex << __EOF
 $string
 \end{document}
 __EOF
-  xelatex tmp.tex > /dev/null 2> /dev/null
+  veval "xelatex tmp.tex"
   assertfile tmp.pdf
   if [ "X"`which pdftops 2> /dev/null` = "X" ]; then
-    pdf2ps tmp.pdf > /dev/null 2> /dev/null
+    veval "pdf2ps tmp.pdf"
   else
-    pdftops tmp.pdf > /dev/null 2> /dev/null
+    veval "pdftops tmp.pdf"
   fi
   assertfile tmp.ps
-  ps2eps -B -C tmp.ps > /dev/null 2> /dev/null
+  veval "ps2eps -B -C tmp.ps"
   assertfile tmp.eps
-  gs -r300 -dNOPAUSE -sDEVICE=pnggray -dEPSCrop -sOutputFile=$name.png tmp.eps quit.ps > /dev/null 2> /dev/null
+  veval "gs -r300 -dNOPAUSE -sDEVICE=pnggray -dEPSCrop -sOutputFile=$name.png tmp.eps quit.ps"
   assertfile $name.png
-  convert $name.png  -bordercolor White -border 5x5 -negate -scale 25% $name.png > /dev/null 2> /dev/null
-  $SYS_HOSTPREFIX/bin/png2scm $name.png
+  veval "convert $name.png  -bordercolor White -border 5x5 -negate -scale 25% $name.png"
+  $SYS_HOSTPREFIX/bin/png2scm $name.png > $scmfile
   cd $oldpath
   rm -rf $newpath
 }
@@ -724,7 +725,7 @@ make_strings()
              echo " => $name.."
 #           echo "$SYS_HOSTPREFIX/bin/ttfstr2scm $font $size \"$label\" $name > $scmfile"
 #             $SYS_HOSTPREFIX/bin/ttfstr2scm $font $size "$label" $name > $scmfile
-             make_string_aux $font $size "$label" $name $opt > $scmfile
+             make_string_aux $font $size "$label" $name $scmfile $opt
              assertfile $scmfile
           fi
           echo "(include \"$scmfile\")" >> $incfile
