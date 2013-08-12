@@ -160,6 +160,19 @@ asserterror()
   fi
 }
 
+asserttool()
+{
+  for tool in $@; do
+    if [ "X"`which $tool 2> /dev/null` = "X" ]; then 
+      echo "ERROR: required tool $tool not found." 
+      echo "Please install a package containing this tool before proceeding."
+      exit 1
+    else 
+      vecho "  => $tool.. ok" 
+    fi
+  done
+}
+
 #################################
 # misc file and directory support
 
@@ -1612,6 +1625,29 @@ make_info()
   exit 1
 }
 
+make_toolcheck()
+{
+  echo "==> checking for required tools.."
+  # basic 
+  asserttool grep wget zip tar sed tr cut tail head find
+  # language 
+  asserttool autoconf make gcc patch
+  # graphics 
+  asserttool gs convert xelatex ps2eps freetype-config
+  if [ $SYS_PLATFORM = android ]; then
+    asserttool bc ant
+  fi 
+  if [ $SYS_PLATFORM = ios ]; then
+    asserttool cmake xcodebuild
+  fi 
+  if [ $SYS_PLATFORM = win32 ]; then
+    asserttool pnmquant pngtopnm ppmtowinicon
+  fi 
+  if [ $SYS_PLATFORM = macosx ]; then
+    asserttool tiffutil tiff2icns
+  fi
+}
+
 usage()
 {
   echo "usage: make.sh <clean|tools|resources|libraries|payload|executable|all|install|package|info>"
@@ -1622,6 +1658,7 @@ usage()
 # main dispatcher
 
 make_setup
+make_toolcheck
 
 # try to prevent a failed build from contaminating next make
 # this has to be called after make_setup
