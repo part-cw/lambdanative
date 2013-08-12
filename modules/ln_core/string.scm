@@ -51,7 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           endstr)))
      #f))
 
-(define (string-remove-qoutes str) 
+(define (string-remove-quotes str) 
   (let ((strlength (string-length str)))
     (if (and 
         (fx>= (string-length str) 2)
