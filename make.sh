@@ -1632,7 +1632,8 @@ make_glcheck()
 {
   if [ $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
     echo "==> checking for sane localhost OpenGL setup.."
-    echo "#include <GL/gl.h>\n int main() { glOrtho(0,0,0,0,0,0); }" > gltest.c
+    echo "#include <GL/gl.h>" > gltest.c
+    echo "int main() { glOrtho(0,0,0,0,0,0); }" >> gltest.c
     gcc -Werror -o gltest gltest.c -I/usr/X11/include -L/usr/X11/lib  -lGL 
     asserterror $? "OpenGL headers are missing?"
   fi
