@@ -36,59 +36,59 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 ;; basic multitouch handling
-;; at the moment this only keeps track of two concurrent touches
 
-(define multitouch:touchid0 0)
-(define multitouch:touchid1 0)
-(define multitouch:touchid2 0)
+(define multitouch:timeout 1.0)
 
-(define multitouch:touch1 '(0 0))
-(define multitouch:touch2 '(0 0))
+(define multitouch:table (make-table))
+
+(define multitouch:curid #f)
+(define multitouch:prvid #f)
 
 ;; return true if multitouch is occurring
-(define (multitouch?) (not (= multitouch:touchid1 multitouch:touchid2)))
+(define (multitouch?)
+  (let* ((now (time->seconds (current-time)))
+         (entry1 (if multitouch:curid (table-ref multitouch:table multitouch:curid #f) #f))
+         (entry2 (if multitouch:prvid (table-ref multitouch:table multitouch:prvid #f) #f))
+         (t1 (if entry1 (caddr entry1) 0))
+         (t2 (if entry2 (caddr entry2) 0)))
+    (and (< (- now t1) multitouch:timeout)
+         (< (- now t2) multitouch:timeout))))
 
 ;; multitouch event handler
 (define (multitouch t x y) 
-  ;; new event id
-  (if (= t EVENT_MULTITOUCH) (begin (set! multitouch:present #t) (set! multitouch:touchid0 x)))
-  ;; keep track of two event ids
-  (if (= t EVENT_BUTTON1DOWN)
-    (if (and (= multitouch:touchid1 0) (not (= multitouch:touchid2 multitouch:touchid0))) 
-      (set! multitouch:touchid1 multitouch:touchid0)
-        (if (and (= multitouch:touchid2 0) (not (= multitouch:touchid1 multitouch:touchid0))) 
-          (set! multitouch:touchid2 multitouch:touchid0))))
-  ;; clear current event id
-  (if (= t EVENT_BUTTON1UP)
-    (if (= multitouch:touchid1 multitouch:touchid0) (set! multitouch:touchid1 0)
-      (if (= multitouch:touchid2 multitouch:touchid0) (set! multitouch:touchid2 0))))
-  ;; insert touch coordinates for two ids
-  (if (or (= t EVENT_MOTION) (= t EVENT_BUTTON1DOWN) (= t EVENT_BUTTON1UP))
-    (if (= multitouch:touchid0 multitouch:touchid1) (set! multitouch:touch1 (list x y))
-      (if (= multitouch:touchid0 multitouch:touchid2) (set! multitouch:touch2 (list x y))))))
+  (let ((now (time->seconds (current-time))))
+    (if (= t EVENT_MULTITOUCH) (begin
+       (if (not (eq? x multitouch:curid)) (set! multitouch:prvid multitouch:curid))
+       (set! multitouch:curid x)))
+    (if (= t EVENT_BUTTON1UP) (set! multitouch:curid #f))
+    (if (or (= t EVENT_MOTION) (= t EVENT_BUTTON1DOWN))
+      (table-set! multitouch:table multitouch:curid (list x y now)))
+   ))
 
 ;; return x coordinate of multi-event 0 or 1
 (define (multitouch-x id) 
-  (cond 
-    ((= id 0) (car multitouch:touch1))
-    ((= id 1) (car multitouch:touch2))
-    (else #f)))
+  (if (and multitouch:curid multitouch:prvid)
+    (let ((id1 (min multitouch:curid multitouch:prvid))
+          (id2 (max multitouch:curid multitouch:prvid)))
+      (cond
+        ((= id 0) (car (table-ref multitouch:table id1 '(#f #f #f))))
+        ((= id 1) (car (table-ref multitouch:table id2 '(#f #f #f))))
+        (else #f))) #f))
 
-;; return y coordinate of multi-event 0 or 1
-(define (multitouch-y id) 
-  (cond 
-    ((= id 0) (cadr multitouch:touch1))
-    ((= id 1) (cadr multitouch:touch2))
-    (else #f)))
+(define (multitouch-y id)
+  (if (and multitouch:curid multitouch:prvid)
+    (let ((id1 (min multitouch:curid multitouch:prvid))
+          (id2 (max multitouch:curid multitouch:prvid)))
+      (cond
+        ((= id 0) (cadr (table-ref multitouch:table id1 '(#f #f #f))))
+        ((= id 1) (cadr (table-ref multitouch:table id2 '(#f #f #f))))
+        (else #f))) #f))
 
-;; x coordinate of current touch event
-(define (multitouch-curx) 
-  (if (= multitouch:touchid0 multitouch:touchid1) (car multitouch:touch1)
-    (if (= multitouch:touchid0 multitouch:touchid2) (car multitouch:touch2))))
+;; coordinates of current touch event
+(define (multitouch-curx)
+  (if multitouch:curid (car (table-ref multitouch:table multitouch:curid '(#f #f #f))) #f))
 
-;; y coordinate of current touch event
-(define (multitouch-cury) 
-  (if (= multitouch:touchid0 multitouch:touchid1) (cadr multitouch:touch1)
-    (if (= multitouch:touchid0 multitouch:touchid2) (cadr multitouch:touch2))))
+(define (multitouch-cury)
+  (if multitouch:curid (cadr (table-ref multitouch:table multitouch:curid '(#f #f #f))) #f))
 
 ;; eof
