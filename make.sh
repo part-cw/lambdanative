@@ -156,6 +156,9 @@ asserterror()
       cat $evallog | sed '/^$/d'
     fi
     echo "ERROR: failed with exit code $1" 1>&2
+    if [ ! "X$2" = "X" ]; then 
+      echo ">> $2"
+    fi
     exit 1
   fi
 }
@@ -1625,6 +1628,18 @@ make_info()
   exit 1
 }
 
+make_glcheck()
+{
+  if [ $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
+    echo "==> checking for sane localhost OpenGL setup.."
+    echo "#include <GL/gl.h>\n int main() { glOrtho(0,0,0,0,0,0); }" > gltest.c
+    gcc -Werror -o gltest gltest.c -I/usr/X11/include -L/usr/X11/lib  -lGL 
+    asserterror $? "OpenGL headers are missing?"
+  fi
+  rmifexists gltest
+  rmifexists gltest.c
+}
+
 make_toolcheck()
 {
   echo "==> checking for required tools.."
@@ -1659,6 +1674,7 @@ usage()
 
 make_setup
 make_toolcheck
+make_glcheck
 
 # try to prevent a failed build from contaminating next make
 # this has to be called after make_setup
