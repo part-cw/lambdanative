@@ -168,9 +168,11 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ Sens
   @Override
   protected void onStop() {
     if (isBatteryRegistered){
-      unregisterReceiver(batteryLevelReceiver);
+      try { unregisterReceiver(batteryLevelReceiver); } catch (Exception e) {}
     }
     super.onStop();
+    nativeEvent(14,0,0); // EVENT_CLOSE
+    nativeEvent(127,0,0); // EVENT_TERMINATE
   }
   @Override
   protected void onPause() {
@@ -178,6 +180,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ Sens
     // Additions needed by modules, e.g. gps
     @ANDROID_ONPAUSE@
     mGLView.onPause();
+    nativeEvent(16,0,0); // EVENT_SUSPEND
   }
   @Override
   protected void onResume() {
@@ -185,6 +188,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ Sens
     // Additions needed by modules, e.g. gps
     @ANDROID_ONRESUME@
     mGLView.onResume();
+    nativeEvent(17,0,0); // EVENT_RESUME
   }
   @Override
   public void onConfigurationChanged(Configuration newConfig) {
@@ -325,16 +329,6 @@ class  xGLSurfaceView extends GLSurfaceView {
     renderer = new myRenderer();
     setRenderer(renderer);
   }
-  public void onResume() {
-    renderer.nativeEvent(17,0,0); // EVENT_RESUME
-  }
-  public void onPause() {
-    renderer.nativeEvent(16,0,0); // EVENT_SUSPEND
-  }
-  public void onDestroy() {
-    renderer.nativeEvent(14,0,0); // EVENT_CLOSE
-    renderer.nativeEvent(128,0,0); // EVENT_TERMINATE
-  }
   public boolean onTouchEvent(final MotionEvent event) {
     t=0;
     x=(int)event.getX(); y=(int)event.getY();
@@ -433,9 +427,6 @@ class myRenderer implements GLSurfaceView.Renderer {
     }
    public void onDrawFrame(GL10 gl) { 
    nativeEvent(15,0,0);   // EVENT_REDRAW 
-   // sleep to lower frame rate and yield to input thread - looks unecessary!
-   // try { Thread.sleep(16); } catch (Exception e) { } 
-   // try { Thread.sleep(50); } catch (Exception e) { } 
    }
    public void pointerEvent(int t, int x, int y) { nativeEvent(t,x,(int)height-y); }
    public float width,height;
