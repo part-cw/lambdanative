@@ -144,7 +144,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (u8data:u24->s24 v)
   (if (fx<= v 8388607) v (fx- v 16777216)))
 (define (u8data:u32->s32 v)
-  (if (fx<= v 2147483647) v (fx- v 4294967296)))
+  (if (<= v 2147483647) v (- v 4294967296)))
 
 (define (u8data-u8 buf)
   (u8data-ref buf 0))
