@@ -1641,6 +1641,26 @@ make_glcheck()
   rmifexists gltest.c
 }
 
+make_linux_alsacheck()
+{
+  echo "==> checking for sane ALSA setup.."
+  echo "#include <alsa/asoundlib.h>" > alsatest.c
+  echo "int main() { snd_pcm_hw_params_t *hwparams; snd_pcm_hw_params_alloca(&hwparams); }" >> alsatest.c
+#  echo "int main() { snd_pcm_t *pcm_handle = NULL; const char *device_name = \"default\"; snd_pcm_open (&pcm_handle, device_name, SND_PCM_STREAM_PLAYBACK, 0); snd_pcm_close (pcm_handle); }" >> alsatest.c
+  gcc -Werror -o alsatest alsatest.c -lasound 
+  asserterror $? "ALSA headers are missing?"
+  rmifexists alsatest
+  rmifexists alsatest.c
+}
+
+make_libarycheck(){
+  echo "==> checking for required libraries.."
+  make_glcheck
+  if [ $SYS_PLATFORM = linux ]; then
+    make_linux_alsacheck
+  fi
+}
+
 make_toolcheck()
 {
   echo "==> checking for required tools.."
@@ -1675,7 +1695,7 @@ usage()
 
 make_setup
 make_toolcheck
-make_glcheck
+make_libarycheck
 
 # try to prevent a failed build from contaminating next make
 # this has to be called after make_setup
