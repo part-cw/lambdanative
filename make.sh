@@ -1631,7 +1631,7 @@ make_info()
 make_glcheck()
 {
   if [ $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
-    echo "==> checking for sane localhost OpenGL setup.."
+    echo " => checking for sane localhost OpenGL setup.."
     echo "#include <GL/gl.h>" > gltest.c
     echo "int main() { glOrtho(0,0,0,0,0,0); }" >> gltest.c
     gcc -Werror -o gltest gltest.c -I/usr/X11/include -L/usr/X11/lib  -lGL 
@@ -1643,7 +1643,7 @@ make_glcheck()
 
 make_linux_alsacheck()
 {
-  echo "==> checking for sane ALSA setup.."
+  echo " => checking for sane ALSA setup.."
   echo "#include <alsa/asoundlib.h>" > alsatest.c
   echo "int main() { snd_pcm_hw_params_t *hwparams; snd_pcm_hw_params_alloca(&hwparams); }" >> alsatest.c
 #  echo "int main() { snd_pcm_t *pcm_handle = NULL; const char *device_name = \"default\"; snd_pcm_open (&pcm_handle, device_name, SND_PCM_STREAM_PLAYBACK, 0); snd_pcm_close (pcm_handle); }" >> alsatest.c

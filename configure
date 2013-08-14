@@ -172,3 +172,7 @@ SYS_MODE=$SYS_MODE
 SYS_VERBOSE=$SYS_VERBOSE
 EOF
 
+#cleanup state file
+if [ -f make.state ]; then
+  rm make.state
+fi
