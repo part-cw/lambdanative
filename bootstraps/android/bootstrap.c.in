@@ -44,7 +44,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #include <android/log.h>
 
-#include "CONFIG.h"
+#include <CONFIG.h>
+
+// include defines from CONFIG_ANDROID.in
+#include <config_android.h>
 
 // event hook
 void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_myRenderer_nativeEvent(JNIEnv* e, jobject o, jint t, jint x, jint y){
@@ -56,7 +59,6 @@ void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_nativeEven
   if ((*e)->ExceptionCheck(e)) return;
   ffi_event((int)t,(int)x,(int)y); 
 }
-
 
 // JNI Hooks and Global Objects
 static jobject globalObj=NULL;
@@ -123,27 +125,33 @@ static jmethodID s_play=NULL;
 static jmethodID s_unload=NULL;
 static jmethodID s_volume=NULL;
 static jmethodID s_headphonepresent=NULL;
+static jmethodID s_sdcardpresent=NULL;
 
 void SoundPoolInit()
 {
-  JNIEnv *env = GetJNIEnv();
-  if (env) {
-    soundpool_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/AudioHelper");
-    if (soundpool_class) {
-      jmethodID getInstance = (*env)->GetStaticMethodID(env,soundpool_class, "getInstance", 
-         "()L@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/AudioHelper;");
-      s_load = (*env)->GetMethodID(env,soundpool_class, "LoadSound", "(Ljava/lang/String;I)I");
-      s_play = (*env)->GetMethodID(env,soundpool_class, "PlaySound", "(IFFIIF)I");
-      s_unload = (*env)->GetMethodID(env,soundpool_class, "UnloadSound", "(I)Z");
-      s_volume = (*env)->GetMethodID(env,soundpool_class, "SetVolume", "(F)Z");
-      s_headphonepresent= (*env)->GetMethodID(env,soundpool_class, "HeadphonePresent", "()Z");
-      if (getInstance) {
-        jobject thiz = (*env)->CallStaticObjectMethod(env,soundpool_class, getInstance);
-        s_globalThiz = (*env)->NewGlobalRef(env,thiz);
+  static int needsinit=1;
+  if (needsinit) {
+    JNIEnv *env = GetJNIEnv();
+    if (env) {
+      soundpool_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/AudioHelper");
+      if (soundpool_class) {
+        jmethodID getInstance = (*env)->GetStaticMethodID(env,soundpool_class, "getInstance", 
+           "()L@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/AudioHelper;");
+        s_load = (*env)->GetMethodID(env,soundpool_class, "LoadSound", "(Ljava/lang/String;I)I");
+        s_play = (*env)->GetMethodID(env,soundpool_class, "PlaySound", "(IFFIIF)I");
+        s_unload = (*env)->GetMethodID(env,soundpool_class, "UnloadSound", "(I)Z");
+        s_volume = (*env)->GetMethodID(env,soundpool_class, "SetVolume", "(F)Z");
+        s_headphonepresent= (*env)->GetMethodID(env,soundpool_class, "HeadphonePresent", "()Z");
+//        s_sdcardpresent= (*env)->GetMethodID(env,soundpool_class, "SDCardPresent", "()Z");
+        if (getInstance) {
+          jobject thiz = (*env)->CallStaticObjectMethod(env,soundpool_class, getInstance);
+          s_globalThiz = (*env)->NewGlobalRef(env,thiz);
+        }
       }
+    } else {
+      s_globalThiz=NULL;
     }
-  } else {
-    s_globalThiz=NULL;
+    needsinit=0;
   }
 }
 
@@ -194,6 +202,16 @@ int SoundPoolHeadphonePresent(void)
   JNIEnv *env = GetJNIEnv();
   if (env&&s_globalThiz) {
     return (*env)->CallBooleanMethod(env,s_globalThiz, s_headphonepresent);
+  } else {
+    return 0;
+  }
+}
+
+int SoundPoolSDCardPresent(void)
+{
+  JNIEnv *env = GetJNIEnv();
+  if (env&&s_globalThiz) {
+    return (*env)->CallBooleanMethod(env,s_globalThiz, s_sdcardpresent);
   } else {
     return 0;
   }
@@ -815,12 +833,17 @@ void destroyThreadLock(void *lock)
   free(p);
 }
 
-#define RT_SRATE 8000
-#define BUFFERFRAMES 512
-#define BUFSIZE 512
+// ---------------------------
+// hook into the OpenSL interface
 
-static OPENSL_STREAM  *p;
-int opensl_on=0;
+#define RT_SRATE 8000
+#define BUFFERFRAMES 1024
+#define BUFSIZE 1024
+
+static OPENSL_STREAM  *p=0;
+
+// this is located in the rtaudio.scm file
+extern int opensl_on;
 
 extern void (*rtaudio_initcb)(int);
 extern void (*rtaudio_inputcb)(float);
@@ -829,33 +852,27 @@ extern void (*rtaudio_closecb)(void);
 
 void start_opensl()
 {
-  static double t =0;
   float ival[BUFSIZE],oval[2*BUFSIZE];
-  int i,s;
-  int s2=1;
-
-  while (!rtaudio_initcb) { sleep(1); }
-
+  int i,s; 
   p = android_OpenAudioDevice(RT_SRATE,1,2,BUFFERFRAMES);
-
-  if (rtaudio_initcb) rtaudio_initcb(s2);
-  opensl_on=1;
-  while (opensl_on) {
+  while (p) {
     s = android_AudioIn(p,ival,BUFSIZE);
     for (i=0;i<s;i++) {
-      if (rtaudio_inputcb) rtaudio_inputcb(ival[i]);
-      if (rtaudio_outputcb) rtaudio_outputcb(&oval[2*i],&oval[2*i+1]);
-      t+=1/8000.;
+      if (opensl_on) {
+        if (rtaudio_inputcb) rtaudio_inputcb(ival[i]);
+        if (rtaudio_outputcb) rtaudio_outputcb(&oval[2*i],&oval[2*i+1]);
+      } else {
+        oval[2*i]=oval[2*i+1]=0;
+      }
     }
-//    android_AudioOut(p,oval,2*BUFSIZE);
     android_AudioOut(p,oval,2*s);
   }
-  android_CloseAudioDevice(p);
 }
 
 void stop_opensl()
 {
-  opensl_on = 0;
+  android_CloseAudioDevice(p);
+  p=0;
 }
 
 #endif // RTAUDIO

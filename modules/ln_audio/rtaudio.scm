@@ -206,25 +206,26 @@ void rtaudio_stop(void) {
 // %%%%%%%%%%%%%%%%%%%%%%%%
 #ifdef USE_ANDROIDAUDIO
 
-#ifdef RTAUDIO
-extern int opensl_on;
-#endif
+int opensl_on=0;
 
 void SoundPoolInit(void);
 int SoundPoolSetVolume(float);
 
 void rtaudio_start(int s2, double volume)  
-{ 
-  SoundPoolInit();
-  SoundPoolSetVolume(volume);
-  if (rtaudio_initcb) rtaudio_initcb(s2);
+{
+  static int opensl_needsinit=1;
+  if (opensl_needsinit) {
+    SoundPoolInit();
+    SoundPoolSetVolume(volume);
+    if (rtaudio_initcb) rtaudio_initcb(s2);
+    opensl_needsinit=0;
+  }
+  opensl_on=1;
 }
 
 void rtaudio_stop(void) { 
-if (rtaudio_closecb) rtaudio_closecb();
-#ifdef RTAUDIO
-  opensl_on = 0;
-#endif
+  if (opensl_on&&rtaudio_closecb) rtaudio_closecb();
+  opensl_on=0;
 }
 
 #endif // USE_ANDROIDAUDIO

@@ -62,6 +62,7 @@ end-of-c-declare
 (define EVENT_RESUME ((c-lambda () int "___result = EVENT_RESUME;")))
 (define EVENT_ORIENTATION ((c-lambda () int "___result = EVENT_ORIENTATION;")))
 (define EVENT_MULTITOUCH ((c-lambda () int "___result = EVENT_MULTITOUCH;")))
+(define EVENT_DEBUG ((c-lambda () int "___result = EVENT_DEBUG;")))
 
 ;; keyboard related constants
 (define EVENT_KEYENTER ((c-lambda () int "___result = EVENT_KEYENTER;")))
@@ -150,7 +151,7 @@ end-of-c-declare
           (if (procedure? hook:resume) (hook:resume))
           ))) 
       (else 
-        (if (procedure? hook:event) (hook:event t x y)))
+        (if (and (not app:mustinit) (procedure? hook:event)) (hook:event t x y)))
   )))
   
 (c-define (c-width) () int "scm_width" ""

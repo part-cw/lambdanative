@@ -69,15 +69,13 @@ import android.hardware.SensorManager;
 @ANDROID_IMPORTS@
 
 public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ SensorEventListener{
-//  private GLSurfaceView mGLView;
-  Thread thread;  // OpenSL
+  Thread openSLThread;  // OpenSL real-time sound
   Thread keepAliveThread; //Background events
   private SensorManager mSensorManager;
   //Battery information variables
   private IntentFilter batteryLevelFilter;
   private BroadcastReceiver batteryLevelReceiver;
   boolean isBatteryRegistered = false;
-  private static boolean batteryLevelHasChanged = false;
   private static int batteryLevel = -1;
   //Variable declarations needed for modules, e.g. gps
   @ANDROID_VARIABLES@
@@ -88,9 +86,9 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ Sens
     Thread.setDefaultUncaughtExceptionHandler(
       new Thread.UncaughtExceptionHandler() {
         public void uncaughtException(Thread t, Throwable e) {
-        final String TAG = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@";
-        Log.e(TAG, e.toString()); 
-        try { Thread.sleep(1000); } catch (Exception ex) { }
+          final String TAG = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@";
+          Log.e(TAG, e.toString()); 
+          try { Thread.sleep(1000); } catch (Exception ex) { }
           System.exit(1);
         }
       });
@@ -113,15 +111,8 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ Sens
     keepAliveThread = new Thread(){
       public void run() {
         while (true) {
-          try{
-            sleep(1000);
-          }catch(InterruptedException e){
-          }
-          nativeEvent(15,0,0);
-          if (batteryLevelHasChanged){
-            nativeEvent(32,batteryLevel,0);
-            batteryLevelHasChanged=false;
-          }
+          try{ sleep(1000); }catch(InterruptedException e){ }
+          nativeEvent(15,0,0); // EVENT_REDRAW
         }
       }
     };
@@ -138,49 +129,49 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ Sens
         if (rawlevel >= 0 && scale > 0) {
           batteryLevel = (rawlevel * 100) / scale;
         }
-        // If I call nativeEvent(32,batteryLevel,0) here, this may crash on start before gui is up.
-        batteryLevelHasChanged=true;
+        nativeEvent(32,batteryLevel,0);  // EVENT_BATTERY
       };
     };
     this.registerReceiver(batteryLevelReceiver, batteryLevelFilter);
     isBatteryRegistered = true;
 
-    // openSL
-    thread = new Thread() {
+    // openSL support
+    openSLThread = new Thread() {
       public void run() {
         setPriority(Thread.MAX_PRIORITY);
         nativeStartOpenSL();
       }
     };
-    thread.start();
+    openSLThread.start();
+
     nativeInstanceInit();
   }
   @Override 
   protected void onDestroy() {
-    super.onDestroy();
-    nativeStopOpenSL();
-    try { thread.join(); }
-    catch (InterruptedException e) {
-      // e.printStackTrace();
-    }
-    thread = null;
-  }
-  @Override
-  protected void onStop() {
+    nativeEvent(14,0,0); // EVENT_CLOSE
+    nativeEvent(127,0,0); // EVENT_TERMINATE
     if (isBatteryRegistered){
       try { unregisterReceiver(batteryLevelReceiver); } catch (Exception e) {}
     }
+    nativeStopOpenSL();
+    try { openSLThread.join(); } catch (InterruptedException e) { }
+    openSLThread = null;
+    try { keepAliveThread.join(); } catch (InterruptedException e) { }
+    keepAliveThread = null;
+    super.onDestroy();
+  }
+  @Override
+  protected void onStop() {
+    nativeEvent(16,0,0); // EVENT_SUSPEND
     super.onStop();
-    nativeEvent(14,0,0); // EVENT_CLOSE
-    nativeEvent(127,0,0); // EVENT_TERMINATE
   }
   @Override
   protected void onPause() {
+    nativeEvent(16,0,0); // EVENT_SUSPEND
     super.onPause();
     // Additions needed by modules, e.g. gps
     @ANDROID_ONPAUSE@
     mGLView.onPause();
-    nativeEvent(16,0,0); // EVENT_SUSPEND
   }
   @Override
   protected void onResume() {
@@ -426,7 +417,7 @@ class myRenderer implements GLSurfaceView.Renderer {
       nativeEvent(127,w,h); // EVENT_INIT
     }
    public void onDrawFrame(GL10 gl) { 
-   nativeEvent(15,0,0);   // EVENT_REDRAW 
+     nativeEvent(15,0,0);   // EVENT_REDRAW 
    }
    public void pointerEvent(int t, int x, int y) { nativeEvent(t,x,(int)height-y); }
    public float width,height;

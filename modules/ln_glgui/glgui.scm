@@ -226,10 +226,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; 20100519: allow multiple guis
 ;; 20100804: support gui offset
 (define (glgui-event guis t x0 y0)
-  (if glgui:active 
-  (let ((gs (if (list? guis) guis (list guis))))
-  (if (fx= t EVENT_REDRAW) (apply glgui:render gs)
-    (apply glgui:inputloop (append (list t x0 y0) gs)))
- )))
+  (if (and glgui:active app:width app:height)
+    (let ((gs (if (list? guis) guis (list guis))))
+      (if (fx= t EVENT_REDRAW) (apply glgui:render gs)
+        (apply glgui:inputloop (append (list t x0 y0) gs)))
+   )))
 
 ;; eof

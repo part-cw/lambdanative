@@ -1101,7 +1101,7 @@ android)
     cat bootstraps/android/Android.mk.jni | sed 's/-lOpenSLES//' > $tmpdir/jni/Android.mk
   fi
   cp $SYS_PREFIX/include/CONFIG.h $tmpdir/jni
-  cat $configtgt | sed -n '/^#+/p' | cut -f 2- -d "+" > "$tmpdir/jni/config.h"
+  cat $configtgt | sed -n '/^#+/p' | cut -f 2- -d "+" > "$tmpdir/jni/config_android.h"
   ac_output bootstraps/android/bootstrap.c $tmpdir/jni/bootstrap.c
   # Add module specific C code to end of file
   for m in $modules; do
