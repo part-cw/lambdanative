@@ -121,6 +121,16 @@ static void system_init(void)
   sys_dir = strdup(path);
 #endif
 
+#if defined(LINUX)
+  extern char *linux_sys_appdir;
+  sys_appdir=strdup(linux_sys_appdir);
+#endif
+
+#if defined(WIN32)
+  extern char *win32_sys_appdir;
+  sys_appdir=strdup(win32_sys_appdir);
+#endif
+
 #if defined(ANDROID)
 // we put files on the sdcard, that's the only sane place (?)
   char path[1024];

@@ -98,9 +98,45 @@ void microgl_hook(int t, int x, int y)
 char *cmd_arg1=0;
 #endif
 
+#if defined(LINUX)
+  char *linux_sys_appdir;
+#endif
+#if defined(WIN32)
+  char *win32_sys_appdir;
+#endif
+
 int main(int argc, char *argv[])
 {
   int w=0,h=0;
+
+#if defined(LINUX)
+  char buf[1024];
+  int len=readlink("/proc/self/exe", buf, 1024);
+  if (len>0) {
+    int i;
+    for (i=len;i>0;i--){
+      if (buf[i]=='/') {
+        buf[i]='\0';
+        break;
+      }
+    }
+    linux_sys_appdir=strdup(buf);
+  }
+#endif
+#if defined(WIN32)
+  char buf[1024];
+  int len=GetModuleFileName(NULL,buf,1024);
+  if (len>0) {
+    int i;
+    for (i=len;i>0;i--){
+      if (buf[i]=='\\'){
+        buf[i]='\0';
+        break;
+      }
+    }
+    win32_sys_appdir=strdup(buf);
+  }
+#endif
 
 #ifdef USECONSOLE 
 // 20101007: quick hack to get a command line argument through 

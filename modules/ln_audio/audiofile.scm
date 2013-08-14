@@ -372,7 +372,9 @@ end-of-c-declare
   (let ((file  (cond
           ((string=? (system-platform) "ios") 
              (string-append (system-appdirectory) (system-pathseparator) name ".wav"))
-          ((member (system-platform) '("win32" "linux" "macosx" "openbsd")) 
+          ((member (system-platform) '("win32" "linux"))
+            (string-append (system-appdirectory) (system-pathseparator) "sounds" (system-pathseparator) name ".wav"))
+          ((member (system-platform) '("macosx" "openbsd"))
              (string-append (system-directory) (system-pathseparator) "sounds" (system-pathseparator) name ".wav"))
           ((string=? (system-platform) "android") (string-downcase name))
           (else #f))))
