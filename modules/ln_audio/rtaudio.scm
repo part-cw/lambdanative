@@ -216,7 +216,7 @@ void rtaudio_start(int s2, double volume)
   static int opensl_needsinit=1;
   if (opensl_needsinit) {
     SoundPoolInit();
-    SoundPoolSetVolume(volume);
+    if (volume>=0) SoundPoolSetVolume(volume);
     if (rtaudio_initcb) rtaudio_initcb(s2);
     opensl_needsinit=0;
   }
