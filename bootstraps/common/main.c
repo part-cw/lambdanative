@@ -55,6 +55,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 static int run_flag=1;
+static int int_flag=0;
 
 #ifndef USECONSOLE
 
@@ -65,6 +66,13 @@ static int run_flag=1;
 #if defined(LINUX) || defined(OPENBSD) || defined(WIN32)
 #include <GL/gl.h>
 #endif
+
+// signal handler
+void signal_hook()
+{
+  run_flag=0;
+  int_flag=1;
+}
 
 // event hook
 void microgl_hook(int t, int x, int y)
@@ -173,6 +181,11 @@ int main(int argc, char *argv[])
   // allow payload to initialize
   ffi_event(EVENT_INIT,w,h);
 
+  // handle signals
+  signal(SIGHUP,signal_hook);
+  signal(SIGTERM,signal_hook);
+  signal(SIGINT,signal_hook);
+
 #ifndef USECONSOLE
 
   // open a window
@@ -213,6 +226,7 @@ int main(int argc, char *argv[])
 
    }
 
+  if (int_flag) ffi_event(EVENT_CLOSE,0,0);
   ffi_event(EVENT_TERMINATE,0,0);
   return 1;
 }
