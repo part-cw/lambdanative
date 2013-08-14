@@ -1,0 +1,68 @@
+#
+# don't allow the screen to lock
+#+ #define USE_NOLOCK
+#
+# execute audioinit at startup
+#+ #define USE_AUDIOINIT
+#
+#########################
+# plist
+#
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+<key>CFBundleDevelopmentRegion</key>
+<string>English</string>
+<key>CFBundleExecutable</key>
+<string>@SYS_APPNAME@</string>
+<key>CFBundleIdentifier</key>
+<string>@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@</string>
+<key>CFBundleInfoDictionaryVersion</key>
+<string>6.0</string>
+<key>CFBundleLongVersionString</key>
+<string>@SYS_APPVERSION@</string>
+<key>CFBundlePackageType</key>
+<string>APPL</string>
+<key>CFBundleResourceSpecification</key>
+<string>ResourceRules.plist</string>
+<key>CFBundleSignature</key>
+<string>????</string>
+<key>CFBundleSupportedPlatforms</key>
+<array>
+<string>iPhoneOS</string>
+</array>
+<key>CFBundleVersion</key>
+<string>@SYS_APPVERSION@</string>
+<key>CFBundleDisplayName</key>
+<string>@SYS_APPNAME@</string>
+<key>CSResourcesFileMapped</key>
+<true/>
+<key>LSRequiresCarbon</key>
+<true/>
+<key>NSHumanReadableCopyright</key>
+<string></string>
+<key>CFBundleIconFile</key>
+<string>Icon.png</string>
+<key>CFBundleIconFiles</key>
+<array>
+<string>Icon.png</string>
+<string>Icon@2x.png</string>
+#<string>Icon-72.png</string>
+#<string>Icon-72@2x.png</string>
+</array>
+<key>UIStatusBarHidden</key>
+<true/>
+<key>UIFileSharingEnabled</key>
+<true/>
+<key>UIRequiredDeviceCapabilities</key> 
+<array> 
+<string>microphone</string> 
+</array>
+<key>UIApplicationExitsOnSuspend</key> 
+<true/>
+<key>UILaunchImageFile</key>
+<string>Default</string>
+</dict>
+</plist>
+#eof
