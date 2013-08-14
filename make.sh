@@ -1634,7 +1634,7 @@ make_glcheck()
     echo " => checking for sane localhost OpenGL setup.."
     echo "#include <GL/gl.h>" > gltest.c
     echo "int main() { glOrtho(0,0,0,0,0,0); }" >> gltest.c
-    gcc -Werror -o gltest gltest.c -I/usr/X11/include -L/usr/X11/lib  -lGL 
+    gcc -Werror -o gltest gltest.c -I/usr/X11/include -I/usr/X11R6/include -L/usr/X11/lib -L/usr/X11R6/lib -lGL  > /dev/null 2> /dev/null
     asserterror $? "OpenGL headers are missing?"
   fi
   rmifexists gltest
