@@ -1653,11 +1653,25 @@ make_linux_alsacheck()
   rmifexists alsatest.c
 }
 
+make_openbsd_portaudiocheck()
+{
+  echo " => checking for portaudio.."
+  echo "#include <portaudio.h>" > patest.c
+  echo "int main() { Pa_GetDefaultInputDevice(); }" >> patest.c
+  gcc -Werror -o patest patest.c -I/usr/local/include -L/usr/local/lib -lportaudio 
+  asserterror $? "portaudio is not installed? Please install patched version from ports."
+  rmifexists patest
+  rmifexists patest.c
+}
+
 make_libarycheck(){
   echo "==> checking for required libraries.."
   make_glcheck
   if [ $SYS_PLATFORM = linux ]; then
     make_linux_alsacheck
+  fi
+  if [ $SYS_PLATFORM = openbsd ]; then
+    make_openbsd_portaudiocheck
   fi
 }
 
