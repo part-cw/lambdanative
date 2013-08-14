@@ -46,8 +46,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #if defined(OPENBSD)
 #include <sys/types.h>
-#include <signal.h>
 #include <fcntl.h>
+#endif
+
+#if defined (OPENBSD) || defined (LINUX) || defined (WIN32)
+#include <signal.h>
 #endif
 
 #if defined(WIN32)
@@ -182,7 +185,9 @@ int main(int argc, char *argv[])
   ffi_event(EVENT_INIT,w,h);
 
   // handle signals
-  signal(SIGHUP,signal_hook);
+  #ifndef WIN32
+    signal(SIGHUP,signal_hook);
+  #endif
   signal(SIGTERM,signal_hook);
   signal(SIGINT,signal_hook);
 
