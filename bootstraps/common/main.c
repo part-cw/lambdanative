@@ -61,6 +61,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static int run_flag=1;
 static int int_flag=0;
 
+// signal handler
+void signal_hook()
+{
+  run_flag=0;
+  int_flag=1;
+}
+
 #ifndef USECONSOLE
 
 #ifdef MACOSX
@@ -70,13 +77,6 @@ static int int_flag=0;
 #if defined(LINUX) || defined(OPENBSD) || defined(WIN32)
 #include <GL/gl.h>
 #endif
-
-// signal handler
-void signal_hook()
-{
-  run_flag=0;
-  int_flag=1;
-}
 
 // event hook
 void microgl_hook(int t, int x, int y)
