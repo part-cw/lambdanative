@@ -106,67 +106,15 @@ void microgl_hook(int t, int x, int y)
 
 #endif // USECONSOLE
 
-#ifdef USECONSOLE
+char *cmd_arg0=0;
 char *cmd_arg1=0;
-#endif
-
-#if defined(LINUX)
-  char *linux_sys_appdir;
-#endif
-#if defined(WIN32)
-  char *win32_sys_appdir;
-#endif
-#ifdef OPENBSD
-  char *openbsd_sys_appdir;
-#endif
 
 int main(int argc, char *argv[])
 {
   int w=0,h=0;
 
-#if defined(LINUX)
-  char buf[1024];
-  int len=readlink("/proc/self/exe", buf, 1024);
-  if (len>0) {
-    int i;
-    for (i=len;i>0;i--){
-      if (buf[i]=='/') {
-        buf[i]='\0';
-        break;
-      }
-    }
-    linux_sys_appdir=strdup(buf);
-  }
-#endif
-#if defined(WIN32)
-  char buf[1024];
-  int len=GetModuleFileName(NULL,buf,1024);
-  if (len>0) {
-    int i;
-    for (i=len;i>0;i--){
-      if (buf[i]=='\\'){
-        buf[i]='\0';
-        break;
-      }
-    }
-    win32_sys_appdir=strdup(buf);
-  }
-#endif
-#if defined(OPENBSD)
-  char buf[PATH_MAX];
-  if (realpath(argv[0],buf)) {
-    int i = strlen(buf)-1;
-    while (i>0&&buf[i]!='/') {i--;}
-    if (i>0) buf[i]=0;
-    // check if directory exists?
-    openbsd_sys_appdir=strdup(buf);
-  }
-#endif
-  
-#ifdef USECONSOLE 
-// 20101007: quick hack to get a command line argument through 
+  cmd_arg0=argv[0];
   if (argc>1) cmd_arg1=argv[1];
-#endif
 
 // fork to release terminal (for starting processes on embedded systems)
 #if defined(USECONSOLE) && defined(OPENBSD)

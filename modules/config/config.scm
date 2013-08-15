@@ -63,12 +63,53 @@ extern
 #endif
 char *cmd_arg1;
 
-//#include "CONFIG.h"
+#ifdef USECONSOLE
+extern 
+#endif
+char *cmd_arg0;
 
-#if defined(IOS) || defined(MACOSX)
-static char *macosx_directory=0;
-void find_macosx_app_directory() 
+static char *app_directory=0;
+void find_app_directory()
 {
+#if defined(LINUX)
+  char buf[1024];
+  int len=readlink("/proc/self/exe", buf, 1024);
+  if (len>0) {
+    int i;
+    for (i=len;i>0;i--){
+      if (buf[i]=='/') {
+        buf[i]='\0';
+        break;
+      }
+    }
+    app_directory=strdup(buf);
+  }
+#endif
+#if defined(WIN32)
+  char buf[1024];
+  int len=GetModuleFileName(NULL,buf,1024);
+  if (len>0) {
+    int i;
+    for (i=len;i>0;i--){
+      if (buf[i]=='\\'){
+        buf[i]='\0';
+        break;
+      }
+    }
+    app_directory=strdup(buf);
+  }
+#endif
+#if defined(OPENBSD)
+  char buf[PATH_MAX];
+  if (realpath(cmd_arg0,buf)) {
+    int i = strlen(buf)-1;
+    while (i>0&&buf[i]!='/') {i--;}
+    if (i>0) buf[i]=0;
+    // check if directory exists?
+    app_directory=strdup(buf);
+  }
+#endif
+#if defined(IOS) || defined(MACOSX)
   char path[1024];
   CFBundleRef mainBundle = CFBundleGetMainBundle();
   CFURLRef mainBundleURL = CFBundleCopyBundleURL( mainBundle);
@@ -76,73 +117,40 @@ void find_macosx_app_directory()
   CFStringGetCString( cfStringRef, path, 1024, kCFStringEncodingASCII);
   CFRelease( mainBundleURL);
   CFRelease( cfStringRef);
-  macosx_directory=strdup(path);
-}
+  app_directory=strdup(path);
 #endif
+#if defined(ANDROID)
+// we put files on the sdcard, that's the only sane place (?)
+  char path[1024];
+  sprintf(path,"/sdcard/%s", SYS_APPNAME);
+  app_directory=strdup(path);
+#endif
+}
 
 // store the program info
 static unsigned int sys_buildepoch;
 static char *sys_dir, *sys_appdir, *sys_platform, *sys_appname, *sys_appversion, *sys_cmdarg;
 static char *sys_buildhash;
 static char *sys_repository, *sys_repositorydate;
+
 static void system_init(void)
 {
-
-#ifndef USECONSOLE
-
-// get system path on the iphone
-#if defined(IOS)
-  find_macosx_app_directory();
+  find_app_directory();
+#ifdef IOS
   // check for jail break
-  // XXX does this violate app store requirements?
   FILE *fd = fopen("/var/mobile/tmp.341231","a");
   if (fd) {
     fclose(fd);
     remove("/var/mobile/tmp.341231");
-    sys_dir = strdup(macosx_directory);
+    sys_dir = strdup(app_directory);
   } else {
+    // point to the folder that is shared through iTunes
     sys_dir = strdup(iphone_directory);
   }
-  sys_appdir=strdup(macosx_directory);
+#else
+  sys_dir=strdup(app_directory);
 #endif
-
-// get system path on a mac
-#if defined(MACOSX)
-  find_macosx_app_directory();
-  sys_dir = strdup(macosx_directory);
-#endif
-
-#endif // !USECONSOLE
-
-#if defined(LINUX) || defined(OPENBSD) || defined(NETBSD) || defined(WIN32) || defined(USECONSOLE)
-  // application path on unixy systems
-  char path[1024];
-  getcwd(path,1024);
-  sys_dir = strdup(path);
-#endif
-
-#if defined(LINUX)
-  extern char *linux_sys_appdir;
-  sys_appdir=strdup(linux_sys_appdir);
-#endif
-
-#if defined(WIN32)
-  extern char *win32_sys_appdir;
-  sys_appdir=strdup(win32_sys_appdir);
-#endif
-
-#if defined(OPENBSD)
-  extern char *openbsd_sys_appdir;
-  sys_appdir=strdup(openbsd_sys_appdir);
-#endif
-
-#if defined(ANDROID)
-// we put files on the sdcard, that's the only sane place (?)
-  char path[1024];
-  sprintf(path,"/sdcard/%s", SYS_APPNAME);
-  sys_dir=strdup(path);
-#endif
-
+  sys_appdir=strdup(app_directory);
   sys_platform=strdup(SYS_PLATFORM);
   sys_appname=strdup(SYS_APPNAME);
   sys_appversion=strdup(SYS_APPVERSION);
