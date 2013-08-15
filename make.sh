@@ -439,6 +439,7 @@ int debug_settings = ___DEBUG_SETTINGS_INITIAL;
 char *cmd_arg1=0;
 char *linux_sys_appdir="";
 char *win32_sys_appdir="";
+char *openbsd_sys_appdir="";
 int main(int argc, char *argv[])
 {
   if (argc>1) cmd_arg1=argv[1];

@@ -47,6 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if defined(OPENBSD)
 #include <sys/types.h>
 #include <fcntl.h>
+#include <limits.h>
 #endif
 
 #if defined (OPENBSD) || defined (LINUX) || defined (WIN32)
@@ -115,6 +116,9 @@ char *cmd_arg1=0;
 #if defined(WIN32)
   char *win32_sys_appdir;
 #endif
+#ifdef OPENBSD
+  char *openbsd_sys_appdir;
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -148,7 +152,17 @@ int main(int argc, char *argv[])
     win32_sys_appdir=strdup(buf);
   }
 #endif
-
+#if defined(OPENBSD)
+  char buf[PATH_MAX];
+  if (realpath(argv[0],buf)) {
+    int i = strlen(buf)-1;
+    while (i>0&&buf[i]!='/') {i--;}
+    if (i>0) buf[i]=0;
+    // check if directory exists?
+    openbsd_sys_appdir=strdup(buf);
+  }
+#endif
+  
 #ifdef USECONSOLE 
 // 20101007: quick hack to get a command line argument through 
   if (argc>1) cmd_arg1=argv[1];

@@ -131,6 +131,11 @@ static void system_init(void)
   sys_appdir=strdup(win32_sys_appdir);
 #endif
 
+#if defined(OPENBSD)
+  extern char *openbsd_sys_appdir;
+  sys_appdir=strdup(openbsd_sys_appdir);
+#endif
+
 #if defined(ANDROID)
 // we put files on the sdcard, that's the only sane place (?)
   char path[1024];
