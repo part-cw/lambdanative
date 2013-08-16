@@ -75,6 +75,10 @@ linux*)
 ;;
 esac
 
+if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
+  EXTRACONF=
+fi
+
 CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure --quiet --prefix="@SYS_PREFIX@" $EXTRACONF --enable-static --disable-shared --with-jack=no
 
 mv Makefile tmp

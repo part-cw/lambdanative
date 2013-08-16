@@ -820,7 +820,7 @@ make_setup()
       SYS_APPFIX=
     ;;
     linux_linux)
-      SYS_CC="gcc $SYS_DEBUGFLAG -m32 -DLINUX"
+      SYS_CC="gcc $SYS_DEBUGFLAG -DLINUX"
       SYS_AR=ar
       SYS_RANLIB=ranlib
       SYS_STRIP=strip

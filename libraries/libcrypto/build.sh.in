@@ -50,6 +50,10 @@ linux*)
 ;;
 esac
 
+if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
+  EXTRACONF=
+fi
+
 CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" MAKE="make -s" ./Configure --openssldir="@SYS_PREFIX@" $EXTRACONF no-shared no-threads no-zlib no-asm no-dso no-sse2
 
 # we are not using the gcc wrapper, so platform flags won't work
