@@ -95,7 +95,6 @@ void microgl_hook(int t, int x, int y)
       break;
     case EVENT_CLOSE: 
       ffi_event(EVENT_CLOSE,0,0);
-      microgl_close();
       run_flag=0;
       break; 
     default:
@@ -195,6 +194,11 @@ int main(int argc, char *argv[])
 
   if (int_flag) ffi_event(EVENT_CLOSE,0,0);
   ffi_event(EVENT_TERMINATE,0,0);
+
+#ifndef USECONSOLE
+  microgl_close();
+#endif
+
   return 1;
 }
 
