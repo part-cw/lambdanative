@@ -35,7 +35,7 @@ case @SYS_PLATFORM@ in
 ios)
   EXTRACONF=--host=arm
 ;;
-android)
+android|bb10)
   EXTRACONF=--host=arm-eabi
 ;;
 win32*)
@@ -52,16 +52,25 @@ esac
 CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure --quiet --prefix="@SYS_PREFIX@" $EXTRACONF
 
 echo "==> Patching source..."
-patches=`ls -1 ../../*.patch`
+patches=`ls -1 ../../*.patch 2> /dev/null`
 for p in $patches; do
   patch -p0 < $p
 done
 
-echo "==> Compiling source..."
-AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make -s
+if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
+  echo "==> Compiling source..."
+  AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make -s
+else
+  echo "==> Compiling library source..."
+  cd lib
+  AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make -s
+  cd ..
+fi
 
 echo "==> Installing..."
-make install -s
+if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
+  make install -s
+fi
 cp lib/libgambc.a @SYS_PREFIX@/lib
 cp include/gambit*.h @SYS_PREFIX@/include
 cd "$here"

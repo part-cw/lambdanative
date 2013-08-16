@@ -145,6 +145,9 @@ assertfile()
       cat $evallog | sed '/^$/d'
     fi
     echo "ERROR: failed on file $1" 1>&2
+    if [ ! "X$2" = "X" ]; then 
+      echo ">> $2"
+    fi
     exit 1
   fi
 }
@@ -365,7 +368,7 @@ compile()
   veval "$SYS_GSC -prelude \"$opts\" -c -o $ctgt $src"
   assertfile "$ctgt"
   rmifexists "$otgt"
-  veval "$SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -c -o $otgt $ctgt -I$SYS_PREFIX/include"
+  veval "$SYS_ENV $SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -c -o $otgt $ctgt -I$SYS_PREFIX/include"
   assertfile "$otgt"
   cd $here
 }
@@ -410,7 +413,7 @@ compile_payload()
     vecho "$SYS_GSC -link $csrcs"
     $SYS_GSC -link $csrcs 
     assertfile $lctgt
-    veval "$SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -o $lotgt -c $lctgt -I$SYS_PREFIX/include"
+    veval "$SYS_ENV $SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -o $lotgt -c $lctgt -I$SYS_PREFIX/include"
     assertfile $lotgt
   fi
   objs="$objs $lotgt"
@@ -477,7 +480,7 @@ _EOF
     if [ `is_standalone_app` = "yes" ]; then
       defs="$defs -DSTANDALONE"
     fi
-    veval "$SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -c -o $hotgt $hctgt -I$SYS_PREFIX/include"
+    veval "$SYS_ENV $SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -c -o $hotgt $hctgt -I$SYS_PREFIX/include"
     assertfile $hotgt
   fi
   objs="$objs $hotgt"
@@ -884,6 +887,26 @@ make_setup()
      SYS_WINDRES=
      SYS_EXEFIX=
      SYS_APPFIX=
+   ;;
+   bb10_macosx) 
+     TOOLCHAIN=`wildcard_dir /Applications/Momentics.app/host_10_1_*/darwin/x86`
+     assertfile "$TOOLCHAIN" "Blackberry 10 host environment not found"
+     SYS_ARMROOT=`wildcard_dir /Applications/Momentics.app/target_10_1_*/qnx*/arm*`
+     assertfile "$SYS_ARMROOT" "BlackBerry 10 target environment not found"
+     SYS_ROOT=`wildcard_dir /Applications/Momentics.app/target_10_1_*/qnx*`
+     assertfile "$SYS_ROOT" "BlackBerry 10 target environment not found"
+     SYS_ENV="QNX_HOST=$TOOLCHAIN QNX_TARGET=$SYS_ROOT"
+     CROSS=`echo $TOOLCHAIN/usr/bin/arm-*-qnx*eabi-`
+     SYS_CC="${CROSS}gcc $SYS_DEBUGFLAG -DBB10 -nostdlib -isysroot $SYS_ARMROOT -I$SYS_ROOT/usr/include -L$SYS_ARMROOT/usr/lib"
+     SYS_AR=$CROSS"ar"
+     SYS_RANLIB=$CROSS"ranlib"
+     SYS_STRIP=$CROSS"strip"
+     SYS_WINDRES=
+     SYS_EXEFIX=
+     SYS_APPFIX=
+   ;;
+   *)
+     echo "ERROR: don't know how to setup a build for $SYS_PLATFORM on a $SYS_HOSTPLATFORM host"
    ;;
   esac
   SYS_LOCASEAPPNAME=`echo $SYS_APPNAME | tr A-Z a-z`
@@ -1394,6 +1417,11 @@ openbsd)
   rm -rf "$tmpdir"
 ;;
 #####################################
+bb10)
+  echo "ERROR: Blackberry bootstrap is still a work in progress. Stay tuned :)"
+  exit 1
+;;
+#####################################
 *)
   echo "ERROR: Don't know how to make the bootstrap!"
   exit 1
@@ -1471,7 +1499,7 @@ make_clean()
 make_scrub()
 {
   echo "==> removing entire build cache.."
-  platforms="ios macosx android win32 linux openbsd"
+  platforms="ios macosx android win32 linux openbsd bb10"
   for platform in $platforms; do
     rmifexists $SYS_PREFIXROOT/$platform
   done
@@ -1524,7 +1552,7 @@ make_package()
   here=`pwd`
   echo "==> making package.."
   case $SYS_PLATFORM in
-  win32|linux|openbsd|macosx)
+  win32|linux|openbsd|macosx|bb10)
     pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).zip"
     rmifexists $pkgfile
     echo " => making generic zip archive $pkgfile.."
@@ -1595,7 +1623,7 @@ make_libraries()
         echo " => $libname.."
         cd $libdir
         ac_output build.sh
-        sh build.sh
+        eval "$SYS_ENV sh build.sh"
         rm build.sh
         cd $here
       fi

@@ -70,7 +70,7 @@ fi
 
 with_app=$1
 
-platforms="android ios linux win32 macosx"
+platforms="android ios linux win32 macosx bb10"
 with_platform=
 for platform in $platforms; do
   if [ ! "X"`echo "$@" | cut -f 2- -d " " | grep $platform | cut -c 1` = "X" ]; then
@@ -142,7 +142,7 @@ esac
 
 # setup target platform
 case "$with_platform" in
-linux|ios|macosx|win32|android)
+linux|ios|macosx|win32|android|bb10)
   SYS_PLATFORM=$with_platform
 ;;
 *)
