@@ -828,6 +828,17 @@ make_setup()
       SYS_EXEFIX=
       SYS_APPFIX=
     ;;
+    linux486_linux)
+      SDKROOT=/usr/i486-*linux*/
+      CROSS=/usr/bin/i486-*linux*-
+      SYS_CC=$CROSS"gcc $SYS_DEBUGFLAG -isysroot $SDKROOT -m32 -DLINUX"
+      SYS_AR=$CROSS"ar"
+      SYS_RANLIB=$CROSS"ranlib"
+      SYS_STRIP=$CROSS"strip"
+      SYS_WINDRES=
+      SYS_EXEFIX=
+      SYS_APPFIX=
+    ;;
     openbsd_openbsd)
       SYS_CC="gcc $SYS_DEBUGFLAG -DOPENBSD -I/usr/X11R6/include"
       SYS_AR=ar
@@ -1368,6 +1379,54 @@ linux)
   rm -rf "$tmpdir"
 ;;
 #####################################
+linux486)
+  appdir="$SYS_PREFIX/$SYS_APPNAME"
+  rmifexists "$appdir"
+  mkdir "$appdir"
+  tmpdir=`mktemp -d tmp.XXXXXX`
+  if [ `is_gui_app` = yes ]; then
+    cp bootstraps/x11/x11_microgl.c $tmpdir 
+  fi
+  if [ `is_standalone_app` = "no" ]; then
+    cp bootstraps/common/main.c $tmpdir
+  fi
+  cd $tmpdir
+  sounddir=`locatedir apps/$SYS_APPNAME/sounds silent`
+  if [ -d "$sounddir" ]; then
+    echo "Sound is currently not supported on linux486!!!"
+    return;
+  fi
+  echo " => compiling application.."
+  tgt=$appdir/$SYS_APPNAME$SYS_EXEFIX
+  if [ `is_standalone_app` = "yes" ]; then
+      veval "$SYS_CC -I$SYS_PREFIX/include \
+        -DUSECONSOLE -o $tgt \
+        -L/usr/local/linux/i486-linux/lib \
+        -L$SYS_PREFIX/lib -lpayload -lrt -lutil -lpthread -ldl -lm"
+  else
+    if [ `is_gui_app` = yes ]; then
+      echo "GUI applications are currently not supported on linux486!!!"
+      return;
+      veval "$SYS_CC -I$SYS_PREFIX/include \
+        x11_microgl.c main.c -o $tgt \
+        -L/usr/local/linux/i486-linux/lib \
+        -L$SYS_PREFIX/lib -lpayload -lGL -lXext -lX11 -lrt -lutil -lpthread -ldl -lm"
+    else
+      veval "$SYS_CC -I$SYS_PREFIX/include \
+        -DUSECONSOLE main.c -o $tgt \
+        -L/usr/local/linux/i486-linux/lib \
+        -L$SYS_PREFIX/lib -lpayload -lrt -lutil -lpthread -ldl -lm"
+    fi
+  fi
+  asserterror $?
+  assertfile $tgt
+  $SYS_STRIP $tgt
+  asserterror $?
+  cd $here
+  echo " => cleaning up.."
+  rm -rf "$tmpdir"
+;;
+#####################################
 openbsd)
   appdir="$SYS_PREFIX/$SYS_APPNAME"
   rmifexists "$appdir"
@@ -1499,7 +1558,7 @@ make_clean()
 make_scrub()
 {
   echo "==> removing entire build cache.."
-  platforms="ios macosx android win32 linux openbsd bb10"
+  platforms="ios macosx android win32 linux linux486 openbsd bb10"
   for platform in $platforms; do
     rmifexists $SYS_PREFIXROOT/$platform
   done
@@ -1552,7 +1611,7 @@ make_package()
   here=`pwd`
   echo "==> making package.."
   case $SYS_PLATFORM in
-  win32|linux|openbsd|macosx|bb10)
+  win32|linux|linux486|openbsd|macosx|bb10)
     pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).zip"
     rmifexists $pkgfile
     echo " => making generic zip archive $pkgfile.."

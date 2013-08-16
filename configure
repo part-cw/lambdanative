@@ -70,17 +70,19 @@ fi
 
 with_app=$1
 
-platforms="android ios linux win32 macosx bb10"
+platforms="android ios linux linux486 win32 macosx bb10"
 with_platform=
 for platform in $platforms; do
-  if [ ! "X"`echo "$@" | cut -f 2- -d " " | grep $platform | cut -c 1` = "X" ]; then
-    if [ "X"$with_platform = "X" ]; then
-      with_platform=$platform
-    else 
-      echo "ERROR: multiple platforms specified [$platform and $with_platform]"
-      exit 1
+  for arg in $@; do
+    if [ "X$arg" = "X$platform" ]; then
+      if [ "X$with_platform" = "X" ]; then
+        with_platform=$platform
+      else
+        echo "ERROR: multiple platforms specified [$platform and $with_platform]"
+        exit 1
+      fi
     fi
-  fi
+  done
 done
 
 with_mode=
@@ -142,7 +144,7 @@ esac
 
 # setup target platform
 case "$with_platform" in
-linux|ios|macosx|win32|android|bb10)
+linux|linux486|ios|macosx|win32|android|bb10)
   SYS_PLATFORM=$with_platform
 ;;
 *)
