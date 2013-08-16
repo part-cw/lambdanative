@@ -593,7 +593,7 @@ make_textures()
   setstate TEXTURES
   echo "==> creating textures needed for $SYS_APPNAME.."
   srcdir=`locatedir apps/$SYS_APPNAME/textures silent`
-  if [ "X" == "X$srcdir" ]; then 
+  if [ "X" = "X$srcdir" ]; then 
     return 
   fi
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/textures
