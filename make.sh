@@ -101,6 +101,7 @@ statefile=`pwd`"/make.state"
 setstate()
 {
   echo "state=$1" > $statefile
+  rmifexists $evallog
 }
 
 resetstate()
@@ -531,6 +532,10 @@ make_artwork()
   objsrc=`locatefile "apps/$SYS_APPNAME/artwork.obj" silent`
   epssrc=`locatefile "apps/$SYS_APPNAME/artwork.eps" silent`
   if [ "X$epssrc" = "X" ]; then
+    if [ "X$objsrc" = "X" ]; then
+      echo "ERROR: artwork not found"
+      exit 1
+    fi
     assertfile $objsrc
     epssrc=`echo $objsrc | sed 's/obj$/eps/'`
   fi
@@ -899,19 +904,23 @@ make_setup()
      SYS_EXEFIX=
      SYS_APPFIX=
    ;;
-   bb10_macosx) 
-     TOOLCHAIN=`wildcard_dir /Applications/Momentics.app/host_10_1_*/darwin/x86`
-     assertfile "$TOOLCHAIN" "Blackberry 10 host environment not found"
-     SYS_ARMROOT=`wildcard_dir /Applications/Momentics.app/target_10_1_*/qnx*/arm*`
-     assertfile "$SYS_ARMROOT" "BlackBerry 10 target environment not found"
-     SYS_ROOT=`wildcard_dir /Applications/Momentics.app/target_10_1_*/qnx*`
-     assertfile "$SYS_ROOT" "BlackBerry 10 target environment not found"
-     SYS_ENV="QNX_HOST=$TOOLCHAIN QNX_TARGET=$SYS_ROOT"
+   bb10_macosx)
+     bbapi=`echo $BB10API | tr "." "_"`
+     script=`echo $BB10SDK/bbndk-env_${bbapi}_*.sh`
+     assertfile "$script" "BB10 environment script not found"
+     source "$script"
+     TOOLCHAIN=`wildcard_dir /Applications/Momentics.app/host_${bbapi}_*/darwin/x86`
+     assertfile "$TOOLCHAIN" "Blackberry 10 host tool chain not found"
      CROSS=`echo $TOOLCHAIN/usr/bin/arm-*-qnx*eabi-`
-     SYS_CC="${CROSS}gcc $SYS_DEBUGFLAG -DBB10 -nostdlib -isysroot $SYS_ARMROOT -I$SYS_ROOT/usr/include -L$SYS_ARMROOT/usr/lib"
+     SYS_CC="qcc -Vgcc_ntoarmv7le $SYS_DEBUGFLAG -DBB10 -DQNX"
+  #   CROSS=`echo $TOOLCHAIN/usr/bin/i486-*-qnx*-`
+  #   SYS_CC="qcc -Vgcc_ntox86 $SYS_DEBUGFLAG -DBB10 -DQNX"
      SYS_AR=$CROSS"ar"
+     assertfile $SYS_AR "Blackberry 10 tool chain setup is incorrect"
      SYS_RANLIB=$CROSS"ranlib"
+     assertfile $SYS_RANLIB "Blackberry 10 tool chain setup is incorrect"
      SYS_STRIP=$CROSS"strip"
+     assertfile $SYS_STRIP "Blackberry 10 tool chain setup is incorrect"
      SYS_WINDRES=
      SYS_EXEFIX=
      SYS_APPFIX=
@@ -962,6 +971,7 @@ make_setup()
   ac_subst SYS_ANDROIDAPI
   ac_subst SYS_BUILDHASH
   ac_subst SYS_BUILDEPOCH
+  ac_subst SYS_PROFILE
   ac_output CONFIG.h $SYS_PREFIX/include/CONFIG.h
 }
 
@@ -1477,8 +1487,60 @@ openbsd)
 ;;
 #####################################
 bb10)
-  echo "ERROR: Blackberry bootstrap is still a work in progress. Stay tuned :)"
-  exit 1
+  configsrc=`locatedir apps/$SYS_APPNAME`"/CONFIG_BB10.in"
+  assertfile $configsrc "BB10 configuration desriptor is required"
+  configtgt=$SYS_PREFIXROOT/build/$SYS_APPNAME/CONFIG_BB10
+  ac_output $configsrc $configtgt
+  assertfile $configtgt
+  tmpdir=`mktemp -d tmp.XXXXXX`
+  if [ `is_gui_app` = yes ]; then
+    cp bootstraps/qnx/bootstrap.c $tmpdir
+  else
+    if [ `is_standalone_app` = "no" ]; then
+      cp bootstraps/common/main.c $tmpdir
+    fi
+  fi
+  cd $tmpdir
+  echo " => compiling application.."
+  cat $configtgt | sed -n '/^#+/p' | cut -f 2- -d "+" > config_bb10.h
+  tgt=$SYS_APPNAME$SYS_EXEFIX
+  if [ `is_standalone_app` = "yes" ]; then
+      touch main.c
+      veval "$SYS_CC -I$SYS_PREFIX/include \
+        main.c -DUSECONSOLE -o $tgt \
+        -L$SYS_PREFIX/lib -lpayload -lsocket -lm"
+  else
+    if [ `is_gui_app` = yes ]; then
+      veval "$SYS_CC -I$SYS_PREFIX/include \
+        bootstrap.c -o $tgt \
+        -L$SYS_PREFIX/lib -lpayload -lglview -lGLESv1_CL -lbps -lscreen -lsocket -lm"
+    else
+      veval "$SYS_CC -I$SYS_PREFIX/include \
+        -DUSECONSOLE main.c -o $tgt \
+        -L$SYS_PREFIX/lib -lpayload -lsocket -lm" 
+    fi
+  fi
+  asserterror $?
+  assertfile $tgt
+  $SYS_STRIP $tgt
+  asserterror $?
+  echo " => preparing descriptor.."
+  cat $configtgt | sed '/^#/d' > bar-descriptor.xml
+  echo " => preparing icon.."
+  cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-114.png" icon.png
+  echo " => preparing package.."
+  fnlfile=$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-bb10.bar
+  if [ $SYS_MODE = release ]; then
+    blackberry-nativepackager -package $fnlfile bar-descriptor.xml
+  else
+    blackberry-nativepackager -package $fnlfile bar-descriptor.xml
+#    blackberry-nativepackager -package $fnlfile bar-descriptor.xml -devMode -debugToken "path to debugtoken2.bar"
+  fi
+  echo " => signing package.."
+# blackberry-signer -storepass $SYS_BB10STOREPW $fnlfile
+  cd $here
+  echo " => cleaning up.."
+  rm -rf "$tmpdir"
 ;;
 #####################################
 *)
@@ -1589,6 +1651,14 @@ make_install()
       $ANDROIDSDK/platform-tools/adb shell am start -n $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME/.$SYS_APPNAME
     fi
   ;;
+  bb10)
+    echo "==> attempting to install bb10 application $SYS_APPNAME.."
+    pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-bb10.bar"
+    assertfile $pkgfile
+    if [ ! "X$SYS_BB10IPADDR" = "X" ]; then
+      blackberry-deploy -installApp $SYS_BB10IPADDR -password $SYS_BB10PW  
+    fi
+  ;;
   default)
     echo "==> no install setup for this platform ($SYS_PLATFORM)"
   ;;
@@ -1611,12 +1681,12 @@ make_package()
   here=`pwd`
   echo "==> making package.."
   case $SYS_PLATFORM in
-  win32|linux|linux486|openbsd|macosx|bb10)
+  win32|linux|linux486|openbsd|macosx)
     pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).zip"
     rmifexists $pkgfile
     echo " => making generic zip archive $pkgfile.."
     cd $SYS_PREFIX
-    veval "zip -9 -y -r $pkgfile $SYS_APPNAME$SYS_APPFIX"
+    veval "zip -y -r $pkgfile $SYS_APPNAME$SYS_APPFIX"
     cd $here
     assertfile $pkgfile
     echo "=== $pkgfile"
@@ -1651,6 +1721,11 @@ make_package()
   ;;
   android)
     pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).apk"
+    assertfile $pkgfile
+    echo "=== $pkgfile"
+  ;;
+  bb10)
+    pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).bar"
     assertfile $pkgfile
     echo "=== $pkgfile"
   ;;
@@ -1809,6 +1884,9 @@ make_toolcheck()
   fi 
   if [ $SYS_PLATFORM = macosx ]; then
     asserttool tiffutil tiff2icns
+  fi
+  if [ $SYS_PLATFORM = bb10 ]; then
+    asserttool qcc blackberry-nativepackager blackberry-deploy
   fi
 }
 

@@ -62,6 +62,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <GL/gl.h>
 #endif
 
+// blackberry 
+#if defined(QNX)
+#include <GLES/gl.h>
+#endif
+
 end-of-c-declare
 )
 
@@ -115,7 +120,7 @@ ___result = GL_CLAMP_TO_EDGE;
 ;; glOrtho is different in OpenGL and GLES. Why, thanks dudes!
 (define (glOrtho arg1 arg2 arg3 arg4 arg5 arg6) 
   ((c-lambda (float float float float float float) void 
-   "#if defined(IOS)||defined(ANDROID)
+   "#if defined(IOS)||defined(ANDROID)||defined(QNX)
      glOrthof(___arg1,___arg2,___arg3,___arg4,___arg5,___arg6);
    #else
      glOrtho(___arg1,___arg2,___arg3,___arg4,___arg5,___arg6);

@@ -71,6 +71,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define USE_PORTAUDIO
 #endif
 
+#ifdef BB10
+#define USE_BB10AUDIO
+#endif 
+
 void (*rtaudio_initcb)(int)=0;
 void (*rtaudio_inputcb)(float)=0;
 void (*rtaudio_outputcb)(float*,float*)=0;
@@ -230,6 +234,13 @@ void rtaudio_stop(void) {
 
 #endif // USE_ANDROIDAUDIO
 
+// %%%%%%%%%%%%%%%%%%%%%%%%
+#ifdef USE_BB10AUDIO
+
+void rtaudio_start(int s2, double volume)  { }
+void rtaudio_stop(void) { }
+
+#endif // USE_BB10AUDIO
 
 end-of-c-declare
 )
