@@ -43,22 +43,23 @@ win32*)
   EXTRACONF=mingw
 ;;
 linux*)
-  EXTRACONF=linux-generic32
+  cpu=`../../../../config.guess | cut -f 1 -d "-"`
+  if [ "X$cpu" = "Xx86_64" ]; then
+    EXTRACONF=linux-x86_64
+  else
+    EXTRACONF=linux-generic32
+  fi
 ;;
 *)
   EXTRACONF=BSD-generic32
 ;;
 esac
 
-if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
-  EXTRACONF=
-fi
-
 CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" MAKE="make -s" ./Configure --openssldir="@SYS_PREFIX@" $EXTRACONF no-shared no-threads no-zlib no-asm no-dso no-sse2
 
 # we are not using the gcc wrapper, so platform flags won't work
-mv Makefile tmp
-cat tmp | sed "s/-arch i386//g;s/-arch x86_64/-m32/" > Makefile
+#mv Makefile tmp
+#cat tmp | sed "s/-arch i386//g;s/-arch x86_64/-m32/" > Makefile
 
 echo "==> Compiling source..."
 CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make -s build_ssl build_crypto
