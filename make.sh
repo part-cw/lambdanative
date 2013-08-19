@@ -1717,10 +1717,13 @@ make_info()
   exit 1
 }
 
+######################
+# system sanity checks
+
 make_glcheck()
 {
   if [ $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
-    echo " => checking for sane localhost OpenGL setup.."
+    vecho " => checking for sane localhost OpenGL setup.."
     echo "#include <GL/gl.h>" > gltest.c
     echo "int main() { glOrtho(0,0,0,0,0,0); }" >> gltest.c
     gcc -Werror -o gltest gltest.c -I/usr/X11/include -I/usr/X11R6/include -L/usr/X11/lib -L/usr/X11R6/lib -lGL  > /dev/null 2> /dev/null
@@ -1732,7 +1735,7 @@ make_glcheck()
 
 make_linux_alsacheck()
 {
-  echo " => checking for sane ALSA setup.."
+  vecho " => checking for sane ALSA setup.."
   echo "#include <alsa/asoundlib.h>" > alsatest.c
   echo "int main() { snd_pcm_hw_params_t *hwparams; snd_pcm_hw_params_alloca(&hwparams); }" >> alsatest.c
 #  echo "int main() { snd_pcm_t *pcm_handle = NULL; const char *device_name = \"default\"; snd_pcm_open (&pcm_handle, device_name, SND_PCM_STREAM_PLAYBACK, 0); snd_pcm_close (pcm_handle); }" >> alsatest.c
@@ -1744,13 +1747,33 @@ make_linux_alsacheck()
 
 make_openbsd_portaudiocheck()
 {
-  echo " => checking for portaudio.."
+  vecho " => checking for portaudio.."
   echo "#include <portaudio.h>" > patest.c
   echo "int main() { Pa_GetDefaultInputDevice(); }" >> patest.c
   gcc -Werror -o patest patest.c -I/usr/local/include -L/usr/local/lib -lportaudio 
   asserterror $? "portaudio is not installed? Please install patched version from ports."
   rmifexists patest
   rmifexists patest.c
+}
+
+make_xelatexcheck()
+{
+  vecho " => checking for working xelatex.."
+  chkdir=check.xelatex
+  mkdir -p $chkdir
+  cd $chkdir
+cat > check.tex << END
+\documentclass{article}
+\usepackage{fontspec}
+\usepackage{geometry}
+\begin{document}
+check
+\end{document}
+END
+  veval "xelatex check.tex"
+  assertfile check.pdf "xelatex environment is not complete. Please install necessary XeTeX packages." 
+  cd ..
+  rm -rf $chkdir
 }
 
 make_libarycheck(){
@@ -1773,6 +1796,8 @@ make_toolcheck()
   asserttool autoconf make gcc patch
   # graphics 
   asserttool gs convert xelatex ps2eps freetype-config
+  # verify that xelatex works
+  make_xelatexcheck
   if [ $SYS_PLATFORM = android ]; then
     asserttool bc ant
   fi 
@@ -1803,6 +1828,20 @@ make_libarycheck
 # try to prevent a failed build from contaminating next make
 # this has to be called after make_setup
 resetstate
+
+# check if framework version has changed since last configure
+cfg_version=$SYS_VERSION
+cur_version=`cat ./VERSION | sed '/^#/d'`
+if [ "X$cfg_version" = "X" ]; then
+  cfg_version=$cur_version
+fi
+if [ ! "X$cfg_version" = "X$cur_version" ]; then
+  echo " ** NEW FRAMEWORK VERSION DETECTED - scrubbing cache"
+  make_scrub
+  rm config.cache
+  echo " ** FRAMEWORK VERSION CHANGE - please rerun configure for the local host"
+  exit 1
+fi
 
 case "$1" in
 clean) 
