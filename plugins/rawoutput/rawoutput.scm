@@ -83,7 +83,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (rawoutput:start store instance)
   )))
 
-(define (rawoutput:run store instance)
+(define (rawoutput:caserun store instance)
   (if (and (store-ref store "CaseID" #f) 
            #t ;;  (> (store-ref store "DiskSpace" 0) 0) ;; forget disk space for now
       )
@@ -101,7 +101,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   #t)
 
 ;; register the plugin
-(plugin-register "rawoutput" rawoutput:init rawoutput:caseinit rawoutput:run 
+(plugin-register "rawoutput" rawoutput:init rawoutput:caseinit rawoutput:caserun
                  rawoutput:caseend rawoutput:end 'output)
 
 ;; eof
