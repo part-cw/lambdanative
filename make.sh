@@ -1776,7 +1776,7 @@ make_tools()
     assertfile $tooldir
     cd $tooldir
     ac_output build.sh
-    sh build.sh
+    veval "sh build.sh"
     asserterror $?
     rm build.sh
     cd $here
