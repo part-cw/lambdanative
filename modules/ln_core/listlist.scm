@@ -36,21 +36,37 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(include "color.scm")
-(include "floatstring.scm")
-(include "flofix.scm")
-(include "list.scm")
-(include "math.scm")
-(include "list-stats.scm")
-(include "listlist.scm")
-(include "sort.scm")
-(include "string.scm")
-(include "time.scm")
-(include "log.scm")
-(include "ipaddr.scm")
-(include "launchurl.scm")
-(include "u8vector.scm")
-(include "u8data.scm")
-(include "u8vector-crcs.scm")
-(include "u8vector-compress.scm")
-(include "file-compress.scm")
+;; list-of-list operations
+(define (listlist? obj)   
+  (if (list? obj)
+    (let loop ((o obj)(r #t))
+      (if (= (length o) 0) r
+        (loop (cdr o) (if (list? (car o)) r #f)))) #f))
+
+(define (listlist-map m ll)
+ (if (listlist? ll)    
+   (let loop ((a ll)(b '()))
+     (if (= (length a) 0) b
+       (loop (cdr a) (append b (list 
+         (map m (car a)))))))))
+
+(define (listlist-apply f ll) 
+  (if (listlist? ll) (apply f (flatten ll))))
+
+(define (transpose lst)
+  (let loop ((lst2  lst)
+             (tlst '()))
+    (if (null? (car lst2)) (reverse tlst)
+      (loop (map cdr lst2) (cons (map car lst2) tlst)))))
+
+(define (flatten tree)
+  (cond ((null? tree) 
+         '())
+        ((not (pair? tree))
+         (list tree))
+        ((pair? (car tree))
+         (append (flatten (car tree)) (flatten (cdr tree))))
+        (else
+         (cons (car tree) (flatten (cdr tree))))))
+
+;; eof
