@@ -1331,7 +1331,7 @@ win32)
   fi
   asserterror $?
   assertfile $tgt
-  if [ "X$SYS_MODE" = "Xdebug" ]; then
+  if [ ! "X$SYS_MODE" = "Xdebug" ]; then
     $SYS_STRIP $tgt
     asserterror $?
   fi
@@ -1384,7 +1384,7 @@ linux)
   fi
   asserterror $?
   assertfile $tgt
-  if [ "X$SYS_MODE" = "Xdebug" ]; then
+  if [ ! "X$SYS_MODE" = "Xdebug" ]; then
     $SYS_STRIP $tgt
     asserterror $?
   fi
@@ -1434,7 +1434,7 @@ linux486)
   fi
   asserterror $?
   assertfile $tgt
-  if [ "X$SYS_MODE" = "Xdebug" ]; then
+  if [ ! "X$SYS_MODE" = "Xdebug" ]; then
     $SYS_STRIP $tgt
     asserterror $?
   fi
@@ -1485,7 +1485,7 @@ openbsd)
   fi
   asserterror $?
   assertfile $tgt
-  if [ "X$SYS_MODE" = "Xdebug" ]; then
+  if [ ! "X$SYS_MODE" = "Xdebug" ]; then
     $SYS_STRIP $tgt
     asserterror $?
   fi
@@ -1530,7 +1530,7 @@ bb10)
   fi
   asserterror $?
   assertfile $tgt
-  if [ "X$SYS_MODE" = "Xdebug" ]; then
+  if [ ! "X$SYS_MODE" = "Xdebug" ]; then
     $SYS_STRIP $tgt
     asserterror $?
   fi
