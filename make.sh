@@ -1900,8 +1900,14 @@ usage()
 # main dispatcher
 
 make_setup
-make_toolcheck
-make_libarycheck
+case "$1" in
+  clean|scrub|info|package|install)
+  ;;
+  *)
+    make_toolcheck
+    make_libarycheck
+  ;;
+esac
 
 # try to prevent a failed build from contaminating next make
 # this has to be called after make_setup

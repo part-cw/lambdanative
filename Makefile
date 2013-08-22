@@ -13,3 +13,5 @@ install:
 package:
 	@ ./make.sh package
 
+info:
+	@ ./make.sh info
