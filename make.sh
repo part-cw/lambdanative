@@ -1331,8 +1331,10 @@ win32)
   fi
   asserterror $?
   assertfile $tgt
-  $SYS_STRIP $tgt
-  asserterror $?
+  if [ "X$SYS_MODE" = "Xdebug" ]; then
+    $SYS_STRIP $tgt
+    asserterror $?
+  fi
   cd $here
   echo " => cleaning up.."
   rm -rf "$tmpdir"
@@ -1382,8 +1384,10 @@ linux)
   fi
   asserterror $?
   assertfile $tgt
-  $SYS_STRIP $tgt
-  asserterror $?
+  if [ "X$SYS_MODE" = "Xdebug" ]; then
+    $SYS_STRIP $tgt
+    asserterror $?
+  fi
   cd $here
   echo " => cleaning up.."
   rm -rf "$tmpdir"
@@ -1430,8 +1434,10 @@ linux486)
   fi
   asserterror $?
   assertfile $tgt
-  $SYS_STRIP $tgt
-  asserterror $?
+  if [ "X$SYS_MODE" = "Xdebug" ]; then
+    $SYS_STRIP $tgt
+    asserterror $?
+  fi
   cd $here
   echo " => cleaning up.."
   rm -rf "$tmpdir"
@@ -1479,8 +1485,10 @@ openbsd)
   fi
   asserterror $?
   assertfile $tgt
-  $SYS_STRIP $tgt
-  asserterror $?
+  if [ "X$SYS_MODE" = "Xdebug" ]; then
+    $SYS_STRIP $tgt
+    asserterror $?
+  fi
   cd $here
   echo " => cleaning up.."
   rm -rf "$tmpdir"
@@ -1522,8 +1530,10 @@ bb10)
   fi
   asserterror $?
   assertfile $tgt
-  $SYS_STRIP $tgt
-  asserterror $?
+  if [ "X$SYS_MODE" = "Xdebug" ]; then
+    $SYS_STRIP $tgt
+    asserterror $?
+  fi
   echo " => preparing descriptor.."
   cat $configtgt | sed '/^#/d' > bar-descriptor.xml
   echo " => preparing icon.."
