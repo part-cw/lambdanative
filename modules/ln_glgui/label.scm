@@ -101,10 +101,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (r (glgui-widget-get g wgt 'rounded))
          (color (glgui-widget-get-dyn g wgt 'color))
          (bgcolor (glgui-widget-get-dyn g wgt 'bgcolor))
-         (align (glgui-widget-get g wgt 'align)))
+         (align (glgui-widget-get g wgt 'align))
+         (direction (glgui-widget-get g wgt 'direction)))
     (if bgcolor (if r (glgui:draw-rounded-box x y w h bgcolor) (glgui:draw-box x y w h bgcolor)))
     (if (and label (fx> (string-length label) 0))
-      (let ((labelsplit (string-split-width label w fnt))
+      (let ((labelsplit ((if (= direction GUI_RIGHTTOLEFT) string-split-width-rtl string-split-width) label w fnt))
             (hline lblh))
         (let loop ((i 0) (yline (fl+ y h (fl- hline))))
           (if (fx= i (length labelsplit)) 
@@ -171,6 +172,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'aftercharcb #f    ;; A callback that is called after every character and after delete
      'color color
      'hidden #f
+     'direction GUI_LEFTTORIGHT
      'password #f
      'enableinput #f   ;; This way we can make clickable labels
      'focus #f

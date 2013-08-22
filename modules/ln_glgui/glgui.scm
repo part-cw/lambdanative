@@ -75,6 +75,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define GUI_ALIGNBOTTOM  5)
 
+;; text direction
+(define GUI_LEFTTORIGHT  6)
+
+(define GUI_RIGHTTOLEFT  7)
+
 ;; 20100629 modal dialog support
 (define glgui:modalstate #f)
 

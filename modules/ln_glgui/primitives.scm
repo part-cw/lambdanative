@@ -271,5 +271,28 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 (string-append (if wrap? "" newstr) buildstr)
                 (fx+ buildstr_len (if wrap? 0 newstr_len)))))))
    ))
+
+(define (string-split-width-rtl str w fnt)
+  (if (string-contains str "\n")
+    ;; If there is a new line in the text, call this procedure for each line - section separated by new lines
+    (let lloop ((lines (string-split str #\newline)) (strlist (list)))
+      (if (fx= (length lines) 0) strlist
+         ;; Get results of using this procedure on the line
+         (let ((linelist (string-split-width-rtl (car lines) w fnt)))
+           ;; Handle an empty list (two new lines in a row) by replacing with a list with an empty string
+           (lloop (cdr lines) (append strlist (if (fx= (length linelist) 0) '("") linelist))))))
+    ;; If no new line, proceed normally - determine words on each line
+    (let ((strsplit (string-split str #\ )))
+      (let loop ((i (- (length strsplit) 1)) (strlist (list)) (newstr "") (newstr_len 0))
+        (if (fx= i -1)
+          (if (fx> newstr_len 0) (append strlist (list newstr)) strlist)
+                                           ;; Don't add a space, if it is the last word and there is no end space
+          (let* ((buildstr (string-append (if (fx= i 0) "" " ") (list-ref strsplit i)))
+                 (buildstr_len (fix (glgui:stringwidth buildstr fnt)))
+                 (wrap? (fx> (fx+ newstr_len buildstr_len) (fix w))))
+            (loop (fx- i 1) (append strlist (if wrap? (list newstr) '()))
+                (string-append buildstr (if wrap? "" newstr))
+                (fx+ buildstr_len (if wrap? 0 newstr_len)))))))
+   ))
   
 ;; eof
