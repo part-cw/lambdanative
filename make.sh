@@ -768,6 +768,7 @@ make_strings()
 
 make_setup()
 {
+  setstate SETUP
   profile=`locatefile PROFILE`
   assertfile "$profile"
   . "$profile"
@@ -973,6 +974,7 @@ make_setup()
   ac_subst SYS_BUILDEPOCH
   ac_subst SYS_PROFILE
   ac_output CONFIG.h $SYS_PREFIX/include/CONFIG.h
+  setstate
 }
 
 make_bootstrap()
@@ -1708,6 +1710,7 @@ make_executable()
 
 make_package()
 {
+  setstate PACKAGE
   here=`pwd`
   echo "==> making package.."
   case $SYS_PLATFORM in
@@ -1763,10 +1766,12 @@ make_package()
     echo "=== no packaging setup for this platform ($SYS_PLATFORM)"
   ;;
   esac
+  setstate
 }
 
 make_libraries()
 {
+  setstate LIBRARIES
   echo "==> creating libraries needed for $SYS_APPNAME.."
   libfile=`locatefile apps/$SYS_APPNAME/LIBRARIES` 
   assertfile $libfile
@@ -1794,10 +1799,12 @@ make_libraries()
       explode_library $libname
     fi
   done
+  setstate
 }
 
 make_tools()
 {
+  setstate TOOLS
   echo "==> creating tools needed for $SYS_APPNAME.."
   tools=`ls -1 tools`
   here=`pwd`
@@ -1811,6 +1818,7 @@ make_tools()
     rm build.sh
     cd $here
   done
+  setstate
 }
 
 make_info()
@@ -1882,6 +1890,7 @@ END
 }
 
 make_libarycheck(){
+  setstate LIBRARYCHECK
   echo "==> checking for required libraries.."
   make_glcheck
   if [ $SYS_PLATFORM = linux ]; then
@@ -1890,10 +1899,12 @@ make_libarycheck(){
   if [ $SYS_PLATFORM = openbsd ]; then
     make_openbsd_portaudiocheck
   fi
+  setstate
 }
 
 make_toolcheck()
 {
+  setstate TOOLCHECK
   echo "==> checking for required tools.."
   # basic 
   asserttool grep wget zip tar sed tr cut tail head find
@@ -1918,6 +1929,7 @@ make_toolcheck()
   if [ $SYS_PLATFORM = bb10 ]; then
     asserttool qcc blackberry-nativepackager blackberry-deploy
   fi
+  setstate
 }
 
 usage()
