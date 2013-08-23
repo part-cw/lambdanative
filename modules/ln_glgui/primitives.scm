@@ -171,9 +171,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (if (fx= (length g) 5) (list-ref g 3)
     (glgui:image-w (glgui:glyph-image g))))
 
+(define glgui:use_utf8 #t)
+
+(define (glgui-utf8-set! flag) (set! glgui:use_utf8 flag))
+
+(define glgui:string->glyphs (if glgui:use_utf8 utf8string->unicode (lambda (s) (map char->integer (string->list s)))))
+(define glgui:glyphs->string (if glgui:use_utf8 unicode->utf8string (lambda (l) (list->string (map integer->char l)))))
+
 (define (glgui:renderstring x y txt fnt color)
   (glCoreColor color)
-  (let loop ((x0 (flo x))(cs (map char->integer (string->list txt))))
+  (let loop ((x0 (flo x))(cs (glgui:string->glyphs txt)))
     (if (fx> (length cs) 0)
       (let* ((charcode (car cs))
              (g (assoc charcode fnt))
@@ -193,7 +200,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (cadr (cadr (car fnt)))))) h))
 
 (define (glgui:stringheight txt fnt)
-  (let loop ((above 0.)(below 0.)(cs (map char->integer (string->list txt))))
+  (let loop ((above 0.)(below 0.)(cs (glgui:string->glyphs txt)))
     (if (fx= (length cs) 0) (list above below)
       (let* ((g (assoc (car cs) fnt))
              (i (if g (glgui:glyph-image g) #f))
@@ -202,7 +209,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (loop (flmax above goy)  (flmin below (fl- goy gh)) (cdr cs))))))
 
 (define (glgui:stringwidth txt fnt)
-  (let loop ((x 0.)(cs (map char->integer (string->list txt))))
+  (let loop ((x 0.)(cs (glgui:string->glyphs txt)))
     (if (fx= (length cs) 0) (fix (ceiling x))
       (let* ((glyph (assoc (car cs) fnt))
              (ax (if glyph (flo (glgui:glyph-advancex glyph)) 0.)))
@@ -217,12 +224,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (loop (fl+ x ax) (cdr cs) (append rs (if (fl<= (fl+ x ax) w) (list (car cs)) '()))))))))
 
 (define (glgui:stringclipright w txt fnt)
-  (list->string (map integer->char 
-    (glgui:stringcliplist w (map char->integer (string->list txt)) fnt))))
+  (glgui:glyphs->string (glgui:stringcliplist w (glgui:string->glyphs txt) fnt)))
 
 (define (glgui:stringclipleft w txt fnt)
-  (list->string (map integer->char 
-    (reverse (glgui:stringcliplist w (reverse (map char->integer (string->list txt))) fnt)))))
+  (glgui:glyphs->string (reverse (glgui:stringcliplist w (reverse (glgui:string->glyphs txt)) fnt))))
 
 (define (glgui:draw-text-left x y w h label fnt color)
   (let* ((strw (flo (glgui:stringwidth label fnt)))
