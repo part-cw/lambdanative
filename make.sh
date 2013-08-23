@@ -1675,6 +1675,26 @@ make_install()
   esac
 }
 
+update_packfile()
+{
+  setstate PACKTOOL
+  embedfile=`locatefile apps/$SYS_APPNAME/EMBED silent`
+  if [ ! "X$embedfile" = "X" ]; then
+    echo "==> Updating packfile for $SYS_APPNAME.."
+    here=`pwd`
+    cd apps/$SYS_APPNAME
+    $SYS_HOSTPREFIX/bin/packtool
+    cd $here
+    mainfile=`locatefile apps/$SYS_APPNAME/main.scm`
+    if [ "X"`cat "$mainfile" | grep "(include \"embed.scm\")" | cut -c 1` = "X" ]; then
+      echo "ERROR: $SYS_APPNAME/main.scm is missing include for embed.scm" 
+      echo "Please add  (include \"embed.scm\")  to the top of it."
+      exit 1
+    fi
+  fi
+  setstate
+}
+
 make_executable()
 {
   if [ ! "$SYS_MODULES" ]; then
@@ -1978,6 +1998,7 @@ if [ `is_gui_app` = "yes" ]; then
   make_strings
 fi
   make_payload
+  update_packfile
   make_executable
   make_package
 ;;

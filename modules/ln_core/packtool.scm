@@ -36,22 +36,30 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(include "color.scm")
-(include "floatstring.scm")
-(include "flofix.scm")
-(include "list.scm")
-(include "math.scm")
-(include "list-stats.scm")
-(include "listlist.scm")
-(include "sort.scm")
-(include "string.scm")
-(include "time.scm")
-(include "log.scm")
-(include "ipaddr.scm")
-(include "launchurl.scm")
-(include "u8vector.scm")
-(include "u8data.scm")
-(include "u8vector-crcs.scm")
-(include "u8vector-compress.scm")
-(include "file-compress.scm")
-(include "packtool.scm")
+;; simple code to package files within an application
+;; this will allow default arbitrary files to be transferred to any platform
+
+(define (packtool:prep file)
+  (let* ((tmp (string-split file (string-ref (system-pathseparator) 0)))
+         (basename (car (reverse tmp))))
+    (let loop ((dirs (reverse (cdr (reverse tmp))))
+               (path (system-directory)))
+      (if (= (length dirs) 0) (string-append path (system-pathseparator) basename)
+        (let ((newpath (string-append path (system-pathseparator) (car dirs))))
+          (if (not (file-exists? newpath)) (create-directory newpath))
+          ;; sometimes directories are not instantly available??
+          (let loop2 ()
+            (if (not (file-exists? newpath)) (begin
+              (thread-sleep! 0.1)
+              (loop2))))
+          (loop (cdr dirs) newpath))))))
+
+;; extract an embedded file
+(define (packtool-unpack file cdata)
+  (let ((path (packtool:prep file)))
+    (if (not (file-exists? path))
+      (let ((data (u8vector-decompress cdata)))
+        (log-system "packtool: extracting " path)
+        (u8vector->file data path)))))
+
+;; eof

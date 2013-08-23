@@ -36,22 +36,35 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(include "color.scm")
-(include "floatstring.scm")
-(include "flofix.scm")
-(include "list.scm")
-(include "math.scm")
-(include "list-stats.scm")
-(include "listlist.scm")
-(include "sort.scm")
-(include "string.scm")
-(include "time.scm")
-(include "log.scm")
-(include "ipaddr.scm")
-(include "launchurl.scm")
-(include "u8vector.scm")
-(include "u8data.scm")
-(include "u8vector-crcs.scm")
-(include "u8vector-compress.scm")
-(include "file-compress.scm")
-(include "packtool.scm")
+;; tool to package files for scheme inclusion
+(define srcfile "EMBED")
+(define tgtfile "embed.scm")
+
+(define (packtool:pack file)
+  (if (file-exists? file)
+    (let* ((data (file->u8vector file))
+           (cdata (u8vector-compress data)))
+       `(packtool-unpack ,file ',cdata))))
+
+(if (file-exists? srcfile)
+  (let* ((srcfiles (string-split (with-input-from-file srcfile (lambda () (read-line))) #\space))
+         (tgttime (if (file-exists? tgtfile) (time->seconds (file-last-modification-time tgtfile)) 0.))
+         (srcfile-updated? (> (time->seconds (file-last-modification-time srcfile)) tgttime))
+         (dirty (let loop ((files srcfiles)(flag srcfile-updated?))
+           (if (= (length files) 0) flag
+             (let ((file (car files)))
+               (loop (cdr files) (or flag (and (file-exists? file)
+                 (> (time->seconds (file-last-modification-time file)) tgttime)))))))))
+    (if dirty (begin
+      (with-output-to-file tgtfile (lambda () (display ";; automatically generated. Do not edit.\n")))
+      (let loop ((files srcfiles))
+        (if (> (length files) 0) 
+          (let ((file (car files)))
+            (if (file-exists? file) (begin
+              (for-each display (list " => embedding " file "..\n"))
+              (with-output-to-file (list path: tgtfile append: #t) (lambda () 
+                (write (packtool:pack file))))))
+            (loop (cdr files))))))
+     (display " => embedded data is up to date, nothing to do.\n")))
+)
+;; eof
