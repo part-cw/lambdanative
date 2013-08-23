@@ -104,7 +104,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                           (integer->char (bitwise-ior #x80 (bitwise-and #x3F (arithmetic-shift c -12))))
                           (integer->char (bitwise-ior #x80 (bitwise-and #x3F (arithmetic-shift c  -6))))
                           (integer->char (bitwise-ior #x80 (bitwise-and #x3F c)))))
-                 ((fx<= x #x7fffffff)
+                 ((fx<= c #x7fffffff)
                   (string (integer->char (bitwise-ior #xFC (bitwise-and #x01 (arithmetic-shift c -30))))
                           (integer->char (bitwise-ior #x80 (bitwise-and #x3F (arithmetic-shift c -24))))
                           (integer->char (bitwise-ior #x80 (bitwise-and #x3F (arithmetic-shift c -18))))
