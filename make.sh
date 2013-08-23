@@ -655,12 +655,21 @@ make_fonts()
           font=`locatefile fonts/$fontname`
           assertfile $font 
           bits=`echo "$fline" | cut -f 2 -d " "`
+          if [ "X$bits" = "X7" ]; then 
+             bits=`locatefile fonts/ascii7.set`
+          else
+            if [ "X$bits" = "X8" ]; then 
+              bits=`locatefile fonts/ascii8.set`
+            else
+              bits=`locatefile fonts/$bits`
+            fi
+          fi
           sizes=`echo "$fline" | cut -f 3 -d " "`
           name=`echo "$fline" | cut -f 4 -d " "`
           scmfile=$tgtdir/${name}.scm
           if [ `isnewer $srcfile $scmfile` = "yes" ]; then
-             echo " => $name.."
-             $SYS_HOSTPREFIX/bin/ttffnt2scm $font $bits $sizes $name > $scmfile
+             echo " => $name using glyph set $bits.."
+             $SYS_HOSTPREFIX/bin/ttffnt2scm $font "$bits" $sizes $name > $scmfile
              assertfile $scmfile
           fi
           echo "(include \"$scmfile\")" >> $incfile
@@ -678,9 +687,10 @@ make_string_aux()
   newpath=`mktemp -d tmp.XXXXXX`
   cd $newpath
   srcfont=$1
+  assertfile $srcfont
   fontname=`$SYS_HOSTPREFIX/bin/ttfname $srcfont`
   tgtfont="$fontname".ttf
-  cp $srcfont $tgtfont
+  cp "$srcfont" "$tgtfont"
   fontpath=`pwd`"/"
   size=$2
   string="$3"
@@ -695,7 +705,7 @@ cat > tmp.tex << __EOF
 \usepackage{fontspec}
 \usepackage{xunicode}
 %\fontspec [ Path = $fontpath ]{$fontname}
-\setmainfont[$opt]{"[$fontname.ttf]"}
+\setmainfont[$opt]{[$fontname.ttf]}
 \usepackage[margin=0.1in, paperwidth=40in, paperheight=2in]{geometry}
 \begin{document}
 \thispagestyle{empty}

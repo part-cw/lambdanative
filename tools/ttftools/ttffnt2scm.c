@@ -50,18 +50,69 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "texture-atlas.h"
 #include "texture-font.h"
 
-// plain ascii
-const wchar_t *ascii7_set = L" !\"#$%&'()*+,-./0123456789:;<=>?"
-                           L"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-                           L"`abcdefghijklmnopqrstuvwxyz{|}~";
-// extended ascii
-const wchar_t *ascii8_set = L" !\"#$%&'()*+,-./0123456789:;<=>?"
-                           L"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-                           L"`abcdefghijklmnopqrstuvwxyz{|}~"
-                           L"ŠŒŽšžŸœÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝß"
-                           L"àáâãäåæçèéêëìíîïñòóôõöøùúûüýÿ";
+wchar_t *glyph_set=0;
 
-int use_extended=0;
+// load a glyph set from a file
+void load_glyph_set(char *setarg)
+{
+  FILE *fd;
+  char buf[1024];
+  int nglyphs, n=0,l,i,factor;
+  fd=fopen(setarg,"r");
+  if (!fd) return;
+  // allocate glyph array
+  while (fd&&!feof(fd)) { fgets(buf,1024,fd); if (buf&&buf[0]!='#') n++; }
+  fclose(fd);
+  glyph_set=(wchar_t*)malloc((n+1)*sizeof(wchar_t));
+  nglyphs=n;
+  glyph_set[n]=0;
+  // load glyphs
+  n=0;
+  if (glyph_set) {
+    fd=fopen(setarg,"r");
+    while (fd&&!feof(fd)) {
+      buf[0]=0;
+      fgets(buf,1024,fd);
+      if (buf&&buf[0]!='#') {
+        l=strlen(buf); 
+        for (i=0;i<l;i++) { if (buf[i]<32) buf[i]=0; }
+        switch (buf[0]) {
+          case 'b': // octal
+            l=strlen(buf);
+            factor=1;
+            glyph_set[n]=0;
+            for (i=l-1;i>0;i--) {
+              glyph_set[n]+=(wchar_t)(factor*buf[i]);
+              factor*=8; 
+            } 
+            break;
+          case 'x': // hexadecimal
+            l=strlen(buf);
+            factor=1;
+            glyph_set[n]=0;
+            for (i=l-1;i>0;i--) {
+              glyph_set[n]+=(wchar_t)(factor*(buf[i]<59?buf[i]-48:(buf[i]<71?buf[i]-65+10:buf[i]-97+10)));
+              factor*=16; 
+            } 
+            break;
+          case 'U': // unicode U+XXXX hex notation
+            l=strlen(buf);
+            factor=1;
+            glyph_set[n]=0;
+            for (i=l-1;i>1;i--) {
+              glyph_set[n]+=(wchar_t)(factor*(buf[i]<59?buf[i]-48:(buf[i]<71?buf[i]-65+10:buf[i]-97+10)));
+              factor*=16; 
+            } 
+            break;
+          default: // decimal
+            glyph_set[n]=(wchar_t)atoi(buf);
+            break;
+        }
+        n++;
+      }
+    }
+  }
+}
 
 void printscmatlas(char *name, texture_atlas_t *a)
 {
@@ -125,7 +176,7 @@ size_t tryatlas(size_t w, size_t h, char *fname, int *pointlist,char *tag)
       printf("(define %s (list\n", buf);
       sprintf(buf,"%s.raw", tag);
     }
-    missed += texture_font_load_glyphs( font, (use_extended?ascii8_set:ascii7_set));
+    missed += texture_font_load_glyphs( font, glyph_set);
     if (tag) printscmfont(tag,font,w,h);
     texture_font_delete( font );
     if (tag) printf("))\n");
@@ -160,7 +211,6 @@ int main( int argc, char **argv )
   char *s1,*s2;
   int n=0,pointlist[]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
   if (argc!=5) usage();
-  if (atoi(argv[2])==8) use_extended=1;
   for( s2 = argv[3]; s2; ) {
     while( *s2 == ' ' || *s2 == '\t' ) s2++;
     s1 = strsep( &s2, "," );
@@ -171,6 +221,7 @@ int main( int argc, char **argv )
       if( ret == 1 ) { pointlist[n++]=val; }
     }
   }
+  load_glyph_set(argv[2]);
   makeatlas(argv[1],pointlist,argv[4]);
   return 0;
 }
