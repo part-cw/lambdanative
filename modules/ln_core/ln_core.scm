@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "listlist.scm")
 (include "sort.scm")
 (include "string.scm")
+(include "utf8string.scm")
 (include "time.scm")
 (include "log.scm")
 (include "ipaddr.scm")
