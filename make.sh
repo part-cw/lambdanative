@@ -1684,7 +1684,7 @@ update_packfile()
   if [ ! "X$embedfile" = "X" ]; then
     echo "==> Updating packfile for $SYS_APPNAME.."
     here=`pwd`
-    cd apps/$SYS_APPNAME
+    cd `locatedir apps/$SYS_APPNAME`
     $SYS_HOSTPREFIX/bin/packtool
     cd $here
     mainfile=`locatefile apps/$SYS_APPNAME/main.scm`
