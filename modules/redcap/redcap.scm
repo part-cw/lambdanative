@@ -165,7 +165,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (begin
         (log-warning "Cannot export from REDCap, no valid connection")
         (httpsclient-close)
-        (list) ;; Could also return #f
+        #f ;; Denote difference between no data and no connection
       )
     )
   )
@@ -382,7 +382,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (begin
         (log-warning "Cannot export from REDCap, no valid connection")
         (httpsclient-close)
-        (list) ;; Could also return #f
+        #f  ;; Denote difference between no data and no connection
       )
     )
   )
