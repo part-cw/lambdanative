@@ -1892,11 +1892,12 @@ END
 make_libarycheck(){
   setstate LIBRARYCHECK
   echo "==> checking for required libraries.."
-  make_glcheck
   if [ $SYS_PLATFORM = linux ]; then
+    make_glcheck
     make_linux_alsacheck
   fi
   if [ $SYS_PLATFORM = openbsd ]; then
+    make_glcheck
     make_openbsd_portaudiocheck
   fi
   setstate
