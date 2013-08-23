@@ -189,8 +189,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 )
 
 (define (glgui:inputloop t x0 y0 . gs)
-    (let loop0 ((guis gs))
-      (if (fx= (length guis) 0) #f
+    (let loop0 ((guis (reverse gs)) (done0 #f))
+      (if (or done0 (fx= (length guis) 0)) done0
         (let* ((gui (car guis))
                (xofs (glgui-get gui 'xofs))
                (yofs (glgui-get gui 'yofs))
@@ -209,8 +209,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                       ((fx= glgui:rotate 3) (- app:height y0))
                       ))))
                (widget-list (reverse (glgui-get gui 'widget-list))))
-;;         (log-system "input to gui " gui " [" widget-list "]")
-         (let loop ((wl widget-list)(done #f))
+         (loop0 (cdr guis) (let loop ((wl widget-list)(done #f))
             (if (or (fx= (length wl) 0) done) done
                (let* ((wgt (car wl))
                       (h (glgui-widget-get gui wgt 'hidden))
@@ -223,9 +222,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             (if (procedure? p) (p gui wgt t x y) (if container? (glgui:inputloop t x0 y0 wgt) #f))
                           (if (and (not glgui:modalstate) (not m) (not h))
                             (if (procedure? p) (p gui wgt t x y) (if container? (glgui:inputloop t x0 y0 wgt) #f)) #f))))
-         ;;         (log-system "input loop on widget " wgt " =" r)
-                  (loop (cdr wl) (and (not (or (fx= t EVENT_BUTTON1UP) propagate glgui:propagate)) r)))))
-          (loop0 (cdr guis))))))
+                  (loop (cdr wl) (and (not (or (fx= t EVENT_BUTTON1UP) propagate glgui:propagate)) r))))))))))
 
 ;; process an input event
 ;; 20100519: allow multiple guis
