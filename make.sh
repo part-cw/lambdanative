@@ -1673,6 +1673,19 @@ make_install()
       $ANDROIDSDK/platform-tools/adb shell am start -n $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME/.$SYS_APPNAME
     fi
   ;;
+  macosx)
+    echo "==> attempting to install android application $SYS_APPNAME to local desktop.."
+    pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-macosx.zip"
+    desktop=$HOME/Desktop
+    assertfile "$desktop"
+    exefile="$desktop/${SYS_APPNAME}.app/$SYS_APPNAME"
+    here=`pwd`
+    cd "$desktop"
+    unzip -oqq $pkgfile
+    cd "$here"
+    echo "==> Starting application.."
+    eval "$exefile &"
+  ;;
   bb10)
     echo "==> attempting to install bb10 application $SYS_APPNAME.."
     pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-bb10.bar"
