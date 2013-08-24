@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Local variables specifying REDCap server settings
 (define redcap:url "/redcap/api/")
+(define (redcap-url-set! url) (set! redcap:url url))
 (define redcap:user-agent "lambdanative/1.0")
 (define redcap:content-type "application/x-www-form-urlencoded")
 (define redcap:content-type-file "multipart/form-data")
