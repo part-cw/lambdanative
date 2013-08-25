@@ -202,16 +202,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       ))
     str))
 
-
 (define (string-replace-substring str searchstr replacestr)
-  (if (and (string? str) (string? searchstr) (string? replacestr) (> (string-length str) (string-length searchstr)))
-    (let loop ((i 0) (newstr str))
-      (if (fx= i (- (string-length newstr) (string-length searchstr) -1)) newstr
-        (loop (+ i 1) (if (string=? (substring newstr i (+ i (string-length searchstr))) searchstr) 
-          (string-append (substring newstr 0 i) replacestr (substring newstr (+ i (string-length searchstr)) (string-length newstr)))
-          newstr))
-      )) 
-    str))
+  (let ((searchstrlen (string-length searchstr)))
+    (if (and (string? str) (string? searchstr) 
+          (string? replacestr) (> (string-length str) (string-length searchstr)))
+      (let loop ((substr str)(res ""))
+        (if (= (string-length substr) 0) res
+          (let ((match? (and (>= (string-length substr) searchstrlen)
+                          (string=? (substring substr 0 searchstrlen) searchstr))))
+            (loop (substring substr (if match? searchstrlen 1) (string-length substr))
+              (string-append res (if match? replacestr (substring substr 0 1))))))))))
 
 (define (string-split-into-two str)
   
