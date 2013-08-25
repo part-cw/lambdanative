@@ -35,11 +35,155 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
-;; misc utf8 manipulation
 
-(define (utf8string-length src)
-  (length (utf8string->unicode src)))
+;; misc simplistic utf8 manipulation
+;; standard gambit string operations are not utf8 aware
 
+;; -------------------------------
+;; character level - the utf8 "char" is a string
+
+(define utf8char? string?)
+(define utf8char=? string=?)
+(define utf8char-ci=? string-ci=?)
+
+(define (char->utf8char c) (if (char? c) (string c) c))
+
+(define (utf8char->integer c) (car (utf8string->unicode c)))
+(define (integer->utf8char i) (unicode->utf8string (list i)))
+
+;; -------------------------------
+;; string level
+
+(define utf8string? string?)
+(define utf8string=? string=?)
+(define utf8string-append string-append)
+(define utf8string-copy string-copy) 
+
+(define (utf8string-length src) (length (utf8string->unicode src)))
+
+(define (utf8string-ref s idx) (integer->utf8char (list-ref (utf8string->unicode s) idx)))
+
+(define (utf8string . cs) 
+  (let ((utf8cs (map char->utf8char cs)))
+   (apply string-append utf8cs)))
+
+(define (make-utf8string n . c) 
+  (let ((utf8c (char->utf8char (if (fx= (length c) 1) (car c) " "))))
+    (let loop ((i 0)(s ""))
+      (if (fx= i n) s 
+        (loop (fx+ i 1) (string-append s utf8c))))))
+
+(define (utf8string->list s) (map integer->utf8char (utf8string->unicode s)))
+
+(define (list->utf8string l) (apply string-append l))
+
+(define (utf8substring s ofs len)
+  (list->utf8string (sublist (utf8string->list s) ofs len)))
+
+;; ---------------------------
+;; replicate extensions in string.scm
+
+(define utf8string-trim string-trim)
+
+(define utf8string-remove-quotes string-remove-quotes)
+
+(define (utf8string-remove-spaces str) (utf8string-remove-char str #\space))
+
+(define (utf8string-remove-char str chr)
+  (let ((utf8chr (char->utf8char chr)))
+    (let loop ((ret (list)) (lst (utf8string->list str)))
+      (if (not (pair? lst)) (list->utf8string ret)
+        (loop (if (utf8char=? (car lst) utf8chr) ret (append ret (list (car lst))))  (cdr lst))
+      ))))
+
+(define utf8string-upcase! string-upcase!)
+(define utf8string-upcase string-upcase)
+
+(define utf8string-downcase! string-downcase!)
+(define utf8string-downcase string-downcase)
+
+(define utf8string-capitalize! string-capitalize!)
+(define utf8string-capitalize string-capitalize)
+
+(define utf8string-explode (lambda (str seplst)
+  (let ((utf8seplst (map char->utf8char seplst)))
+    (let loop ((strlst (utf8string->list str))(tmp "")(res '()))
+      (if (= (length strlst) 0) (append res 
+        (if (> (utf8string-length tmp) 0) (list tmp) '()))
+        (let ((chop? (member (car strlst) utf8seplst)))
+          (loop (cdr strlst) (if chop? "" (utf8string-append tmp (utf8string (car strlst))))
+            (if chop? (append res (list tmp) 
+               (list (utf8string (car strlst)))) res))))))))
+
+(define (utf8string-split str sep)
+  (let ((utf8sep (char->utf8char sep)))
+    (let loop ((cs (utf8string->list str))(subres "")(res '()))
+      (if (= (length cs) 0) (if (> (utf8string-length subres) 0) 
+        (append res (list subres)) res)
+        (let* ((c (car cs))
+               (split? (utf8char=? c utf8sep)))
+          (loop (cdr cs) (if split? "" (utf8string-append subres c))
+            (if split? (append res (list subres)) res)))))))
+
+(define (utf8string-index str a-char cmp)
+  (let ((utf8a-char (char->utf8char a-char)))
+    (let loop ((pos 0)) (cond
+        ((>= pos (utf8string-length str)) #f)
+        ((cmp utf8a-char (utf8string-ref str pos)) pos)
+        (else (loop (fx+ pos 1)))))))
+
+(define (utf8string:contains str pattern cmp)
+  (let* ((pat-len (utf8string-length pattern))
+         (search-span (- (utf8string-length str) pat-len))
+         (c1 (if (zero? pat-len) #f (utf8string-ref pattern 0)))
+         (c2 (if (<= pat-len 1) #f (utf8string-ref pattern 1))))
+    (cond
+     ((not c1) 0)    
+     ((not c2) (utf8string-index str c1 cmp))
+     (else (let outer ((pos 0))
+          (cond
+	    ((> pos search-span) #f)
+            ((not (cmp c1 (utf8string-ref str pos)))
+                (outer (+ 1 pos)))	
+            ((not (cmp c2 (utf8string-ref str (+ 1 pos))))
+                (outer (+ 1 pos)))
+            (else (let inner ((i-pat 2) (i-str (+ 2 pos)))
+               (if (>= i-pat pat-len) pos 
+                  (if (cmp (utf8string-ref pattern i-pat) (utf8string-ref str i-str))
+                        (inner (+ 1 i-pat) (+ 1 i-str))
+                        (outer (+ 1 pos))))))))))))	
+
+(define (utf8string-contains str pattern) (utf8string:contains str pattern utf8char=?))
+(define (utf8string-contains-ci str pattern) (utf8string:contains str pattern utf8char-ci=?))
+
+(define utf8string-count string-count)
+(define utf8string-mapconcat string-mapconcat)
+
+(define (utf8string-replace-char str oldchr newchr)
+  (let ((utf8oldchr (char->utf8char oldchr))
+        (utf8newchr (char->utf8char newchr)))
+    (let loop ((oldcs (utf8string->list str))(newcs '()))
+      (if (= (length oldcs) 0) (list->utf8string newcs)
+        (loop (cdr oldcs) (append newcs  
+          (list (if (utf8char=? (car oldcs) utf8oldchr) utf8newchr (car oldcs)))))))))
+
+(define utf8string-replace-substring string-replace-substring)
+
+(define (utf8string-split-into-two str)
+  (set! str (utf8string-trim str))
+  (if (fx= (utf8string-length str) 0)
+    (list "" "")
+    (let loop ((first (utf8string-split str #\space)) (second (list)) (bestw (utf8string-length str)))
+      (let* ((moveindex (- (length first) 1))
+             (newfirst (list-head first moveindex))
+             (newsecond (append (list (list-ref first moveindex)) second))
+             (neww (max (utf8string-length (utf8string-mapconcat newfirst " ")) 
+               (utf8string-length (utf8string-mapconcat newsecond " ")))))
+        (if (< neww bestw)
+          (loop newfirst newsecond neww)
+          (list (utf8string-mapconcat first " ") (utf8string-mapconcat second " ")))))))
+
+;; -------------------------------
 ;; unicode<->utf8 translation
 ;; adopted from http://ccm.sherry.jp/cleite/ (public domain)
 
