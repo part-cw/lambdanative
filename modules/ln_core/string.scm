@@ -211,7 +211,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (let ((match? (and (>= (string-length substr) searchstrlen)
                           (string=? (substring substr 0 searchstrlen) searchstr))))
             (loop (substring substr (if match? searchstrlen 1) (string-length substr))
-              (string-append res (if match? replacestr (substring substr 0 1))))))))))
+              (string-append res (if match? replacestr (substring substr 0 1))))))) str)))
 
 (define (string-split-into-two str)
   
