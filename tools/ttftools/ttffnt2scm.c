@@ -52,65 +52,68 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 wchar_t *glyph_set=0;
 
-// load a glyph set from a file
-void load_glyph_set(char *setarg)
+int hex_digit(char c)
 {
-  FILE *fd;
+  int res=0;
+  if (c>='0'&&c<='9') res=(int)c-'0';
+  if (c>='a'&&c<='f') res=(int)c-'a'+10;
+  if (c>='A'&&c<='F') res=(int)c-'A'+10;
+  return res;
+}
+
+int _load_glyph_set(char *fname, wchar_t* gset)
+{
+  unsigned int i,n=0,l,a,b,factor;
   char buf[1024];
-  int nglyphs, n=0,l,i,factor;
-  fd=fopen(setarg,"r");
-  if (!fd) return;
-  // allocate glyph array
-  while (fd&&!feof(fd)) { fgets(buf,1024,fd); if (buf&&buf[0]!='#') n++; }
-  fclose(fd);
-  glyph_set=(wchar_t*)malloc((n+1)*sizeof(wchar_t));
-  nglyphs=n;
-  glyph_set[n]=0;
-  // load glyphs
-  n=0;
-  if (glyph_set) {
-    fd=fopen(setarg,"r");
-    while (fd&&!feof(fd)) {
-      buf[0]=0;
-      fgets(buf,1024,fd);
-      if (buf&&buf[0]!='#') {
-        l=strlen(buf); 
-        for (i=0;i<l;i++) { if (buf[i]<32) buf[i]=0; }
-        switch (buf[0]) {
-          case 'b': // octal
-            l=strlen(buf);
-            factor=1;
-            glyph_set[n]=0;
-            for (i=l-1;i>0;i--) {
-              glyph_set[n]+=(wchar_t)(factor*buf[i]);
-              factor*=8; 
-            } 
-            break;
-          case 'x': // hexadecimal
-            l=strlen(buf);
-            factor=1;
-            glyph_set[n]=0;
-            for (i=l-1;i>0;i--) {
-              glyph_set[n]+=(wchar_t)(factor*(buf[i]<59?buf[i]-48:(buf[i]<71?buf[i]-65+10:buf[i]-97+10)));
-              factor*=16; 
-            } 
-            break;
-          case 'U': // unicode U+XXXX hex notation
-            l=strlen(buf);
-            factor=1;
-            glyph_set[n]=0;
-            for (i=l-1;i>1;i--) {
-              glyph_set[n]+=(wchar_t)(factor*(buf[i]<59?buf[i]-48:(buf[i]<71?buf[i]-65+10:buf[i]-97+10)));
-              factor*=16; 
-            } 
-            break;
-          default: // decimal
-            glyph_set[n]=(wchar_t)atoi(buf);
-            break;
+  FILE *fd=fopen(fname,"r");
+  if (!fd) return -1;
+  while (!feof(fd)) {
+    buf[0]=0;
+    fgets(buf,1024,fd);
+    if (buf&&buf[0]!='#') {
+      l=strlen(buf); 
+      for (i=0;i<l;i++) { if (buf[i]<32) buf[i]=0; }
+      l=strlen(buf); 
+      if (buf[0]=='U'&&buf[1]=='+') {
+        a=0;
+        if (l==6||l==11) {
+          factor=1;
+          for (i=6-1;i>1;i--) {
+            int digit=hex_digit(buf[i]);
+            a+=factor*digit;
+            factor*=16;
+          }
         }
-        n++;
+        b=0;
+        if (l==11&&buf[6]=='-') {
+          factor=1;
+          for (i=11-1;i>6;i--) {
+            int digit=hex_digit(buf[i]);
+            b+=factor*digit;
+            factor*=16;
+          }
+        } else b=a;
+        for (i=a;i<=b;i++) {
+          if (gset) gset[n]=(wchar_t)i;  
+          n++;
+        }
       }
     }
+  }
+  fclose(fd); 
+  return n;
+}
+
+// load a glyph set from a file
+void load_glyph_set(char *setarg)
+{ 
+  int nglyphs=_load_glyph_set(setarg,0);
+  if (nglyphs>=0) {
+    glyph_set=(wchar_t*)malloc((nglyphs+1)*sizeof(wchar_t));
+    _load_glyph_set(setarg,glyph_set);
+    glyph_set[nglyphs]=0;
+  } else {
+    fprintf(stderr,"ERROR: glyph set %s not valid. Font will be empty.\n",setarg);
   }
 }
 
