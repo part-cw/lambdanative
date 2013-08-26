@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 ;; geometric primitives
 
+
 ;; ---------
 ;; lines
 ;; this is for completeness. Line drawing is very inefficient on some platforms. Use textures instead.
@@ -171,12 +172,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (if (fx= (length g) 5) (list-ref g 3)
     (glgui:image-w (glgui:glyph-image g))))
 
-(define glgui:use_utf8 #t)
+(define glgui:string->glyphs #f)
+(define glgui:glyphs->string #f)
 
-(define (glgui-utf8-set! flag) (set! glgui:use_utf8 flag))
+(define (glgui-utf8-set! flag) 
+  (if flag (begin
+    (set! glgui:string->glyphs utf8string->unicode)
+    (set! glgui:glyphs->string unicode->utf8string)
+  ) (begin 
+    (set! glgui:string->glyphs (lambda (s) (map char->integer (string->list s))))
+    (set! glgui:glyphs->string (lambda (l) (list->string (map integer->char l))))
+  )))
 
-(define glgui:string->glyphs (if glgui:use_utf8 utf8string->unicode (lambda (s) (map char->integer (string->list s)))))
-(define glgui:glyphs->string (if glgui:use_utf8 unicode->utf8string (lambda (l) (list->string (map integer->char l)))))
+(glgui-utf8-set! #t)
 
 (define (glgui:renderstring x y txt fnt color)
   (glCoreColor color)
