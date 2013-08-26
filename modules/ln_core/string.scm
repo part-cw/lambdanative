@@ -205,7 +205,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (string-replace-substring str searchstr replacestr)
   (let ((searchstrlen (string-length searchstr)))
     (if (and (string? str) (string? searchstr) 
-          (string? replacestr) (> (string-length str) (string-length searchstr)))
+          (string? replacestr) (>= (string-length str) (string-length searchstr)))
       (let loop ((substr str)(res ""))
         (if (= (string-length substr) 0) res
           (let ((match? (and (>= (string-length substr) searchstrlen)
