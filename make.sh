@@ -1674,11 +1674,24 @@ make_install()
     fi
   ;;
   macosx)
-    echo "==> attempting to install android application $SYS_APPNAME to local desktop.."
+    echo "==> attempting to install macosx application $SYS_APPNAME to local desktop.."
     pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-macosx.zip"
     desktop=$HOME/Desktop
     assertfile "$desktop"
     exefile="$desktop/${SYS_APPNAME}.app/$SYS_APPNAME"
+    here=`pwd`
+    cd "$desktop"
+    unzip -oqq $pkgfile
+    cd "$here"
+    echo "==> Starting application.."
+    eval "$exefile &"
+  ;;
+  linux)
+    echo "==> attempting to install linux application $SYS_APPNAME to local desktop.."
+    pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-linux.zip"
+    desktop=$HOME/Desktop
+    assertfile "$desktop"
+    exefile="$desktop/${SYS_APPNAME}/$SYS_APPNAME"
     here=`pwd`
     cd "$desktop"
     unzip -oqq $pkgfile
