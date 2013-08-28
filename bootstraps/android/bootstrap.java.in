@@ -112,7 +112,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ Sens
       public void run() {
         while (true) {
           try{ sleep(1000); }catch(InterruptedException e){ }
-          nativeEvent(15,0,0); // EVENT_REDRAW
+          nativeEvent(19,0,0); // EVENT_IDLE
         }
       }
     };
@@ -162,12 +162,10 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ Sens
   }
   @Override
   protected void onStop() {
-    nativeEvent(16,0,0); // EVENT_SUSPEND
     super.onStop();
   }
   @Override
   protected void onPause() {
-    nativeEvent(16,0,0); // EVENT_SUSPEND
     super.onPause();
     // Additions needed by modules, e.g. gps
     @ANDROID_ONPAUSE@
@@ -179,7 +177,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ Sens
     // Additions needed by modules, e.g. gps
     @ANDROID_ONRESUME@
     mGLView.onResume();
-    nativeEvent(17,0,0); // EVENT_RESUME
   }
   @Override
   public void onConfigurationChanged(Configuration newConfig) {
@@ -404,6 +401,14 @@ class  xGLSurfaceView extends GLSurfaceView {
         renderer.nativeEvent(t,x,y); }}); 
     }
     return true;
+  }
+  public void onPause() {
+    super.onPause();
+    renderer.nativeEvent(16,0,0); // EVENT_SUSPEND
+  }
+  public void onResume() {
+    super.onResume();
+    renderer.nativeEvent(17,0,0);  // EVENT_RESUME
   }
   int t,x,y;
   myRenderer renderer;
