@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; this will allow default arbitrary files to be transferred to any platform
 
 (define (packtool:prep file)
-  (let* ((tmp (string-split file (string-ref (system-pathseparator) 0)))
+  (let* ((tmp (string-split file #\/))
          (basename (car (reverse tmp))))
     (let loop ((dirs (reverse (cdr (reverse tmp))))
                (path (system-directory)))
