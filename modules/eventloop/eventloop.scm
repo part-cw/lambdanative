@@ -119,6 +119,8 @@ end-of-c-declare
       ((fx= t EVENT_REDRAW)
          (if (string=? (system-platform) "android") (##thread-heartbeat!))
          (hook:event t 0 0))
+      ((fx= t EVENT_IDLE)
+         (if (string=? (system-platform) "android") (##thread-heartbeat!)))
       ((or (fx= t EVENT_BUTTON1DOWN) (fx= t EVENT_BUTTON1UP)
            (fx= t EVENT_BUTTON2DOWN) (fx= t EVENT_BUTTON2UP)
            (fx= t EVENT_BUTTON3DOWN) (fx= t EVENT_BUTTON3UP)
