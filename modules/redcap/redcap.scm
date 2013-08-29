@@ -38,6 +38,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; REDCap module - Allows data export-/import to an Research Electronic Data Capture server
 
+;; intermediate data handling 
+
+(define redcap:datachunk 10000)
+(define redcap:data (u8vector))
+(define redcap:datalen 0)
+
+(define (redcap:data-clear!)
+  (set! redcap:datalen 0)
+  (u8vector-shrink! redcap:data 0))
+
+(define (redcap:data->string)
+  (let ((str (u8vector->string (subu8vector redcap:data 0 redcap:datalen))))
+    (redcap:data-clear!)
+    str))
+
+(define (redcap:data->u8vector)
+  (let ((v (subu8vector redcap:data 0 redcap:datalen)))
+    (redcap:data-clear!)
+    v))
+
+(define (redcap:data-append! v)
+  (let ((lv (u8vector-length v))
+        (la (u8vector-length redcap:data)))
+    (if (> (+ redcap:datalen lv) la)
+      (set! redcap:data (u8vector-append redcap:data (make-u8vector (max lv redcap:datachunk)))))
+    (subu8vector-move! v 0 lv redcap:data redcap:datalen)
+    (set! redcap:datalen (+ redcap:datalen lv))))
+
 ;; Local variables specifying REDCap server settings
 (define redcap:url "/redcap/api/")
 (define (redcap-url-set! url) (set! redcap:url url))
@@ -97,7 +125,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Helper function to split return string into header and body
 (define (redcap:split-headerbody str)
-  (set! a (string->list str))
   (let ((pos (string-contains str "\r\n\r\n")))
     (if pos (list (substring str 0 pos) (substring str (+ pos 4) (string-length str))) (list str (list)))
   )
@@ -149,18 +176,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (fx= (httpsclient-open host) 1)
       (begin
         (httpsclient-send (string->u8vector request-str))
-        (let loop ((n 1) (buf (u8vector)))
-          (if (fx<= n 0) 
+        (redcap:data-clear!)
+        (let loop ((n #f))
+          (if (and n (fx<= n 0)) 
             (begin 
               (httpsclient-close)  
-              (let ((output (cadr (redcap:split-headerbody (u8vector->string buf)))))
+              (let ((output (cadr (redcap:split-headerbody (redcap:data->string)))))
                  (if (string=? format "json")
                    ;; If format is json, turn into a list, otherwise just return output
                    (redcap:jsonstr->list output)
                    output))
-            )
-            (loop (httpsclient-recv redcap:buf) (u8vector-append buf redcap:buf))
-          )
+            ) (begin
+             (if n (redcap:data-append! redcap:buf))
+            (loop (httpsclient-recv redcap:buf))
+          ))
         )
       )
       (begin
@@ -206,19 +235,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (fx= (httpsclient-open host) 1)
       (begin
         (httpsclient-send (string->u8vector request-str))
-        (let loop ((n 1) (buf (u8vector)))
-          (if (fx<= n 0) 
+        (redcap:data-clear!)
+        (let loop ((n #f))
+          (if (and n (fx<= n 0)) 
             (begin 
               (httpsclient-close)  
-              (let ((msg (redcap:split-headerbody (u8vector->string buf))))
+              (let ((msg (redcap:split-headerbody (redcap:data->string))))
                 (if (and (string? (car msg)) (fx> (string-length (car msg)) 12) (or (string=? (substring (car msg) 9 12) "201")
                                                                                     (string=? (substring (car msg) 9 12) "200"))) #t
                   (begin (log-error "REDCap:" (cadr msg)) #f)
                 )
               )
-            )
-            (loop (httpsclient-recv redcap:buf) (u8vector-append buf redcap:buf))
-          )
+            ) (begin
+             (if n (redcap:data-append! redcap:buf))
+             (loop (httpsclient-recv redcap:buf))
+          ))
         )
       )
       (begin
@@ -265,11 +296,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (fx= (httpsclient-open host) 1)
       (begin
         (httpsclient-send (string->u8vector request-str))
-        (let loop ((n 1) (buf (u8vector)))
-          (if (fx<= n 0) 
+        (redcap:data-clear!)
+        (let loop ((n #f))
+          (if (and n (fx<= n 0)) 
             (begin 
               (httpsclient-close)  
-              (let ((msg (redcap:split-headerbody (u8vector->string buf))))
+              (let ((msg (redcap:split-headerbody (redcap:data->string))))
                 (if (and (string? (car msg)) (fx> (string-length (car msg)) 12) 
                          (or (string=? (substring (car msg) 9 12) "201")
                              (string=? (substring (car msg) 9 12) "200"))) 
@@ -279,9 +311,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     #f)
                 )
               )
-            )
-            (loop (httpsclient-recv-reentrant redcap:buf) (u8vector-append buf redcap:buf))
-          )
+            ) (begin
+             (if n (redcap:data-append! redcap:buf))
+             (loop (httpsclient-recv-reentrant redcap:buf))
+          ))
         )
       )
       (begin
@@ -336,18 +369,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (fx= (httpsclient-open host) 1)
       (begin
         (httpsclient-send (string->u8vector request-str))
-        (let loop ((n 1) (buf (u8vector)))
-          (if (fx<= n 0) 
+        (redcap:data-clear!)
+        (let loop ((n #f))
+          (if (and n (fx<= n 0)) 
             (begin 
               (httpsclient-close)
-              (let ((output (cadr (redcap:split-headerbody (u8vector->string buf)))))
+              (let ((output (cadr (redcap:split-headerbody (redcap:data->string)))))
                  (if (string=? format "json")
                    ;; If format is json, turn into a list, otherwise just return output
                    (if (string? output) (redcap:jsonstr->list output) #f)
                    output))
-            )
-            (loop (httpsclient-recv-reentrant redcap:buf) (u8vector-append buf redcap:buf))
-          )
+            ) (begin
+            (if n (redcap:data-append! redcap:buf))
+            (loop (httpsclient-recv-reentrant redcap:buf))
+          ))
         )
       )
       (begin
@@ -372,15 +407,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (fx= (httpsclient-open host) 1)
       (begin
         (httpsclient-send (string->u8vector request-str))
-        (let loop ((n 1) (buf (u8vector)))
-          (if (fx<= n 0) 
+        (redcap:data-clear!)
+        (let loop ((n #f))
+          (if (and n (fx<= n 0)) 
             (begin 
-              (httpsclient-close)  
+              (httpsclient-close)
               (maps (lambda (l) (cdr (car l))) 
-                (redcap:jsonstr->list (cadr (redcap:split-headerbody (u8vector->string buf)))))
-            )
-            (loop (httpsclient-recv redcap:buf) (u8vector-append buf redcap:buf))
-          )
+                (redcap:jsonstr->list (cadr (redcap:split-headerbody (redcap:data->string)))))
+            ) (begin
+            (if n
+              (redcap:data-append! redcap:buf))
+            (loop (httpsclient-recv redcap:buf))
+          ))
         )
       )
       (begin
@@ -455,11 +493,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (and filesize (fx= (httpsclient-open host) 1))
       (begin
         (httpsclient-send request-vector)
-        (let loop ((n 1) (buf (u8vector)))
-          (if (fx<= n 0)
+        (redcap:data-clear!)
+        (let loop ((n #f))
+          (if (and n (fx<= n 0))
             (begin
               (httpsclient-close)
-              (let ((msg (redcap:split-headerbody (u8vector->string buf))))
+              (let ((msg (redcap:split-headerbody (redcap:data->string))))
                 (if (and (string? (car msg)) (fx> (string-length (car msg)) 12) 
                          (or (string=? (substring (car msg) 9 12) "201")                                                                                   (string=? (substring (car msg) 9 12) "200"))) 
                   #t
@@ -468,9 +507,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     #f)
                 )
               )
-            )
-            (loop (httpsclient-recv redcap:buf) (u8vector-append buf redcap:buf))
-          )
+            ) (begin
+            (if n (redcap:data-append! redcap:buf))
+            (loop (httpsclient-recv redcap:buf))
+          ))
         )
       )
       (begin
@@ -508,12 +548,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (fx= (httpsclient-open host) 1)
       (begin
         (httpsclient-send (string->u8vector request-str))
-        (let loop ((n 1) (output (u8vector)))
+        (redcap:data-clear!)
+        (let loop ((n 1))
           (if (fx<= n 0) 
             (begin 
               (httpsclient-close)
               ;; Get a list consisting of the header as a string followed by the body as a vector
-              (let ((fileout (redcap:split-headerbody-vector output)))
+              (let ((fileout (redcap:split-headerbody-vector (redcap:data->u8vector))))
                 ;; If the returned code is 200 or 201, just return the header and file
                 (if (and (string? (car fileout)) (fx> (string-length (car fileout)) 12) 
                          (or (string=? (substring (car fileout) 9 12) "201")
@@ -526,7 +567,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 ))
             )
             (let ((count (httpsclient-recv redcap:buf)))
-              (loop count (u8vector-append output (subu8vector redcap:buf 0 count))))
+              (if (> count 0) (redcap:data-append! redcap:buf))
+              (loop count))
           )
         )
       )
