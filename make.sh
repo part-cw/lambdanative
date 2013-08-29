@@ -1239,13 +1239,20 @@ macosx)
       fi
       tiffs="$tiffs $tgtimg"
     done
+    iconimg=$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-icon.icns
+    if [ ! -f "$iconimg" ]; then 
+      dirty=yes
+    fi
     if [ $dirty = "yes" ]; then
       echo " => generating icns icon.."
       tiffutil -catnosizecheck $tiffs -out tmp.tif 2> /dev/null
       assertfile tmp.tif
-      tiff2icns tmp.tif $appdir/Icon.icns
+      tiff2icns tmp.tif "$iconimg"
       rm tmp.tif
     fi
+    assertfile "$iconimg"
+    echo " => transferring icon.."
+    cp "$iconimg" $appdir/Icon.icns
     echo " => preparing plist.."
     cp bootstraps/macosx/Info.plist $appdir
   fi
