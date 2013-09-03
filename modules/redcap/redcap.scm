@@ -88,7 +88,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Helper function to parse REDCAP JSON format [much easier than XML parsing]
 (define (redcap:jsonstr->list str)
-  (if (fx= (string-length str) 0)
+  (if (fx< (string-length str) 3)
     (list)
     (map (lambda (li) (if (fx> (length li) 0)
                         ;; THIRD, go through each field and recombine values that have commas in them
@@ -187,7 +187,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                    (redcap:jsonstr->list output)
                    output))
             ) (begin
-             (if n (redcap:data-append! redcap:buf))
+             (if (and n (> n 0)) 
+               (redcap:data-append! (subu8vector redcap:buf 0 n)))
             (loop (httpsclient-recv redcap:buf))
           ))
         )
@@ -247,7 +248,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 )
               )
             ) (begin
-             (if n (redcap:data-append! redcap:buf))
+             (if (and n (> n 0)) 
+               (redcap:data-append! (subu8vector redcap:buf 0 n)))
              (loop (httpsclient-recv redcap:buf))
           ))
         )
@@ -312,7 +314,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 )
               )
             ) (begin
-             (if n (redcap:data-append! redcap:buf))
+             (if (and n (> n 0)) 
+               (redcap:data-append! (subu8vector redcap:buf 0 n)))
              (loop (httpsclient-recv-reentrant redcap:buf))
           ))
         )
@@ -380,7 +383,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                    (if (string? output) (redcap:jsonstr->list output) #f)
                    output))
             ) (begin
-            (if n (redcap:data-append! redcap:buf))
+            (if (and n (> n 0)) 
+              (redcap:data-append! (subu8vector redcap:buf 0 n)))
             (loop (httpsclient-recv-reentrant redcap:buf))
           ))
         )
@@ -415,8 +419,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (maps (lambda (l) (cdr (car l))) 
                 (redcap:jsonstr->list (cadr (redcap:split-headerbody (redcap:data->string)))))
             ) (begin
-            (if n
-              (redcap:data-append! redcap:buf))
+            (if (and n (> n 0)) 
+              (redcap:data-append! (subu8vector redcap:buf 0 n)))
             (loop (httpsclient-recv redcap:buf))
           ))
         )
@@ -508,7 +512,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 )
               )
             ) (begin
-            (if n (redcap:data-append! redcap:buf))
+            (if (and n (> n 0)) 
+              (redcap:data-append! (subu8vector redcap:buf 0 n)))
             (loop (httpsclient-recv redcap:buf))
           ))
         )
