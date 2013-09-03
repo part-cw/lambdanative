@@ -149,6 +149,11 @@ assertfile()
     if [ ! "X$2" = "X" ]; then 
       echo ">> $2"
     fi
+    if [ "X$SYS_VERBOSE" = "X" ]; then  
+      echo "BUILD FAILED - configure with verbose option for more information" 
+    else 
+      echo "BUILD FAILED"
+    fi
     exit 1
   fi
 }
@@ -163,6 +168,11 @@ asserterror()
     if [ ! "X$2" = "X" ]; then 
       echo ">> $2"
     fi
+    if [ "X$SYS_VERBOSE" = "X" ]; then  
+      echo "BUILD FAILED - configure with verbose option for more information" 
+    else 
+      echo "BUILD FAILED"
+    fi
     exit 1
   fi
 }
@@ -173,6 +183,11 @@ asserttool()
     if [ "X"`which $tool 2> /dev/null` = "X" ]; then 
       echo "ERROR: required tool $tool not found." 
       echo "Please install a package containing this tool before proceeding."
+    if [ "X$SYS_VERBOSE" = "X" ]; then  
+      echo "BUILD FAILED - configure with verbose option for more information" 
+    else 
+      echo "BUILD FAILED"
+    fi
       exit 1
     else 
       vecho "  => $tool.. ok" 
@@ -698,6 +713,7 @@ make_string_aux()
   scmfile="$5"
   opt="$6"
 cat > tmp.tex << __EOF
+\batchmode
 \documentclass{article}
 \makeatletter 
 \renewcommand{\Large}{\@setfontsize\Large{$size}{$size}} 
@@ -1566,7 +1582,8 @@ bb10)
 #    blackberry-nativepackager -package $fnlfile bar-descriptor.xml -devMode -debugToken "path to debugtoken2.bar"
   fi
   echo " => signing package.."
-# blackberry-signer -storepass $SYS_BB10STOREPW $fnlfile
+# blackberry-signer -csksetup -cskpass $BB10PW
+# blackberry-signer -storepass $BB10PW $fnlfile
   cd $here
   echo " => cleaning up.."
   rm -rf "$tmpdir"
@@ -1919,6 +1936,7 @@ make_xelatexcheck()
   mkdir -p $chkdir
   cd $chkdir
 cat > check.tex << END
+\batchmode
 \documentclass{article}
 \usepackage{fontspec}
 \usepackage{geometry}
