@@ -54,7 +54,14 @@ if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
   EXTRACONF=
 fi
 
-CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure --quiet --prefix="@SYS_PREFIX@" $EXTRACONF
+confquiet=
+makequiet=
+if [ "X@SYS_VERBOSE@" = "X" ]; then
+confquiet="--quiet"
+makequiet="-s"
+fi
+
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure $confquiet --prefix="@SYS_PREFIX@" $EXTRACONF
 
 echo "==> Patching source..."
 patches=`ls -1 ../../*.patch 2> /dev/null`
@@ -64,17 +71,17 @@ done
 
 if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
   echo "==> Compiling source..."
-  AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make -s
+  AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make $makequiet
 else
   echo "==> Compiling library source..."
   cd lib
-  AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make -s
+  AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make $makequiet
   cd ..
 fi
 
 echo "==> Installing..."
 if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
-  make install -s
+  make install $makequiet
 fi
 cp lib/libgambc.a @SYS_PREFIX@/lib
 cp include/gambit*.h @SYS_PREFIX@/include
