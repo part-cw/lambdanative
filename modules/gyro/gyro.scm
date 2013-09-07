@@ -52,11 +52,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   double android_gyro_roll(void);
 #endif
 
+#ifdef BB10
+  double qnx_gyro_yaw(void);
+  double qnx_gyro_pitch(void);
+  double qnx_gyro_roll(void);
+#endif 
+
 static double gyro_yaw(void){
 #ifdef IOS
   return ios_gyro_yaw();
 #elif ANDROID
   return android_gyro_yaw();
+#elif BB10
+  return qnx_gyro_yaw();
 #else
   return 0;
 #endif
@@ -67,6 +75,8 @@ static double gyro_pitch(void) {
   return ios_gyro_pitch();
 #elif ANDROID
   return android_gyro_pitch();
+#elif BB10
+  return qnx_gyro_pitch();
 #else
   return 0;
 #endif
@@ -77,6 +87,8 @@ static double gyro_roll(void) {
   return ios_gyro_roll();
 #elif ANDROID
   return android_gyro_roll();
+#elif BB10
+  return qnx_gyro_roll();
 #else
   return 0;
 #endif
