@@ -68,8 +68,10 @@ extern
 #endif
 char *cmd_arg0;
 
-static char *app_directory=0;
-void find_app_directory()
+static char *sys_appdir=0;
+static char *sys_dir=0;
+
+static void find_directories()
 {
 #if defined(LINUX)
   char buf[1024];
@@ -82,7 +84,8 @@ void find_app_directory()
         break;
       }
     }
-    app_directory=strdup(buf);
+    sys_appdir=strdup(buf);
+    sys_dir=strdup(buf);
   }
 #endif
 #if defined(WIN32)
@@ -96,7 +99,8 @@ void find_app_directory()
         break;
       }
     }
-    app_directory=strdup(buf);
+    sys_appdir=strdup(buf);
+    sys_dir=strdup(buf);
   }
 #endif
 #if defined(OPENBSD)
@@ -106,7 +110,8 @@ void find_app_directory()
     while (i>0&&buf[i]!='/') {i--;}
     if (i>0) buf[i]=0;
     // check if directory exists?
-    app_directory=strdup(buf);
+    sys_appdir=strdup(buf);
+    sys_dir=strdup(buf);
   }
 #endif
 #if defined(IOS) || defined(MACOSX)
@@ -117,40 +122,47 @@ void find_app_directory()
   CFStringGetCString( cfStringRef, path, 1024, kCFStringEncodingASCII);
   CFRelease( mainBundleURL);
   CFRelease( cfStringRef);
-  app_directory=strdup(path);
-#endif
-#if defined(ANDROID)
-// we put files on the sdcard, that's the only sane place (?)
-  char path[1024];
-  sprintf(path,"/sdcard/%s", SYS_APPNAME);
-  app_directory=strdup(path);
-#endif
-}
-
-// store the program info
-static unsigned int sys_buildepoch;
-static char *sys_dir, *sys_appdir, *sys_platform, *sys_appname, *sys_appversion, *sys_cmdarg;
-static char *sys_buildhash;
-static char *sys_repository, *sys_repositorydate;
-
-static void system_init(void)
-{
-  find_app_directory();
+  sys_appdir=strdup(path);
 #ifdef IOS
   // check for jail break
   FILE *fd = fopen("/var/mobile/tmp.341231","a");
   if (fd) {
     fclose(fd);
     remove("/var/mobile/tmp.341231");
-    sys_dir = strdup(app_directory);
+    sys_dir= strdup(path);
   } else {
     // point to the folder that is shared through iTunes
-    sys_dir = strdup(iphone_directory);
+    sys_dir= strdup(iphone_directory);
   }
 #else
-  sys_dir=strdup(app_directory);
+  sys_dir=strdup(path);
 #endif
-  sys_appdir=strdup(app_directory);
+#endif
+#if defined(ANDROID)
+// we put files on the sdcard, that's the only sane place (?)
+  char path[1024];
+  sprintf(path,"/sdcard/%s", SYS_APPNAME);
+  sys_appdir=strdup(path);
+  sys_dir=strdup(path);
+#endif
+#if defined(BB10)
+  char path[1024], cwd[1024];
+  getcwd(cwd,1023);
+  sprintf(path,"%s/app", cwd);
+  sys_appdir=strdup(path);
+  sprintf(path,"%s/data", cwd);
+  sys_dir=strdup(path);
+#endif
+}
+
+static unsigned int sys_buildepoch;
+static char *sys_platform, *sys_appname, *sys_appversion, *sys_cmdarg;
+static char *sys_buildhash;
+static char *sys_repository, *sys_repositorydate;
+
+static void system_init(void)
+{
+  find_directories();
   sys_platform=strdup(SYS_PLATFORM);
   sys_appname=strdup(SYS_APPNAME);
   sys_appversion=strdup(SYS_APPVERSION);
