@@ -46,12 +46,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   double ios_location_getaltitude(void);
   double ios_location_getaccuracy(void);
   double ios_location_gettimestamp(void);
-#elif ANDROID
+#endif
+
+#ifdef ANDROID
   double android_location_getlatitude(void);
   double android_location_getlongitude(void);
-  double android_location_getlongitude(void);
+  double android_location_getaltitude(void);
   double android_location_getaccuracy(void);
   double android_location_gettimestamp(void);
+#endif
+
+#ifdef BB10
+  double qnx_location_getlatitude(void);
+  double qnx_location_getlongitude(void);
+  double qnx_location_getlatitude(void);
+  double qnx_location_getaccuracy(void);
+  double qnx_location_gettimestamp(void);
 #endif
 
 static double longitude(void){
@@ -59,6 +69,8 @@ static double longitude(void){
    return ios_location_getlongitude();
 #elif ANDROID
    return android_location_getlongitude();
+#elif BB10
+   return qnx_location_getlongitude();
 #else
    return 0;
 #endif
@@ -69,6 +81,8 @@ static double latitude(void){
    return ios_location_getlatitude();
 #elif ANDROID
    return android_location_getlatitude();
+#elif BB10
+   return qnx_location_getlatitude();
 #else
    return 0;
 #endif
@@ -79,6 +93,8 @@ static double altitude(void){
    return ios_location_getaltitude();
 #elif ANDROID
    return android_location_getaltitude();
+#elif BB10
+   return qnx_location_getaltitude();
 #else
    return 0;
 #endif
@@ -89,6 +105,8 @@ static double accuracy(void){
    return ios_location_getaccuracy();
 #elif ANDROID
    return android_location_getaccuracy();
+#elif BB10
+   return qnx_location_getaccuracy();
 #else
    return 0;
 #endif
@@ -99,6 +117,8 @@ static int timestamp(void){
    return ios_location_gettimestamp();
 #elif ANDROID
    return android_location_gettimestamp();
+#elif BB10
+   return qnx_location_getaccuracy();
 #else
    return 0;
 #endif
