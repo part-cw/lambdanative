@@ -52,11 +52,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   double android_accel_getz(void);
 #endif
 
+#ifdef BB10
+  double qnx_accel_getx(void);
+  double qnx_accel_gety(void);
+  double qnx_accel_getz(void);
+#endif
+
 static double accel_x(void) {
 #ifdef IOS
   return ios_accel_getx();
 #elif ANDROID
   return android_accel_getx();
+#elif BB10
+  return qnx_accel_getx();
 #else
   return 0;
 #endif
@@ -67,6 +75,8 @@ static double accel_y(void) {
   return ios_accel_gety();
 #elif ANDROID
   return android_accel_gety();
+#elif BB10
+  return qnx_accel_gety();
 #else
   return 0;
 #endif
@@ -77,6 +87,8 @@ static double accel_z(void) {
   return ios_accel_getz();
 #elif ANDROID
   return android_accel_getz();
+#elif BB10
+  return qnx_accel_getz();
 #else
   return 0;
 #endif
