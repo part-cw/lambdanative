@@ -1,0 +1,2 @@
+mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+mSensorManager.registerListener(this, mGyroscope, SensorManager.SENSOR_DELAY_GAME);

@@ -1,0 +1,3 @@
+if (event.sensor.getType()==Sensor.TYPE_ACCELEROMETER) {
+  accelEvent((double)event.values[0], (double)event.values[1], (double)event.values[2]);
+}

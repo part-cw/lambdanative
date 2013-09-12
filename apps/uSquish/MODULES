@@ -1,1 +1,1 @@
-config eventloop ln_core ln_glcore ln_glgui ln_audio csv
+config eventloop ln_core ln_glcore ln_glgui audio csv

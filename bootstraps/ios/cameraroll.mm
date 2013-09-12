@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 // access to last image in camera roll
 
-#import "config.h"
+#import "config_custom.h"
 
 #ifdef USE_CAMERAROLL
 

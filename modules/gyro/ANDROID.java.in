@@ -1,18 +1,0 @@
-ANDROID_IMPORTS=""
-
-ANDROID_VARIABLES="private Sensor mGyroscope;"
-
-ANDROID_ONCREATE="mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);\
-mSensorManager.registerListener(this, mGyroscope, SensorManager.SENSOR_DELAY_GAME);"
-
-ANDROID_ONPAUSE=""
-
-ANDROID_ONRESUME="mSensorManager.registerListener(this, mGyroscope, SensorManager.SENSOR_DELAY_GAME);"
-
-ANDROID_ONSENSORCHANGED="if (event.sensor.getType()==Sensor.TYPE_GYROSCOPE){\
-  gyroEvent((double)event.values[0], (double)event.values[1], (double)event.values[2]);\
-}"
-
-ANDROID_ACTIVITYADDITIONS="native void gyroEvent(double x, double y, double z);"
-
-ANDROID_PERMISSIONS="<uses-feature android:name=\"android.hardware.sensor.gyroscope\" />"

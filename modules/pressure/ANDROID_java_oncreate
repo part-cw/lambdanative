@@ -1,0 +1,2 @@
+mPressure = mSensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE);
+mSensorManager.registerListener(this, mPressure, SensorManager.SENSOR_DELAY_NORMAL);

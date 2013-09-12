@@ -22,4 +22,11 @@ IOSSDK=`find $IOSROOT/SDKs/*  -maxdepth 0 -print 2> /dev/null | tail -n 1`
 # minimum version to support
 IOSVERSION=4.3
 # ------------------------------------
+## Blackberry BB10 cross compiler (linux or mac)
+BB10SDK=/Applications/Momentics.app
+if [ ! -d "$BB10SDK" ]; then
+  BB10SDK=$HOME/bbndk
+fi
+BB10API=10.1
+# ------------------------------------
 # eof

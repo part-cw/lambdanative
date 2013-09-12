@@ -174,7 +174,7 @@ char *match_pattern(char *buf)
           parse_file(fd);
           fclose(fd);
         } else {
-          fprintf(stdout,"%s",tmp->out); 
+          // ignore non-existing file reference
         }
       } else {
         fprintf(stdout,"%s",tmp->out); 

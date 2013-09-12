@@ -64,7 +64,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (glEnable GL_BLEND)
       (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
       (set! glCore:needsinit #f)
-      (event-push EVENT_REDRAW 0 0)
+;;      (event-push EVENT_REDRAW 0 0)
     ) (glcore:log 0 "glCoreInit failed"))
   ))
   (glClear GL_COLOR_BUFFER_BIT)

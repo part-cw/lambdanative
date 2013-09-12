@@ -46,8 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <CONFIG.h>
 
-// include defines from CONFIG_ANDROID.in
-#include <config_android.h>
+@ANDROID_C_DEFINES@
 
 // event hook
 void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_myRenderer_nativeEvent(JNIEnv* e, jobject o, jint t, jint x, jint y){
@@ -878,3 +877,5 @@ void stop_opensl()
 #endif // RTAUDIO
 
 // Add code here if needed for modules, such as GPS.
+@ANDROID_C_ADDITIONS@
+

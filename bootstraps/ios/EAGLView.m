@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #import <CONFIG.h>
 
-#import "config.h"
+#import "config_custom.h"
 
 #import <CoreGraphics/CoreGraphics.h>
 

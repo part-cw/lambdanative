@@ -37,8 +37,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
 
-@SYS_BB10_C@
+@BB10_C_DEFINES@
 
 #include <bps/screen.h>
 #include <bps/bps.h>
@@ -84,6 +87,13 @@ double qnx_location_gettimestamp() { return location_timestamp; }
 
 #ifdef USE_AUDIO
 
+#include <sys/asoundlib.h>
+#include <bps/audiomixer.h>
+#include <bps/audiodevice.h>
+
+static int audio_on=0;
+
+static int card = -1;
 static snd_pcm_t *pcm_handle;
 static snd_pcm_info_t info;
 static snd_pcm_channel_params_t pp;
@@ -93,8 +103,13 @@ static snd_pcm_channel_info_t pi;
 static snd_mixer_t *mixer_handle;
 static snd_mixer_group_t group;
 
-static void audio_setup(char *dev_name)
+static int audio_bufsize=0;
+static unsigned char *audio_buf=0;
+
+static void audio_setup(const char *dev_name)
 {
+  int fragsize = -1;
+  int num_frags = -1;
   char *defdev_name="pcmPreferred";
   if (snd_pcm_open_name(&pcm_handle, (dev_name?dev_name:defdev_name), SND_PCM_OPEN_PLAYBACK)<0) return;
   if (snd_pcm_info(pcm_handle, &info) < 0) goto setup_failure; 
@@ -109,7 +124,8 @@ static void audio_setup(char *dev_name)
   pp.stop_mode = SND_PCM_STOP_STOP;
   pp.buf.block.frag_size = pi.max_fragment_size;
   if (fragsize != -1) { pp.buf.block.frag_size = fragsize; }
-  pp.buf.block.frags_max = num_frags;
+//  pp.buf.block.frags_max = num_frags;
+  pp.buf.block.frags_max = 10;
   pp.buf.block.frags_min = 1;
   pp.format.interleave = 1;
   pp.format.rate = 44100;
@@ -125,48 +141,78 @@ static void audio_setup(char *dev_name)
   if (snd_pcm_plugin_setup(pcm_handle, &setup) < 0) goto setup_failure; 
   if (group.gid.name[0] == 0) goto setup_failure; 
   if (snd_mixer_open(&mixer_handle, card, setup.mixer_device) < 0) goto setup_failure; 
+  audio_bufsize=setup.buf.block.frag_size;
+  if (audio_buf) free(audio_buf);
+  audio_buf=(unsigned char*)malloc(audio_bufsize);
+  audio_on=1;
   return;
-setup_failed:
+setup_failure:
   snd_pcm_close(pcm_handle);
 }
 
-static void audio_push()
+void audiofile_nextsample(short*,short*);
+
+void audio_play()
 {
- 
+  fd_set rfds, wfds;
+  FD_ZERO (&rfds);
+  FD_ZERO (&wfds);
   if (tcgetpgrp(0) == getpid()) FD_SET(STDIN_FILENO, &rfds);
   FD_SET(snd_mixer_file_descriptor(mixer_handle), &rfds);
   FD_SET(snd_pcm_file_descriptor(pcm_handle, SND_PCM_CHANNEL_PLAYBACK), &wfds);
-  rtn = max(snd_mixer_file_descriptor(mixer_handle), snd_pcm_file_descriptor(pcm_handle, SND_PCM_CHANNEL_PLAYBACK));
-  if (select(rtn + 1, &rfds, &wfds, NULL, NULL) == -1) { goto fail5; }
+  int rtn = max(snd_mixer_file_descriptor(mixer_handle), snd_pcm_file_descriptor(pcm_handle, SND_PCM_CHANNEL_PLAYBACK));
+  if (select(rtn + 1, &rfds, &wfds, NULL, NULL) == -1) return;
   if (FD_ISSET(snd_pcm_file_descriptor(pcm_handle, SND_PCM_CHANNEL_PLAYBACK), &wfds)) {
-     snd_pcm_channel_status_t status;
-     int written = 0;
-     if ((bytes_read = fread(sample_buffer, 1, min(samples - total_written, bsize), file)) <= 0) continue;
-     written = snd_pcm_plugin_write(pcm_handle, sample_buffer, bytes_read);
-     if (written < bytes_read) {
-       memset(&status, 0, sizeof(status));
-       status.channel = SND_PCM_CHANNEL_PLAYBACK;
-       if (snd_pcm_plugin_status(pcm_handle, &status) < 0) { goto fail5; }
-       if (status.status == SND_PCM_STATUS_READY ||
-           status.status == SND_PCM_STATUS_UNDERRUN) {
-         if (snd_pcm_plugin_prepare(pcm_handle, SND_PCM_CHANNEL_PLAYBACK) < 0) { goto fail5; }
-       }
-       if (written < 0) written = 0;
-       written += snd_pcm_plugin_write(pcm_handle, sample_buffer + written, bytes_read - written);
-     }
-     total_written += written;
+    snd_pcm_channel_status_t status;
+    int i, written=0;
+    short *buf=(short*)audio_buf;
+    for (i=0;i<(audio_bufsize>>1)-1;i+=2) audiofile_nextsample(&buf[i],&buf[i+1]);
+    written = snd_pcm_plugin_write(pcm_handle, audio_buf, audio_bufsize);
+    if (written < audio_bufsize) {
+      memset(&status, 0, sizeof(status));
+      status.channel = SND_PCM_CHANNEL_PLAYBACK;
+      if (snd_pcm_plugin_status(pcm_handle, &status) < 0) return;
+      if (status.status == SND_PCM_STATUS_READY || status.status == SND_PCM_STATUS_UNDERRUN) {
+          if (snd_pcm_plugin_prepare(pcm_handle, SND_PCM_CHANNEL_PLAYBACK) < 0) return;
+      }
+      if (written < 0) written = 0;
+      snd_pcm_plugin_write(pcm_handle, audio_buf + written, audio_bufsize - written);
+    }
   }
-  return;
-fail5:
-    snd_mixer_close(mixer_handle);
-fail4:
-    snd_pcm_close(pcm_handle);
-fail3:
-    free(sample_buffer);
-    sample_buffer = NULL;
-fail2:
-    fclose(file);
-fail1:
+}
+
+static void *audio_play_thread(void *arg)
+{
+  while (1) { if (audio_on) audio_play(); else usleep(250); }
+  return 0;
+}
+
+#include <pthread.h>
+
+static  pthread_t audio_playerthread;
+
+static void audio_init()
+{
+  audio_setup(0);
+  int policy;
+  struct sched_param param;
+  pthread_attr_t attr_p;
+  pthread_attr_init(&attr_p);
+  pthread_attr_setdetachstate(&attr_p,PTHREAD_CREATE_JOINABLE);
+  pthread_attr_setinheritsched(&attr_p,PTHREAD_EXPLICIT_SCHED);
+  pthread_getschedparam(pthread_self(), &policy, &param);
+  param.sched_priority = 12;
+  pthread_attr_setschedparam(&attr_p,&param);
+  pthread_attr_setschedpolicy(&attr_p,SCHED_RR);
+  pthread_create(&audio_playerthread, &attr_p,&audio_play_thread,0);
+}
+
+static void audio_stop()
+{
+  audio_on=0;
+  snd_mixer_close(mixer_handle);
+  snd_pcm_close(pcm_handle);
+  pthread_join(audio_playerthread,NULL);
 }
 
 #endif // USE_AUDIO
@@ -211,6 +257,7 @@ static void init_cb(void *p)
 
 #ifdef USE_AUDIO
   audiodevice_request_events(0);
+  audio_init();
 #endif  
 
   ffi_event(EVENT_INIT,screen_width,screen_height);
@@ -218,6 +265,7 @@ static void init_cb(void *p)
 
 static void display_cb(void *p)
 {
+//  audio_play();
   ffi_event(EVENT_REDRAW,0,0);
 }
 
@@ -235,6 +283,9 @@ static void close_cb(void *p)
 {
   ffi_event(EVENT_CLOSE,0,0);
   ffi_event(EVENT_TERMINATE,0,0);
+#ifdef USE_AUDIO
+  audio_stop();
+#endif
 }
 
 static void event_cb(bps_event_t *event, int domain, int code, void *p)
@@ -340,8 +391,9 @@ static void event_cb(bps_event_t *event, int domain, int code, void *p)
   if (domain == audiodevice_get_domain()) {
     const char * audiodevice_path = audiodevice_event_get_path(event);
     if (audiodevice_path) { 
-      audio_mixer_close(mixer_handle);
-      audio_pcm_close(pcm_handle);
+      audio_on=0;
+      snd_mixer_close(mixer_handle);
+      snd_pcm_close(pcm_handle);
       audio_setup(audiodevice_path);
     }
     return;

@@ -1,0 +1,1 @@
+mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_GAME);

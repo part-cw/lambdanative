@@ -66,9 +66,9 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 // Imports needed for modules, e.g. gps
-@ANDROID_IMPORTS@
+@ANDROID_JAVA_IMPORTS@
 
-public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ SensorEventListener{
+public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@ SensorEventListener{
   Thread openSLThread;  // OpenSL real-time sound
   Thread keepAliveThread; //Background events
   private SensorManager mSensorManager;
@@ -78,7 +78,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ Sens
   boolean isBatteryRegistered = false;
   private static int batteryLevel = -1;
   //Variable declarations needed for modules, e.g. gps
-  @ANDROID_VARIABLES@
+  @ANDROID_JAVA_VARIABLES@
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -105,7 +105,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ Sens
     AudioHelper.getInstance().setContext(this, new MediaPlayer());
     mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
     // Additions needed by modules, e.g. gps
-    @ANDROID_ONCREATE@
+    @ANDROID_JAVA_ONCREATE@
 
     // Make sure event loop keeps getting called if we are in the background.
     keepAliveThread = new Thread(){
@@ -168,14 +168,14 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ Sens
   protected void onPause() {
     super.onPause();
     // Additions needed by modules, e.g. gps
-    @ANDROID_ONPAUSE@
+    @ANDROID_JAVA_ONPAUSE@
     mGLView.onPause();
   }
   @Override
   protected void onResume() {
     super.onResume();
     // Additions needed by modules, e.g. gps
-    @ANDROID_ONRESUME@
+    @ANDROID_JAVA_ONRESUME@
     mGLView.onResume();
   }
   @Override
@@ -203,10 +203,10 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_IMPLEMENTS@ Sens
   @Override
   public void onSensorChanged(SensorEvent event) {
     // Extra function calls needed by modules, e.g. gyro
-    @ANDROID_ONSENSORCHANGED@
+    @ANDROID_JAVA_ONSENSORCHANGED@
   }
   // Extra functions calls needed by modules, e.g. gps
-  @ANDROID_ACTIVITYADDITIONS@
+  @ANDROID_JAVA_ACTIVITYADDITIONS@
 
   // OpenSL bindings
   GLSurfaceView mGLView;

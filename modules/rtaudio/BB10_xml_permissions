@@ -1,0 +1,3 @@
+<permission>record_audio</permission>
+<permission>play_audio</permission>
+<permission>set_audio_volume</permission>

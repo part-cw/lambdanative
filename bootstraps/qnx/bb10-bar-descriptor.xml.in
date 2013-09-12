@@ -35,8 +35,9 @@
 </configuration>
 <icon> <image>icon.png</image> </icon>
 #<splashscreen></splashscreen>
+@BB10_XML_ASSETS@
 <permission system="true">run_native</permission>
-@SYS_BB10_PERMISSIONS@
+@BB10_XML_PERMISSIONS@
 <permission>access_shared</permission>
 #<permission>record_audio</permission>
 #<permission>read_geolocation</permission>

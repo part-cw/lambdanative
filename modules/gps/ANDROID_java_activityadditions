@@ -1,0 +1,14 @@
+native void gpsEvent(double lat, double lon, double altitude, double accuracy, long timestamp);
+@Override
+public void onLocationChanged(Location location) {
+  gpsEvent(location.getLatitude(),location.getLongitude(),location.getAltitude(),location.getAccuracy(),location.getTime());
+}
+@Override
+public void onProviderDisabled(String provider) {
+}
+@Override
+public void onProviderEnabled(String provider) {
+}
+@Override
+public void onStatusChanged(String provider, int status, Bundle extras) {
+}

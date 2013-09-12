@@ -1,0 +1,1 @@
+native void accelEvent(double x, double y, double z);

@@ -56,7 +56,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/file.h>
 #endif
 
-#if defined(OPENBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS)
+#if defined(OPENBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
 #include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
@@ -85,7 +85,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define RS232_57600BAUD   57600
 #define RS232_76800BAUD   76800
 #define RS232_115200BAUD  115200
+
+#ifndef BB10
 #define RS232_230400BAUD  230400
+#endif
 
 // parity
 #define RS232_NOPARITY 0
@@ -221,11 +224,11 @@ int serial_open(char *dev, int baudrate, int bitsize, int parity, int stopbits){
      }
 #endif  // WIN32
 
-#if defined(OPENBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS)
+#if defined(OPENBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
   struct termios my_termios;
   int fd=0,spd;
 
-#if defined(LINUX)
+#if defined(LINUX) || defined(BB10)
  fd = open(dev, O_RDWR | O_NOCTTY | O_NONBLOCK );
  // this blocks if already locked by another process:
  // flock(fd,LOCK_EX);
@@ -258,7 +261,9 @@ int serial_open(char *dev, int baudrate, int bitsize, int parity, int stopbits){
     case RS232_38400BAUD: spd = B38400; break;
     case RS232_57600BAUD: spd = B57600; break;
     case RS232_115200BAUD: spd = B115200; break;
+#ifndef BB10
     case RS232_230400BAUD: spd = B230400; break;
+#endif
     default: spd = B9600; break;
   }
   cfsetospeed(&my_termios, (speed_t)spd);
@@ -318,7 +323,7 @@ void serial_close(int d){
   if (!fd) { _serial_error=1;  return; }
   CloseHandle(fd);
 #endif
-#if defined(OPENBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS)
+#if defined(OPENBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
   int fd=d;
   if (!fd) { _serial_error=1;  return; }
   if (close(fd)) {
@@ -344,7 +349,7 @@ void serial_writechar(int d, int val){
   }
 #endif
 
-#if defined(OPENBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS)
+#if defined(OPENBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
   int fd=d;
   if (!fd) { _serial_error=1; return; }
   ssize_t n_written=0;
@@ -374,7 +379,7 @@ int serial_readchar(int d){
    _serial_notready=1;
 #endif
 
-#if defined(OPENBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS)
+#if defined(OPENBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
   int fd=d;
   if (read(fd,&buf,1)!=1) {
     if (errno==35) {

@@ -148,7 +148,7 @@ static void find_directories()
 #if defined(BB10)
   char path[1024], cwd[1024];
   getcwd(cwd,1023);
-  sprintf(path,"%s/app", cwd);
+  sprintf(path,"%s/app/native", cwd);
   sys_appdir=strdup(path);
   sprintf(path,"%s/data", cwd);
   sys_dir=strdup(path);

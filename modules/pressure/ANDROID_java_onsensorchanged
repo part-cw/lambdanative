@@ -1,0 +1,3 @@
+if(event.sensor.getType()==Sensor.TYPE_PRESSURE) {
+  pressureEvent((double)event.values[0]);
+}

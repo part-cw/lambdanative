@@ -1,0 +1,1 @@
+locationManager.removeUpdates(this);

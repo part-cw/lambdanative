@@ -303,26 +303,36 @@ wildcard_dir()
 #################################
 # autoconf-like parameter substitution
 
-ac_sedsub=
+ac_cache=`pwd`/tmp.subst
+
+if [ -f $ac_cache ]; then
+  rm $ac_cache
+fi
 
 ac_subst()
 {
-  newcmd="echo \"s|@${1}@|\$${1}|g;\""
-  newsub=`eval $newcmd`
-  ac_sedsub="${ac_sedsub}${newsub}"
+  ac_tool=$SYS_HOSTPREFIX/bin/subtool
+  if [ "X$2" = "X" ]; then
+    paramcmd="echo \"\$${1}\""
+    substcmd="$ac_tool $ac_cache $1 \"`eval $paramcmd`\""
+  else
+    substcmd="$ac_tool $ac_cache $1 \"$2\""
+  fi 
+  eval $substcmd
 }
 
 ac_output()
 {
+  ac_tool=$SYS_HOSTPREFIX/bin/subtool
   infile=`echo "${1}" | sed 's/\.in$//'`.in
   if [ "X$2" = "X" ]; then
     outfile=$1
   else 
     outfile=$2
   fi
-  assertfile $infile
-  cat $infile | sed "$ac_sedsub" > $outfile
-  assertfile $outfile
+  assertfile $infile "substitution source file $infile not found"
+  cat $infile | $ac_tool $ac_cache > $outfile
+  asserterror $? "substitution failed on $infile"
 }
 
 #################################
@@ -384,7 +394,7 @@ compile()
   veval "$SYS_GSC -prelude \"$opts\" -c -o $ctgt $src"
   assertfile "$ctgt"
   rmifexists "$otgt"
-  veval "$SYS_ENV $SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -c -o $otgt $ctgt -I$SYS_PREFIX/include"
+  veval "$SYS_ENV $SYS_CC $defs -c -o $otgt $ctgt -I$SYS_PREFIX/include"
   assertfile "$otgt"
   cd $here
 }
@@ -429,7 +439,7 @@ compile_payload()
     vecho "$SYS_GSC -link $csrcs"
     $SYS_GSC -link $csrcs 
     assertfile $lctgt
-    veval "$SYS_ENV $SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -o $lotgt -c $lctgt -I$SYS_PREFIX/include"
+    veval "$SYS_ENV $SYS_CC $defs -o $lotgt -c $lctgt -I$SYS_PREFIX/include"
     assertfile $lotgt
   fi
   objs="$objs $lotgt"
@@ -472,12 +482,13 @@ int main(int argc, char *argv[])
   return 0;
 }
 #else 
+#include <stdio.h>
 void ffi_event(int t, int x, int y)
 {
   static int lock=0;
   static int gambitneedsinit=1;
   if (lock) { return; } else { lock=1; }
-  if (gambitneedsinit) {
+  if (gambitneedsinit) { 
       ___setup_params_reset (&setup_params);
       setup_params.version = ___VERSION;
       setup_params.linker = LINKER;
@@ -485,6 +496,7 @@ void ffi_event(int t, int x, int y)
         (___DEBUG_SETTINGS_REPL_STDIO << ___DEBUG_SETTINGS_REPL_SHIFT);
       setup_params.debug_settings = debug_settings;
       ___setup(&setup_params);
+//      ___disable_heartbeat_interrupts(); //@@
       gambitneedsinit=0;
   }
   if (!gambitneedsinit) scm_event(t,x,y);
@@ -496,7 +508,7 @@ _EOF
     if [ `is_standalone_app` = "yes" ]; then
       defs="$defs -DSTANDALONE"
     fi
-    veval "$SYS_ENV $SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS $defs -c -o $hotgt $hctgt -I$SYS_PREFIX/include"
+    veval "$SYS_ENV $SYS_CC $defs -c -o $hotgt $hctgt -I$SYS_PREFIX/include"
     assertfile $hotgt
   fi
   objs="$objs $hotgt"
@@ -931,23 +943,25 @@ make_setup()
      SYS_EXEFIX=
      SYS_APPFIX=
    ;;
-   bb10_macosx)
+   bb10_macosx|bb10_linux)
      bbapi=`echo $BB10API | tr "." "_"`
      script=`echo $BB10SDK/bbndk-env_${bbapi}_*.sh`
      assertfile "$script" "BB10 environment script not found"
+#     echo "@@ script=$script"
      source "$script"
-     TOOLCHAIN=`wildcard_dir /Applications/Momentics.app/host_${bbapi}_*/darwin/x86`
+     TOOLCHAIN=`wildcard_dir ${BB10SDK}/host_${bbapi}_*/darwin/x86`
      assertfile "$TOOLCHAIN" "Blackberry 10 host tool chain not found"
      CROSS=`echo $TOOLCHAIN/usr/bin/arm-*-qnx*eabi-`
      SYS_CC="qcc -Vgcc_ntoarmv7le $SYS_DEBUGFLAG -DBB10 -DQNX"
-  #   CROSS=`echo $TOOLCHAIN/usr/bin/i486-*-qnx*-`
-  #   SYS_CC="qcc -Vgcc_ntox86 $SYS_DEBUGFLAG -DBB10 -DQNX"
+# ix86 setup (to target simulator)
+#    CROSS=`echo $TOOLCHAIN/usr/bin/i486-*-qnx*-`
+#    SYS_CC="qcc -Vgcc_ntox86 $SYS_DEBUGFLAG -DBB10 -DQNX"
      SYS_AR=$CROSS"ar"
-     assertfile $SYS_AR "Blackberry 10 tool chain setup is incorrect"
+     assertfile $SYS_AR "Blackberry 10 tool chain setup is invalid"
      SYS_RANLIB=$CROSS"ranlib"
-     assertfile $SYS_RANLIB "Blackberry 10 tool chain setup is incorrect"
+     assertfile $SYS_RANLIB "Blackberry 10 tool chain setup is invalid"
      SYS_STRIP=$CROSS"strip"
-     assertfile $SYS_STRIP "Blackberry 10 tool chain setup is incorrect"
+     assertfile $SYS_STRIP "Blackberry 10 tool chain setup is invalid"
      SYS_WINDRES=
      SYS_EXEFIX=
      SYS_APPFIX=
@@ -971,8 +985,16 @@ make_setup()
   SYS_BUILDHASH=`echo "$SYS_BUILDHASH" | sed 's/,$//'`
   echo $SYS_BUILDHASH
   SYS_BUILDEPOCH=`date +"%s"`
+  SYS_HOSTEXEFIX=
+  if [ "$SYS_HOSTPLATFORM" = "win32" ]; then
+    SYS_HOSTEXEFIX=".exe" 
+  fi
   # Adding BUILD info requires rebuilding of config module
   touch modules/config/config.scm
+  # build the subtool
+  if `test tools/subtool/subtool.c -nt $SYS_HOSTPREFIX/bin/subtool`; then
+    gcc -o $SYS_HOSTPREFIX/bin/subtool tools/subtool/subtool.c 2> /dev/null
+  fi
   ac_subst SYS_ORGTLD
   ac_subst SYS_ORGSLD
   ac_subst SYS_APPNAME
@@ -999,6 +1021,8 @@ make_setup()
   ac_subst SYS_BUILDHASH
   ac_subst SYS_BUILDEPOCH
   ac_subst SYS_PROFILE
+  ac_subst SYS_VERBOSE
+  ac_subst SYS_HOSTEXEFIX
   ac_output CONFIG.h $SYS_PREFIX/include/CONFIG.h
   setstate
 }
@@ -1012,6 +1036,18 @@ make_bootstrap()
   case $SYS_PLATFORM in
 ################################
 ios)
+  ios_subst()
+  {
+    ac_subst IOS_OBJC_DEFINES "@$1/IOS_objc_defines"
+    ac_subst IOS_XML_PERMISSIONS "@$1/IOS_xml_permissions"
+    ac_subst IOS_XML_REQUIREDDEVICECAP "@$1/IOS_xml_requireddevicecap"
+  }
+  ios_subst bootstraps/ios
+  for m in $modules; do
+    modpath=`locatedir modules/$m silent`
+    ios_subst $modpath
+  done
+  ios_subst `locatedir apps/$SYS_APPNAME`
   tgtdir="$SYS_PREFIX/$SYS_APPNAME$SYS_APPFIX"
   srcdir=`pwd`"/bootstraps/ios"
   cmakedir=`mktemp -d tmp.XXXXXX`
@@ -1028,28 +1064,29 @@ ios)
   cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-144.png" "$cmakedir/Icon-72@2x.png"
   # go full screen on retina displays!
   cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/retina.png" "$cmakedir/Default-568h@2x.png"
-
   snddir=`locatedir apps/$SYS_APPNAME/sounds silent`
   if [ -d "$snddir" ]; then
     echo " => transferring sounds..."
-    snds=`ls -1 $snddir/*.wav`
+    snds=`ls -1 $snddir/*.wav 2> /dev/null`
     for snd in $snds; do
-#      locasesnd=`basename $snd | tr A-Z a-z`
-#     echo " => $locasesnd.."
-#     cp $snd $cmakedir/$locasesnd
       vecho " => $snd.."
       cp $snd $cmakedir
     done
- fi
-
- echo " => preparing plist.."
-  configsrc=`locatedir apps/$SYS_APPNAME`"/CONFIG_IOS.in"
-  configtgt=$SYS_PREFIXROOT/build/$SYS_APPNAME/CONFIG_IOS
-  ac_output $configsrc $configtgt
-  assertfile $configtgt
-  cat $configtgt | sed '/^#/d' > "$SYS_PREFIXROOT/build/$SYS_APPNAME/Info.plist"
-  echo "// automatically generated. Do not edit" > "$cmakedir/config.h"
-  cat $configtgt | sed -n '/^#+/p' | cut -f 2- -d "+" >> "$cmakedir/config.h"
+    snds=`ls -1 $snddir/*.ogg 2> /dev/null`
+    for snd in $snds; do
+      vecho " => $snd.."
+      cp $snd $cmakedir
+    done
+  fi
+  echo " => preparing plist.."
+  configsrc=bootstraps/ios/Info.plist.in
+  ac_output $configsrc tmp.xml
+  assertfile tmp.xml
+  cat tmp.xml | sed '/^#/d' > "$SYS_PREFIXROOT/build/$SYS_APPNAME/Info.plist"
+  echo " => preparing custom config.."
+  headersrc=bootstraps/ios/config_custom.h.in
+  ac_output bootstraps/ios/config_custom.h.in "$cmakedir/config_custom.h"
+  assertfile "$cmakedir/config_custom.h"
   echo " => building bootstrap.."
   xcodedir=`mktemp -d tmp.XXXXXX`
   xcodedir=`pwd`"/$xcodedir"
@@ -1080,6 +1117,27 @@ ios)
 ;;
 #####################################
 android)
+  android_subst()
+  {
+    d=$1
+    ac_subst ANDROID_C_DEFINES "@$d/ANDROID_c_defines"
+    ac_subst ANDROID_C_ADDITIONS "@$d/ANDROID_c_additions"
+    ac_subst ANDROID_JAVA_IMPORTS "@$d/ANDROID_java_imports"
+    ac_subst ANDROID_JAVA_IMPLEMENTS "@$d/ANDROID_java_implements"
+    ac_subst ANDROID_JAVA_VARIABLES "@$d/ANDROID_java_variables"
+    ac_subst ANDROID_JAVA_ONCREATE "@$d/ANDROID_java_oncreate"
+    ac_subst ANDROID_JAVA_ONPAUSE "@$d/ANDROID_java_onpause"
+    ac_subst ANDROID_JAVA_ONRESUME "@$d/ANDROID_java_onresume"
+    ac_subst ANDROID_JAVA_ONSENSORCHANGED "@$d/ANDROID_java_onsensorchanged"
+    ac_subst ANDROID_JAVA_ACTIVITYADDITIONS "@$d/ANDROID_java_activityadditions"
+    ac_subst ANDROID_XML_PERMISSIONS "@$d/ANDROID_xml_permissions"
+  }
+  android_subst bootstraps/android
+  for m in $modules; do
+    modpath=`locatedir modules/$m silent`
+    android_subst $modpath
+  done
+  android_subst `locatedir apps/$SYS_APPNAME`
   echo " => creating android project.."
   tmpdir=`mktemp -d tmp.XXXXXX`
   tmpdir=`pwd`"/$tmpdir"
@@ -1100,8 +1158,14 @@ android)
   snddir=`locatedir apps/$SYS_APPNAME/sounds silent`
   if [ -d "$snddir" ]; then
     echo " => transferring sounds..."
-    snds=`ls -1 $snddir/*.wav`
     mkdir -p $tmpdir/res/raw
+    snds=`ls -1 $snddir/*.wav 2> /dev/null`
+    for snd in $snds; do
+      locasesnd=`basename $snd | tr A-Z a-z`
+      vecho " => $locasesnd.."
+      cp $snd $tmpdir/res/raw/$locasesnd
+    done
+    snds=`ls -1 $snddir/*.ogg 2> /dev/null`
     for snd in $snds; do
       locasesnd=`basename $snd | tr A-Z a-z`
       vecho " => $locasesnd.."
@@ -1109,56 +1173,11 @@ android)
     done
   fi
   echo " => transferring java hook.."
-  hookfile=$tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
-  ac_output bootstraps/android/bootstrap.java $hookfile
-  # Helper for adding module specific Java code to app
-  ac_java_sedsub=
-  ac_java_subst(){
-    newcmd="echo \"s|@${1}@|\$${1}@${1}@|g;\""
-    newsub=`eval $newcmd`
-    ac_java_sedsub="${ac_java_sedsub}${newsub}"
-  }
-
-  for m in $modules; do
-    javaincfile=`locatefile modules/$m/ANDROID.java.in silent`
-    if [ -f "$javaincfile" ]; then
-      . $javaincfile
-      ac_java_sedsub=
-      ac_java_subst ANDROID_IMPORTS
-      ac_java_subst ANDROID_IMPLEMENTS
-      ac_java_subst ANDROID_VARIABLES
-      ac_java_subst ANDROID_ONCREATE
-      ac_java_subst ANDROID_ONPAUSE
-      ac_java_subst ANDROID_ONRESUME
-      ac_java_subst ANDROID_ONSENSORCHANGED
-      ac_java_subst ANDROID_ACTIVITYADDITIONS
-      tmphookfile=$hookfile.tmp
-      sed -e "$ac_java_sedsub" $hookfile > $tmphookfile
-      mv $tmphookfile $hookfile
-      ANDROID_IMPLEMENTS=
-    fi
-  done
-  tmphookfile=$hookfile.tmp
-  sed -e 's/@ANDROID_[A-Z]*@//' $hookfile > $tmphookfile
-  mv $tmphookfile $hookfile
+  ac_output bootstraps/android/bootstrap.java.in $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
   echo " => preparing manifest.."
-  configsrc=`locatedir apps/$SYS_APPNAME`"/CONFIG_ANDROID.in"
-  assertfile $configsrc
-  configtgt=$SYS_PREFIXROOT/build/$SYS_APPNAME/CONFIG_ANDROID
-  ac_output $configsrc $configtgt
-  assertfile $configtgt
-  cat $configtgt | sed '/^#/d' > "$tmpdir/AndroidManifest.xml"
-  oldtail=`tail -n 1 "$tmpdir/AndroidManifest.xml"`
-  head -n $(( `wc -l < "$tmpdir/AndroidManifest.xml"` - 1)) "$tmpdir/AndroidManifest.xml" > "$tmpdir/AndroidManifest.xml2"
-  mv "$tmpdir/AndroidManifest.xml2" "$tmpdir/AndroidManifest.xml"
-  for m in $modules; do
-    javaincfile=`locatefile modules/$m/ANDROID.java.in silent`
-    if [ -f "$javaincfile" ]; then
-      . $javaincfile
-      echo "$ANDROID_PERMISSIONS" >> "$tmpdir/AndroidManifest.xml"
-    fi
-  done
-  echo $oldtail >> "$tmpdir/AndroidManifest.xml"
+  ac_output bootstraps/android/AndroidManifest.xml.in tmp.xml
+  cat tmp.xml | sed '/^#/d' > "$tmpdir/AndroidManifest.xml"
+  rm tmp.xml
   echo " => creating payload module.."
   cd $here
   tmpmoddir=`mktemp -d tmp.XXXXXX`
@@ -1175,18 +1194,7 @@ android)
     cat bootstraps/android/Android.mk.jni | sed 's/-lOpenSLES//' > $tmpdir/jni/Android.mk
   fi
   cp $SYS_PREFIX/include/CONFIG.h $tmpdir/jni
-  cat $configtgt | sed -n '/^#+/p' | cut -f 2- -d "+" > "$tmpdir/jni/config_android.h"
   ac_output bootstraps/android/bootstrap.c $tmpdir/jni/bootstrap.c
-  # Add module specific C code to end of file
-  for m in $modules; do
-    jnifile=`locatefile modules/$m/ANDROID.c.in silent`
-    if [ -f "$jnifile" ]; then
-      cat $jnifile >> $tmpdir/jni/bootstrap.c
-      tmpbootstrap=bootstrap.tmp 
-      sed -e "$ac_sedsub" $tmpdir/jni/bootstrap.c > $tmpbootstrap
-      mv $tmpbootstrap $tmpdir/jni/bootstrap.c
-    fi
-  done
   cd $tmpdir
   if [ $SYS_MODE = "debug" ]; then
     echo " => compiling payload module with debug options.."
@@ -1275,8 +1283,13 @@ macosx)
   sounddir=`locatedir apps/$SYS_APPNAME/sounds silent`
   if [ -d "$sounddir" ]; then
     echo " => transferring sounds..."
-    snds=`ls -1 $sounddir/*.wav`
     mkdir -p $appdir/sounds
+    snds=`ls -1 $sounddir/*.wav 2> /dev/null`
+    for snd in $snds; do
+       vecho " => $snd.."
+       cp $snd $appdir/sounds
+    done
+    snds=`ls -1 $sounddir/*.ogg 2> /dev/null`
     for snd in $snds; do
        vecho " => $snd.."
        cp $snd $appdir/sounds
@@ -1286,16 +1299,16 @@ macosx)
   echo " => compiling application.."
   if [ `is_standalone_app` = "yes" ]; then
     cd "$tmpdir"
-    veval "$SYS_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $appdir/$SYS_APPNAME $SYS_LDFLAGS -lpayload"
+    veval "$SYS_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $appdir/$SYS_APPNAME -lpayload"
   else
     if [ `is_gui_app` = "yes" ]; then
       cp bootstraps/macosx/*.[mh] $tmpdir
       cd "$tmpdir"
-      veval "$SYS_CC -framework OpenGL -framework Cocoa -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -x objective-c -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -o $appdir/$SYS_APPNAME $SYS_LDFLAGS -lpayload main.m SimpleOpenGLView.m"
+      veval "$SYS_CC -framework OpenGL -framework Cocoa -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -x objective-c -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -o $appdir/$SYS_APPNAME -lpayload main.m SimpleOpenGLView.m"
     else
       cp bootstraps/common/main.c $tmpdir
       cd "$tmpdir"
-      veval "$SYS_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $appdir/$SYS_APPNAME $SYS_LDFLAGS -lpayload main.c"
+      veval "$SYS_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $appdir/$SYS_APPNAME -lpayload main.c"
     fi
   fi
   cd $here
@@ -1319,7 +1332,12 @@ win32)
   if [ -d "$sounddir" ]; then
     echo " => transferring sounds..."
     mkdir -p $appdir/sounds
-    snds=`ls -1 $sounddir/*.wav`
+    snds=`ls -1 $sounddir/*.wav 2> /dev/null`
+    for snd in $snds; do
+       vecho " => $snd.."
+       cp $snd $appdir/sounds
+    done
+    snds=`ls -1 $sounddir/*.ogg 2> /dev/null`
     for snd in $snds; do
        vecho " => $snd.."
        cp $snd $appdir/sounds
@@ -1390,8 +1408,13 @@ linux)
   sounddir=`locatedir apps/$SYS_APPNAME/sounds silent`
   if [ -d "$sounddir" ]; then
     echo " => transferring sounds..."
-    snds=`ls -1 $sounddir/*.wav`
     mkdir -p $appdir/sounds
+    snds=`ls -1 $sounddir/*.wav 2> /dev/null`
+    for snd in $snds; do
+       vecho " => $snd.."
+       cp $snd $appdir/sounds
+    done
+    snds=`ls -1 $sounddir/*.ogg 2> /dev/null`
     for snd in $snds; do
        vecho " => $snd.."
        cp $snd $appdir/sounds
@@ -1493,8 +1516,13 @@ openbsd)
   sounddir=`locatedir apps/$SYS_APPNAME/sounds silent`
   if [ -d "$sounddir" ]; then
     echo " => transferring sounds..."
-    snds=`ls -1 $sounddir/*.wav`
     mkdir -p $appdir/sounds
+    snds=`ls -1 $sounddir/*.wav 2> /dev/null`
+    for snd in $snds; do
+       vecho " => $snd.."
+       cp $snd $appdir/sounds
+    done
+    snds=`ls -1 $sounddir/*.ogg 2> /dev/null`
     for snd in $snds; do
        vecho " => $snd.."
        cp $snd $appdir/sounds
@@ -1530,14 +1558,25 @@ openbsd)
 ;;
 #####################################
 bb10)
-  configsrc=`locatedir apps/$SYS_APPNAME`"/CONFIG_BB10.in"
+  bb10_subst()
+  {
+    ac_subst BB10_C_DEFINES "@$1/BB10_c_defines"
+    ac_subst BB10_XML_PERMISSIONS "@$1/BB10_xml_permissions"
+    ac_subst BB10_XML_ASSETS "@$1/BB10_xml_assets"
+  }
+  bb10_subst bootstraps/qnx
+  for m in $modules; do
+    modpath=`locatedir modules/$m silent`
+    bb10_subst $modpath
+  done
+  bb10_subst `locatedir apps/$SYS_APPNAME`
+  configsrc=`pwd`"/bootstraps/qnx/bb10-bar-descriptor.xml.in"
   assertfile $configsrc "BB10 configuration desriptor is required"
-  configtgt=$SYS_PREFIXROOT/build/$SYS_APPNAME/CONFIG_BB10
-  ac_output $configsrc $configtgt
-  assertfile $configtgt
+  mkdir -p $SYS_PREFIXROOT/build/$SYS_APPNAME
+  configtgt=$SYS_PREFIXROOT/build/$SYS_APPNAME/bar-descriptor.xml
   tmpdir=`mktemp -d tmp.XXXXXX`
   if [ `is_gui_app` = yes ]; then
-    cp bootstraps/qnx/bootstrap.c $tmpdir
+     ac_output bootstraps/qnx/bootstrap.c.in $tmpdir/bootstrap.c
   else
     if [ `is_standalone_app` = "no" ]; then
       cp bootstraps/common/main.c $tmpdir
@@ -1545,22 +1584,21 @@ bb10)
   fi
   cd $tmpdir
   echo " => compiling application.."
-  cat $configtgt | sed -n '/^#+/p' | cut -f 2- -d "+" > config_bb10.h
   tgt=$SYS_APPNAME$SYS_EXEFIX
   if [ `is_standalone_app` = "yes" ]; then
       touch main.c
       veval "$SYS_CC -I$SYS_PREFIX/include \
         main.c -DUSECONSOLE -o $tgt \
-        -L$SYS_PREFIX/lib -lpayload -lsocket -lm"
+        -L$SYS_PREFIX/lib -lpayload -lsocket -lasound -lm"
   else
     if [ `is_gui_app` = yes ]; then
       veval "$SYS_CC -I$SYS_PREFIX/include \
         bootstrap.c -o $tgt \
-        -L$SYS_PREFIX/lib -lpayload -lglview -lGLESv1_CL -lbps -lscreen -lsocket -lm"
+        -L$SYS_PREFIX/lib -lpayload -lglview -lGLESv1_CL -lbps -lscreen -lsocket -lasound -lm"
     else
       veval "$SYS_CC -I$SYS_PREFIX/include \
         -DUSECONSOLE main.c -o $tgt \
-        -L$SYS_PREFIX/lib -lpayload -lsocket -lm" 
+        -L$SYS_PREFIX/lib -lpayload -lsocket -lasound -lm" 
     fi
   fi
   asserterror $?
@@ -1569,21 +1607,48 @@ bb10)
     $SYS_STRIP $tgt
     asserterror $?
   fi
+  sounddir=`locatedir apps/$SYS_APPNAME/sounds silent`
+  rmifexists sound.assets
+  if [ -d "$sounddir" ]; then
+    echo " => transferring sounds..."
+    snds=`ls -1 $sounddir/*.wav 2> /dev/null`
+    for snd in $snds; do
+       vecho " => $snd.."
+       cp $snd .
+       sname=`basename $snd`
+       echo "<asset path=\"$sname\">$sname</asset>" >> sound.assets
+    done
+    snds=`ls -1 $sounddir/*.ogg 2> /dev/null`
+    for snd in $snds; do
+       vecho " => $snd.."
+       cp $snd .
+       sname=`basename $snd`
+       echo "<asset path=\"$sname\">$sname</asset>\n" >> sound.assets
+    done
+    ac_subst BB10_XML_ASSETS "@sound.assets"
+  fi
   echo " => preparing descriptor.."
+  ac_output $configsrc $configtgt
+  assertfile $configtgt
   cat $configtgt | sed '/^#/d' > bar-descriptor.xml
+  rmifexists sound.assets
   echo " => preparing icon.."
   cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-114.png" icon.png
   echo " => preparing package.."
   fnlfile=$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-bb10.bar
   if [ $SYS_MODE = release ]; then
-    blackberry-nativepackager -package $fnlfile bar-descriptor.xml
+    veval "blackberry-nativepackager -package $fnlfile bar-descriptor.xml"
+    asserterror $?
+    echo " => signing package.."
+    veval "blackberry-signer -storepass $SYS_BB10PW $fnlfile"
+    asserterror $?
+# @@@@@ verify here
   else
-    blackberry-nativepackager -package $fnlfile bar-descriptor.xml
-#    blackberry-nativepackager -package $fnlfile bar-descriptor.xml -devMode -debugToken "path to debugtoken2.bar"
+    token="$SYS_BB10DEBUGTOKEN"
+    assertfile "$token" "No debug token found, please create and put path in PROFILE"
+    veval "blackberry-nativepackager -package $fnlfile bar-descriptor.xml -devMode -debugToken \"$token\""
+    asserterror $?
   fi
-  echo " => signing package.."
-# blackberry-signer -csksetup -cskpass $BB10PW
-# blackberry-signer -storepass $BB10PW $fnlfile
   cd $here
   echo " => cleaning up.."
   rm -rf "$tmpdir"
@@ -1675,6 +1740,7 @@ make_scrub()
 
 make_install()
 {
+  setstate INSTALL
   case $SYS_PLATFORM in
   ios)
     echo "==> attempting to install $SYS_PLATFORM application $SYS_APPNAME.."
@@ -1727,14 +1793,15 @@ make_install()
     echo "==> attempting to install bb10 application $SYS_APPNAME.."
     pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-bb10.bar"
     assertfile $pkgfile
-    if [ ! "X$SYS_BB10IPADDR" = "X" ]; then
-      blackberry-deploy -installApp $SYS_BB10IPADDR -password $SYS_BB10PW  
+    if [ ! "X$SYS_BB10DEVICEIPADDR" = "X" ]; then
+      blackberry-deploy -installApp -launchApp $SYS_BB10DEVICEIPADDR -password $SYS_BB10DEVICEPW $pkgfile
     fi
   ;;
-  default)
+  *)
     echo "==> no install setup for this platform ($SYS_PLATFORM)"
   ;;
   esac
+  setstate
 }
 
 update_packfile()
@@ -1746,6 +1813,11 @@ update_packfile()
     here=`pwd`
     cd `locatedir apps/$SYS_APPNAME`
     $SYS_HOSTPREFIX/bin/packtool
+    if [ -f embed.scm ]; then
+      if `test "embed.scm" -nt "main.scm"`; then
+        touch main.scm
+      fi
+    fi
     cd $here
     mainfile=`locatefile apps/$SYS_APPNAME/main.scm`
     if [ "X"`cat "$mainfile" | grep "(include \"embed.scm\")" | cut -c 1` = "X" ]; then
@@ -1763,7 +1835,7 @@ make_executable()
     make_bootstrap
   else
     echo "==> making standalone executable for $SYS_APPNAME.."
-    veval "$SYS_CC $SYS_CPPFLAGS $SYS_CFLAGS -o $SYS_PREFIX/bin/$SYS_APPNAME$SYS_EXEFIX $SYS_PREFIX/lib/libpayload.a"
+    veval "$SYS_CC -o $SYS_PREFIX/bin/$SYS_APPNAME$SYS_EXEFIX $SYS_PREFIX/lib/libpayload.a"
     assertfile $SYS_PREFIX/bin/$SYS_APPNAME$SYS_EXEFIX
   fi
 }

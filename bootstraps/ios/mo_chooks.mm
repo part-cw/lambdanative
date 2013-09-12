@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 // audio
 
-#import "config.h"
+#import "config_custom.h"
 
 #import "mo_audio.h"
 #import <MediaPlayer/MediaPlayer.h>
@@ -171,34 +171,47 @@ extern "C" double ios_gyro_pitch() { return ios_gyro(1); }
 extern "C" double ios_gyro_roll() { return ios_gyro(2); }
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%
-// device orientation
+// device identification
 
-/*
-extern "C" int iphone_device_orientation(){
-  static int orientation=0;
-  static int start_flag=1;
-   UIDevice *dev = [UIDevice currentDevice];
-   if (start_flag) {
-     [dev beginGeneratingDeviceOrientationNotifications];
-     start_flag=0;
-  }
-  switch ([dev orientation]) {
-    case UIDeviceOrientationPortrait:
-      orientation=0; break;
-    case UIDeviceOrientationLandscapeLeft:
-      orientation=1; break;
-    case UIDeviceOrientationLandscapeRight:
-      orientation=2; break;
-    case UIDeviceOrientationPortraitUpsideDown:
-      orientation=3; break;
-    case UIDeviceOrientationUnknown:
-    case UIDeviceOrientationFaceUp:
-    case UIDeviceOrientationFaceDown:
-    default:
-      break;
-  }
-  return orientation;
+#import <sys/sysctl.h>
+//#import "UIDevice-Hardware.h"
+
+extern "C" int ios_hardware_id()
+{
+  int res=0;
+  size_t size;
+  sysctlbyname("hw.machine", NULL, &size, NULL, 0);
+  char *model = (char*)malloc(size);
+  sysctlbyname("hw.machine", model, &size, NULL, 0);
+  if (!strcmp(model,"iPhone1,1")) res=1;
+  if (!strcmp(model,"iPhone1,2")) res=2;
+  if (!strcmp(model,"iPhone2,1")) res=3;
+  if (!strcmp(model,"iPhone3,1")) res=4;
+  if (!strcmp(model,"iPhone3,3")) res=5;
+  if (!strcmp(model,"iPhone4,1")) res=6;
+  if (!strcmp(model,"iPhone5,1")) res=7;
+  if (!strcmp(model,"iPhone5,2")) res=8;
+  if (!strcmp(model,"iPod1,1")) res=16+1;
+  if (!strcmp(model,"iPod2,1")) res=16+2;
+  if (!strcmp(model,"iPod3,1")) res=16+3;
+  if (!strcmp(model,"iPod4,1")) res=16+4;
+  if (!strcmp(model,"iPod5,1")) res=16+5;
+  if (!strcmp(model,"iPad1,1")) res=32+1;
+  if (!strcmp(model,"iPad2,1")) res=32+2;
+  if (!strcmp(model,"iPad2,2")) res=32+3;
+  if (!strcmp(model,"iPad2,3")) res=32+4;
+  if (!strcmp(model,"iPad2,4")) res=32+5;
+  if (!strcmp(model,"iPad2,5")) res=32+6;
+  if (!strcmp(model,"iPad2,6")) res=32+7;
+  if (!strcmp(model,"iPad2,7")) res=32+8;
+  if (!strcmp(model,"iPad3,1")) res=32+9;
+  if (!strcmp(model,"iPad3,2")) res=32+10;
+  if (!strcmp(model,"iPad3,3")) res=32+11;
+  if (!strcmp(model,"iPad3,4")) res=32+12;
+  if (!strcmp(model,"iPad3,5")) res=32+13;
+  if (!strcmp(model,"iPad3,6")) res=32+14;
+  free(model); 
+  return res;
 }
-*/
 
 // eof

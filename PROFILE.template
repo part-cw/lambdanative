@@ -8,3 +8,9 @@ SYS_IOSRELCERT="iPhone Distribution: Your iOS identifier here"
 SYS_IOSDEVCERT="iPhone Developer: Your iOS identifier here (XXXXXXXXX)"
 # android keystore password
 SYS_ANDROIDPW="yoursecrethere"
+# BB10 developer password
+SYS_BB10PW="yoursecrethere"
+# BB10 debug device 
+SYS_BB10DEVICEPW="yoursecrethere"
+SYS_BB10DEVICEIPADDR="development device ip address here"
+SYS_BB10DEBUGTOKEN="path to debugtoken bar"
