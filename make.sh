@@ -2143,8 +2143,8 @@ if [ `is_gui_app` = "yes" ]; then
   make_fonts
   make_strings
 fi
-  make_payload
   update_packfile
+  make_payload
   make_executable
   make_package
 ;;
