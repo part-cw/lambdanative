@@ -1,0 +1,3 @@
+#define USE_ORIENTATION 1
+#define USE_AUDIOINIT 1
+#define USE_NOLOCK 1
