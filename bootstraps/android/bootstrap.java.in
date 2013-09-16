@@ -92,6 +92,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
           System.exit(1);
         }
       });
+    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     this.requestWindowFeature(Window.FEATURE_NO_TITLE); 
     // make sure volume controls control media
     this.setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -177,24 +178,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONRESUME@
     mGLView.onResume();
-  }
-  @Override
-  public void onConfigurationChanged(Configuration newConfig) {
-    super.onConfigurationChanged(newConfig);
-    int orientation=1; // PORTRAIT
-    Context context = getApplicationContext();
-    final int rotation = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getOrientation();
-    switch (rotation) {
-      case Surface.ROTATION_0: orientation=1; break;
-      case Surface.ROTATION_90: orientation=2; break;
-      case Surface.ROTATION_180: orientation=4; break;
-      default: orientation=3;
-    } 
-// alternative implementation (can't do seascape/upsidedown)
-//   final int nCurrentOrientation = getResources().getConfiguration().orientation;
-//   final int orientation = (nCurrentOrientation==Configuration.ORIENTATION_LANDSCAPE?2:1);
-   final int o_dispatch=orientation;
-   nativeEvent(33,o_dispatch,0);   // EVENT_ORIENTATION
   }
   @Override
   public void onAccuracyChanged(Sensor sensor, int accuracy) {
