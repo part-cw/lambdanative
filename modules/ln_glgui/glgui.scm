@@ -219,9 +219,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                       (p (glgui-widget-get gui wgt 'input-handle))
                       (container? (glgui-widget-get gui wgt 'container))
                       (r (if (and glgui:modalstate (or m minput) (not h))
-                            (if (procedure? p) (p gui wgt t x y) (if container? (glgui:inputloop t x0 y0 wgt) #f))
+                            (if (procedure? p) (p gui wgt t x y) (if container? (glgui:inputloop t x y wgt) #f))
                           (if (and (not glgui:modalstate) (not m) (not h))
-                            (if (procedure? p) (p gui wgt t x y) (if container? (glgui:inputloop t x0 y0 wgt) #f)) #f))))
+                            (if (procedure? p) (p gui wgt t x y) (if container? (glgui:inputloop t x y wgt) #f)) #f))))
                   (loop (cdr wl) (and (not (or (fx= t EVENT_BUTTON1UP) propagate glgui:propagate)) r))))))))))
 
 ;; process an input event
