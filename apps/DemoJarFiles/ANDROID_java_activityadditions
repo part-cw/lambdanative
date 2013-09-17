@@ -1,0 +1,7 @@
+
+native void myprocessid(int pid);
+
+public void getMyPid() {
+	myprocessid(MyProcess.myPid());
+}
+
