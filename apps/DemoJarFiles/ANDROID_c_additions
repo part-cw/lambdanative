@@ -1,0 +1,7 @@
+// FFI for getting GPS data to Scheme
+static int my_process_id;
+void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_myprocessid(JNIEnv* e, jobject o, jint pid) {
+	my_process_id = (int)pid;
+}
+
+android_process_mypid(){ return my_process_id; }
