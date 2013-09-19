@@ -926,4 +926,21 @@ end-of-c-declare
        (if (> outlen (* inlen 10000)) (begin (log-error "fastlz: decompression failed") #f) 
          (if (> retval 0) (subu8vector outbuf 0 retval) (expand (* outlen 10)))))))) #f))
 
+;; unit tests
+;; -----------------
+
+(unit-test "u8vector-compress" "1000 random vectors (min compression)"
+  (lambda () (let loop ((n 1000))
+      (if (fx= n 0) #t (if (let* ((datalen (random-integer 100000))
+           (data (random-u8vector datalen)))
+          (not (equal? data (u8vector-decompress (u8vector-compress data))))
+        ) #f (loop (fx- n 1)))))))
+
+(unit-test "u8vector-compress" "1000 empty vectors (max compression)"
+  (lambda () (let loop ((n 1000))
+      (if (fx= n 0) #t (if (let* ((datalen (random-integer 100000))
+           (data (make-u8vector datalen 7)))
+          (not (equal? data (u8vector-decompress (u8vector-compress data))))
+        ) #f (loop (fx- n 1)))))))
+
 ;; eof

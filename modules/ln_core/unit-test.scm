@@ -36,25 +36,46 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(include "unit-test.scm")
-(include "color.scm")
-(include "floatstring.scm")
-(include "flofix.scm")
-(include "list.scm")
-(include "math.scm")
-(include "list-stats.scm")
-(include "listlist.scm")
-(include "sort.scm")
-(include "string.scm")
-(include "utf8string.scm")
-(include "time.scm")
-(include "log.scm")
-(include "ipaddr.scm")
-(include "launchurl.scm")
-(include "u8vector.scm")
-(include "u8data.scm")
-(include "u8vector-crcs.scm")
-(include "u8vector-compress.scm")
-(include "file-compress.scm")
-(include "packtool.scm")
+;; very simple unit testing framework
+;; this can be used to test cases in code
+;; API
+;; (unit-test <unit-name> <test-name> <test-proc>)
+;; (unit-test <unit-name>)
+;; (unit-test-all)
 
+(define unit-test:table (make-table init: #f))
+
+(define (unit-test n . x)
+
+  ;; add a test to the test group
+  (define (unit-test-add n tn tp)
+    (let* ((t (table-ref unit-test:table n))
+          (tt (if (table? t) t (make-table init: #f))))
+      (table-set! tt tn tp)
+      (table-set! unit-test:table n tt)))
+
+  ;; run a test and catch all errors
+  (define (unit-test-try p)
+    (let ((outcome 
+       (with-exception-catcher (lambda (e) #f)
+         (lambda () (p)))))
+      (if outcome "OK" "FAIL")))
+
+  ;; run all tests with-in a group
+  (define (unit-test-run n)
+    (let ((t (table-ref unit-test:table n)))
+      (if (table? t)
+        (table-for-each (lambda (tn tp) 
+          (for-each display (list n ": "  tn ".. " 
+             (unit-test-try tp) "\n"))) t)
+        (for-each display (list n ": no tests found.\n")))))
+
+  (if (> (length x) 0)
+    (apply unit-test-add (append (list n) x))
+    (unit-test-run n)))
+
+(define (unit-test-all) 
+  (table-for-each (lambda (k v)
+     (unit-test k)) unit-test:table))
+
+;; eof
