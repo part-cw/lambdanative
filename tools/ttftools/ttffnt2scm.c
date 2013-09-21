@@ -117,6 +117,22 @@ void load_glyph_set(char *setarg)
   }
 }
 
+int fastlz_compress(const void*, int, void*);
+
+void printcompressedtexture(unsigned char *data, int len)
+{
+  int i, maxlen = 67+(int)(1.05*len);
+  unsigned char *cdata = (unsigned char *)malloc(maxlen);
+  int clen = fastlz_compress(data,len,cdata);
+  printf("1 ");
+  for (i=0;i<clen;i++) {
+    printf("%i",(int)cdata[i]);
+    if (i<clen-1) printf(" ");
+  }
+  free(cdata);
+}
+
+
 void printscmatlas(char *name, texture_atlas_t *a)
 {
   int i;
@@ -124,17 +140,9 @@ void printscmatlas(char *name, texture_atlas_t *a)
   int h = a->height;
   int depth = a->depth;
   unsigned char *data = a->data;
-  printf("(define %s.raw (glCoreTextureCreate %i %i '#u8(",name, w ,h );
-  if (depth==4) {
-    for (i=0;i<4*w*h;i++) { printf("%i",(int)data[i]); if (i<4*w*h-1) printf(" "); }
-  }
-  if (depth==3) {
-    for (i=0;i<3*w*h;i++) { printf("%i",(int)data[i]); if (i<3*w*h-1) printf(" "); } 
-  } 
-  if (depth==1) {
-    for (i=0;i<w*h;i++) { printf("%i",(int)data[i]); if (i<w*h-1) printf(" "); } 
-  }
-  printf(") GL_LINEAR GL_REPEAT))\n");
+  printf("(define %s.raw (glCoreTextureCreate %i %i (u8vector-decompress '#u8(",name, w ,h );
+  printcompressedtexture(data,depth*w*h);
+  printf(")) GL_LINEAR GL_REPEAT))\n");
 //  printf(") GL_NEAREST GL_REPEAT))\n");
 //  printf("(define %s.img (list %i %i %s.raw 0. 0. 1. 1.))\n", name,w,h,name);
 }

@@ -1,4 +1,4 @@
-#|
+/*
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2013, University of British Columbia
 All rights reserved.
@@ -34,13 +34,7 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-|#
-
-;; fastlz -  very fast data compression of u8vectors
-
-(c-declare  #<<end-of-c-declare
-
-//#include <stdio.h>
+*/
 
 /*
   FastLZ - lightning-fast lossless compression library
@@ -898,49 +892,4 @@ static FASTLZ_INLINE int FASTLZ_DECOMPRESSOR(const void* input, int length, void
   return op - (flzuint8*)output;
 }
 
-end-of-c-declare
-)
-
-(define (u8vector-compress inbuf)
-  (if (u8vector? inbuf) 
-  (let* ((inlen (u8vector-length inbuf))
-         (outlen (max 66 (fix (* 1.05 inlen))))
-         (outbuf (make-u8vector outlen)))
-    (if (fx< inlen 16) (u8vector-append (u8vector 0) inbuf) 
-      (let ((retval ((c-lambda  (scheme-object int scheme-object) int
-         "___result=fastlz_compress(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)),___arg2,
-              ___CAST(void*,___BODY_AS(___arg3,___tSUBTYPED)));") inbuf inlen outbuf)))
-        (u8vector-append (u8vector 1) (subu8vector outbuf 0 retval))))) #f))
-
-(define (u8vector-decompress inbuf)
-  (if (u8vector? inbuf)
-  (let ((flag (u8vector-ref inbuf 0))
-        (inlen (u8vector-length inbuf)))
-   (if (fx= flag 0) (subu8vector inbuf 1 inlen)
-     (let expand ((outlen (* 5 inlen)))  ;; we could start lower, but potential for performance hit?
-       (let* ((outbuf (make-u8vector outlen 0))
-              (retval ((c-lambda  (scheme-object int scheme-object int) int
-                 "___result=fastlz_decompress(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)),___arg2,
-                  ___CAST(void*,___BODY_AS(___arg3,___tSUBTYPED)),___arg4);")
-                 (subu8vector inbuf 1 inlen) (- inlen 1) outbuf outlen)))
-       (if (> outlen (* inlen 10000)) (begin (log-error "fastlz: decompression failed") #f) 
-         (if (> retval 0) (subu8vector outbuf 0 retval) (expand (* outlen 10)))))))) #f))
-
-;; unit tests
-;; -----------------
-
-(unit-test "u8vector-compress" "1000 random vectors (min compression)"
-  (lambda () (let loop ((n 1000))
-      (if (fx= n 0) #t (if (let* ((datalen (random-integer 100000))
-           (data (random-u8vector datalen)))
-          (not (equal? data (u8vector-decompress (u8vector-compress data))))
-        ) #f (loop (fx- n 1)))))))
-
-(unit-test "u8vector-compress" "1000 empty vectors (max compression)"
-  (lambda () (let loop ((n 1000))
-      (if (fx= n 0) #t (if (let* ((datalen (random-integer 100000))
-           (data (make-u8vector datalen 7)))
-          (not (equal? data (u8vector-decompress (u8vector-compress data))))
-        ) #f (loop (fx- n 1)))))))
-
-;; eof
+// eof

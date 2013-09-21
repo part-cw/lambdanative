@@ -1173,18 +1173,18 @@ android)
       cp $snd $tmpdir/res/raw/$locasesnd
     done
   fi
-
   # transfering jar files
-  echo "=> transfering jar files"
-  jarfilesdir=`locatedir apps/$SYS_APPNAME/android_jars`
-  jarfiles=`ls -1 $jarfilesdir/*.jar 2> /dev/null`
-  mkdir -p $tmpdir/libs/
-  for jar in $jarfiles; do
-    locajar=`basename $jar | tr A-Z a-z`
-    vecho " => coping jar file - $locajar ..."
-    cp $jar $tmpdir/libs/
-  done
-
+  jarfilesdir=`locatedir apps/$SYS_APPNAME/android_jars silent`
+  if [ -d "$jarfilesdir" ]; then
+    echo " => transfering jar files.."
+    jarfiles=`ls -1 $jarfilesdir/*.jar 2> /dev/null`
+    mkdir -p $tmpdir/libs/
+    for jar in $jarfiles; do
+      locajar=`basename $jar | tr A-Z a-z`
+      vecho " => coping jar file - $locajar ..."
+      cp $jar $tmpdir/libs/
+    done
+  fi
   echo " => transferring java hook.."
   ac_output bootstraps/android/bootstrap.java.in $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
   echo " => preparing manifest.."

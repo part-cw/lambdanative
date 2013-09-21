@@ -1,5 +1,5 @@
 
-COMMON_SRCS="texture-atlas.c texture-font.c vector.c"
+COMMON_SRCS="texture-atlas.c texture-font.c vector.c fastlz.c"
 COMMON_OBJS=`echo "$COMMON_SRCS" | sed 's/\.c/\.o/g'`
 COMMON_HS=`echo "$COMMON_SRCS" | sed 's/\.c/\.h/g'`" vec234.h"
 FTINC=`freetype-config --cflags`
