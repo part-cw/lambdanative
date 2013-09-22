@@ -5,7 +5,7 @@ if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
     echo " => $tgta.."
     mkdir -p @SYS_HOSTPREFIX@/bin
     @SYS_CC@ -c libpng/*.c
-    @SYS_CC@ -c png2scm.c -I./libpng
+    @SYS_CC@ -c png2scm.c fastlz.c -I./libpng
     @SYS_CC@ -o $tgta *.o -lz -lm
     if [ ! $? = 0 ]; then exit 1; fi
     rm *.o
