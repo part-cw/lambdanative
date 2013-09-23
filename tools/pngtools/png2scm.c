@@ -138,6 +138,55 @@ void usage(void)
   exit(1);
 }
 
+int fastlz_compress(const void*, int, void*);
+
+void printcompressedtexture(unsigned char *data,int type, int w, int h)
+{
+  int i, maxlen, depth, clen, j;
+  unsigned char *cdata;
+  unsigned char *clean_data;
+   
+  switch (type) {
+  case TYPE_ALPHA:
+    depth=1;
+    break;
+  case TYPE_RGB:
+    depth=3;
+    break;
+  case TYPE_RGBA:
+    depth=4;
+    break;
+  }
+
+  clean_data = (unsigned char *)malloc(depth*w*h);
+  maxlen = 67+(int)(1.05*depth*w*h);
+  cdata = (unsigned char *)malloc(maxlen);
+  memset(clean_data,0,w*h*depth);
+
+  j=0;
+  switch (type) {
+  case TYPE_ALPHA:
+    for (i=0;i<4*w*h;i++) { if (i%4==0) {clean_data[j++] = data[i];} }
+    break;
+  case TYPE_RGB:
+    for (i=0;i<4*w*h;i++) { if (i%4!=3) {clean_data[j++] = data[i];} }
+    break;
+  case TYPE_RGBA:
+    memcpy(clean_data,data,depth*w*h);
+    break;
+  }
+
+  clen = fastlz_compress(clean_data,depth*w*h,cdata);
+
+  printf("1 ");
+  for (i=0;i<clen;i++) {
+    printf("%i",(int)cdata[i]);
+    if (i<clen-1) printf(" ");
+  }
+  free(cdata);
+  free(clean_data);
+}
+
 int main(int argc, char *argv[])
 {
   char name[1024];memset(name,0,1024);
@@ -167,17 +216,9 @@ int main(int argc, char *argv[])
     if (data) {
       printf(";; Automatically generated. Do not edit.\n");
       printf(";; png2scm ver 2.0. type=%i\n", type);
-      printf("(define %s.raw (glCoreTextureCreate %i %i '#u8(",name, w2 ,h2 );
-      if (type==TYPE_RGBA) {
-        for (i=0;i<4*w2*h2;i++) { printf("%i",(int)data2[i]); if (i<4*w2*h2-1) printf(" "); }
-      }
-      if (type==TYPE_RGB) {
-        for (i=0;i<4*w2*h2;i++) { if (i%4!=3) { printf("%i",(int)data2[i]); if (i<4*w2*h2-1) printf(" "); } }
-      } 
-      if (type==TYPE_ALPHA) {
-        for (i=0;i<4*w2*h2;i++) { if (i%4==0) { printf("%i",(int)data2[i]); if (i<4*w2*h2-1) printf(" "); } }
-      }
-      printf(")))\n");
+      printf("(define %s.raw (glCoreTextureCreate %i %i (u8vector-decompress '#u8(",name, w2 ,h2 );
+      printcompressedtexture(data2,type,w2,h2);
+      printf("))))\n");
       printf("(define %s.img (list %i %i %s.raw 0. 0. %f %f))\n", name,w,h,name,(double)w/(double)w2, (double)h/(double)h2);
     } else {
      fprintf(stderr,"ERROR!\n");
