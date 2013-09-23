@@ -66,9 +66,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (let ((t (table-ref unit-test:table n)))
       (if (table? t)
         (table-for-each (lambda (tn tp) 
-          (for-each display (list n ": "  tn ".. " 
-             (unit-test-try tp) "\n"))) t)
-        (for-each display (list n ": no tests found.\n")))))
+          (log-status n ": " tn ".. " (unit-test-try tp))) t)
+        (log-status n ": no tests found."))))
 
   (if (> (length x) 0)
     (apply unit-test-add (append (list n) x))
