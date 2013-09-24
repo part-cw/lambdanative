@@ -589,11 +589,15 @@ make_artwork()
 # the crazy list of artwork sizes:
 # 1024: iTunes
 # 512:  google play
+# 152:  iPad (iOS7)
 # 144: 	retina ipad
 # 128:  macosx
+# 120:  iPod touch (iOS7)
 # 114: 	retina iphone
 # 96:  	Retina iPad spotlight, android launcher
+# 76:   iPad (iOS7)
 # 72:   ipad, android launcher
+# 60:   iPod touch (iOS7)
 # 58:	iphone 4 settings
 # 57:   iphone
 # 48:   iPad Spotlight, android launcher, macosx
@@ -601,7 +605,7 @@ make_artwork()
 # 32:   macosx
 # 29: 	iphone settings
 # 16:   macosx
-  sizes="1024 512 144 128 114 96 72 58 57 48 36 32 29 16"
+  sizes="1024 512 152 144 128 120 114 96 76 72 60 58 57 48 36 32 29 16"
   for s in $sizes; do
     tgt="$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-$s.png"
     if [ `isnewer $epssrc $tgt` = "yes" ]; then
@@ -1063,6 +1067,10 @@ ios)
   cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-114.png" "$cmakedir/Icon@2x.png"
   cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-72.png" "$cmakedir/Icon-72.png"
   cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-144.png" "$cmakedir/Icon-72@2x.png"
+  cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-60.png" "$cmakedir/Icon-60.png"
+  cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-120.png" "$cmakedir/Icon-60@2x.png"
+  cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-76.png" "$cmakedir/Icon-76.png"
+  cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-152.png" "$cmakedir/Icon-76@2x.png"
   # go full screen on retina displays!
   cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/retina.png" "$cmakedir/Default-568h@2x.png"
   snddir=`locatedir apps/$SYS_APPNAME/sounds silent`
