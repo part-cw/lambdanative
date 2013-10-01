@@ -624,46 +624,104 @@ make_artwork()
   setstate
 }
 
+make_texturedir()
+{
+  srcdir=$1
+  incfile=$2
+  if [ ! -f "$incfile" ]; then 
+    echo ";; Automatically generated. Do not edit."  > "$incfile"
+  fi
+  if [ -d "$srcdir" ]; then
+    echo " => adding textures from $srcdir.."
+    images=`ls -1 "$srcdir"/*.png 2> /dev/null`
+    dirty=no
+    new=no
+    for imgfile in $images; do
+      scmfile=$SYS_PREFIXROOT/build/$SYS_APPNAME/textures/`basename $imgfile | sed 's/png$/scm/'`
+      if [ `isnewer $imgfile $incfile` = "yes" ]; then
+        dirty=yes 
+      fi
+      if [ "X"`grep "$scmfile" "$incfile" | head -n 1 | cut -c 1` = "X" ]; then 
+        dirty=yes
+        new=yes
+      fi
+      if [ $dirty = yes ]; then
+        echo " => $imgfile.."
+        $SYS_HOSTPREFIX/bin/png2scm "$imgfile" > "$scmfile"
+        if [ $new = yes ]; then
+          echo "(include \"$scmfile\")" >> "$incfile"
+        fi
+      fi
+    done
+  fi
+}
+
 make_textures()
 {
   setstate TEXTURES
   echo "==> creating textures needed for $SYS_APPNAME.."
-  srcdir=`locatedir apps/$SYS_APPNAME/textures silent`
-  if [ "X" = "X$srcdir" ]; then 
-    return 
-  fi
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/textures
   mkdir -p $tgtdir
   incfile=$tgtdir/textures_include.scm
-  images=`ls -1 "$srcdir"/*.png 2> /dev/null`
-  dirty="no"
-  empty=yes
-  for imgfile in $images; do
-    empty=no
-    if [ `isnewer $imgfile $incfile` = "yes" ]; then
-      dirty="yes" 
+  srcdir="$appsrcdir/textures"
+  if [ -d $srcdir ]; then 
+    make_texturedir "$srcdir" "$incfile"
+  fi
+  for m in $modules; do
+    srcdir=`locatedir modules/$m/textures silent`
+    if [ ! "X$srcdir" = "X" ]; then
+      make_texturedir "$srcdir" "$incfile"
     fi
   done
-  if [ "$dirty" = "yes" ]; then
-    echo ";; Automatically generated. Do not edit."  > $incfile
-    if [ -d "$srcdir" ]; then
-      for imgfile in $images; do
-        scmfile=$SYS_PREFIXROOT/build/$SYS_APPNAME/textures/`basename $imgfile | sed 's/png$/scm/'`
-        if [ `isnewer $imgfile $scmfile` = "yes" ]; then
-          echo " => $imgfile.."
-          $SYS_HOSTPREFIX/bin/png2scm $imgfile > $scmfile
-        fi
-        echo "(include \"$scmfile\")" >> $incfile
-      done
-    fi
-    echo ";; eof" >> $incfile
-  fi
-  if [ "$empty" = "yes" ]; then
-    if [ ! -e $incfile ]; then
-      touch $incfile
-    fi
-  fi
   setstate
+}
+
+make_fontfile()
+{
+  dirty=no
+  srcfile=$1
+  incfile=$2
+  if [ ! -f "$incfile" ]; then
+    echo ";; Automatically generated. Do not edit."  > $incfile 
+  fi
+  if [ `isnewer $srcfile $incfile` = "yes" ]; then
+    dirty=yes
+  fi
+  if [ "X"`grep ";; $srcfile" "$incfile" | head -n 1 | cut -c 1` = "X" ]; then
+    dirty=yes
+  fi
+  if [ $dirty = "yes" ]; then
+    while read line; do
+      fline=`echo "$line" | sed '/^#/d'`
+      if [ "$fline" ]; then 
+        fontname=`echo "$fline" | cut -f 1 -d " "`
+        font=`locatefile fonts/$fontname`
+        assertfile $font 
+        bits=`echo "$fline" | cut -f 2 -d " "`
+        if [ "X$bits" = "X7" ]; then 
+           bits=`locatefile fonts/ascii7.set`
+        else
+          if [ "X$bits" = "X8" ]; then 
+            bits=`locatefile fonts/ascii8.set`
+          else
+            bits=`locatefile fonts/$bits`
+          fi
+        fi
+        sizes=`echo "$fline" | cut -f 3 -d " "`
+        name=`echo "$fline" | cut -f 4 -d " "`
+        scmfile=$tgtdir/${name}.scm
+        if [ `isnewer $srcfile $scmfile` = "yes" ]; then
+           echo " => $name using glyph set $bits.."
+           $SYS_HOSTPREFIX/bin/ttffnt2scm $font "$bits" $sizes $name > $scmfile
+           assertfile $scmfile
+        fi
+        if [ "X"`grep "$scmfile" "$incfile" | head -n 1 | cut -c 1` = "X" ]; then 
+          echo ";; $srcfile" >> $incfile
+          echo "(include \"$scmfile\")" >> $incfile
+        fi
+      fi
+    done < $srcfile
+  fi
 }
 
 make_fonts()
@@ -672,43 +730,17 @@ make_fonts()
   echo "==> creating fonts needed for $SYS_APPNAME.."
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/fonts
   mkdir -p $tgtdir
-  srcfile=`locatefile apps/$SYS_APPNAME/FONTS silent`
-  if [ "X$srcfile" = "X" ]; then
-    touch $tgtdir/fonts_include.scm
-  else
-    incfile=$tgtdir/fonts_include.scm
-    if [ `isnewer $srcfile $incfile` = "yes" ]; then
-      echo ";; Automatically generated. Do not edit."  > $incfile
-      while read line; do
-        fline=`echo "$line" | sed '/^#/d'`
-        if [ "$fline" ]; then 
-          fontname=`echo "$fline" | cut -f 1 -d " "`
-          font=`locatefile fonts/$fontname`
-          assertfile $font 
-          bits=`echo "$fline" | cut -f 2 -d " "`
-          if [ "X$bits" = "X7" ]; then 
-             bits=`locatefile fonts/ascii7.set`
-          else
-            if [ "X$bits" = "X8" ]; then 
-              bits=`locatefile fonts/ascii8.set`
-            else
-              bits=`locatefile fonts/$bits`
-            fi
-          fi
-          sizes=`echo "$fline" | cut -f 3 -d " "`
-          name=`echo "$fline" | cut -f 4 -d " "`
-          scmfile=$tgtdir/${name}.scm
-          if [ `isnewer $srcfile $scmfile` = "yes" ]; then
-             echo " => $name using glyph set $bits.."
-             $SYS_HOSTPREFIX/bin/ttffnt2scm $font "$bits" $sizes $name > $scmfile
-             assertfile $scmfile
-          fi
-          echo "(include \"$scmfile\")" >> $incfile
-        fi
-      done < $srcfile
-      echo ";; eof" >> $incfile
-    fi
+  incfile=$tgtdir/fonts_include.scm
+  srcfile="$appsrcdir/FONTS"
+  if [ -f $srcfile ]; then 
+    make_fontfile "$srcfile" "$incfile"
   fi
+  for m in $modules; do
+    srcdir=`locatefile modules/$m/FONTS silent`
+    if [ ! "X$srcdir" = "X" ]; then
+      make_fontfile "$srcdir" "$incfile"
+    fi
+  done
   setstate
 }
 
@@ -763,6 +795,47 @@ __EOF
   rm -rf $newpath
 }
 
+make_stringfile()
+{
+  dirty=no
+  srcfile=$1
+  incfile=$2
+  if [ ! -f "$incfile" ]; then
+    echo ";; Automatically generated. Do not edit."  > $incfile
+  fi
+  if [ `isnewer $srcfile $incfile` = "yes" ]; then
+    dirty=yes
+  fi
+  if [ "X"`grep ";; $srcfile" "$incfile" | head -n 1 | cut -c 1` = "X" ]; then
+    dirty=yes
+  fi
+  if [ $dirty = yes ]; then
+    cat $srcfile | sed '/^#/d' > tmp.STRINGS
+    while read -r fline; do
+      if [ "$fline" ]; then 
+        fontname=`eval "getparam 1 $fline"`
+        font=`locatefile fonts/$fontname`
+        assertfile $font
+        size=`eval "getparam 2 $fline"`
+        label=`eval "getparam 3 $fline" | sed 's:_/:@TMP@:g;s:/:\\\\:g;s:@TMP@:/:g'`
+        name=`eval "getparam 4 $fline"`
+        opt=`eval "getparam 5 $fline"`
+        scmfile=$tgtdir/${name}.scm
+        if [ `isnewer $srcfile $scmfile` = "yes" ]; then
+           echo " => $name.."
+           make_string_aux $font $size "$label" $name $scmfile $opt
+           assertfile $scmfile
+        fi
+        if [ "X"`grep "$scmfile" "$incfile" | head -n 1 | cut -c 1` = "X" ]; then 
+          echo ";; $srcfile" >> $incfile
+          echo "(include \"$scmfile\")" >> $incfile
+        fi
+      fi
+    done < tmp.STRINGS
+    rm tmp.STRINGS
+  fi 
+}
+
 make_strings()
 {
   setstate STRINGS
@@ -770,39 +843,54 @@ make_strings()
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/strings
   mkdir -p $tgtdir
   incfile=$tgtdir/strings_include.scm
-  srcfile=`locatefile apps/$SYS_APPNAME/STRINGS silent`
-  if [ "X$srcfile" = "X" ]; then
-    touch $incfile
-  else
-    assertfile $srcfile
-    if [ `isnewer $srcfile $incfile` = "yes" ]; then
-      cat $srcfile | sed '/^#/d' > $tgtdir/STRINGS
-      echo ";; Automatically generated. Do not edit."  > $incfile
-      while read -r fline; do
-#        fline=`echo "$line" | sed '/^#/d'`
-        if [ "$fline" ]; then 
-          fontname=`eval "getparam 1 $fline"`
-          font=`locatefile fonts/$fontname`
-          assertfile $font
-          size=`eval "getparam 2 $fline"`
-          label=`eval "getparam 3 $fline" | sed 's:_/:@TMP@:g;s:/:\\\\:g;s:@TMP@:/:g'`
-          name=`eval "getparam 4 $fline"`
-          opt=`eval "getparam 5 $fline"`
-          scmfile=$tgtdir/${name}.scm
-          if [ `isnewer $srcfile $scmfile` = "yes" ]; then
-             echo " => $name.."
-#           echo "$SYS_HOSTPREFIX/bin/ttfstr2scm $font $size \"$label\" $name > $scmfile"
-#             $SYS_HOSTPREFIX/bin/ttfstr2scm $font $size "$label" $name > $scmfile
-             make_string_aux $font $size "$label" $name $scmfile $opt
-             assertfile $scmfile
-          fi
-          echo "(include \"$scmfile\")" >> $incfile
-        fi
-      done < $tgtdir/STRINGS
-      echo ";; eof" >> $incfile
-    fi 
+  srcfile="$appsrcdir/STRINGS"
+  if [ -f $srcfile ]; then 
+    make_stringfile "$srcfile" "$incfile"
   fi
+  for m in $modules; do
+    srcfile=`locatefile modules/$m/STRINGS silent`
+    if [ ! "X$srcfile" = "X" ]; then
+      make_stringfile "$srcdir" "$incfile"
+    fi
+  done
   setstate
+}
+
+make_sounddir()
+{
+  snddir=$1
+  make_soundfile=$2
+  echo " => processing sounds from $snddir..."
+  snds=`ls -1 $snddir/*.wav 2> /dev/null`
+  for snd in $snds; do
+    if [ -f "$snd" ]; then
+      echo " => $snd.."
+      $make_soundfile "$snd"
+    fi
+  done
+  snds=`ls -1 $snddir/*.ogg 2> /dev/null`
+  for snd in $snds; do
+    if [ -f "$snd" ]; then
+      vecho " => $snd.."
+      $make_soundfile "$snd"
+    fi
+  done
+}
+
+make_sounds()
+{
+  make_soundfile=$1
+  echo " => processing sounds needed for $SYS_APPNAME.."
+  srcdir="$appsrcdir/sounds"
+  if [ -d "$srcdir" ]; then 
+    make_sounddir "$srcdir" $make_soundfile
+  fi
+  for m in $modules; do
+    srcdir=`locatedir modules/$m/sounds silent`
+    if [ ! "X$srcdir" = "X" ]; then
+      make_sounddir "$srcdir" $make_soundfile
+    fi
+  done
 }
 
 ###################################
@@ -1029,6 +1117,22 @@ make_setup()
   ac_subst SYS_VERBOSE
   ac_subst SYS_HOSTEXEFIX
   ac_output CONFIG.h $SYS_PREFIX/include/CONFIG.h
+  name=$SYS_APPNAME
+  here=`pwd`
+  appsrcdir=`locatedir apps/$name`
+  apptgtdir=$SYS_PREFIX/${SYS_APPNAME}${SYS_APPFIX}
+  modules=
+  if [ -f "$appsrcdir/MODULES" ]; then
+    modules=`cat $appsrcdir/MODULES`
+  fi
+  plugins=
+  if [ -f "$appsrcdir/PLUGINS" ]; then
+    plugins=`cat $appsrcdir/PLUGINS`
+  fi
+  libraries=
+  if [ -f "$appsrcdir/LIBRARIES" ]; then
+    libraries=`cat $appsrcdir/LIBRARIES`
+  fi
   setstate
 }
 
@@ -1073,20 +1177,11 @@ ios)
   cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-152.png" "$cmakedir/Icon-76@2x.png"
   # go full screen on retina displays!
   cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/retina.png" "$cmakedir/Default-568h@2x.png"
-  snddir=`locatedir apps/$SYS_APPNAME/sounds silent`
-  if [ -d "$snddir" ]; then
-    echo " => transferring sounds..."
-    snds=`ls -1 $snddir/*.wav 2> /dev/null`
-    for snd in $snds; do
-      vecho " => $snd.."
-      cp $snd $cmakedir
-    done
-    snds=`ls -1 $snddir/*.ogg 2> /dev/null`
-    for snd in $snds; do
-      vecho " => $snd.."
-      cp $snd $cmakedir
-    done
-  fi
+  make_soundfile_ios()
+  {
+    cp "$1" "$cmakedir"
+  }
+  make_sounds make_soundfile_ios
   echo " => preparing plist.."
   configsrc=bootstraps/ios/Info.plist.in
   ac_output $configsrc tmp.xml
@@ -1164,23 +1259,13 @@ android)
   echo " => preparing icons.."
   mkdir -p $tmpdir/res/drawable
   cp $SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-72.png $tmpdir/res/drawable/icon.png
-  snddir=`locatedir apps/$SYS_APPNAME/sounds silent`
-  if [ -d "$snddir" ]; then
-    echo " => transferring sounds..."
+  make_soundfile_android()
+  {
     mkdir -p $tmpdir/res/raw
-    snds=`ls -1 $snddir/*.wav 2> /dev/null`
-    for snd in $snds; do
-      locasesnd=`basename $snd | tr A-Z a-z`
-      vecho " => $locasesnd.."
-      cp $snd $tmpdir/res/raw/$locasesnd
-    done
-    snds=`ls -1 $snddir/*.ogg 2> /dev/null`
-    for snd in $snds; do
-      locasesnd=`basename $snd | tr A-Z a-z`
-      vecho " => $locasesnd.."
-      cp $snd $tmpdir/res/raw/$locasesnd
-    done
-  fi
+    locasesnd=`basename "$1" | tr A-Z a-z`
+    cp "$1" $tmpdir/res/raw/$locasesnd
+  }
+  make_sounds make_soundfile_android
   # transfering jar files
   jarfilesdir=`locatedir apps/$SYS_APPNAME/android_jars silent`
   if [ -d "$jarfilesdir" ]; then
@@ -1266,9 +1351,8 @@ android)
 ;;
 #####################################
 macosx)
-  appdir="$SYS_PREFIX/$SYS_APPNAME.app"
-  rmifexists "$appdir"
-  mkdir "$appdir"
+  rmifexists "$apptgtdir"
+  mkdir "$apptgtdir"
   if [ `is_gui_app` = "yes" ]; then
     tiffs=
     dirty=no
@@ -1297,50 +1381,40 @@ macosx)
     fi
     assertfile "$iconimg"
     echo " => transferring icon.."
-    cp "$iconimg" $appdir/Icon.icns
+    cp "$iconimg" $apptgtdir/Icon.icns
     echo " => preparing plist.."
-    cp bootstraps/macosx/Info.plist $appdir
+    cp bootstraps/macosx/Info.plist $apptgtdir
   fi
-  sounddir=`locatedir apps/$SYS_APPNAME/sounds silent`
-  if [ -d "$sounddir" ]; then
-    echo " => transferring sounds..."
-    mkdir -p $appdir/sounds
-    snds=`ls -1 $sounddir/*.wav 2> /dev/null`
-    for snd in $snds; do
-       vecho " => $snd.."
-       cp $snd $appdir/sounds
-    done
-    snds=`ls -1 $sounddir/*.ogg 2> /dev/null`
-    for snd in $snds; do
-       vecho " => $snd.."
-       cp $snd $appdir/sounds
-    done
-  fi
+  make_soundfile_macosx()
+  {
+    mkdir -p "$apptgtdir/sounds"
+    cp "$1" "$apptgtdir/sounds"
+  }
+  make_sounds make_soundfile_macosx
   tmpdir=`mktemp -d tmp.XXXXXX`
   echo " => compiling application.."
   if [ `is_standalone_app` = "yes" ]; then
     cd "$tmpdir"
-    veval "$SYS_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $appdir/$SYS_APPNAME -lpayload"
+    veval "$SYS_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload"
   else
     if [ `is_gui_app` = "yes" ]; then
       cp bootstraps/macosx/*.[mh] $tmpdir
       cd "$tmpdir"
-      veval "$SYS_CC -framework OpenGL -framework Cocoa -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -x objective-c -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -o $appdir/$SYS_APPNAME -lpayload main.m SimpleOpenGLView.m"
+      veval "$SYS_CC -framework OpenGL -framework Cocoa -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -x objective-c -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -o $apptgtdir/$SYS_APPNAME -lpayload main.m SimpleOpenGLView.m"
     else
       cp bootstraps/common/main.c $tmpdir
       cd "$tmpdir"
-      veval "$SYS_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $appdir/$SYS_APPNAME -lpayload main.c"
+      veval "$SYS_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload main.c"
     fi
   fi
   cd $here
-  assertfile $appdir/$SYS_APPNAME
+  assertfile $apptgtdir/$SYS_APPNAME
   rm -rf "$tmpdir"
 ;;
 #####################################
 win32)
-  appdir="$SYS_PREFIX/$SYS_APPNAME"
-  rmifexists "$appdir"
-  mkdir "$appdir"
+  rmifexists "$apptgtdir"
+  mkdir "$apptgtdir"
   tmpdir=`mktemp -d tmp.XXXXXX`
   if [ `is_gui_app` = yes ]; then
     cp bootstraps/win32/win32_microgl.c $tmpdir
@@ -1349,21 +1423,12 @@ win32)
     cp bootstraps/common/main.c $tmpdir
   fi
   cd $tmpdir
-  sounddir=`locatedir apps/$SYS_APPNAME/sounds silent`
-  if [ -d "$sounddir" ]; then
-    echo " => transferring sounds..."
-    mkdir -p $appdir/sounds
-    snds=`ls -1 $sounddir/*.wav 2> /dev/null`
-    for snd in $snds; do
-       vecho " => $snd.."
-       cp $snd $appdir/sounds
-    done
-    snds=`ls -1 $sounddir/*.ogg 2> /dev/null`
-    for snd in $snds; do
-       vecho " => $snd.."
-       cp $snd $appdir/sounds
-    done
-  fi
+  make_soundfile_win32()
+  {
+    mkdir -p "$apptgtdir/sounds"
+    cp "$1" "$apptgtdir/sounds"
+  }
+  make_sounds make_soundfile_win32
   if [ `is_gui_app` = yes ]; then
     srcimg=$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-32.png
     tgtimg=$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-32.ico
@@ -1387,7 +1452,7 @@ win32)
     assertfile icon.o
   fi
   echo " => compiling application.."
-  tgt=$appdir/$SYS_APPNAME$SYS_EXEFIX
+  tgt=$apptgtdir/$SYS_APPNAME$SYS_EXEFIX
   if [ `is_standalone_app` = "yes" ]; then
     veval "$SYS_CC -I$SYS_PREFIX/include \
       -DUSECONSOLE -o $tgt \
@@ -1415,9 +1480,8 @@ win32)
 ;;
 #####################################
 linux)
-  appdir="$SYS_PREFIX/$SYS_APPNAME"
-  rmifexists "$appdir"
-  mkdir "$appdir"
+  rmifexists "$apptgtdir"
+  mkdir "$apptgtdir"
   tmpdir=`mktemp -d tmp.XXXXXX`
   if [ `is_gui_app` = yes ]; then
     cp bootstraps/x11/x11_microgl.c $tmpdir 
@@ -1426,23 +1490,14 @@ linux)
     cp bootstraps/common/main.c $tmpdir
   fi
   cd $tmpdir
-  sounddir=`locatedir apps/$SYS_APPNAME/sounds silent`
-  if [ -d "$sounddir" ]; then
-    echo " => transferring sounds..."
-    mkdir -p $appdir/sounds
-    snds=`ls -1 $sounddir/*.wav 2> /dev/null`
-    for snd in $snds; do
-       vecho " => $snd.."
-       cp $snd $appdir/sounds
-    done
-    snds=`ls -1 $sounddir/*.ogg 2> /dev/null`
-    for snd in $snds; do
-       vecho " => $snd.."
-       cp $snd $appdir/sounds
-    done
-  fi
+  make_soundfile_linux()
+  {
+    mkdir -p "$apptgtdir/sounds"
+    cp "$1" "$apptgtdir/sounds"
+  }
+  make_sounds make_soundfile_linux
   echo " => compiling application.."
-  tgt=$appdir/$SYS_APPNAME$SYS_EXEFIX
+  tgt=$apptgtdir/$SYS_APPNAME$SYS_EXEFIX
   if [ `is_standalone_app` = "yes" ]; then
       veval "$SYS_CC -I$SYS_PREFIX/include \
         -DUSECONSOLE -o $tgt \
@@ -1473,9 +1528,8 @@ linux)
 ;;
 #####################################
 linux486)
-  appdir="$SYS_PREFIX/$SYS_APPNAME"
-  rmifexists "$appdir"
-  mkdir "$appdir"
+  rmifexists "$apptgtdir"
+  mkdir "$apptgtdir"
   tmpdir=`mktemp -d tmp.XXXXXX`
   if [ `is_gui_app` = yes ]; then
     cp bootstraps/x11/x11_microgl.c $tmpdir 
@@ -1490,7 +1544,7 @@ linux486)
     return;
   fi
   echo " => compiling application.."
-  tgt=$appdir/$SYS_APPNAME$SYS_EXEFIX
+  tgt=$apptgtdir/$SYS_APPNAME$SYS_EXEFIX
   if [ `is_standalone_app` = "yes" ]; then
       veval "$SYS_CC -I$SYS_PREFIX/include \
         -DUSECONSOLE -o $tgt \
@@ -1523,9 +1577,8 @@ linux486)
 ;;
 #####################################
 openbsd)
-  appdir="$SYS_PREFIX/$SYS_APPNAME"
-  rmifexists "$appdir"
-  mkdir "$appdir"
+  rmifexists "$apptgtdir"
+  mkdir "$apptgtdir"
   tmpdir=`mktemp -d tmp.XXXXXX`
   if [ `is_gui_app` = yes ]; then
     cp bootstraps/x11/x11_microgl.c $tmpdir 
@@ -1534,23 +1587,14 @@ openbsd)
     cp bootstraps/common/main.c $tmpdir
   fi
   cd $tmpdir
-  sounddir=`locatedir apps/$SYS_APPNAME/sounds silent`
-  if [ -d "$sounddir" ]; then
-    echo " => transferring sounds..."
-    mkdir -p $appdir/sounds
-    snds=`ls -1 $sounddir/*.wav 2> /dev/null`
-    for snd in $snds; do
-       vecho " => $snd.."
-       cp $snd $appdir/sounds
-    done
-    snds=`ls -1 $sounddir/*.ogg 2> /dev/null`
-    for snd in $snds; do
-       vecho " => $snd.."
-       cp $snd $appdir/sounds
-    done
-  fi
+  make_soundfile_openbsd()
+  {
+    mkdir -p "$apptgtdir/sounds"
+    cp "$1" "$apptgtdir/sounds"
+  }
+  make_sounds make_soundfile_openbsd
   echo " => compiling application.."
-  tgt=$appdir/$SYS_APPNAME$SYS_EXEFIX
+  tgt=$apptgtdir/$SYS_APPNAME$SYS_EXEFIX
   if [ `is_standalone_app` = "yes" ]; then
       veval "$SYS_CC -I$SYS_PREFIX/include \
         -DUSECONSOLE -o $tgt \
@@ -1628,26 +1672,15 @@ bb10)
     $SYS_STRIP $tgt
     asserterror $?
   fi
-  sounddir=`locatedir apps/$SYS_APPNAME/sounds silent`
   rmifexists sound.assets
-  if [ -d "$sounddir" ]; then
-    echo " => transferring sounds..."
-    snds=`ls -1 $sounddir/*.wav 2> /dev/null`
-    for snd in $snds; do
-       vecho " => $snd.."
-       cp $snd .
-       sname=`basename $snd`
-       echo "<asset path=\"$sname\">$sname</asset>" >> sound.assets
-    done
-    snds=`ls -1 $sounddir/*.ogg 2> /dev/null`
-    for snd in $snds; do
-       vecho " => $snd.."
-       cp $snd .
-       sname=`basename $snd`
-       echo "<asset path=\"$sname\">$sname</asset>\n" >> sound.assets
-    done
-    ac_subst BB10_XML_ASSETS "@sound.assets"
-  fi
+  make_soundfile_bb10()
+  {
+    cp $1 .
+    sname=`basename $1`
+    echo "<asset path=\"$sname\">$sname</asset>" >> sound.assets
+  }
+  make_sounds make_soundfile_bb10
+  ac_subst BB10_XML_ASSETS "@sound.assets"
   echo " => preparing descriptor.."
   ac_output $configsrc $configtgt
   assertfile $configtgt
@@ -1689,21 +1722,6 @@ esac
 make_payload()
 {
   setstate PAYLOAD
-  name=$SYS_APPNAME
-  here=`pwd`
-  appdir=`locatedir apps/$name`
-  modules=
-  if [ -f "$appdir/MODULES" ]; then
-    modules=`cat $appdir/MODULES`
-  fi
-  plugins=
-  if [ -f "$appdir/PLUGINS" ]; then
-    plugins=`cat $appdir/PLUGINS`
-  fi
-  libraries=
-  if [ -f "$appdir/LIBRARIES" ]; then
-    libraries=`cat $appdir/LIBRARIES`
-  fi
   fonts=$SYS_PREFIXROOT/build/$SYS_APPNAME/fonts/fonts_include.scm
   if [ ! -f "$fonts" ]; then
     fonts=
@@ -1726,7 +1744,7 @@ make_payload()
     srcs="$srcs $plugsrc"
   done
   # note: textures, fonts and strings can't go before glcore!
-  srcs="$srcs $textures $fonts $strings $appdir/main.scm"
+  srcs="$srcs $textures $fonts $strings $appsrcdir/main.scm"
   libs=
   for l in $libraries; do
     libname=`echo "$l!" | cut -f 1 -d "!"`
@@ -1784,31 +1802,21 @@ make_install()
       $ANDROIDSDK/platform-tools/adb shell am start -n $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME/.$SYS_APPNAME
     fi
   ;;
-  macosx)
-    echo "==> attempting to install macosx application $SYS_APPNAME to local desktop.."
-    pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-macosx.zip"
+  macosx|linux|openbsd)
+    echo "==> attempting to install $SYS_PLATFORM application $SYS_APPNAME to local desktop.."
+    pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).zip"
     desktop=$HOME/Desktop
+    if [ ! -d "$desktop" ]; then 
+      mkdir -p "$desktop"
+    fi
     assertfile "$desktop"
-    exefile="$desktop/${SYS_APPNAME}.app/$SYS_APPNAME"
+    exefile="$desktop/${SYS_APPNAME}${SYS_APPFIX}/$SYS_APPNAME"
     here=`pwd`
     cd "$desktop"
     unzip -oqq $pkgfile
     cd "$here"
     echo "==> Starting application.."
-    eval "$exefile &"
-  ;;
-  linux)
-    echo "==> attempting to install linux application $SYS_APPNAME to local desktop.."
-    pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-linux.zip"
-    desktop=$HOME/Desktop
-    assertfile "$desktop"
-    exefile="$desktop/${SYS_APPNAME}/$SYS_APPNAME"
-    here=`pwd`
-    cd "$desktop"
-    unzip -oqq $pkgfile
-    cd "$here"
-    echo "==> Starting application.."
-    eval "$exefile &"
+    eval "$exefile"
   ;;
   bb10)
     echo "==> attempting to install bb10 application $SYS_APPNAME.."
@@ -2087,6 +2095,30 @@ make_toolcheck()
   setstate
 }
 
+make_lntoolcheck()
+{
+  echo "==> checking for lambdanative tools.."
+  if [ ! -x $SYS_HOSTPREFIX/bin/gsc ]; then
+    if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
+      echo " => not found, commence building lambdanative tools.."
+      cp config.cache tmp.config.cache
+      ./configure $SYS_APPNAME
+      . ./config.cache
+      rmifexists tmp.subst
+      make_setup
+      make_libraries
+      make_tools 
+      mv tmp.config.cache config.cache
+      . ./config.cache
+      rmifexists tmp.subst
+      make_setup
+      echo " => lambdanative tools build complete"
+    fi
+  fi
+}
+
+##############################
+
 usage()
 {
   echo "usage: make.sh <clean|tools|resources|libraries|payload|executable|all|install|package|info>"
@@ -2103,6 +2135,7 @@ case "$1" in
   *)
     make_toolcheck
     make_libarycheck
+    make_lntoolcheck
   ;;
 esac
 
