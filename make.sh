@@ -2129,7 +2129,7 @@ make_lntoolcheck()
 make_gcc()
 {
   echo "==> building gcc compiler (this will take a while).."
-  assert_tool flex bison
+  asserttool flex bison
   gcc_version="4.8.1"
   gcc_ball="gcc-${gcc_version}.tar.gz"
   gcc_prefix=$SYS_PREFIXROOT/gcc/$SYS_HOSTPLATFORM/gcc-${gcc_version}
