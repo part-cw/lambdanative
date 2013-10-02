@@ -57,4 +57,5 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "u8vector-compress.scm")
 (include "file-compress.scm")
 (include "packtool.scm")
+(include "sxml2xml.scm")
 
