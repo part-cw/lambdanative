@@ -15,3 +15,6 @@ package:
 
 info:
 	@ ./make.sh info
+
+gcc:
+	@ ./make.sh gcc

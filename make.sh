@@ -985,8 +985,15 @@ make_setup()
       SYS_APPFIX=
     ;;
     macosx_macosx)
-      SYS_CC=gcc
-      SYS_CC="$SYS_CC $SYS_DEBUGFLAG -m32 -DMACOSX"
+      SYS_HOST_CC="gcc $SYS_DEBUGFLAG -DMACOSX"
+      SDKROOT=`ls -1 $SYS_PREFIXROOT/gcc/$SYS_HOSTPLATFORM/gcc-*`
+      if [ -d "$SDKROOT" ]; then
+        CROSS=$SDKROOT/bin/x*-
+        osxsdk=`ls -1 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/ | tail -n 1`
+        SYS_CC=$CROSS"gcc $SYS_DEBUGFLAG -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/${osxsdk} -DMACOSX"
+      else
+        SYS_CC=$SYS_HOST_CC
+      fi
       SYS_AR=ar
       SYS_RANLIB=ranlib
       SYS_STRIP=strip
@@ -1395,16 +1402,16 @@ macosx)
   echo " => compiling application.."
   if [ `is_standalone_app` = "yes" ]; then
     cd "$tmpdir"
-    veval "$SYS_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload"
+    veval "$SYS_HOST_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload"
   else
     if [ `is_gui_app` = "yes" ]; then
       cp bootstraps/macosx/*.[mh] $tmpdir
       cd "$tmpdir"
-      veval "$SYS_CC -framework OpenGL -framework Cocoa -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -x objective-c -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -o $apptgtdir/$SYS_APPNAME -lpayload main.m SimpleOpenGLView.m"
+      veval "$SYS_HOST_CC -framework OpenGL -framework Cocoa -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -x objective-c -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -o $apptgtdir/$SYS_APPNAME -lpayload main.m SimpleOpenGLView.m"
     else
       cp bootstraps/common/main.c $tmpdir
       cd "$tmpdir"
-      veval "$SYS_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload main.c"
+      veval "$SYS_HOST_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload main.c"
     fi
   fi
   cd $here
@@ -2119,6 +2126,41 @@ make_lntoolcheck()
 
 ##############################
 
+make_gcc()
+{
+  echo "==> building gcc compiler (this will take a while).."
+  assert_tool flex bison
+  gcc_version="4.8.1"
+  gcc_ball="gcc-${gcc_version}.tar.gz"
+  gcc_prefix=$SYS_PREFIXROOT/gcc/$SYS_HOSTPLATFORM/gcc-${gcc_version}
+  tgt=$SYS_PREFIXROOT/packages/$gcc_ball
+  if [ ! -f "$tgt" ]; then  
+    echo " => downloading $gcc_ball.."
+    veval "wget ftp://ftp.gnu.org/gnu/gcc/gcc-${gcc_version}/$gcc_ball -O $tgt"
+  fi
+  assertfile $tgt
+  oldpath=`pwd`
+  newpath=`mktemp -d tmp.XXXXXX`
+  cd $newpath
+  tar -zxf $tgt
+  cd *
+  veval "./contrib/download_prerequisites"
+  mkdir build
+  cd build
+  veval "../configure \
+    --prefix=$gcc_prefix \
+    --enable-languages=c \
+    --disable-nls"
+  veval "make -j 4 bootstrap"
+  mkdir -p $gcc_prefix
+  veval "make install"
+  echo " => gcc compilation complete"
+  cd $oldpath
+  rm -rf $newpath
+}
+
+##############################
+
 usage()
 {
   echo "usage: make.sh <clean|tools|resources|libraries|payload|executable|all|install|package|info>"
@@ -2210,6 +2252,9 @@ install)
 ;;
 info)
   make_info
+;;
+gcc)
+  make_gcc
 ;;
 *)
   usage
