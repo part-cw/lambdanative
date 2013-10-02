@@ -82,7 +82,7 @@ fi
 CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure --quiet --prefix="@SYS_PREFIX@" $EXTRACONF --enable-static --disable-shared --with-jack=no
 
 mv Makefile tmp
-cat tmp | sed "s/-arch i386//g;s/-arch x86_64//" > Makefile
+cat tmp | sed "s/-arch i386//g;s/-arch x86_64//;s/Werror/Wall/g" > Makefile
 
 echo "==> Compiling source..."
 MAKE=make
