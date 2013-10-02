@@ -1,6 +1,6 @@
 if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
   tgt=@SYS_HOSTPREFIX@/bin/packtool@SYS_EXEFIX@
-  auxsrc="flofix.scm string.scm time.scm u8vector.scm u8vector-compress.scm"
+  auxsrc="flofix.scm string.scm time.scm u8vector.scm unit-test.scm u8vector-compress.scm"
   src="packtool.scm"
   if [ ! -e $tgt ] || [ $src -nt $tgt ]; then
     src="$auxsrc $src"
