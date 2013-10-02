@@ -986,8 +986,8 @@ make_setup()
     ;;
     macosx_macosx)
       SYS_HOST_CC="gcc $SYS_DEBUGFLAG -DMACOSX"
-      SDKROOT=`ls -1 $SYS_PREFIXROOT/gcc/$SYS_HOSTPLATFORM/gcc-*`
-      if [ -d "$SDKROOT" ]; then
+      SDKROOT=`ls -1d $SYS_PREFIXROOT/gcc/$SYS_HOSTPLATFORM/gcc-*`
+      if [ -d "$SDKROOT" ]; then 
         CROSS=$SDKROOT/bin/x*-
         osxsdk=`ls -1 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/ | tail -n 1`
         SYS_CC=$CROSS"gcc $SYS_DEBUGFLAG -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/${osxsdk} -DMACOSX"
