@@ -407,7 +407,7 @@ compile_payload()
   libs="$3"
   objs=
   defs="-D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
-  echo "==> creating payload needed for $name.."
+  echo "==> creating payload needed for $SYS_APPNAME.."
   mkdir -p "$SYS_PREFIX/build"
   dirty=
   for src in $srcs; do
@@ -986,7 +986,7 @@ make_setup()
     ;;
     macosx_macosx)
       SYS_HOST_CC="gcc $SYS_DEBUGFLAG -DMACOSX"
-      SDKROOT=`ls -1d $SYS_PREFIXROOT/gcc/$SYS_HOSTPLATFORM/gcc-*`
+      SDKROOT=`ls -1d $SYS_PREFIXROOT/gcc/$SYS_HOSTPLATFORM/gcc-* 2> /dev/null`
       if [ -d "$SDKROOT" ]; then 
         CROSS=$SDKROOT/bin/x*-
         osxsdk=`ls -1 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/ | tail -n 1`
