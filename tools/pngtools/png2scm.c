@@ -140,9 +140,11 @@ void usage(void)
 
 int fastlz_compress(const void*, int, void*);
 
+int compressed_len=0;
+
 void printcompressedtexture(unsigned char *data,int type, int w, int h)
 {
-  int i, maxlen, depth, clen, j;
+  int i, maxlen, depth, j;
   unsigned char *cdata;
   unsigned char *clean_data;
    
@@ -176,12 +178,14 @@ void printcompressedtexture(unsigned char *data,int type, int w, int h)
     break;
   }
 
-  clen = fastlz_compress(clean_data,depth*w*h,cdata);
+  compressed_len = fastlz_compress(clean_data,depth*w*h,cdata);
 
-  printf("1 ");
-  for (i=0;i<clen;i++) {
+  printf("// length=%i [%i]\n", compressed_len, depth*w*h);
+  printf("1, ");
+  for (i=0;i<compressed_len;i++) {
     printf("%i",(int)cdata[i]);
-    if (i<clen-1) printf(" ");
+    if (i<compressed_len-1) printf(", ");
+    if (i%32==0) printf("\n");
   }
   free(cdata);
   free(clean_data);
@@ -214,11 +218,21 @@ int main(int argc, char *argv[])
       if (!bail) type=TYPE_ALPHA;
     }
     if (data) {
+      char sane_name[1024];
+      for (i=0;i<strlen(name);i++) {
+        sane_name[i]='_';
+        if (name[i]>='a'&&name[i]<='z') sane_name[i]=name[i];
+        if (name[i]>='A'&&name[i]<='Z') sane_name[i]=name[i];
+        if (name[i]>='0'&&name[i]<='9') sane_name[i]=name[i];
+      }
+      sane_name[strlen(name)]=0;
       printf(";; Automatically generated. Do not edit.\n");
-      printf(";; png2scm ver 2.0. type=%i\n", type);
-      printf("(define %s.raw (glCoreTextureCreate %i %i (u8vector-decompress '#u8(",name, w2 ,h2 );
+      printf(";; png2scm ver 3.0. type=%i\n", type);
+      printf("(c-declare  #<<end-of-c-declare\n#include <string.h>\nstatic unsigned char %s_texture[]={\n",sane_name);
       printcompressedtexture(data2,type,w2,h2);
-      printf("))))\n");
+      printf("};\nend-of-c-declare\n)\n");
+      printf("(define %s.z  (let ((u8v (make-u8vector %i))) ((c-lambda (scheme-object int) void \"memcpy(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)),%s_texture,___arg2);\") u8v %i) u8v))\n", name, compressed_len+1, sane_name, compressed_len+1);
+      printf("(define %s.raw (glCoreTextureCreate %i %i (u8vector-decompress %s.z)))",name, w2 ,h2, name );
       printf("(define %s.img (list %i %i %s.raw 0. 0. %f %f))\n", name,w,h,name,(double)w/(double)w2, (double)h/(double)h2);
     } else {
      fprintf(stderr,"ERROR!\n");

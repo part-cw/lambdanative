@@ -1,12 +1,13 @@
 
 if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
-  tgta=@SYS_HOSTPREFIX@/bin/png2scm@SYS_EXEFIX@
-  if [ ! -e $tgta ]; then 
-    echo " => $tgta.."
+  tgt=@SYS_HOSTPREFIX@/bin/png2scm@SYS_EXEFIX@
+  src=png2scm.c
+  if [ ! -e $tgt ] || [ $src -nt $tgt ]; then
+    echo " => $tgt.."
     mkdir -p @SYS_HOSTPREFIX@/bin
     @SYS_CC@ -c libpng/*.c
     @SYS_CC@ -c png2scm.c fastlz.c -I./libpng
-    @SYS_CC@ -o $tgta *.o -lz -lm
+    @SYS_CC@ -o $tgt *.o -lz -lm
     if [ ! $? = 0 ]; then exit 1; fi
     rm *.o
   fi

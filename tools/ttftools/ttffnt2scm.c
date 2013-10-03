@@ -119,15 +119,19 @@ void load_glyph_set(char *setarg)
 
 int fastlz_compress(const void*, int, void*);
 
+int clen;
+
 void printcompressedtexture(unsigned char *data, int len)
 {
   int i, maxlen = 67+(int)(1.05*len);
   unsigned char *cdata = (unsigned char *)malloc(maxlen);
-  int clen = fastlz_compress(data,len,cdata);
-  printf("1 ");
+  clen = fastlz_compress(data,len,cdata);
+  printf("// length=%i [%i]\n",clen,len);
+  printf("1, ");
   for (i=0;i<clen;i++) {
     printf("%i",(int)cdata[i]);
-    if (i<clen-1) printf(" ");
+    if (i<clen-1) printf(", ");
+    if (i%32==0) printf("\n");
   }
   free(cdata);
 }
@@ -140,11 +144,20 @@ void printscmatlas(char *name, texture_atlas_t *a)
   int h = a->height;
   int depth = a->depth;
   unsigned char *data = a->data;
-  printf("(define %s.raw (glCoreTextureCreate %i %i (u8vector-decompress '#u8(",name, w ,h );
+
+  char sane_name[1024];
+  for (i=0;i<strlen(name);i++) {
+    sane_name[i]='_';
+    if (name[i]>='a'&&name[i]<='z') sane_name[i]=name[i];
+    if (name[i]>='A'&&name[i]<='Z') sane_name[i]=name[i];
+    if (name[i]>='0'&&name[i]<='9') sane_name[i]=name[i];
+  }
+  sane_name[strlen(name)]=0;
+  printf("(c-declare  #<<end-of-c-declare\n#include <string.h>\nstatic unsigned char %s_font[]={\n",sane_name);
   printcompressedtexture(data,depth*w*h);
-  printf(")) GL_LINEAR GL_REPEAT))\n");
-//  printf(") GL_NEAREST GL_REPEAT))\n");
-//  printf("(define %s.img (list %i %i %s.raw 0. 0. 1. 1.))\n", name,w,h,name);
+  printf("};\nend-of-c-declare\n)\n");
+  printf("(define %s.z  (let ((u8v (make-u8vector %i))) ((c-lambda (scheme-object int) void \"memcpy(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)),%s_font,___arg2);\") u8v %i) u8v))\n", name, clen+1, sane_name, clen+1);
+  printf("(define %s.raw (glCoreTextureCreate %i %i (u8vector-decompress %s.z) GL_LINEAR GL_REPEAT))\n",name, w ,h, name );
 }
 
 void printscmfont(char *tag, texture_font_t *font, int w, int h)
