@@ -1,0 +1,116 @@
+static int needs_init=1;
+static jobject serial_object=NULL;
+static jclass serial_class=NULL;
+static jmethodID s_serial_open=NULL;
+static jmethodID s_serial_close=NULL;
+static jmethodID s_serial_writechar=NULL;
+static jmethodID s_serial_readchar=NULL;
+static jmethodID s_serial_flush=NULL;
+
+int serial_init(){
+  JNIEnv *env = GetJNIEnv();
+  if (env) {
+    serial_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/RS232Manager");
+    jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+    if (serial_class && main_class) {
+      jmethodID getRS232Instance = (*env)->GetStaticMethodID(env,main_class, "getRS232Instance","()L@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/RS232Manager;");
+      s_serial_open = (*env)->GetMethodID(env,serial_class, "open", "(Ljava/lang/String;IIII)I");
+      s_serial_close = (*env)->GetMethodID(env,serial_class, "close", "(I)I");
+      s_serial_writechar = (*env)->GetMethodID(env,serial_class, "writechar", "(II)V");
+      s_serial_readchar = (*env)->GetMethodID(env,serial_class, "readchar", "(I)I");
+      s_serial_flush = (*env)->GetMethodID(env,serial_class, "flush", "(I)V");
+      if (getRS232Instance) {
+         jobject thiz = (*env)->CallStaticObjectMethod(env,main_class, getRS232Instance);
+         serial_object = (*env)->NewGlobalRef(env,thiz);  
+       }
+    }
+  } else {
+    serial_object=NULL;
+  }
+}
+
+int serial_open(char *dev, int baudrate, int bitsize, int parity, int stopbits){
+  if (needs_init==1){
+    serial_init();
+    needs_init=0;
+  }
+  JNIEnv *env = GetJNIEnv();
+  if (env&&serial_object) {
+    serial_error_set(0);
+    serial_timeout_set(0);
+    jstring dev_str = (*env)->NewStringUTF(env,dev);
+    int ret = (*env)->CallIntMethod(env,serial_object, s_serial_open, dev_str, baudrate, bitsize, parity, stopbits);
+    if (ret==-1){
+      serial_error_set(1);
+      return 0;
+    }
+    return ret;
+  } else {
+    serial_error_set(1);
+    return 0;
+  }
+}
+
+void serial_close(int dev){
+  if (needs_init==1){
+    serial_init();
+    needs_init=0;
+  }
+  JNIEnv *env = GetJNIEnv();
+  if (env&&serial_object) {
+    serial_timeout_set(0);
+    serial_error_set(0);
+    int error=(*env)->CallIntMethod(env,serial_object, s_serial_close, dev);
+    if (error>0){
+      serial_error_set(1);
+    }
+  } 
+}
+void serial_writechar(int dev, int val){
+  if (needs_init==1){
+    serial_init();
+    needs_init=0;
+  }
+  JNIEnv *env = GetJNIEnv();
+  if (env&&serial_object) {
+    serial_timeout_set(0);
+    (*env)->CallIntMethod(env,serial_object, s_serial_writechar, dev, val);
+  } 
+}
+int serial_readchar(int dev){
+  if (needs_init==1){
+    serial_init();
+    needs_init=0;
+  }
+  JNIEnv *env = GetJNIEnv();
+  if (env&&serial_object) {
+    serial_timeout_set(0);
+    int ret=(*env)->CallIntMethod(env,serial_object, s_serial_readchar, dev);
+    if (ret==-1){
+      serial_timeout_set(1);
+      return 0;
+    }
+    if (ret==-2){
+      serial_error_set(1);
+      return 0;
+    }
+    return ret;
+  } else {
+    serial_error_set(1);
+    return 0;
+  }
+}
+void serial_flush(int dev){
+  if (needs_init==1){
+    serial_init();
+    needs_init=0;
+  }
+  JNIEnv *env = GetJNIEnv();
+  if (env&&serial_object) {
+    (*env)->CallIntMethod(env,serial_object, s_serial_flush, dev);
+  } 
+}
+int serial_openfile(char *filepath){
+  serial_error_set(1);
+  return 0;
+}

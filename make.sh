@@ -811,6 +811,7 @@ make_stringfile()
   fi
   if [ $dirty = yes ]; then
     cat $srcfile | sed '/^#/d' > tmp.STRINGS
+    echo >> tmp.STRINGS
     while read -r fline; do
       if [ "$fline" ]; then 
         fontname=`eval "getparam 1 $fline"`
@@ -1118,6 +1119,7 @@ make_setup()
   ac_subst SYS_APPVERSION
   ac_subst SYS_APPVERSIONCODE
   ac_subst SYS_ANDROIDAPI
+  ac_subst ANDROIDSDK
   ac_subst SYS_BUILDHASH
   ac_subst SYS_BUILDEPOCH
   ac_subst SYS_PROFILE
@@ -1242,6 +1244,7 @@ android)
     ac_subst ANDROID_JAVA_ONSENSORCHANGED "@$d/ANDROID_java_onsensorchanged"
     ac_subst ANDROID_JAVA_ACTIVITYADDITIONS "@$d/ANDROID_java_activityadditions"
     ac_subst ANDROID_XML_PERMISSIONS "@$d/ANDROID_xml_permissions"
+    ac_subst ANDROID_INTENT_FILTERS "@$d/ANDROID_intent_filters"
   }
   android_subst bootstraps/android
   for m in $modules; do
@@ -1283,6 +1286,17 @@ android)
       locajar=`basename $jar | tr A-Z a-z`
       vecho " => coping jar file - $locajar ..."
       cp $jar $tmpdir/libs/
+    done
+  fi
+  # tranfer xml
+  xmlfilesdir=`locatedir apps/$SYS_APPNAME/xml silent`
+  if [ -d "$xmlfilesdir" ]; then
+    echo " => transferring xml files ..."
+    mkdir -p $tmpdir/res/xml/
+    xmlfiles=`ls -1 $xmlfilesdir/*.xml 2> /dev/null`
+    for xml in $xmlfiles; do
+      vecho " => coping xml file - $xml ..."
+      cp $xml $tmpdir/res/xml/
     done
   fi
   echo " => transferring java hook.."

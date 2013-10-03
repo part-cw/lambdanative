@@ -1,0 +1,3 @@
+private UsbManager mUsbManager;
+private static RS232Manager mRS232Manager;
+private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();

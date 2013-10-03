@@ -1,0 +1,3 @@
+public static RS232Manager getRS232Instance(){
+  return mRS232Manager;
+}

@@ -1,0 +1,3 @@
+mUsbManager = (UsbManager)getSystemService(Context.USB_SERVICE);
+mRS232Manager=new RS232Manager(mUsbManager);
+mExecutor.submit(mRS232Manager);

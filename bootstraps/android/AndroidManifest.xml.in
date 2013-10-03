@@ -15,6 +15,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            @ANDROID_INTENT_FILTERS@
         </activity>
     </application>
 @ANDROID_XML_PERMISSIONS@
