@@ -111,9 +111,14 @@ end-of-c-declare
      (let ((ret (car event:fifo)))
         (set! event:fifo (cdr event:fifo)) ret) #f))
 
+(define eventloop:mutex (make-mutex))
+(define (eventloop:grab!) (mutex-lock! eventloop:mutex))
+(define (eventloop:release!) (mutex-unlock! eventloop:mutex))
+
 (c-define (c-event t x y) (int int int) void "scm_event" "" 
+  (eventloop:grab!)
   (set! ##now (current-time-seconds))
-  (let ((xtra (event-pop)))
+  (let ((xtra (if (not app:mustinit) (event-pop) #f)))
     (if xtra (apply hook:event xtra))
     (cond 
       ((fx= t EVENT_REDRAW)
@@ -155,7 +160,8 @@ end-of-c-declare
           ))) 
       (else 
         (if (and (not app:mustinit) (procedure? hook:event)) (hook:event t x y)))
-  )))
+  )) 
+  (eventloop:release!))
   
 (c-define (c-width) () int "scm_width" ""
    (if (number? app:width) app:width 0))
