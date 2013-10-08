@@ -91,7 +91,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     )
   ))
 
-(define (instance:delete store instance)
+(define (instance-delete store instance)
   (let ((is (store-ref store "InstanceList" '())))
     (if (and (member instance is) (not (store-ref store "CaseID" #f)))
       (let ((newlist (let loop ((l is)(res '()))
