@@ -97,8 +97,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         (let cloop ((in (cdr li)) (transfer (car li)) (out '()))
                            (if (fx> (length in) 0)
                              (let ((item (car in)))
-                                (if (char=? (string-ref item 0) #\")
-                                  ;; If string starts with a quotation mark, just transfer it to output list
+                                (if (and (char=? (string-ref item 0) #\") (fx> (string-length item) 1))
+                                  ;; If string starts with a quotation mark (and isn't just the closing quotation mark), just transfer it to output list
                                    (cloop (cdr in) item (append out (list transfer)))
                                    ;; Otherwise, combine it with previous item being transferred as this is from the split of a comma within a value 
                                    (cloop (cdr in) (string-append transfer "," item) out)))
