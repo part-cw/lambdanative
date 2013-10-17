@@ -88,7 +88,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Helper function to parse REDCAP JSON format [much easier than XML parsing]
 (define (redcap:jsonstr->list str)
-  (if (fx< (string-length str) 3)
+  (if (or (list? str) (fx< (string-length str) 3))
     (list)
     (map (lambda (li) (if (fx> (length li) 0)
                         ;; THIRD, go through each field and recombine values that have commas in them
