@@ -212,4 +212,6 @@ ___result = GL_CLAMP_TO_EDGE;
         ___CAST(void*,___BODY_AS(___arg9,___tSUBTYPED)));")
          arg1 arg2 arg3 arg4 arg5 arg6 arg7 arg8 arg9))
 
+(define glLineWidth (c-lambda (float) void "glLineWidth"))
+
 ;; eof
