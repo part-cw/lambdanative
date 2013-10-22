@@ -1092,7 +1092,7 @@ make_setup()
   # Adding BUILD info requires rebuilding of config module
   touch modules/config/config.scm
   # build the subtool
-  if ! `test -e  tools/subtool/subtool.c` || 
+  if ! `test -x  $SYS_HOSTPREFIX/bin/subtool` || 
        `test tools/subtool/subtool.c -nt $SYS_HOSTPREFIX/bin/subtool`; then
     gcc -o $SYS_HOSTPREFIX/bin/subtool tools/subtool/subtool.c 2> /dev/null
   fi
