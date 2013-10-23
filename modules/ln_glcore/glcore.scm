@@ -53,6 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (glDisable GL_BLEND)
     (glCore:customhook) 
     (glDisable GL_CULL_FACE)
+    (glDisable GL_DEPTH_TEST)
     (set! glCore:needsinit #t)))
   (if glCore:needsinit (begin
     (if (and app:width app:height) (begin
