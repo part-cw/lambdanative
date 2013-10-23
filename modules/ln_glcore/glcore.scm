@@ -109,11 +109,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (glVertexPointer 2 GL_FLOAT 0 glCore:varray)
   (glColorPointer 4 GL_UNSIGNED_BYTE 0 glCore:carray)
   (if (or (fx= glCore:type GL_LINES) (fx= glCore:type GL_LINE_LOOP) (fx= glCore:type GL_LINE_STRIP))
-    (glDisableClientState GL_TEXTURE_COORD_ARRAY)
-    (glTexCoordPointer 2 GL_FLOAT 0 glCore:tarray))
+    (begin
+      (glDisable GL_TEXTURE_2D)
+      (glDisableClientState GL_TEXTURE_COORD_ARRAY)
+    )
+    (begin
+      (glEnable GL_TEXTURE_2D)
+      (glEnableClientState GL_TEXTURE_COORD_ARRAY)
+      (glTexCoordPointer 2 GL_FLOAT 0 glCore:tarray)
+    ))
   (glDrawArrays glCore:type 0 (fix (/ glCore:vindex 2)))
-  (if (or (fx= glCore:type GL_LINES) (fx= glCore:type GL_LINE_LOOP) (fx= glCore:type GL_LINE_STRIP))
-    (glEnableClientState GL_TEXTURE_COORD_ARRAY))
 )
 
 (define (glCoreVertex2f x0 y0 . xtra)
