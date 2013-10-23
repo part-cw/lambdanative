@@ -113,6 +113,15 @@ ___result = GL_CLAMP;
 ___result = GL_CLAMP_TO_EDGE;
 #endif")))
 (define GL_INVALID_VALUE ((c-lambda () int "___result = GL_INVALID_VALUE;")))
+
+;; 3D related
+(define GL_DEPTH_BUFFER_BIT ((c-lambda () int "___result = GL_DEPTH_BUFFER_BIT;")))
+(define GL_DEPTH_TEST ((c-lambda () int "___result = GL_DEPTH_TEST;")))
+(define GL_CULL_FACE ((c-lambda () int "___result = GL_CULL_FACE;")))
+(define GL_FRONT ((c-lambda () int "___result = GL_FRONT;")))
+(define GL_BACK ((c-lambda () int "___result = GL_BACK;")))
+(define GL_TRUE ((c-lambda () int "___result = GL_TRUE;")))
+
 ;;(define GL_ ((c-lambda () int "___result = GL_;")))
 
 ;; functions
@@ -125,6 +134,14 @@ ___result = GL_CLAMP_TO_EDGE;
    #else
      glOrtho(___arg1,___arg2,___arg3,___arg4,___arg5,___arg6);
    #endif") (flo arg1) (flo arg2) (flo arg3) (flo arg4) (flo arg5) (flo arg6)))
+
+(define (glFrustum arg1 arg2 arg3 arg4 arg5 arg6)
+  ((c-lambda (float float float float float float) void
+   "#if defined(IOS)||defined(ANDROID)||defined(QNX)
+     glFrustumf(___arg1,___arg2,___arg3,___arg4,___arg5,___arg6);
+   #else
+     glFrustum(___arg1,___arg2,___arg3,___arg4,___arg5,___arg6);
+   #endif ") (flo arg1) (flo arg2) (flo arg3) (flo arg4) (flo arg5) (flo arg6)))
 
 (define glLoadIdentity (c-lambda () void "glLoadIdentity"))
 
@@ -213,5 +230,8 @@ ___result = GL_CLAMP_TO_EDGE;
          arg1 arg2 arg3 arg4 arg5 arg6 arg7 arg8 arg9))
 
 (define glLineWidth (c-lambda (float) void "glLineWidth"))
+
+(define glDepthMask (c-lambda (int) void "glDepthMask"))
+(define glCullFace (c-lambda (int) void "glCullFace"))
 
 ;; eof

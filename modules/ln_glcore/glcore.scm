@@ -44,8 +44,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; ----------------------------------
 ;; Initialization
 
+(define glCore:customhook #f)
+(define (glCore-registerhook h) (set! glCore:customhook h))
+
 (define glCore:needsinit #t)
 (define (glCoreInit)
+  (if (and glCore:customhook app:width app:height) (begin 
+    (glDisable GL_BLEND)
+    (glCore:customhook) 
+    (glDisable GL_CULL_FACE)
+    (set! glCore:needsinit #t)))
   (if glCore:needsinit (begin
     (if (and app:width app:height) (begin
       (glcore:log 5 "glCoreInit") 
@@ -64,10 +72,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (glEnable GL_BLEND)
       (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
       (set! glCore:needsinit #f)
-;;      (event-push EVENT_REDRAW 0 0)
     ) (glcore:log 0 "glCoreInit failed"))
   ))
-  (glClear GL_COLOR_BUFFER_BIT)
+  (if (not glCore:customhook)  (glClear GL_COLOR_BUFFER_BIT))
   (set! glCore:curtexture -1)
 )
 
@@ -77,10 +84,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; maximum number of vertices
 (define glCore:MAX 200)
 
+(define glCore:use3D #f)
 (define glCore:type #f)
 (define glCore:tarray (##still-copy (make-f32vector (* 2 glCore:MAX))))
-;; (define glCore:varray (##still-copy (make-s16vector (* 2 glCore:MAX))))
 (define glCore:varray (##still-copy (make-f32vector (* 2 glCore:MAX))))
+(define glCore:varray3D (##still-copy (make-f32vector (* 3 glCore:MAX))))
 (define glCore:carray (##still-copy (make-u8vector  (* 4 glCore:MAX))))
 (define glCore:cindex 0)
 (define glCore:vindex 0)
@@ -105,30 +113,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (glCoreEnd)
   (glcore:log 5 "glCoreEnd")
-  ;;(glVertexPointer 2 GL_SHORT 0 glCore:varray)
-  (glVertexPointer 2 GL_FLOAT 0 glCore:varray)
+  (glVertexPointer (if glCore:use3D 3 2) GL_FLOAT 0 (if glCore:use3D glCore:varray3D glCore:varray))
   (glColorPointer 4 GL_UNSIGNED_BYTE 0 glCore:carray)
   (if (or (fx= glCore:type GL_LINES) (fx= glCore:type GL_LINE_LOOP) (fx= glCore:type GL_LINE_STRIP))
-    (begin
+    (begin 
       (glDisable GL_TEXTURE_2D)
       (glDisableClientState GL_TEXTURE_COORD_ARRAY)
-    )
+    ) 
     (begin
       (glEnable GL_TEXTURE_2D)
       (glEnableClientState GL_TEXTURE_COORD_ARRAY)
       (glTexCoordPointer 2 GL_FLOAT 0 glCore:tarray)
     ))
-  (glDrawArrays glCore:type 0 (fix (/ glCore:vindex 2)))
+  (glDrawArrays glCore:type 0 (fix (/ glCore:vindex (if glCore:use3D 3 2))))
 )
 
 (define (glCoreVertex2f x0 y0 . xtra)
-  (let (
-;;        (x (fix x0)) (y (fix y0))
-        (x (flo x0)) (y (flo y0))
+  (let ((x (flo x0)) (y (flo y0))
         (tx (if (fx= (length xtra) 2) (flo (car xtra)) 0.5))
         (ty (if (fx= (length xtra) 2) (flo (cadr xtra)) 0.5)))
-;;   (s16vector-set! glCore:varray (fx+ glCore:vindex 0) x)
-;;   (s16vector-set! glCore:varray (fx+ glCore:vindex 1) y)
     (f32vector-set! glCore:varray (fx+ glCore:vindex 0) x)
     (f32vector-set! glCore:varray (fx+ glCore:vindex 1) y)
     (set! glCore:vindex (fx+ glCore:vindex 2))
@@ -140,6 +143,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (u8vector-set! glCore:carray (fx+ glCore:cindex 2) glCore:blue)
     (u8vector-set! glCore:carray (fx+ glCore:cindex 3) glCore:alpha) 
     (set! glCore:cindex (fx+ glCore:cindex 4))
+    (set! glCore:use3D #f)
+  ))
+
+;; ------------------------------------------
+;; 3D rendering
+
+(define (glCoreVertex3f x0 y0 z0 . xtra)
+  (let ((x (flo x0)) (y (flo y0)) (z (flo z0))
+        (tx (if (fx= (length xtra) 2) (flo (car xtra)) 0.5))
+        (ty (if (fx= (length xtra) 2) (flo (cadr xtra)) 0.5)))
+    (f32vector-set! glCore:varray3D (fx+ glCore:vindex 0) x)
+    (f32vector-set! glCore:varray3D (fx+ glCore:vindex 1) y)
+    (f32vector-set! glCore:varray3D (fx+ glCore:vindex 2) z)
+    (set! glCore:vindex (fx+ glCore:vindex 3))
+    (f32vector-set! glCore:tarray (fx+ glCore:tindex 0) tx)
+    (f32vector-set! glCore:tarray (fx+ glCore:tindex 1) ty)
+    (set! glCore:tindex (fx+ glCore:tindex 2))
+    (u8vector-set! glCore:carray (fx+ glCore:cindex 0) glCore:red)
+    (u8vector-set! glCore:carray (fx+ glCore:cindex 1) glCore:green)
+    (u8vector-set! glCore:carray (fx+ glCore:cindex 2) glCore:blue)
+    (u8vector-set! glCore:carray (fx+ glCore:cindex 3) glCore:alpha)
+    (set! glCore:cindex (fx+ glCore:cindex 4))
+    (set! glCore:use3D #t)
   ))
 
 ;; ----------------------------------
