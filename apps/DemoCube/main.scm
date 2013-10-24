@@ -40,6 +40,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define alpha 0.)
 (define alphaincrement 0.5)
+(define beta 30.)
+(define betaincrement 0.)
 
 (define cube_vertices `(
   ((-1 -1 1) (1 -1 1) (-1 1 1) (1 1 1)) ;; front
@@ -66,8 +68,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (glEnable GL_DEPTH_TEST)
   (glDepthMask GL_TRUE)
   (glTranslatef 0 0 -5)
-  (glRotatef 30 1 0 0)
   (glRotatef alpha 0 1 0)
+  (glRotatef beta 1 0 0)
   (let loop ((vs cube_vertices)(cs cube_colors))
     (if (> (length vs) 0) (begin
       (glCoreColor (car cs))
@@ -75,9 +77,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (map (lambda (l) (apply glCoreVertex3f l)) (car vs))
       (glCoreEnd)
       (loop (cdr vs) (cdr cs)))))
-  (set! alpha (+ alpha alphaincrement)))
+  (set! alpha (+ alpha alphaincrement))
+  (set! beta (- beta betaincrement)))
 
 (define gui #f)
+
+(define (box-callback g wgt t x y)
+  (let ((ox (glgui-widget-get g wgt 'offsetx))
+        (oy (glgui-widget-get g wgt 'offsety))
+        (w (glgui-widget-get g wgt 'w))
+        (h (glgui-widget-get g wgt 'h)))
+    (set! alphaincrement (/ ox w))
+    (set! betaincrement (/ oy h))
+  ))
+
+(define (button-callback g wgt t x y)
+  (set! alphaincrement (- alphaincrement))
+  (set! betaincrement (- betaincrement)))
 
 (main
 ;; initialization
@@ -87,7 +103,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (set! gui (make-glgui))
     (let* ((w (glgui-width-get))
            (h (glgui-height-get)))
-      (glgui-button-string gui 10 10 (- w 20) 32 "Reverse" ascii_16.fnt (lambda (g . arbage) (set! alphaincrement (- alphaincrement)))))
+      (set! box (glgui-box-dragable gui 80 110 160 230 Red box-callback))
+      (glgui-widget-set! gui box 'draw-handle #f) ;; hides the box
+      (glgui-button-string gui 10 10 (- w 20) 32 "Reverse" ascii_16.fnt button-callback)
+    )
     (glCore-registerhook render-custom)
   )
 ;; events
