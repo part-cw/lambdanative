@@ -72,7 +72,7 @@ fi
 
 with_app=$1
 
-platforms="android ios linux linux486 win32 macosx bb10"
+platforms="android ios linux linux486 win32 macosx bb10 openwrt"
 with_platform=
 for platform in $platforms; do
   for arg in $@; do
@@ -146,7 +146,7 @@ esac
 
 # setup target platform
 case "$with_platform" in
-linux|linux486|ios|macosx|win32|android|bb10)
+linux|linux486|ios|macosx|win32|android|bb10|openwrt)
   SYS_PLATFORM=$with_platform
 ;;
 *)

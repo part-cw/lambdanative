@@ -45,6 +45,9 @@ win32*)
 linux*)
   EXTRACONF=--host=i386-linux
 ;;
+openwrt)
+  EXTRACONF=--host=@SYS_OPENWRTTARGET@
+;;
 *)
   EXTRACONF=
 ;;

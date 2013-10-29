@@ -373,6 +373,8 @@ is_standalone_app()
 ###########################
 # general compiler functions
 
+GAMBIT_DEFS="-D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
+
 compile()
 {
   if [ $SYS_MODE = "debug" ]; then
@@ -406,7 +408,8 @@ compile_payload()
   csrcs=
   libs="$3"
   objs=
-  defs="-D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
+#  defs="-D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
+  defs="$GAMBIT_DEFS"
   echo "==> creating payload needed for $SYS_APPNAME.."
   mkdir -p "$SYS_PREFIX/build"
   dirty=
@@ -976,6 +979,21 @@ make_setup()
       SYS_EXEFIX=
       SYS_APPFIX=
     ;;
+    openwrt_linux)
+      GAMBIT_DEFS="-D___LIBRARY -D___PRIMAL"
+      STAGING_DIR=`ls -1d $OPENWRTSDK/staging_dir`
+      SDKROOT=`ls -1d $STAGING_DIR/target*`
+      CROSS=`ls -1d $STAGING_DIR/toolchain*/bin/*gcc | head -n 1 | sed 's/gcc$//'`
+      SYS_OPENWRTTARGET=`basename $CROSS | sed 's/-$//'`
+      SYS_ENV="$SYS_ENV STAGING_DIR=$STAGING_DIR"
+      SYS_CC=$CROSS"gcc $SYS_DEBUGFLAG -isysroot $SDKROOT -DOPENWRT -DLINUX"
+      SYS_AR=$CROSS"ar"
+      SYS_RANLIB=$CROSS"ranlib"
+      SYS_STRIP=$CROSS"strip"
+      SYS_WINDRES=
+      SYS_EXEFIX=
+      SYS_APPFIX=
+    ;;
     openbsd_openbsd)
       SYS_CC="gcc $SYS_DEBUGFLAG -DOPENBSD -I/usr/X11R6/include"
       SYS_AR=ar
@@ -1125,6 +1143,7 @@ make_setup()
   ac_subst SYS_PROFILE
   ac_subst SYS_VERBOSE
   ac_subst SYS_HOSTEXEFIX
+  ac_subst SYS_OPENWRTTARGET
   ac_output CONFIG.h $SYS_PREFIX/include/CONFIG.h
   name=$SYS_APPNAME
   here=`pwd`
@@ -1597,6 +1616,53 @@ linux486)
   rm -rf "$tmpdir"
 ;;
 #####################################
+openwrt)
+  archname=`basename $OPENWRTSDK | cut -f 3 -d "-"`
+  pkgfile=$OPENWRTSDK/bin/$archname/packages/$(echo $SYS_APPNAME)_$(echo $SYS_APPVERSION)_$archname.ipk
+  fnlpkgfile=$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-openwrt-$archname.ipk
+  tmpdir=$OPENWRTSDK/package/$SYS_APPNAME
+  mkdir -p $tmpdir/src
+  cp $SYS_PREFIX/lib/libgambc.a $tmpdir/src/libgambc.a
+  cp $SYS_PREFIX/lib/libpayload.a $tmpdir/src/libpayload.a
+  echo " => compiling application.."
+  cat > $tmpdir/src/Makefile  << _EOF
+$SYS_APPNAME: 
+	\$(CC) \$(LDFLAGS) -o $SYS_APPNAME libpayload.a libgambc.a -lutil -ldl -lm
+_EOF
+  cat > $tmpdir/Makefile  << _EOF
+  include \$(TOPDIR)/rules.mk
+  PKG_NAME:=$SYS_APPNAME
+  PKG_RELEASE:=$SYS_APPVERSION
+  PKG_BUILD_DIR:=\$(BUILD_DIR)/\$(PKG_NAME)
+  include \$(INCLUDE_DIR)/package.mk
+  define Package/$SYS_APPNAME
+	TITLE:=$SYS_APPNAME
+  endef
+  define Build/Prepare
+  	mkdir -p \$(PKG_BUILD_DIR)
+	\$(CP) ./src/* \$(PKG_BUILD_DIR)/
+  endef
+  define Package/$SYS_APPNAME/install
+	\$(INSTALL_DIR) \$(1)/bin
+	\$(INSTALL_BIN) \$(PKG_BUILD_DIR)/$SYS_APPNAME \$(1)/bin/
+  endef
+  \$(eval \$(call BuildPackage,$SYS_APPNAME))
+_EOF
+  cd $OPENWRTSDK
+  if [ "X$SYS_VERBOSE" = "X" ]; then  
+    make > /dev/null
+  else 
+    make V=99
+  fi
+  asserterror $?
+  assertfile $pkgfile
+  cp $pkgfile $fnlpkgfile
+  assertfile $fnlpkgfile
+  cd $here
+  echo " => cleaning up.."
+  rm -rf "$tmpdir"
+;;
+#####################################
 openbsd)
   rmifexists "$apptgtdir"
   mkdir "$apptgtdir"
@@ -1941,6 +2007,12 @@ make_package()
   ;;
   bb10)
     pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).bar"
+    assertfile $pkgfile
+    echo "=== $pkgfile"
+  ;;
+  openwrt)
+    archname=`basename $OPENWRTSDK | cut -f 3 -d "-"`
+    pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM)-$archname.ipk"
     assertfile $pkgfile
     echo "=== $pkgfile"
   ;;
