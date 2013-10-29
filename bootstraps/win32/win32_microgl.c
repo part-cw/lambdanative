@@ -95,6 +95,11 @@ static int _microgl_key(WPARAM wParam, LPARAM lParam, int action)
   }
 }
 
+// timer callback
+static VOID CALLBACK event_timer_callback(HWND hWnd, UINT uMsg, UINT idTimer, DWORD dwTime){
+  ffi_event(EVENT_IDLE,0,0);
+}
+
 // window event callback
 static LRESULT CALLBACK _microgl_callback( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
@@ -212,8 +217,9 @@ void microgl_init(void)
   wc.hbrBackground = NULL;                          
   wc.lpszMenuName  = NULL;                          
   if (!RegisterClassEx( &wc )) 
-    printf("Error: microgl: RegisterClassEx() failed [%i]\n", 
-       (int)GetLastError());
+    printf("Error: microgl: RegisterClassEx() failed [%i]\n", (int)GetLastError());
+  if (!SetTimer(NULL,1,1000,event_timer_callback))
+    printf("Error: microgl: SetTimer() failed [%i]\n", (int)GetLastError());
 }
 
 void microgl_refresh()
