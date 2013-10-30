@@ -61,12 +61,12 @@ extern char* iphone_directory;
 #ifdef USECONSOLE
 extern 
 #endif
-char *cmd_arg1;
+char **cmd_argv;
 
 #ifdef USECONSOLE
 extern 
 #endif
-char *cmd_arg0;
+int cmd_argc;
 
 static char *sys_appdir=0;
 static char *sys_dir=0;
@@ -105,7 +105,7 @@ static void find_directories()
 #endif
 #if defined(OPENBSD)
   char buf[PATH_MAX];
-  if (realpath(cmd_arg0,buf)) {
+  if (realpath(cmd_argv[0],buf)) {
     int i = strlen(buf)-1;
     while (i>0&&buf[i]!='/') {i--;}
     if (i>0) buf[i]=0;
@@ -184,9 +184,10 @@ static char *system_appdir(void) { return sys_appdir; }
 static char *system_platform(void) { return sys_platform; }
 static char *system_appname(void) { return sys_appname; }
 static char *system_appversion(void) { return sys_appversion; }
-static char *system_cmdarg(void) { return cmd_arg1; }
 static char *system_buildhash(void) { return sys_buildhash; }
 static unsigned int system_buildepoch(void) { return sys_buildepoch; }
+
+static char *system_cmdargv(int n) { char *res=0; if (n<cmd_argc) res=cmd_argv[n]; return res; }
 
 void force_terminate()
 {
@@ -200,8 +201,6 @@ end-of-c-declare
 ;; prep the system info
 (c-initialize "system_init();")
 
-(if (string=? (system-platform) "android") (##heartbeat-interval-set! -1.0))
-
 (define ##now 0.)
 
 (define (system-pathseparator) 
@@ -212,11 +211,14 @@ end-of-c-declare
 (define (system-platform) ((c-lambda () char-string "system_platform")))
 (define (system-appname) ((c-lambda () char-string "system_appname")))
 (define (system-appversion) ((c-lambda () char-string "system_appversion")))
-(define (system-cmdarg) ((c-lambda () char-string "system_cmdarg")))
 (define (system-buildhash) ((c-lambda () char-string "system_buildhash")))
 (define (system-buildepoch) ((c-lambda () unsigned-int "system_buildepoch")))
 (define (system-builddate) (seconds->string (system-buildepoch) "%Y-%m-%d"))
 (define (system-builddatetime) (seconds->string (system-buildepoch) "%Y-%m-%d %H:%M:%S"))
+
+(define system-cmdargv (c-lambda (int) char-string "system_cmdargv"))
+(define system-cmdargc (c-lambda () int "___result=cmd_argc;"))
+(define (system-cmdarg) (system-cmdargv 1)) ;; backwards compatibility
 
 (define force-terminate (c-lambda () void "force_terminate"))
 

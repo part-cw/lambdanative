@@ -121,11 +121,8 @@ end-of-c-declare
   (let ((xtra (if (not app:mustinit) (event-pop) #f)))
     (if xtra (apply hook:event xtra))
     (cond 
-      ((fx= t EVENT_REDRAW)
-         (##thread-heartbeat!)
-         (hook:event t 0 0))
-      ((fx= t EVENT_IDLE) 
-        (##thread-heartbeat!))
+      ((fx= t EVENT_REDRAW) (hook:event t 0 0))
+      ((fx= t EVENT_IDLE) #t)
       ((or (fx= t EVENT_BUTTON1DOWN) (fx= t EVENT_BUTTON1UP)
            (fx= t EVENT_BUTTON2DOWN) (fx= t EVENT_BUTTON2UP)
            (fx= t EVENT_BUTTON3DOWN) (fx= t EVENT_BUTTON3UP)

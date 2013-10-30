@@ -105,15 +105,14 @@ void microgl_hook(int t, int x, int y)
 
 #endif // USECONSOLE
 
-char *cmd_arg0=0;
-char *cmd_arg1=0;
+int cmd_argc=0;
+char **cmd_argv;
 
 int main(int argc, char *argv[])
 {
   int w=0,h=0;
 
-  cmd_arg0=argv[0];
-  if (argc>1) cmd_arg1=argv[1];
+  cmd_argc=argc; cmd_argv=argv;
 
 // fork to release terminal (for starting processes on embedded systems)
 #if defined(USECONSOLE) && defined(OPENBSD)

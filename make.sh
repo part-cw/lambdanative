@@ -468,12 +468,11 @@ ___END_C_LINKAGE
 ___setup_params_struct setup_params;
 int debug_settings = ___DEBUG_SETTINGS_INITIAL;
 #ifdef STANDALONE
-char *cmd_arg0=0;
-char *cmd_arg1=0;
+char **cmd_argv;
+int cmd_argc=0;
 int main(int argc, char *argv[])
 {
-  cmd_arg0=argv[0];
-  if (argc>1) cmd_arg1=argv[1];
+  cmd_argc=argc; cmd_argv=argv;
   ___setup_params_reset (&setup_params);
   setup_params.version = ___VERSION;
   setup_params.linker = LINKER;
