@@ -2195,7 +2195,7 @@ make_lntoolcheck()
     if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
       echo " => not found, commence building lambdanative tools.."
       cp config.cache tmp.config.cache
-      ./configure $SYS_APPNAME
+      SYS_PATH=$SYS_PATH ./configure $SYS_APPNAME
       . ./config.cache
       rmifexists tmp.subst
       make_setup
