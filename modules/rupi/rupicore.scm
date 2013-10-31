@@ -114,7 +114,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (rupi:readobj port keyidx)
   (let ((rr (rupi:read keyidx port)))
-    (if (and rr (not (null? rr))) (list (car rr) (u8vector->object (cadr rr))) #f)
+    (if (and rr (not (null? rr)) (u8vector? (cadr rr))) 
+      (list (car rr) (u8vector->object (cadr rr))) 
+      #f
+    )
   )
 )
 
@@ -170,8 +173,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         #f
             )
             (lambda () (let* ((data2 (rupi:readobj p clientidx)) 
-            ;;(ridx (if data1 (car data) #f))
-            (data1 (if data2 (cadr data2) #f))
+                              (data1 (if data2 (cadr data2) #f))
                               (data (if data1 (cdr data1) #f))
                               (retcmd (if data1 (car data1) #f)))
                (if (equal? retcmd cmd) data #f)
