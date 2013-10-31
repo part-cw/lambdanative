@@ -2350,6 +2350,10 @@ if [ -f $evallog ]; then
   rm $evallog
 fi
 
+if [ -f $ac_cache ]; then
+  rm $ac_cache
+fi
+
 # all is well if we got here, so clear the state cache
 resetstate
 
