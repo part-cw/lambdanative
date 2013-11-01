@@ -121,16 +121,19 @@ resetstate()
        fi
       ;;
       STRINGS)
-       file="$SYS_PREFIXROOT/build/$SYS_APPNAME/strings/strings_include.scm"
-       rmifexists $file
+       if [ -d "$SYS_PREFIXROOT/build/$SYS_APPNAME/strings" ]; then
+         rm "$SYS_PREFIXROOT/build/$SYS_APPNAME/strings/*.scm"
+       fi
        ;;
       FONTS)
-       file="$SYS_PREFIXROOT/build/$SYS_APPNAME/fonts/fonts_include.scm"
-       rmifexists $file
+       if [ -d "$SYS_PREFIXROOT/build/$SYS_APPNAME/fonts" ]; then
+         rm "$SYS_PREFIXROOT/build/$SYS_APPNAME/fonts/*.scm"
+       fi
        ;;
       TEXTURES)
-       file="$SYS_PREFIXROOT/build/$SYS_APPNAME/textures/textures_include.scm"
-       rmifexists $file
+       if [ -d "$SYS_PREFIXROOT/build/$SYS_APPNAME/textures" ]; then
+         rm "$SYS_PREFIXROOT/build/$SYS_APPNAME/textures/*.scm"
+       fi
        ;;
     esac
   fi
@@ -412,22 +415,30 @@ compile_payload()
   defs="$GAMBIT_DEFS"
   echo "==> creating payload needed for $SYS_APPNAME.."
   mkdir -p "$SYS_PREFIX/build"
-  dirty=
+  dirty=no
   for src in $srcs; do
     chsh=`stringhash "$src"`
     ctgt="$SYS_PREFIX/build/$chsh.c"
     csrcs="$csrcs $ctgt"
     otgt=`echo "$ctgt" | sed 's/c$/o/'`
     objs="$objs $otgt"
-    flag=
+    flag=no
     if [ ! -f "$otgt" ]; then
       flag=yes
     else 
-      if [ `newersourceindir "$src" "$otgt"` = "yes" ]; then
-        flag=yes
+      topdir=`dirname $src`
+      topdir=`basename $topdir`
+      if [[ "X$topdir" = "Xtextures" || "X$topdir" = "Xstrings" || "X$topdir" = "Xfonts" ]]; then
+        if [ `isnewer "$src" "$otgt"` = "yes" ]; then
+          flag=yes
+        fi
+      else
+        if [ `newersourceindir "$src" "$otgt"` = "yes" ]; then
+          flag=yes
+        fi
       fi
     fi
-    if [ $flag ]; then
+    if [ $flag = yes ]; then
       dirty=yes
       compile "$src" "$ctgt" "$otgt" "$defs"
     fi
@@ -437,7 +448,7 @@ compile_payload()
   if [ ! -f "$lotgt" ]; then
     dirty=yes
   fi
-  if [ $dirty ]; then
+  if [ $dirty = yes ]; then
     echo " => creating gsc link.."
     vecho "$SYS_GSC -link $csrcs"
     $SYS_GSC -link $csrcs 
@@ -452,7 +463,7 @@ compile_payload()
   if [ ! -f "$hotgt" ]; then
     dirty=yes
   fi
-  if [ $dirty ]; then
+  if [ $dirty = yes ]; then
     echo " => generating hook.."
     linker=`echo $chsh"__"`
 cat > $hctgt  << _EOF
@@ -626,33 +637,20 @@ make_artwork()
   setstate
 }
 
+texture_srcs=
+
 make_texturedir()
 {
   srcdir=$1
-  incfile=$2
-  if [ ! -f "$incfile" ]; then 
-    echo ";; Automatically generated. Do not edit."  > "$incfile"
-  fi
+  prefix=$2
   if [ -d "$srcdir" ]; then
-    echo " => adding textures from $srcdir.."
     images=`ls -1 "$srcdir"/*.png 2> /dev/null`
-    dirty=no
-    new=no
     for imgfile in $images; do
-      scmfile=$SYS_PREFIXROOT/build/$SYS_APPNAME/textures/`basename $imgfile | sed 's/png$/scm/'`
-      if [ `isnewer $imgfile $incfile` = "yes" ]; then
-        dirty=yes 
-      fi
-      if [ "X"`grep "$scmfile" "$incfile" | head -n 1 | cut -c 1` = "X" ]; then 
-        dirty=yes
-        new=yes
-      fi
-      if [ $dirty = yes ]; then
+      scmfile=$SYS_PREFIXROOT/build/$SYS_APPNAME/textures/"$prefix"`basename $imgfile | sed 's/png$/scm/'`
+      texture_srcs="$texture_srcs $scmfile"
+      if [ `isnewer $imgfile $scmfile` = "yes" ]; then
         echo " => $imgfile.."
         $SYS_HOSTPREFIX/bin/png2scm "$imgfile" > "$scmfile"
-        if [ $new = yes ]; then
-          echo "(include \"$scmfile\")" >> "$incfile"
-        fi
       fi
     done
   fi
@@ -664,35 +662,26 @@ make_textures()
   echo "==> creating textures needed for $SYS_APPNAME.."
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/textures
   mkdir -p $tgtdir
-  incfile=$tgtdir/textures_include.scm
   srcdir="$appsrcdir/textures"
   if [ -d $srcdir ]; then 
-    make_texturedir "$srcdir" "$incfile"
+    make_texturedir "$srcdir" "main-"
   fi
   for m in $modules; do
     srcdir=`locatedir modules/$m/textures silent`
     if [ ! "X$srcdir" = "X" ]; then
-      make_texturedir "$srcdir" "$incfile"
+      make_texturedir "$srcdir" "${m}-"
     fi
   done
   setstate
 }
 
+font_srcs=
+
 make_fontfile()
 {
-  dirty=no
   srcfile=$1
-  incfile=$2
-  if [ ! -f "$incfile" ]; then
-    echo ";; Automatically generated. Do not edit."  > $incfile 
-  fi
+  prefix=$2
   if [ `isnewer $srcfile $incfile` = "yes" ]; then
-    dirty=yes
-  fi
-  if [ "X"`grep ";; $srcfile" "$incfile" | head -n 1 | cut -c 1` = "X" ]; then
-    dirty=yes
-  fi
-  if [ $dirty = "yes" ]; then
     while read line; do
       fline=`echo "$line" | sed '/^#/d'`
       if [ "$fline" ]; then 
@@ -711,15 +700,12 @@ make_fontfile()
         fi
         sizes=`echo "$fline" | cut -f 3 -d " "`
         name=`echo "$fline" | cut -f 4 -d " "`
-        scmfile=$tgtdir/${name}.scm
+        scmfile=$tgtdir/${prefix}${name}.scm
+        font_srcs="$font_srcs $scmfile"
         if [ `isnewer $srcfile $scmfile` = "yes" ]; then
            echo " => $name using glyph set $bits.."
            $SYS_HOSTPREFIX/bin/ttffnt2scm $font "$bits" $sizes $name > $scmfile
            assertfile $scmfile
-        fi
-        if [ "X"`grep "$scmfile" "$incfile" | head -n 1 | cut -c 1` = "X" ]; then 
-          echo ";; $srcfile" >> $incfile
-          echo "(include \"$scmfile\")" >> $incfile
         fi
       fi
     done < $srcfile
@@ -732,15 +718,14 @@ make_fonts()
   echo "==> creating fonts needed for $SYS_APPNAME.."
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/fonts
   mkdir -p $tgtdir
-  incfile=$tgtdir/fonts_include.scm
   srcfile="$appsrcdir/FONTS"
   if [ -f $srcfile ]; then 
-    make_fontfile "$srcfile" "$incfile"
+    make_fontfile "$srcfile" "main-"
   fi
   for m in $modules; do
     srcdir=`locatefile modules/$m/FONTS silent`
     if [ ! "X$srcdir" = "X" ]; then
-      make_fontfile "$srcdir" "$incfile"
+      make_fontfile "$srcdir" "${m}-"
     fi
   done
   setstate
@@ -797,46 +782,33 @@ __EOF
   rm -rf $newpath
 }
 
+string_srcs=
+
 make_stringfile()
 {
-  dirty=no
   srcfile=$1
-  incfile=$2
-  if [ ! -f "$incfile" ]; then
-    echo ";; Automatically generated. Do not edit."  > $incfile
-  fi
-  if [ `isnewer $srcfile $incfile` = "yes" ]; then
-    dirty=yes
-  fi
-  if [ "X"`grep ";; $srcfile" "$incfile" | head -n 1 | cut -c 1` = "X" ]; then
-    dirty=yes
-  fi
-  if [ $dirty = yes ]; then
-    cat $srcfile | sed '/^#/d' > tmp.STRINGS
-    echo >> tmp.STRINGS
-    while read -r fline; do
-      if [ "$fline" ]; then 
-        fontname=`eval "getparam 1 $fline"`
-        font=`locatefile fonts/$fontname`
-        assertfile $font
-        size=`eval "getparam 2 $fline"`
-        label=`eval "getparam 3 $fline" | sed 's:_/:@TMP@:g;s:/:\\\\:g;s:@TMP@:/:g'`
-        name=`eval "getparam 4 $fline"`
-        opt=`eval "getparam 5 $fline"`
-        scmfile=$tgtdir/${name}.scm
-        if [ `isnewer $srcfile $scmfile` = "yes" ]; then
-           echo " => $name.."
-           make_string_aux $font $size "$label" $name $scmfile $opt
-           assertfile $scmfile
-        fi
-        if [ "X"`grep "$scmfile" "$incfile" | head -n 1 | cut -c 1` = "X" ]; then 
-          echo ";; $srcfile" >> $incfile
-          echo "(include \"$scmfile\")" >> $incfile
-        fi
+  prefix=$2
+  cat $srcfile | sed '/^#/d' > tmp.STRINGS
+  echo >> tmp.STRINGS
+  while read -r fline; do
+    if [ "$fline" ]; then 
+      fontname=`eval "getparam 1 $fline"`
+      font=`locatefile fonts/$fontname`
+      assertfile $font
+      size=`eval "getparam 2 $fline"`
+      label=`eval "getparam 3 $fline" | sed 's:_/:@TMP@:g;s:/:\\\\:g;s:@TMP@:/:g'`
+      name=`eval "getparam 4 $fline"`
+      opt=`eval "getparam 5 $fline"`
+      scmfile=$tgtdir/${prefix}${name}.scm
+      string_srcs="$string_srcs $scmfile"
+      if [ `isnewer $srcfile $scmfile` = "yes" ]; then
+         echo " => $name.."
+         make_string_aux $font $size "$label" $name $scmfile $opt
+         assertfile $scmfile
       fi
-    done < tmp.STRINGS
-    rm tmp.STRINGS
-  fi 
+    fi
+  done < tmp.STRINGS
+  rm tmp.STRINGS
 }
 
 make_strings()
@@ -845,15 +817,14 @@ make_strings()
   echo "==> creating strings needed for $SYS_APPNAME.."
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/strings
   mkdir -p $tgtdir
-  incfile=$tgtdir/strings_include.scm
   srcfile="$appsrcdir/STRINGS"
   if [ -f $srcfile ]; then 
-    make_stringfile "$srcfile" "$incfile"
+    make_stringfile "$srcfile" "main-"
   fi
   for m in $modules; do
     srcfile=`locatefile modules/$m/STRINGS silent`
     if [ ! "X$srcfile" = "X" ]; then
-      make_stringfile "$srcdir" "$incfile"
+      make_stringfile "$srcdir" "$m-"
     fi
   done
   setstate
@@ -1808,18 +1779,6 @@ esac
 make_payload()
 {
   setstate PAYLOAD
-  fonts=$SYS_PREFIXROOT/build/$SYS_APPNAME/fonts/fonts_include.scm
-  if [ ! -f "$fonts" ]; then
-    fonts=
-  fi
-  textures=$SYS_PREFIXROOT/build/$SYS_APPNAME/textures/textures_include.scm
-  if [ ! -f "$textures" ]; then
-    textures=
-  fi
-  strings=$SYS_PREFIXROOT/build/$SYS_APPNAME/strings/strings_include.scm
-  if [ ! -f "$strings" ]; then
-    strings=
-  fi
   srcs=
   for m in $modules; do
     modsrc=`locatefile modules/$m/$m.scm`
@@ -1830,7 +1789,7 @@ make_payload()
     srcs="$srcs $plugsrc"
   done
   # note: textures, fonts and strings can't go before glcore!
-  srcs="$srcs $textures $fonts $strings $appsrcdir/main.scm"
+  srcs="$srcs $texture_srcs $font_srcs $string_srcs $appsrcdir/main.scm"
   libs=
   for l in $libraries; do
     libname=`echo "$l!" | cut -f 1 -d "!"`
