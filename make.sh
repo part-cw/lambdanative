@@ -928,7 +928,7 @@ make_setup()
   SYS_BUILDEPOCH=`date +"%s"`
   SYS_HOSTEXEFIX=
   if [ "$SYS_HOSTPLATFORM" = "win32" ]; then
-    SYS_HOSTEXEFIX=".exe" 
+    SYS_HOSTEXEFIX=".exe"
   fi
   # Adding BUILD info requires rebuilding of config module
   touch modules/config/config.scm
@@ -1045,7 +1045,7 @@ make_clean()
 make_scrub()
 {
   echo "==> removing entire build cache.."
-  platforms="ios macosx android win32 linux linux486 openbsd bb10"
+  platforms=`ls -1 targets`
   for platform in $platforms; do
     rmifexists $SYS_PREFIXROOT/$platform
   done
@@ -1104,65 +1104,11 @@ make_package()
   setstate PACKAGE
   here=`pwd`
   echo "==> making package.."
-  case $SYS_PLATFORM in
-  win32|linux|linux486|openbsd|macosx)
-    pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).zip"
-    rmifexists $pkgfile
-    echo " => making generic zip archive $pkgfile.."
-    cd $SYS_PREFIX
-    veval "zip -y -r $pkgfile $SYS_APPNAME$SYS_APPFIX"
-    cd $here
-    assertfile $pkgfile
-    echo "=== $pkgfile"
-  ;;
-  ios)
-#  an ipa is not needed anymore? 
-#    echo " => making iphone ipa archive.."
-#    tmpdir=`mktemp -d tmp.XXXXXX`
-#    mkdir $tmpdir/Payload
-#    cp -R $SYS_PREFIX/$SYS_APPNAME.app $tmpdir/Payload
-#    cp $SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-1024.png $tmpdir/iTunesArtwork 
-#    cd $tmpdir
-#    mkdir -p "$SYS_PREFIXROOT/packages"
-#    pkgfile=$SYS_PREFIXROOT/packages/$SYS_APPNAME-$SYS_APPVERSION-iphone.ipa
-#    if [ -f $pkgfile ]; then
-#      rm $pkgfile
-#    fi
-#    /usr/bin/zip -9 -y -r $pkgfile Payload iTunesArtwork
-#    cd $here
-#    assertfile $pkgfile
-#    rm -rf $tmpdir
-    echo " => making $SYS_PLATFORM zip archive.."
-    pkgfile=$SYS_PREFIXROOT/packages/$SYS_APPNAME-$SYS_APPVERSION-$SYS_PLATFORM.zip
-    if [ -f $pkgfile ]; then
-      rm $pkgfile
-    fi
-    cd $SYS_PREFIX
-    veval "zip -q -y -r $pkgfile ${SYS_APPNAME}.app"
-    cd $here
-    assertfile $pkgfile
-    echo "=== $pkgfile"
-  ;;
-  android)
-    pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).apk"
-    assertfile $pkgfile
-    echo "=== $pkgfile"
-  ;;
-  bb10)
-    pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).bar"
-    assertfile $pkgfile
-    echo "=== $pkgfile"
-  ;;
-  openwrt)
-    archname=`basename $OPENWRTSDK | cut -f 3 -d "-"`
-    pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM)-$archname.ipk"
-    assertfile $pkgfile
-    echo "=== $pkgfile"
-  ;;
-  *)
+  if [ -s targets/$SYS_PLATFORM/package ]; then
+    . targets/$SYS_PLATFORM/package
+  else
     echo "=== no packaging setup for this platform ($SYS_PLATFORM)"
-  ;;
-  esac
+  fi
   setstate
 }
 
@@ -1230,42 +1176,6 @@ make_info()
 ######################
 # system sanity checks
 
-make_glcheck()
-{
-  if [ $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
-    vecho " => checking for sane localhost OpenGL setup.."
-    echo "#include <GL/gl.h>" > gltest.c
-    echo "int main() { glOrtho(0,0,0,0,0,0); }" >> gltest.c
-    gcc -Werror -o gltest gltest.c -I/usr/X11/include -I/usr/X11R6/include -L/usr/X11/lib -L/usr/X11R6/lib -lGL  > /dev/null 2> /dev/null
-    asserterror $? "OpenGL headers are missing?"
-  fi
-  rmifexists gltest
-  rmifexists gltest.c
-}
-
-make_linux_alsacheck()
-{
-  vecho " => checking for sane ALSA setup.."
-  echo "#include <alsa/asoundlib.h>" > alsatest.c
-  echo "int main() { snd_pcm_hw_params_t *hwparams; snd_pcm_hw_params_alloca(&hwparams); }" >> alsatest.c
-#  echo "int main() { snd_pcm_t *pcm_handle = NULL; const char *device_name = \"default\"; snd_pcm_open (&pcm_handle, device_name, SND_PCM_STREAM_PLAYBACK, 0); snd_pcm_close (pcm_handle); }" >> alsatest.c
-  gcc -Werror -o alsatest alsatest.c -lasound 
-  asserterror $? "ALSA headers are missing?"
-  rmifexists alsatest
-  rmifexists alsatest.c
-}
-
-make_openbsd_portaudiocheck()
-{
-  vecho " => checking for portaudio.."
-  echo "#include <portaudio.h>" > patest.c
-  echo "int main() { Pa_GetDefaultInputDevice(); }" >> patest.c
-  gcc -Werror -o patest patest.c -I/usr/local/include -L/usr/local/lib -lportaudio 
-  asserterror $? "portaudio is not installed? Please install patched version from ports."
-  rmifexists patest
-  rmifexists patest.c
-}
-
 make_xelatexcheck()
 {
   vecho " => checking for working xelatex.."
@@ -1290,13 +1200,8 @@ END
 make_libarycheck(){
   setstate LIBRARYCHECK
   echo "==> checking for required libraries.."
-  if [ $SYS_PLATFORM = linux ]; then
-    make_glcheck
-    make_linux_alsacheck
-  fi
-  if [ $SYS_PLATFORM = openbsd ]; then
-    make_glcheck
-    make_openbsd_portaudiocheck
+  if [ -s targets/$SYS_PLATFORM/check-libraries ]; then
+    . targets/$SYS_PLATFORM/check-libraries
   fi
   setstate
 }
@@ -1313,20 +1218,9 @@ make_toolcheck()
   asserttool gs convert xelatex ps2eps freetype-config
   # verify that xelatex works
   make_xelatexcheck
-  if [ $SYS_PLATFORM = android ]; then
-    asserttool bc ant
-  fi 
-  if [ $SYS_PLATFORM = ios ]; then
-    asserttool cmake xcodebuild
-  fi 
-  if [ $SYS_PLATFORM = win32 ]; then
-    asserttool pnmquant pngtopnm ppmtowinicon
-  fi 
-  if [ $SYS_PLATFORM = macosx ]; then
-    asserttool tiffutil tiff2icns
-  fi
-  if [ $SYS_PLATFORM = bb10 ]; then
-    asserttool qcc blackberry-nativepackager blackberry-deploy
+  # platform specific tools
+  if [ -s targets/$SYS_PLATFORM/check-tools ]; then
+    . targets/$SYS_PLATFORM/check-tools
   fi
   setstate
 }
