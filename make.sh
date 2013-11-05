@@ -987,16 +987,16 @@ make_setup()
   setstate
 }
 
-make_bootstrap()
+make_loader()
 {
-  setstate BOOTSTRAP
+  setstate LOADER
   locaseappname=`echo $SYS_APPNAME | tr A-Z a-z`
   here=`pwd`
-  echo "==> creating $SYS_PLATFORM bootstrap needed for $SYS_APPNAME.."
+  echo "==> creating $SYS_PLATFORM loader needed for $SYS_APPNAME.."
   if [ -s targets/$SYS_PLATFORM/build-binary ]; then
     . targets/$SYS_PLATFORM/build-binary
   else
-    echo "ERROR: Don't know how to make the bootstrap!"
+    echo "ERROR: Don't know how to make the loader!"
     exit 1
   fi
   echo "=== $SYS_PREFIX/$SYS_APPNAME$SYS_APPFIX"
@@ -1091,7 +1091,7 @@ update_packfile()
 make_executable()
 {
   if [ ! "$SYS_MODULES" ]; then
-    make_bootstrap
+    make_loader
   else
     echo "==> making standalone executable for $SYS_APPNAME.."
     veval "$SYS_CC -o $SYS_PREFIX/bin/$SYS_APPNAME$SYS_EXEFIX $SYS_PREFIX/lib/libpayload.a"

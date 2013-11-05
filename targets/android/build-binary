@@ -51,7 +51,7 @@ android_subst()
   ac_subst ANDROID_XML_PERMISSIONS "@$d/ANDROID_xml_permissions"
   ac_subst ANDROID_INTENT_FILTERS "@$d/ANDROID_intent_filters"
 }
-android_subst bootstraps/android
+android_subst loaders/android
 for m in $modules; do
   modpath=`locatedir modules/$m silent`
   android_subst $modpath
@@ -112,10 +112,10 @@ if [ -d "$xmlfilesdir" ]; then
 fi
 
 echo " => transferring java hook.."
-ac_output bootstraps/android/bootstrap.java.in $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
+ac_output loaders/android/bootstrap.java.in $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
 
 echo " => preparing manifest.."
-ac_output bootstraps/android/AndroidManifest.xml.in tmp.xml
+ac_output loaders/android/AndroidManifest.xml.in tmp.xml
 cat tmp.xml | sed '/^#/d' > "$tmpdir/AndroidManifest.xml"
 rm tmp.xml
 
@@ -124,19 +124,19 @@ cd $here
 tmpmoddir=`mktemp -d tmp.XXXXXX`
 tmpmoddir=`pwd`"/$tmpmoddir"
 mkdir $tmpmoddir/libpayload
-cp bootstraps/android/Android.mk.module $tmpmoddir/libpayload/Android.mk
+cp loaders/android/Android.mk.module $tmpmoddir/libpayload/Android.mk
 cp $SYS_PREFIX/lib/libpayload.a $tmpmoddir/libpayload
 
 echo " => preparing JNI.."
 mkdir $tmpdir/jni
 # opensl was introduced at api 10
 if [ `echo "$ANDROIDAPI > 9" | bc` = 1 ]; then
-  cp bootstraps/android/Android.mk.jni $tmpdir/jni/Android.mk
+  cp loaders/android/Android.mk.jni $tmpdir/jni/Android.mk
 else
-  cat bootstraps/android/Android.mk.jni | sed 's/-lOpenSLES//' > $tmpdir/jni/Android.mk
+  cat loaders/android/Android.mk.jni | sed 's/-lOpenSLES//' > $tmpdir/jni/Android.mk
 fi
 cp $SYS_PREFIX/include/CONFIG.h $tmpdir/jni
-ac_output bootstraps/android/bootstrap.c $tmpdir/jni/bootstrap.c
+ac_output loaders/android/bootstrap.c $tmpdir/jni/bootstrap.c
 cd $tmpdir
 
 if [ $SYS_MODE = "debug" ]; then

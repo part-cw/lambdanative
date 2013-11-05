@@ -41,23 +41,23 @@ bb10_subst()
   ac_subst BB10_XML_PERMISSIONS "@$1/BB10_xml_permissions"
   ac_subst BB10_XML_ASSETS "@$1/BB10_xml_assets"
 }
-bb10_subst bootstraps/qnx
+bb10_subst loaders/qnx
 for m in $modules; do
   modpath=`locatedir modules/$m silent`
   bb10_subst $modpath
 done
 bb10_subst `locatedir apps/$SYS_APPNAME`
 
-configsrc=`pwd`"/bootstraps/qnx/bb10-bar-descriptor.xml.in"
+configsrc=`pwd`"/loaders/qnx/bb10-bar-descriptor.xml.in"
 assertfile $configsrc "BB10 configuration desriptor is required"
 mkdir -p $SYS_PREFIXROOT/build/$SYS_APPNAME
 configtgt=$SYS_PREFIXROOT/build/$SYS_APPNAME/bar-descriptor.xml
 tmpdir=`mktemp -d tmp.XXXXXX`
 if [ `is_gui_app` = yes ]; then
-  ac_output bootstraps/qnx/bootstrap.c.in $tmpdir/bootstrap.c
+  ac_output loaders/qnx/bootstrap.c.in $tmpdir/bootstrap.c
 else
   if [ `is_standalone_app` = "no" ]; then
-    cp bootstraps/common/main.c $tmpdir
+    cp loaders/common/main.c $tmpdir
   fi
 fi
 cd $tmpdir

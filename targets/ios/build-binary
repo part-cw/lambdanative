@@ -41,7 +41,7 @@ ios_subst()
   ac_subst IOS_XML_PERMISSIONS "@$1/IOS_xml_permissions"
   ac_subst IOS_XML_REQUIREDDEVICECAP "@$1/IOS_xml_requireddevicecap"
 }
-ios_subst bootstraps/ios
+ios_subst loaders/ios
 for m in $modules; do
   modpath=`locatedir modules/$m silent`
   ios_subst $modpath
@@ -49,7 +49,7 @@ done
 ios_subst `locatedir apps/$SYS_APPNAME`
 
 tgtdir="$SYS_PREFIX/$SYS_APPNAME$SYS_APPFIX"
-srcdir=`pwd`"/bootstraps/ios"
+srcdir=`pwd`"/loaders/ios"
 cmakedir=`mktemp -d tmp.XXXXXX`
 cmakedir=`pwd`"/$cmakedir"
 cd $here
@@ -77,17 +77,17 @@ make_soundfile_ios()
 make_sounds make_soundfile_ios
 
 echo " => preparing plist.."
-configsrc=bootstraps/ios/Info.plist.in
+configsrc=loaders/ios/Info.plist.in
 ac_output $configsrc tmp.xml
 assertfile tmp.xml
 cat tmp.xml | sed '/^#/d' > "$SYS_PREFIXROOT/build/$SYS_APPNAME/Info.plist"
 
 echo " => preparing custom config.."
-headersrc=bootstraps/ios/config_custom.h.in
-ac_output bootstraps/ios/config_custom.h.in "$cmakedir/config_custom.h"
+headersrc=loaders/ios/config_custom.h.in
+ac_output loaders/ios/config_custom.h.in "$cmakedir/config_custom.h"
 assertfile "$cmakedir/config_custom.h"
 
-echo " => building bootstrap.."
+echo " => building loader.."
 xcodedir=`mktemp -d tmp.XXXXXX`
 xcodedir=`pwd`"/$xcodedir"
 cd $here
