@@ -1,0 +1,196 @@
+#!/bin/sh
+# LambdaNative - a cross-platform Scheme framework
+# Copyright (c) 2009-2013, University of British Columbia
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or
+# without modification, are permitted provided that the
+# following conditions are met:
+#
+# * Redistributions of source code must retain the above
+# copyright notice, this list of conditions and the following
+# disclaimer.
+#
+# * Redistributions in binary form must reproduce the above
+# copyright notice, this list of conditions and the following
+# disclaimer in the documentation and/or other materials
+# provided with the distribution.
+#
+# * Neither the name of the University of British Columbia nor
+# the names of its contributors may be used to endorse or
+# promote products derived from this software without specific
+# prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+android_subst()
+{
+  d=$1
+  ac_subst ANDROID_C_DEFINES "@$d/ANDROID_c_defines"
+  ac_subst ANDROID_C_ADDITIONS "@$d/ANDROID_c_additions"
+  ac_subst ANDROID_JAVA_IMPORTS "@$d/ANDROID_java_imports"
+  ac_subst ANDROID_JAVA_IMPLEMENTS "@$d/ANDROID_java_implements"
+  ac_subst ANDROID_JAVA_VARIABLES "@$d/ANDROID_java_variables"
+  ac_subst ANDROID_JAVA_ONCREATE "@$d/ANDROID_java_oncreate"
+  ac_subst ANDROID_JAVA_ONPAUSE "@$d/ANDROID_java_onpause"
+  ac_subst ANDROID_JAVA_ONRESUME "@$d/ANDROID_java_onresume"
+  ac_subst ANDROID_JAVA_ONSENSORCHANGED "@$d/ANDROID_java_onsensorchanged"
+  ac_subst ANDROID_JAVA_ACTIVITYADDITIONS "@$d/ANDROID_java_activityadditions"
+  ac_subst ANDROID_XML_PERMISSIONS "@$d/ANDROID_xml_permissions"
+  ac_subst ANDROID_INTENT_FILTERS "@$d/ANDROID_intent_filters"
+}
+android_subst bootstraps/android
+for m in $modules; do
+  modpath=`locatedir modules/$m silent`
+  android_subst $modpath
+done
+android_subst `locatedir apps/$SYS_APPNAME`
+
+echo " => creating android project.."
+tmpdir=`mktemp -d tmp.XXXXXX`
+tmpdir=`pwd`"/$tmpdir"
+cd $here
+ANDROIDSDKTARGET=`$ANDROIDSDK/tools/android list targets | grep "^id:" | grep "android-$ANDROIDAPI" | cut -f 2 -d " "`
+if [ "X$ANDROIDSDKTARGET" = "X" ]; then
+  echo "ERROR: API $ANDROIDAPI not a target."
+  exit
+else
+  echo " => using target $ANDROIDSDKTARGET [API $ANDROIDAPI]"
+fi
+$ANDROIDSDK/tools/android --silent create project \
+  --target $ANDROIDSDKTARGET --name $SYS_APPNAME --path $tmpdir \
+  --activity $SYS_APPNAME --package $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME
+
+echo " => preparing icons.."
+mkdir -p $tmpdir/res/drawable
+cp $SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-72.png $tmpdir/res/drawable/icon.png
+
+# transfering sound files
+make_soundfile_android()
+{
+  mkdir -p $tmpdir/res/raw
+  locasesnd=`basename "$1" | tr A-Z a-z`
+  cp "$1" $tmpdir/res/raw/$locasesnd
+}
+  make_sounds make_soundfile_android
+
+# transfering jar files
+jarfilesdir=`locatedir apps/$SYS_APPNAME/android_jars silent`
+if [ -d "$jarfilesdir" ]; then
+  echo " => transfering jar files.."
+  jarfiles=`ls -1 $jarfilesdir/*.jar 2> /dev/null`
+  mkdir -p $tmpdir/libs/
+  for jar in $jarfiles; do
+    locajar=`basename $jar | tr A-Z a-z`
+    vecho " => coping jar file - $locajar ..."
+    cp $jar $tmpdir/libs/
+  done
+fi
+
+# tranfer xml
+xmlfilesdir=`locatedir apps/$SYS_APPNAME/xml silent`
+if [ -d "$xmlfilesdir" ]; then
+  echo " => transferring xml files ..."
+  mkdir -p $tmpdir/res/xml/
+  xmlfiles=`ls -1 $xmlfilesdir/*.xml 2> /dev/null`
+  for xml in $xmlfiles; do
+    vecho " => coping xml file - $xml ..."
+    cp $xml $tmpdir/res/xml/
+  done
+fi
+
+echo " => transferring java hook.."
+ac_output bootstraps/android/bootstrap.java.in $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
+
+echo " => preparing manifest.."
+ac_output bootstraps/android/AndroidManifest.xml.in tmp.xml
+cat tmp.xml | sed '/^#/d' > "$tmpdir/AndroidManifest.xml"
+rm tmp.xml
+
+echo " => creating payload module.."
+cd $here
+tmpmoddir=`mktemp -d tmp.XXXXXX`
+tmpmoddir=`pwd`"/$tmpmoddir"
+mkdir $tmpmoddir/libpayload
+cp bootstraps/android/Android.mk.module $tmpmoddir/libpayload/Android.mk
+cp $SYS_PREFIX/lib/libpayload.a $tmpmoddir/libpayload
+
+echo " => preparing JNI.."
+mkdir $tmpdir/jni
+# opensl was introduced at api 10
+if [ `echo "$ANDROIDAPI > 9" | bc` = 1 ]; then
+  cp bootstraps/android/Android.mk.jni $tmpdir/jni/Android.mk
+else
+  cat bootstraps/android/Android.mk.jni | sed 's/-lOpenSLES//' > $tmpdir/jni/Android.mk
+fi
+cp $SYS_PREFIX/include/CONFIG.h $tmpdir/jni
+ac_output bootstraps/android/bootstrap.c $tmpdir/jni/bootstrap.c
+cd $tmpdir
+
+if [ $SYS_MODE = "debug" ]; then
+  echo " => compiling payload module with debug options.."
+  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build NDK_LOG=1 NDK_DEBUG=1"
+else
+  echo " => compiling payload module.."
+  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build --silent"
+fi
+asserterror $?
+
+echo " => adding precompiled libaries.."
+for lib in $libs; do
+  if [ -f "$SYS_PREFIXROOT/android/lib/$lib.jar" ]; then
+    cp $SYS_PREFIXROOT/android/lib/$lib.jar $tmpdir/libs/
+  fi
+done
+
+echo " => compiling application.."
+veval "ant -quiet release"
+asserterror $?
+cd $here
+pkgfile="$tmpdir/bin/$(echo $SYS_APPNAME)-release-unsigned.apk"
+assertfile "$pkgfile"
+
+echo " => transferring application.."
+fnlfile=$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-android.apk
+cp $pkgfile $fnlfile
+assertfile $fnlfile
+
+# Signing the binary
+keystore=`locatefile PROFILE | sed 's/PROFILE$/android\.keystore/'`
+if [ ! -e $keystore ]; then
+  echo " => generating keystore [$keystore].."
+  keytool -genkey -v -keystore $keystore -dname "CN=$SYS_ORGTLD.$SYS_ORGSLD" -alias "$SYS_ORGTLD.$SYS_ORGSLD" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$SYS_ANDROIDPW" -keypass "$SYS_ANDROIDPW"
+  asserterror $?
+fi
+echo " => signing application with keystore $keystore"
+jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore $keystore -keypass "$SYS_ANDROIDPW" -storepass "$SYS_ANDROIDPW" $fnlfile $SYS_ORGTLD.$SYS_ORGSLD
+asserterror $?
+
+echo " => zipaligning.."
+assertfile $fnlfile
+mv $fnlfile tmp.apk
+$ANDROIDSDK/tools/zipalign -f 4 tmp.apk $fnlfile
+asserterror $?
+rmifexists tmp.apk
+
+echo " => cleaning up.."
+rm -rf $tmpmoddir
+if [ $SYS_MODE = "debug" ]; then
+  echo "DEBUG: android build is in $tmpdir"
+else
+  rm -rf $tmpdir
+fi
+
+#eof

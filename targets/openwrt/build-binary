@@ -1,0 +1,85 @@
+#!/bin/sh
+# LambdaNative - a cross-platform Scheme framework
+# Copyright (c) 2009-2013, University of British Columbia
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or
+# without modification, are permitted provided that the
+# following conditions are met:
+#
+# * Redistributions of source code must retain the above
+# copyright notice, this list of conditions and the following
+# disclaimer.
+#
+# * Redistributions in binary form must reproduce the above
+# copyright notice, this list of conditions and the following
+# disclaimer in the documentation and/or other materials
+# provided with the distribution.
+#
+# * Neither the name of the University of British Columbia nor
+# the names of its contributors may be used to endorse or
+# promote products derived from this software without specific
+# prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+archname=`basename $OPENWRTSDK | cut -f 3 -d "-"`
+pkgfile=$OPENWRTSDK/bin/$archname/packages/$(echo $SYS_APPNAME)_$(echo $SYS_APPVERSION)_$archname.ipk
+fnlpkgfile=$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-openwrt-$archname.ipk
+tmpdir=$OPENWRTSDK/package/$SYS_APPNAME
+mkdir -p $tmpdir/src
+cp $SYS_PREFIX/lib/libgambc.a $tmpdir/src/libgambc.a
+cp $SYS_PREFIX/lib/libpayload.a $tmpdir/src/libpayload.a
+echo " => compiling application.."
+cat > $tmpdir/src/Makefile  << _EOF
+  $SYS_APPNAME:
+  \$(CC) \$(LDFLAGS) -o $SYS_APPNAME libpayload.a libgambc.a -lutil -ldl -lm
+_EOF
+cat > $tmpdir/Makefile  << _EOF
+  include \$(TOPDIR)/rules.mk
+  PKG_NAME:=$SYS_APPNAME
+  PKG_RELEASE:=$SYS_APPVERSION
+  PKG_BUILD_DIR:=\$(BUILD_DIR)/\$(PKG_NAME)
+  include \$(INCLUDE_DIR)/package.mk
+  define Package/$SYS_APPNAME
+  TITLE:=$SYS_APPNAME
+  endef
+  define Build/Prepare
+  mkdir -p \$(PKG_BUILD_DIR)
+  \$(CP) ./src/* \$(PKG_BUILD_DIR)/
+  endef
+  define Package/$SYS_APPNAME/install
+  \$(INSTALL_DIR) \$(1)/bin
+  \$(INSTALL_BIN) \$(PKG_BUILD_DIR)/$SYS_APPNAME \$(1)/bin/
+  endef
+  \$(eval \$(call BuildPackage,$SYS_APPNAME))
+_EOF
+
+cd $OPENWRTSDK
+if [ "X$SYS_VERBOSE" = "X" ]; then
+  make > /dev/null
+else
+  make V=99
+fi
+asserterror $?
+assertfile $pkgfile
+cp $pkgfile $fnlpkgfile
+assertfile $fnlpkgfile
+cd $here
+
+echo " => cleaning up.."
+rm -rf "$tmpdir"
+
+#eof

@@ -72,7 +72,7 @@ fi
 
 with_app=$1
 
-platforms="android ios linux linux486 win32 macosx bb10 openwrt"
+platforms=`ls -1 targets`
 with_platform=
 for platform in $platforms; do
   for arg in $@; do
@@ -145,19 +145,11 @@ i386-unknown-netbsd*)
 esac
 
 # setup target platform
-case "$with_platform" in
-linux|linux486|ios|macosx|win32|android|bb10|openwrt)
+if [ "X$with_platform" = "X" ]; then
+  SYS_PLATFORM=$SYS_HOSTPLATFORM
+else
   SYS_PLATFORM=$with_platform
-;;
-*)
-  if [ "X$with_platform" = "X" ]; then
-    SYS_PLATFORM=$SYS_HOSTPLATFORM
-  else
-    echo "ERROR: unknown platform specified [$with_platform]"
-    exit 1
-  fi
-;;
-esac
+fi
 
 if [ "X$with_mode" = "X" ]; then
   with_mode=normal

@@ -1,0 +1,100 @@
+#!/bin/sh
+# LambdaNative - a cross-platform Scheme framework
+# Copyright (c) 2009-2013, University of British Columbia
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or
+# without modification, are permitted provided that the
+# following conditions are met:
+#
+# * Redistributions of source code must retain the above
+# copyright notice, this list of conditions and the following
+# disclaimer.
+#
+# * Redistributions in binary form must reproduce the above
+# copyright notice, this list of conditions and the following
+# disclaimer in the documentation and/or other materials
+# provided with the distribution.
+#
+# * Neither the name of the University of British Columbia nor
+# the names of its contributors may be used to endorse or
+# promote products derived from this software without specific
+# prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+# CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+rmifexists "$apptgtdir"
+mkdir "$apptgtdir"
+if [ `is_gui_app` = "yes" ]; then
+  tiffs=
+  dirty=no
+  sizes="128 48 32 16"
+  for size in $sizes; do
+    srcimg=$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-$size.png
+    tgtimg=$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-$size.tif
+    assertfile $srcimg
+    if [ `isnewer $srcimg $tgtimg` = "yes" ]; then
+      echo " => generating $tgtimg.."
+      convert $srcimg $tgtimg
+      dirty=yes
+    fi
+    tiffs="$tiffs $tgtimg"
+  done
+  iconimg=$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-icon.icns
+  if [ ! -f "$iconimg" ]; then 
+    dirty=yes
+  fi
+  if [ $dirty = "yes" ]; then
+    echo " => generating icns icon.."
+    tiffutil -catnosizecheck $tiffs -out tmp.tif 2> /dev/null
+    assertfile tmp.tif
+    tiff2icns tmp.tif "$iconimg"
+    rm tmp.tif
+  fi
+  assertfile "$iconimg"
+  echo " => transferring icon.."
+  cp "$iconimg" $apptgtdir/Icon.icns
+  echo " => preparing plist.."
+  cp bootstraps/macosx/Info.plist $apptgtdir
+fi
+
+make_soundfile_macosx()
+{
+  mkdir -p "$apptgtdir/sounds"
+  cp "$1" "$apptgtdir/sounds"
+}
+make_sounds make_soundfile_macosx
+
+tmpdir=`mktemp -d tmp.XXXXXX`
+echo " => compiling application.."
+if [ `is_standalone_app` = "yes" ]; then
+  cd "$tmpdir"
+  veval "$SYS_HOST_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload"
+else
+  if [ `is_gui_app` = "yes" ]; then
+    cp bootstraps/macosx/*.[mh] $tmpdir
+    cd "$tmpdir"
+    veval "$SYS_HOST_CC -framework OpenGL -framework Cocoa -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -x objective-c -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -o $apptgtdir/$SYS_APPNAME -lpayload main.m SimpleOpenGLView.m"
+  else
+    cp bootstraps/common/main.c $tmpdir
+    cd "$tmpdir"
+    veval "$SYS_HOST_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload main.c"
+  fi
+fi
+cd $here
+assertfile $apptgtdir/$SYS_APPNAME
+rm -rf "$tmpdir"
+
+#eof
