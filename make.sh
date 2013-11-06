@@ -93,6 +93,16 @@ rmifexists()
   fi
 }
 
+string_contains() {
+  string="$1"
+  substring="$2"
+  if test "${string#*$substring}" != "$string"; then
+    echo yes
+  else
+    echo no
+  fi
+}
+
 ###############################
 # keep track of state to reset partial builds
 
@@ -985,17 +995,23 @@ make_loader()
 make_payload()
 {
   setstate PAYLOAD
-  srcs=
+  coremodules=" config eventloop ln_core ln_glcore "
+  coresrcs=
+  auxsrcs=
   for m in $modules; do
     modsrc=`locatefile modules/$m/$m.scm`
-    srcs="$srcs $modsrc"
+    if [ `string_contains "$coremodules" " $m "` = yes ]; then
+      coresrcs="$coresrcs $modsrc"
+    else
+      auxsrcs="$auxsrcs $modsrc"
+    fi
   done
   for p in $plugins; do
     plugsrc=`locatefile plugins/$p/$p.scm`
-    srcs="$srcs $plugsrc"
+    auxsrcs="$auxsrcs $plugsrc"
   done
   # note: textures, fonts and strings can't go before glcore!
-  srcs="$srcs $texture_srcs $font_srcs $string_srcs $appsrcdir/main.scm"
+  srcs="$coresrcs $texture_srcs $font_srcs $string_srcs $auxsrcs $appsrcdir/main.scm"
   libs=
   for l in $libraries; do
     libname=`echo "$l!" | cut -f 1 -d "!"`
