@@ -1,0 +1,26 @@
+#!/bin/sh
+# the crazy list of artwork sizes:
+# 57:   iphone
+# 114:  retina iphone
+# 72:   ipad
+# 144:  retina ipad
+# 60:   iPod touch (iOS7)
+# 120:  iPod touch (iOS7)
+# 76:   iPad (iOS7)
+# 152:  iPad (iOS7)
+# 1024: iTunes
+# 29:   iphone settings
+# 58:   iphone 4 settings
+# 100:  Retina iPad spotlight
+# 50:   iPad Spotlight
+sizes="57 114 72 144 29 58 50 100 60 120 76 152 1024"
+
+# create a dummy splash image to get full screen on retina displays
+tgt="$SYS_PREFIXROOT/build/$SYS_APPNAME/retina.png"
+if [ ! -f "$tgt" ]; then
+  echo " => generating retina default image.."
+  convert -size 640x1136 xc:black $tgt
+fi
+assertfile $tgt
+
+#eof

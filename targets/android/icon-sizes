@@ -1,0 +1,8 @@
+#!/bin/sh
+# the crazy list of artwork sizes:
+# 72:   android launcher
+# 512:  google play
+# 96:   android launcher [optional]
+# 48:   android launcher [optional]
+# 36:   android launcher [optional]
+sizes="72 512"

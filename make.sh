@@ -599,41 +599,17 @@ make_artwork()
     rm $tmpfile
   fi
   assertfile $pngsrc
-# the crazy list of artwork sizes:
-# 1024: iTunes
-# 512:  google play
-# 152:  iPad (iOS7)
-# 144: 	retina ipad
-# 128:  macosx
-# 120:  iPod touch (iOS7)
-# 114: 	retina iphone
-# 96:  	Retina iPad spotlight, android launcher
-# 76:   iPad (iOS7)
-# 72:   ipad, android launcher
-# 60:   iPod touch (iOS7)
-# 58:	iphone 4 settings
-# 57:   iphone
-# 48:   iPad Spotlight, android launcher, macosx
-# 36:   android launcher
-# 32:   macosx
-# 29: 	iphone settings
-# 16:   macosx
-  sizes="1024 512 152 144 128 120 114 96 76 72 60 58 57 48 36 32 29 16"
-  for s in $sizes; do
-    tgt="$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-$s.png"
-    if [ `isnewer $epssrc $tgt` = "yes" ]; then
-      echo " => generating "$s"x"$s" pixmap.."
-      convert $pngsrc -resize $s"x"$s $tgt
-      assertfile $tgt
-    fi
-  done
-  # create a dummy splash image to get full screen on retina displays
-  tgt="$SYS_PREFIXROOT/build/$SYS_APPNAME/retina.png"
-  if [ ! -f "$tgt" ]; then
-    echo " => generating retina default image.."
-    convert -size 640x1136 xc:black $tgt
+  if [ -s targets/$SYS_PLATFORM/icon-sizes ]; then
+    . targets/$SYS_PLATFORM/icon-sizes
+    for s in $sizes; do
+      tgt="$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-$s.png"
+      if [ `isnewer $epssrc $tgt` = "yes" ]; then
+        echo " => generating "$s"x"$s" pixmap.."
+        convert $pngsrc -resize $s"x"$s $tgt
+        assertfile $tgt
+      fi
+    done
   fi
-  assertfile $tgt
   setstate
 }
 

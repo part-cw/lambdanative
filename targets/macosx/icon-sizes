@@ -1,0 +1,7 @@
+#!/bin/sh
+# the crazy list of artwork sizes:
+# 128:  macosx
+# 48:   iPad Spotlight, android launcher, macosx
+# 32:   macosx
+# 16:   macosx
+sizes="128 48 32 16"
