@@ -409,7 +409,7 @@ compile()
   veval "$SYS_GSC -prelude \"$opts\" -c -o $ctgt $src"
   assertfile "$ctgt"
   rmifexists "$otgt"
-  veval "$SYS_ENV $SYS_CC $defs -c -o $otgt $ctgt -I$SYS_PREFIX/include"
+  veval "$SYS_ENV $SYS_CC $defs -c -o $otgt $ctgt -I$SYS_PREFIX/include -I$path"
   assertfile "$otgt"
   cd $here
 }
@@ -916,6 +916,7 @@ make_setup()
   if [ "$SYS_HOSTPLATFORM" = "win32" ]; then
     SYS_HOSTEXEFIX=".exe"
   fi
+  SYS_ARCH=`$SYS_CC -dumpmachine`
   # Adding BUILD info requires rebuilding of config module
   touch modules/config/config.scm
   # build the subtool
@@ -953,6 +954,7 @@ make_setup()
   ac_subst SYS_VERBOSE
   ac_subst SYS_HOSTEXEFIX
   ac_subst SYS_OPENWRTTARGET
+  ac_subst SYS_ARCH
   ac_output CONFIG.h $SYS_PREFIX/include/CONFIG.h
   name=$SYS_APPNAME
   here=`pwd`
