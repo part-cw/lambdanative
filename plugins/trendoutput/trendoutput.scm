@@ -83,9 +83,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let* ((fh (instance-refvar store instance "Handle"))
          (trends (instance-refvar store instance "Trends" '()))
          (now (current-time-seconds))
-         (deltat (- now (store-ref store "Start" 0.)))
-         (prv (store-ref store "Prv" 0.)))
-    (if fh (begin
+         (deltat (fl- now (store-ref store "Start" 0.)))
+         (prv (store-ref store "Prv" 0.))
+         (interval (instance-refvar store instance "Interval" 1.)))
+    (if (and fh (fl> (fl- now prv) (fl- (fl* 1. (flo interval)) 0.05))) (begin
       (display (number->string (fix (round deltat))) fh)
       (let loop ((ts trends))
         (if (fx= (length ts) 0)
