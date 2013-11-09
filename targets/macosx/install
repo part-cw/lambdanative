@@ -46,6 +46,8 @@ exefile="$desktop/${SYS_APPNAME}${SYS_APPFIX}/$SYS_APPNAME"
 here=`pwd`
 cd "$desktop"
 unzip -oqq $pkgfile
+cd "${SYS_APPNAME}${SYS_APPFIX}"
+mkdir -p log
 cd "$here"
 echo "==> Starting application.."
 eval "$exefile"
