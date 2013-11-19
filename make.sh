@@ -406,7 +406,11 @@ compile()
   cd $path
   rmifexists "$ctgt"
   echo " => $src.." 
-  veval "$SYS_GSC -:s -prelude \"$opts\" -c -o $ctgt $src"
+  if [ `basename "$src"` = "main.scm" ]; then
+      veval "$SYS_GSC -:s -prelude \"$opts\" -c -o $ctgt $src"
+  else
+      veval "$SYS_GSC -prelude \"$opts\" -c -o $ctgt $src"
+  fi
   assertfile "$ctgt"
   rmifexists "$otgt"
   veval "$SYS_ENV $SYS_CC $defs -c -o $otgt $ctgt -I$SYS_PREFIX/include -I$path"
