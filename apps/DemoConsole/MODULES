@@ -1,1 +1,1 @@
-syntax-case config ln_core 
+config ln_core syntax-case

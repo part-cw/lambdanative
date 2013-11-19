@@ -997,7 +997,7 @@ make_loader()
 make_payload()
 {
   setstate PAYLOAD
-  coremodules=" syntax-case config eventloop ln_core ln_glcore  "
+  coremodules=" config eventloop ln_core ln_glcore syntax-case "
   coresrcs=
   auxsrcs=
   for m in $modules; do
