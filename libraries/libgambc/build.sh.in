@@ -88,6 +88,7 @@ if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
 fi
 cp lib/libgambc.a @SYS_PREFIX@/lib
 cp include/gambit*.h @SYS_PREFIX@/include
+gsc/gsc -dynamic -o @SYS_PREFIX@/lib/gambcext.o1 lib/syntax-case.scm
 cd "$here"
 
 echo "==> Cleaning up..."
