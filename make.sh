@@ -405,6 +405,17 @@ compile()
   here=`pwd`
   cd $path
   rmifexists "$ctgt"
+  if [ `string_contains "$modules" "syntax-case"` = yes ]; then
+    if [ ! -f ${SYS_HOSTPREFIX}/lib/gambcext.tmp ]; then
+      echo " => compiling syntax-case dynamic library.." 
+      veval "$SYS_GSC -dynamic -o  ${SYS_HOSTPREFIX}/lib/gambcext.o1 ${SYS_HOSTPREFIX}/lib/syntax-case.scm"
+      mv ${SYS_HOSTPREFIX}/lib/gambcext.o1 ${SYS_HOSTPREFIX}/lib/gambcext.tmp
+    fi
+    assertfile ${SYS_HOSTPREFIX}/lib/gambcext.tmp
+    cp ${SYS_HOSTPREFIX}/lib/gambcext.tmp ${SYS_HOSTPREFIX}/lib/gambcext.o1
+  else
+    rmifexists ${SYS_HOSTPREFIX}/lib/gambcext.o1
+  fi
   echo " => $src.." 
   veval "$SYS_GSC -prelude \"$opts\" -c -o $ctgt $src"
   assertfile "$ctgt"
@@ -997,11 +1008,15 @@ make_loader()
 make_payload()
 {
   setstate PAYLOAD
-  coremodules=" config eventloop ln_core ln_glcore "
+  coremodules=" syntax-case config eventloop ln_core ln_glcore "
   coresrcs=
   auxsrcs=
   for m in $modules; do
-    modsrc=`locatefile modules/$m/$m.scm`
+    if [ $m = "syntax-case" ]; then
+      modsrc="$SYS_HOSTPREFIX/lib/syntax-case.scm"
+    else
+      modsrc=`locatefile modules/$m/$m.scm`
+    fi
     if [ `string_contains "$coremodules" " $m "` = yes ]; then
       coresrcs="$coresrcs $modsrc"
     else
