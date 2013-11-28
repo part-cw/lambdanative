@@ -69,7 +69,12 @@ static char valstr[16];
 static char *double_to_choppedstring(double val, int precision)
 {
   memset(valstr,0,16);
+  // NOTE: snprintf in some versions of mingw is broken! fall back on _snprintf (the MS version)
+#ifdef WIN32
+  _snprintf(valstr,16,"%f",val);
+#else
   snprintf(valstr,16,"%f",val);
+#endif
   int p=precision;
   if (val<0) p++;
   valstr[p]=0;
