@@ -81,6 +81,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (log-debug  s v . x) 
   (if (fx>= v log:verbose) (apply log:submit (append (list "DEBUG" s) x))))
 
+(c-define  (log-c s) (char-string) void "log_c" "" (log:submit "C" s))
+
 (define (log-folder-cleanup)
   (if log:on (begin
     (log:grab!)
