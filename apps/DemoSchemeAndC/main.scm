@@ -42,8 +42,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; Note: The end-of-c-declare has to be on its own line.
 (c-declare #<<end-of-c-declare
 
+// prototype of the C side logging call
+void log_c(char *);
+
 int pow2 (int x) {
   // The shift by x is equal to the 2^x operation
+  log_c("This is an example log entry from C");
   return 1<<x; 
 }
 end-of-c-declare
