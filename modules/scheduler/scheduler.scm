@@ -256,6 +256,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((caseid (store-ref store "CaseID" #f)))
     (if (fl> (- ##now log:lastrolled) 1.0) (begin
       (if (not (equal? caseid log:lastcaseid)) (begin
+        (log-system "Log continues at log_" caseid ".txt")
         (set! log:file (string-append log:path (system-pathseparator) "log_"
           (if caseid caseid (time->string (current-time) "%Y%m%d_%H%M%S")) ".txt"))
         (log-system "Application " (system-appname) " built " (system-builddatetime))
