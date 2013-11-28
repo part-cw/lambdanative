@@ -44,27 +44,27 @@ cp $SYS_PREFIX/lib/libgambc.a $tmpdir/src/libgambc.a
 cp $SYS_PREFIX/lib/libpayload.a $tmpdir/src/libpayload.a
 echo " => compiling application.."
 cat > $tmpdir/src/Makefile  << _EOF
-  $SYS_APPNAME:
-  \$(CC) \$(LDFLAGS) -o $SYS_APPNAME libpayload.a libgambc.a -lutil -ldl -lm
+$SYS_APPNAME:
+	\$(CC) \$(LDFLAGS) -o $SYS_APPNAME libpayload.a libgambc.a -lutil -ldl -lm
 _EOF
 cat > $tmpdir/Makefile  << _EOF
-  include \$(TOPDIR)/rules.mk
-  PKG_NAME:=$SYS_APPNAME
-  PKG_RELEASE:=$SYS_APPVERSION
-  PKG_BUILD_DIR:=\$(BUILD_DIR)/\$(PKG_NAME)
-  include \$(INCLUDE_DIR)/package.mk
-  define Package/$SYS_APPNAME
-  TITLE:=$SYS_APPNAME
-  endef
-  define Build/Prepare
-  mkdir -p \$(PKG_BUILD_DIR)
-  \$(CP) ./src/* \$(PKG_BUILD_DIR)/
-  endef
-  define Package/$SYS_APPNAME/install
-  \$(INSTALL_DIR) \$(1)/bin
-  \$(INSTALL_BIN) \$(PKG_BUILD_DIR)/$SYS_APPNAME \$(1)/bin/
-  endef
-  \$(eval \$(call BuildPackage,$SYS_APPNAME))
+include \$(TOPDIR)/rules.mk
+PKG_NAME:=$SYS_APPNAME
+PKG_RELEASE:=$SYS_APPVERSION
+PKG_BUILD_DIR:=\$(BUILD_DIR)/\$(PKG_NAME)
+include \$(INCLUDE_DIR)/package.mk
+define Package/$SYS_APPNAME
+	TITLE:=$SYS_APPNAME
+endef
+define Build/Prepare
+	mkdir -p \$(PKG_BUILD_DIR)
+	\$(CP) ./src/* \$(PKG_BUILD_DIR)/
+endef
+define Package/$SYS_APPNAME/install
+	\$(INSTALL_DIR) \$(1)/bin
+	\$(INSTALL_BIN) \$(PKG_BUILD_DIR)/$SYS_APPNAME \$(1)/bin/
+endef
+\$(eval \$(call BuildPackage,$SYS_APPNAME))
 _EOF
 
 cd $OPENWRTSDK
