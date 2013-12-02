@@ -50,12 +50,6 @@ fi
 #########################
 # general functions
 
-# since os x doesn't have md5sum
-md5summer=md5sum
-if [ "X"`which md5sum 2> /dev/null` = "X" ]; then
-  md5summer="cksum"
-fi
-
 veval()
 {
   if [ $SYS_VERBOSE ]; then 
@@ -213,7 +207,7 @@ asserttool()
 
 stringhash()
 {
-  echo "$1" | $md5summer | cut -f 1 -d " "
+  echo "$1" | cksum | cut -f 1 -d " "
 }
 
 isnewer()
