@@ -71,6 +71,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define USE_PORTAUDIO
 #endif
 
+#ifdef NETBSD
+#define USE_PORTAUDIO
+#endif
+
 #ifdef BB10
 #define USE_BB10AUDIO
 #endif 

@@ -44,13 +44,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <unistd.h>
 
-#if defined(OPENBSD)
+#if defined(OPENBSD) || defined(NETBSD)
 #include <sys/types.h>
 #include <fcntl.h>
 #include <limits.h>
 #endif
 
-#if defined (OPENBSD) || defined (LINUX) || defined (WIN32)
+#if defined (OPENBSD) || defined (LINUX) || defined (WIN32) || defined(NETBSD)
 #include <signal.h>
 #endif
 
@@ -74,7 +74,7 @@ void signal_hook()
 #include <OpenGL/OpenGL.h>
 #endif
 
-#if defined(LINUX) || defined(OPENBSD) || defined(WIN32)
+#if defined(LINUX) || defined(OPENBSD) || defined(WIN32) || defined(NETBSD)
 #include <GL/gl.h>
 #endif
 

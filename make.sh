@@ -53,7 +53,7 @@ fi
 # since os x doesn't have md5sum
 md5summer=md5sum
 if [ "X"`which md5sum 2> /dev/null` = "X" ]; then
-  md5summer="md5 -r"
+  md5summer="cksum"
 fi
 
 veval()
@@ -449,7 +449,7 @@ compile_payload()
     else 
       topdir=`dirname $src`
       topdir=`basename $topdir`
-      if [[ "X$topdir" = "Xtextures" || "X$topdir" = "Xstrings" || "X$topdir" = "Xfonts" ]]; then
+      if [ "X$topdir" = "Xtextures" ] || [ "X$topdir" = "Xstrings" ] || [ "X$topdir" = "Xfonts" ]; then
         if [ `isnewer "$src" "$otgt"` = "yes" ]; then
           flag=yes
         fi
@@ -1201,6 +1201,7 @@ check
 \end{document}
 END
   veval "xelatex check.tex"
+  veval "cat check.log"
   assertfile check.pdf "xelatex environment is not complete. Please install necessary XeTeX packages." 
   cd ..
   rm -rf $chkdir

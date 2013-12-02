@@ -56,7 +56,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/file.h>
 #endif
 
-#if defined(OPENBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
+#if defined(OPENBSD) || defined(NETBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
 #include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
@@ -224,7 +224,7 @@ int serial_open(char *dev, int baudrate, int bitsize, int parity, int stopbits){
      }
 #endif  // WIN32
 
-#if defined(OPENBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
+#if defined(OPENBSD) || defined(NETBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
   struct termios my_termios;
   int fd=0,spd;
 
@@ -323,7 +323,7 @@ void serial_close(int d){
   if (!fd) { _serial_error=1;  return; }
   CloseHandle(fd);
 #endif
-#if defined(OPENBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
+#if defined(OPENBSD) || defined(NETBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
   int fd=d;
   if (!fd) { _serial_error=1;  return; }
   if (close(fd)) {
@@ -349,7 +349,7 @@ void serial_writechar(int d, int val){
   }
 #endif
 
-#if defined(OPENBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
+#if defined(OPENBSD) || defined(NETBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
   int fd=d;
   if (!fd) { _serial_error=1; return; }
   ssize_t n_written=0;
@@ -379,7 +379,7 @@ int serial_readchar(int d){
    _serial_notready=1;
 #endif
 
-#if defined(OPENBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
+#if defined(OPENBSD) || defined(NETBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
   int fd=d;
   if (read(fd,&buf,1)!=1) {
     if (errno==35) {

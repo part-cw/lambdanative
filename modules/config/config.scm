@@ -103,7 +103,7 @@ static void find_directories()
     sys_dir=strdup(buf);
   }
 #endif
-#if defined(OPENBSD)
+#if defined(OPENBSD) || defined(NETBSD)
   char buf[PATH_MAX];
   if (realpath(cmd_argv[0],buf)) {
     int i = strlen(buf)-1;
