@@ -416,12 +416,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (if (and n (fx<= n 0)) 
             (begin 
               (httpsclient-close)
-              (maps (lambda (l) (cdr (car l))) 
-                (redcap:jsonstr->list (cadr (redcap:split-headerbody (redcap:data->string)))))
-            ) (begin
-            (if (and n (> n 0)) 
-              (redcap:data-append! (subu8vector redcap:buf 0 n)))
-            (loop (httpsclient-recv redcap:buf))
+              
+              ;; Get data as a list, make sure first entry isn't an error
+              (let ((datalist (redcap:jsonstr->list (cadr (redcap:split-headerbody (redcap:data->string))))))
+                
+                (if (and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
+                  ;; If the first entry is an error, then log it and return false
+                  (begin
+                    (log-error "REDCap error: " (cdaar datalist))
+                    #f)
+                   (maps (lambda (l)
+                          (cdr (car l))) 
+                         datalist))))
+            (begin
+              (if (and n (> n 0)) 
+                (redcap:data-append! (subu8vector redcap:buf 0 n)))
+              (loop (httpsclient-recv redcap:buf))
           ))
         )
       )
