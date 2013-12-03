@@ -1218,10 +1218,12 @@ make_toolcheck()
   asserttool grep wget zip tar sed tr cut tail head find
   # language 
   asserttool autoconf make gcc patch
-  # graphics 
-  asserttool gs convert xelatex ps2eps freetype-config
-  # verify that xelatex works
-  make_xelatexcheck
+  if [ `is_gui_app` = "yes" ]; then
+    # graphics 
+    asserttool gs convert xelatex ps2eps freetype-config
+    # verify that xelatex works
+    make_xelatexcheck
+  fi
   # platform specific tools
   if [ -s targets/$SYS_PLATFORM/check-tools ]; then
     . targets/$SYS_PLATFORM/check-tools
