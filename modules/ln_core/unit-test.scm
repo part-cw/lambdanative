@@ -56,18 +56,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   ;; run a test and catch all errors
   (define (unit-test-try p)
-    (let ((outcome 
-       (with-exception-catcher (lambda (e) #f)
-         (lambda () (p)))))
-      (if outcome "OK" "FAIL")))
+    (with-exception-catcher (lambda (e) #f) (lambda () (p))))
 
   ;; run all tests with-in a group
   (define (unit-test-run n)
-    (let ((t (table-ref unit-test:table n)))
+    (let ((t (table-ref unit-test:table n))
+          (res #t))
       (if (table? t)
-        (table-for-each (lambda (tn tp) 
-          (log-status n ": " tn ".. " (unit-test-try tp))) t)
-        (log-status n ": no tests found."))))
+        (table-for-each (lambda (tn tp)
+          (let ((outcome (unit-test-try tp)))
+            (if (and res (not outcome)) (set! res #f))
+            (log-status n ": " tn ".. " (if outcome "OK" "FAIL")))) t)
+        (begin
+          (log-status n ": no tests found.")
+          (set! res #f)
+        )
+      )
+      res
+    ))
 
   (if (> (length x) 0)
     (apply unit-test-add (append (list n) x))
