@@ -228,4 +228,73 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         )))
 )))
 
+;; unit tests
+;; -----------------
+
+(unit-test "rupi-u8vector" "1000 random u8vectors sent/received by rupi"
+  (lambda ()
+    (let* ((store "rupi-test")
+           (rupi:key (random-u8vector 8))
+           (rupi:addr (u8vector 127 0 0 1))
+           (rupi:port (+ 8000 (random-integer 100)))
+           (upi-cmd (lambda (st l) l))
+           (rc (rupi-client 0 rupi:key rupi:addr rupi:port)))
+      (rupi-server store 0 rupi:key rupi:addr rupi:port upi-cmd)
+      (thread-sleep! 0.5)
+      (let loop ((n 1000))
+        (if (fx= n 0)
+          #t
+          (if (let* ((datalen (random-integer 100000))
+                     (data (random-u8vector datalen)))
+                (not (equal? data (rupi-cmd rc data))))
+            #f
+            (loop (fx- n 1)))
+      ))
+    )
+  ))
+
+(unit-test "rupi-list" "1000 random number lists sent/received by rupi"
+  (lambda ()
+    (let* ((store "rupi-test")
+           (rupi:key (random-u8vector 8))
+           (rupi:addr (u8vector 127 0 0 1))
+           (rupi:port (+ 8000 (random-integer 100)))
+           (upi-cmd (lambda (st l) l))
+           (rc (rupi-client 0 rupi:key rupi:addr rupi:port)))
+      (rupi-server store 0 rupi:key rupi:addr rupi:port upi-cmd)
+      (thread-sleep! 0.5)
+      (let loop ((n 1000))
+        (if (fx= n 0)
+          #t
+          (if (let* ((datalen (random-integer 10000))
+                     (data (make-list datalen (random-integer 32000))))
+                (not (equal? data (rupi-cmd rc data))))
+            #f
+            (loop (fx- n 1)))
+      ))
+    )
+  ))
+
+(unit-test "rupi-bool" "1000 random booleans sent/received by rupi"
+  (lambda ()
+    (let* ((store "rupi-test")
+           (rupi:key (random-u8vector 8))
+           (rupi:addr (u8vector 127 0 0 1))
+           (rupi:port (+ 8000 (random-integer 100)))
+           (upi-cmd (lambda (st l) l))
+           (rc (rupi-client 0 rupi:key rupi:addr rupi:port)))
+      (rupi-server store 0 rupi:key rupi:addr rupi:port upi-cmd)
+      (thread-sleep! 0.5)
+      (let loop ((n 1000))
+        (if (fx= n 0)
+          #t
+          (if (let ((data (list "Booleans" (fx= (random-integer 2) 1) 
+                                (fx= (random-integer 2) 1) (fx= (random-integer 2) 1))))
+                (not (equal? data (rupi-cmd rc data))))
+            #f
+            (loop (fx- n 1)))
+      ))
+    )
+  ))
+
 ;; eof

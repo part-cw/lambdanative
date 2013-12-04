@@ -111,4 +111,22 @@ end-of-c-declare
     #f
   ))
 
+;; unit tests
+;; -----------------
+
+(unit-test "u8vector-blowfish" "1000 random vectors"
+  (lambda () (let loop ((n 1000))
+    (if (fx= n 0)
+      #t
+      (if (let* ((keyidx (random-integer 16))
+                 (keylen (+ (random-integer 52) 4))
+                 (key (random-u8vector keylen))
+                 (datalen (random-integer 100000))
+                 (data (random-u8vector datalen)))
+            (u8vector-setkey-blowfish keyidx key)
+            (not (equal? data (u8vector-decrypt-blowfish keyidx (u8vector-encrypt-blowfish keyidx data)))))
+        #f
+        (loop (fx- n 1)))
+    ))
+  ))
 ;; eof
