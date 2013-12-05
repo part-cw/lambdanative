@@ -5481,7 +5481,8 @@ static int audiofile_reset(struct audiofile *af)
   } else {
     while (af->lock) { usleep(1000); }
     af->lock=1;
-    if (af->vorbis) { stb_vorbis_close(af->vorbis); af->vorbis=0; }
+    //if (af->vorbis) { stb_vorbis_close(af->vorbis); af->vorbis=0; }
+    if (af->vorbis) { stb_vorbis_seek(af->vorbis,0); }
     if (!af->vorbis) { af->vorbis = stb_vorbis_open_filename(af->fname, &error, NULL); }
     if (!af->vorbis) { return 0; }
     stb_vorbis_info info = stb_vorbis_get_info(af->vorbis);
@@ -5540,8 +5541,12 @@ void audiofile_nextsample(int16 *l, int16 *r)
         if (nread<=0||ferror(cur->fd)) { fclose(cur->fd); cur->fd=0; cur=0; *l=*r=0; return; }
       } else {
         while (cur->lock) {usleep(1000);};
-        cur->lock=1;
-        nread = stb_vorbis_get_samples_short_interleaved(cur->vorbis,cur->channels, cur->buf, AUDIOFILE_BUFSIZE);
+        cur->lock=1; 
+        if (cur->vorbis) {
+          nread = stb_vorbis_get_samples_short_interleaved(cur->vorbis,cur->channels, cur->buf, AUDIOFILE_BUFSIZE);
+        } else {
+          nread=0;
+        }
         cur->lock=0;
         nread*=cur->channels;
         if (nread<=0) { stb_vorbis_close(cur->vorbis); cur->vorbis=0; cur=0; *l=*r=0; return; }
