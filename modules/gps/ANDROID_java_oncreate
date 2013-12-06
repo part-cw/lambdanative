@@ -1,4 +1,16 @@
 locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
 Criteria criteria = new Criteria();
+if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)){ 
+  criteria.setAccuracy(Criteria.ACCURACY_FINE);
+} else {
+  criteria.setPowerRequirement(Criteria.POWER_LOW);
+  criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+}
 provider = locationManager.getBestProvider(criteria, false);
 Location location = locationManager.getLastKnownLocation(provider);
+
+String provider = Settings.Secure.getString(getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
+if(provider.equals("")){
+  Intent intent = new Intent(Settings.ACTION_SECURITY_SETTINGS);
+  startActivity(intent);
+}
