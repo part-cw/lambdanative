@@ -38,11 +38,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; date entry widget consisting of three vertical wheels for month, date (of month), and year
 
-;; Months of the year and the three vertical wheels
+;; Months of the year
 (define glgui:datewheel_months `("Jan" "Feb"  "Mar" "Apr" "May" "June" "July" "Aug" "Sept" "Oct" "Nov" "Dec"))
 (define glgui:datewheel_month_lengths `(31 28 31 30 31 30 31 31 30 31 30 31))
 
-(define (glgui:datewheel-update-wheel-limits gui widget mwheel dwheel ywheel)
+;; Constants for the order of the date wheels
+(define GUI_YEAR_MONTH_DAY 1)
+(define GUI_DAY_MONTH_YEAR 2)
+(define GUI_MONTH_DAY_YEAR 2)
+
+;; Public shortcut procedure to call the one below to enforce the limits
+(define (glgui-datawheel-update-limits gui wgt)
+  (let ((mwheel (glgui-widget-get g wgt 'monthwheel))
+        (dwheel (glgui-widget-get g wgt 'datewheel))
+        (ywheel (glgui-widget-get g wgt 'yearwheel)))
+    (glgui:datewheel-update-wheel-limits gui wgt mwheel dwheel ywheel #t #t #t)))
+
+(define (glgui:datewheel-update-wheel-limits gui widget mwheel dwheel ywheel limitday? limitmonth? forcechange?)
   ;; Build a date string from the month, day and year
   (let* ((month (+ (fix (glgui-widget-get gui mwheel 'value)) 1))
          (day (fix (glgui-widget-get gui dwheel 'value)))
@@ -50,74 +62,95 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (dmin (glgui-widget-get gui widget 'datemin))
          (eyear (fix (string->number (seconds->string dmin "%Y"))))
          (dmax (glgui-widget-get gui widget 'datemax))
-         (lyear (fix (string->number (seconds->string dmax "%Y")))))
-     ;; Check if we are in the earliest year - ie. need to limit the other wheels
-     (if (fx= year eyear)
-       (let ((emonth (fix (string->number (seconds->string dmin "%m")))))
-         ;; Make sure month isn't earlier than allowed
-         (if (fx< month emonth) (set! month emonth))
-         ;; Limit available months
-         (glgui-widget-set! gui mwheel 'valmin (- emonth 1))
-         ;; Check if we are in the earliest month (of the earliest year)
-         (if (= month emonth)
-           (let ((eday (fix (string->number (seconds->string dmin "%d")))))
-             ;; Make sure day isn't earlier than allowed
-             (if (fx< day eday) (set! day eday))
-             ;; Limit available days
-             (glgui-widget-set! gui dwheel 'valmin eday))
-           ;; Otherwise no limit on earliest day of the month
-           (glgui-widget-set! gui dwheel 'valmin 1)))
-       ;; Otherwise no limit on earliest month or day of the month
-       (begin 
-         (glgui-widget-set! gui mwheel 'valmin 0)
-         (glgui-widget-set! gui dwheel 'valmin 1)))
-     ;; Check if we are in the latest year - ie. need to limit the other wheels
-     (if (fx= year lyear)
-       (let ((lmonth (fix (string->number (seconds->string dmax "%m")))))
-         ;; Make sure month isn't later than allowed
-         (if (fx> month lmonth) (set! month lmonth))
-         ;; Limit available months
-         (glgui-widget-set! gui mwheel 'valmax (- lmonth 1))
-         ;; Check if we are in the latest month (of the latest year)
-         (if (= month lmonth)
-           (let ((lday (fix (string->number (seconds->string dmax "%d")))))
-              ;; Make sure day isn't later than allowed
-              (if (fx> day lday) (set! day lday))
-              ;; Limit available days
-              (glgui-widget-set! gui dwheel 'valmax lday))
-           ;; Otherwise no limit on latest day of the month - except the number of days in the month
-           (let ((maxday 
-                    (if (fx= month 2)
-                      ;; If February, check if leap year, leap year is divisible by 4, but not by 100, unless by 400. ie. 1896, 2000, 2004 are leap years. 1900, 1901, 1999 are not
-                      (if (fx= (modulo year 4) 0) (if (fx= (modulo year 100) 0) (if (fx= (modulo year 400) 0) 29 28) 29) 28)
-                      ;; Normally just use lengths from list
-                      (list-ref glgui:datewheel_month_lengths (fx- month 1)))))
-               (if (fx> day maxday) (set! day maxday))
-               (glgui-widget-set! gui dwheel 'valmax maxday))))
-       ;; Otherwise no limit on latest month or day of the month
-       (begin 
-         (glgui-widget-set! gui mwheel 'valmax 11)
-         (let ((maxday 
-                 (if (fx= month 2)
-                   ;; If February, check if leap year, leap year is divisible by 4, but not by 100, unless by 400. ie. 1896, 2000, 2004 are leap years. 1900, 1901, 1999 are not
-                   (if (fx= (modulo year 4) 0) (if (fx= (modulo year 100) 0) (if (fx= (modulo year 400) 0) 29 28) 29) 28)
-                   ;; Normally just use lengths from list
-                   (list-ref glgui:datewheel_month_lengths (fx- month 1)))))
-              (if (fx> day maxday) (set! day maxday))
-              (glgui-widget-set! gui dwheel 'valmax maxday))))
-     ;; Get the date specified in the wheels as a string
-     (let ((datestr (string-append (number->string month) "/" (number->string day) "/" (number->string year) " 00:00:00" )))
-        ;; Return this new value
-        (string->seconds datestr "%m/%d/%Y %H:%M:%S")))
+         (lyear (fix (string->number (seconds->string dmax "%Y"))))
+         ;; Make an initial date string and get the initial value
+         (initialdatestr (string-append (number->string month) "/" (number->string day) "/" (number->string year) " 00:00:00" ))
+         (initialvalue (string->seconds initialdatestr "%m/%d/%Y %H:%M:%S")))
+    
+    ;; Don't do anything if value hasn't actually changed and we aren't strictly forcing the limits
+    (if (or forcechange? (not (= (glgui-widget-get gui widget 'value) initialvalue)))
+      (begin
+    
+         ;; Check if we are in the earliest year - ie. need to limit the other wheels (depending on limitday and limitmonth)
+         (if (fx= year eyear)
+           (let ((emonth (fix (string->number (seconds->string dmin "%m")))))
+             ;; Make sure month isn't earlier than allowed
+             (if (and limitmonth? (fx< month emonth)) (set! month emonth))
+             ;; Limit available months
+             (if limitmonth?
+               (glgui-widget-set! gui mwheel 'valmin (- emonth 1)))
+             ;; Check if we are in the earliest month (of the earliest year)
+             (if (= month emonth)
+               (let ((eday (fix (string->number (seconds->string dmin "%d")))))
+                 ;; Make sure day isn't earlier than allowed
+                 (if (and limitday? (fx< day eday)) (set! day eday))
+                 ;; Limit available days
+                 (if limitday?
+                   (glgui-widget-set! gui dwheel 'valmin eday)))
+               ;; Otherwise no limit on earliest day of the month
+               (glgui-widget-set! gui dwheel 'valmin 1)))
+           ;; Otherwise no limit on earliest month or day of the month
+           (begin 
+             (glgui-widget-set! gui mwheel 'valmin 0)
+             (glgui-widget-set! gui dwheel 'valmin 1)))
+         ;; Check if we are in the latest year - ie. need to limit the other wheels
+         (if (fx= year lyear)
+           (let ((lmonth (fix (string->number (seconds->string dmax "%m")))))
+             ;; Make sure month isn't later than allowed
+             (if (and limitmonth? (fx> month lmonth)) (set! month lmonth))
+             ;; Limit available months
+             (if limitmonth?
+               (glgui-widget-set! gui mwheel 'valmax (- lmonth 1)))
+             ;; Check if we are in the latest month (of the latest year)
+             (if (= month lmonth)
+               (let ((lday (fix (string->number (seconds->string dmax "%d")))))
+                  ;; Make sure day isn't later than allowed
+                  (if (and limitday? (fx> day lday)) (set! day lday))
+                  ;; Limit available days
+                  (if limitday?
+                    (glgui-widget-set! gui dwheel 'valmax lday)))
+               ;; Otherwise no limit on latest day of the month - except the number of days in the month
+               (let ((maxday
+                        (if (fx= month 2)
+                          ;; If February, check if leap year, leap year is divisible by 4, but not by 100, unless by 400. ie. 1896, 2000, 2004 are leap years. 1900, 1901, 1999 are not
+                          (if (fx= (modulo year 4) 0) (if (fx= (modulo year 100) 0) (if (fx= (modulo year 400) 0) 29 28) 29) 28)
+                          ;; Normally just use lengths from list
+                          (list-ref glgui:datewheel_month_lengths (fx- month 1)))))
+                   (if (and limitday? (fx> day maxday)) (set! day maxday))
+                   (if limitday?
+                     (glgui-widget-set! gui dwheel 'valmax maxday)))))
+           ;; Otherwise no limit on latest month or day of the month
+           (begin 
+             (glgui-widget-set! gui mwheel 'valmax 11)
+             (let ((maxday
+                     (if (fx= month 2)
+                       ;; If February, check if leap year, leap year is divisible by 4, but not by 100, unless by 400. ie. 1896, 2000, 2004 are leap years. 1900, 1901, 1999 are not
+                       (if (fx= (modulo year 4) 0) (if (fx= (modulo year 100) 0) (if (fx= (modulo year 400) 0) 29 28) 29) 28)
+                       ;; Normally just use lengths from list
+                       (list-ref glgui:datewheel_month_lengths (fx- month 1)))))
+                  (if (and limitday? (fx> day maxday)) (set! day maxday))
+                  (if limitday?
+                    (glgui-widget-set! gui dwheel 'valmax maxday)))))
+         ;; Get the date specified in the wheels as a string
+         (let ((datestr (string-append (number->string month) "/" (number->string day) "/" (number->string year) " 00:00:00" )))
+            ;; Return this new value
+            (string->seconds datestr "%m/%d/%Y %H:%M:%S")))
+      initialvalue))
 )
 
 (define (glgui:datewheels-callback widget mwheel dwheel ywheel)
   ;; The wgt parameter in the lambda is the specific wheel
   (lambda (g wgt . x)
-    ;; Update the value of the date wheels by building it from the individual wheels while possibly modifying the limits of the displayed wheels
-    (let ((newvalue (glgui:datewheel-update-wheel-limits g widget mwheel dwheel ywheel)))
-       ;; Set the current (possibly modified) date
-       (glgui-widget-set! g widget 'value newvalue))
+          ;; Limit the date wheel values if the month or year wheels just changed
+    (let* ((limitday? (or (eqv? wgt mwheel) (eqv? wgt ywheel)))
+           ;; Limit the month wheel values if the year wheel just changed
+           (limitmonth? (eqv? wgt ywheel))
+           (oldvalue (glgui-widget-get g widget 'value))
+           ;; Update the value of the date wheels by building it from the individual wheels while possibly modifying the limits of the displayed wheels
+           (newvalue (glgui:datewheel-update-wheel-limits g widget mwheel dwheel ywheel limitday? limitmonth? #f)))
+       ;; Set the current date if modified
+       (if (not (= oldvalue newvalue)) 
+         (glgui-widget-set! g widget 'value newvalue)))
     ;; Then call the callback for this component - if there is one
     (let ((cb (glgui-widget-get g widget 'callback)))
        (if cb (cb g widget)))))
@@ -153,7 +186,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (glgui-widget-set! g dwheel 'value (glgui:datewheels-get-day val))
         (glgui-widget-set! g ywheel 'value (glgui:datewheels-get-year val))
         ;; Then update the limits of the wheels based on the new values
-        (glgui:datewheel-update-wheel-limits g wgt mwheel dwheel ywheel))
+        (glgui:datewheel-update-wheel-limits g wgt mwheel dwheel ywheel #t #t #f))
       ;; Update wheel limits if max or min have changed, possibly update value too
       ((eqv? id 'datemin)
          (glgui-widget-set! g ywheel 'valmin (fix (string->number (seconds->string val "%Y"))))
@@ -161,25 +194,39 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            ;; If value is less than new minimum, update it (will trigger a call to this procedure recursively)
            (glgui-widget-set! g wgt 'value val) 
            ;; Otherwise just update the limits of the wheels
-           (glgui:datewheel-update-wheel-limits g wgt mwheel dwheel ywheel)))
+           (glgui:datewheel-update-wheel-limits g wgt mwheel dwheel ywheel #t #t #f)))
       ((eqv? id 'datemax)
          (glgui-widget-set! g ywheel 'valmax (fix (string->number (seconds->string val "%Y"))))
          (if (> (glgui-widget-get g wgt 'value) val)
            ;; If value is less than new minimum, update it (will trigger a call to this procedure recursively)
            (glgui-widget-set! g wgt 'value val)   
            ;; Otherwise just update the limits of the wheels
-           (glgui:datewheel-update-wheel-limits g wgt mwheel dwheel ywheel)))
-      ;; Update x or w
-      ((or (eqv? id 'x) (eqv? id 'w))
-        (let* ((w (glgui-widget-get g wgt 'w))
+           (glgui:datewheel-update-wheel-limits g wgt mwheel dwheel ywheel #t #t #f)))
+      ;; Update x or w or the order of the wheels
+      ((or (eqv? id 'x) (eqv? id 'w) (eqv? id 'displayorder))
+        (let* ((order (glgui-widget-get g wgt 'displayorder))
+               (w (glgui-widget-get g wgt 'w))
                (x (glgui-widget-get g wgt 'x))
-               (dx (fix (/ (- w 2) 3))))
-          (glgui-widget-set! g ywheel 'w dx)
-          (glgui-widget-set! g ywheel 'x x)
-          (glgui-widget-set! g mwheel 'w dx)
-          (glgui-widget-set! g mwheel 'x (+ x dx 1))
-          (glgui-widget-set! g dwheel 'w dx)
-          (glgui-widget-set! g dwheel 'x (+ x (* 2 dx) 2))))
+               (dx (fix (/ (- w 2) 3)))
+               ;; Determine which wheel is in which order
+               (first (cond 
+                        ((fx= order GUI_DAY_MONTH_YEAR) dwheel)
+                        ((fx= order GUI_YEAR_MONTH_DAY) ywheel)
+                        ((fx= order GUI_MONTH_DAY_YEAR) mwheel)))
+               (second (cond 
+                        ((fx= order GUI_DAY_MONTH_YEAR) mwheel)
+                        ((fx= order GUI_YEAR_MONTH_DAY) mwheel)
+                        ((fx= order GUI_MONTH_DAY_YEAR) dwheel)))
+               (third (cond 
+                        ((fx= order GUI_DAY_MONTH_YEAR) ywheel)
+                        ((fx= order GUI_YEAR_MONTH_DAY) dwheel)
+                        ((fx= order GUI_MONTH_DAY_YEAR) ywheel))))
+          (glgui-widget-set! g first 'w dx)
+          (glgui-widget-set! g first 'x x)
+          (glgui-widget-set! g second 'w dx)
+          (glgui-widget-set! g second 'x (+ x dx 1))
+          (glgui-widget-set! g third 'w dx)
+          (glgui-widget-set! g third 'x (+ x (* 2 dx) 2))))
       ;; Update fonts
       ((eqv? id 'bignumfnt)
         (glgui-widget-set! g dwheel 'bigfnt val)
@@ -193,7 +240,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (glgui-widget-set! g mwheel 'smlfnt val))))
 )
 
-
+;; Make the date wheels go from 1-31 and the month wheel go from Jan-Dec regardless of the year wheel value or datemin or datemax
+(define (glgui-datewheels-unlimited g wgt)
+  (let ((mwheel (glgui-widget-get g wgt 'monthwheel))
+        (dwheel (glgui-widget-get g wgt 'datewheel)))
+    (glgui-widget-set! gui mwheel 'valmin 0)
+    (glgui-widget-set! gui mwheel 'valmax 11)
+    (glgui-widget-set! gui dwheel 'valmin 1)
+    (glgui-widget-set! gui dwheel 'valmax 31)))
+  
 ;; Create a set of three wheels for entering a date.
 (define (glgui-datewheels g x y w h datemin datemax colorvalue colorshade numfont1 numfont2 monthfont1 monthfont2)
   ;; Determine earliest and latest date
@@ -236,6 +291,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            'smlmonthfnt monthfont2
            ;; Topdown can be set to false to make the latest date be displayed at the top instead of the bottom
            'topdown #t
+           ;; Display order sets the order of the wheels from left to right
+           'displayorder GUI_YEAR_MONTH_DAY
            'monthwheel mwheel
            'datewheel dwheel
            'yearwheel ywheel
