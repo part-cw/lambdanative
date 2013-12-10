@@ -244,10 +244,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui-datewheels-unlimited g wgt)
   (let ((mwheel (glgui-widget-get g wgt 'monthwheel))
         (dwheel (glgui-widget-get g wgt 'datewheel)))
-    (glgui-widget-set! gui mwheel 'valmin 0)
-    (glgui-widget-set! gui mwheel 'valmax 11)
-    (glgui-widget-set! gui dwheel 'valmin 1)
-    (glgui-widget-set! gui dwheel 'valmax 31)))
+    (glgui-widget-set! g mwheel 'valmin 0)
+    (glgui-widget-set! g mwheel 'valmax 11)
+    (glgui-widget-set! g dwheel 'valmin 1)
+    (glgui-widget-set! g dwheel 'valmax 31)))
   
 ;; Create a set of three wheels for entering a date.
 (define (glgui-datewheels g x y w h datemin datemax colorvalue colorshade numfont1 numfont2 monthfont1 monthfont2)
