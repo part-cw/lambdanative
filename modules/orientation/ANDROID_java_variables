@@ -1,1 +1,2 @@
 private OrientationEventListener mOrientationEventListener;
+private Integer mOrientation=1;

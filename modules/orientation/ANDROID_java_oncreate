@@ -1,14 +1,19 @@
     mOrientationEventListener = new OrientationEventListener(this, SensorManager.SENSOR_DELAY_NORMAL){
       @Override
       public void onOrientationChanged(int angle){
-        if ((angle>=0 && angle<=10) ||(angle>=350 && angle<=359)){
-          nativeEvent(33,1,0); //EVENT_ORIENTATION,GUI_PORTRAIT
-        }else if (angle>=260 && angle<=280){
-          nativeEvent(33,2,0); //EVENT_ORIENTATION,GUI_LANDSCAPE
-        }else if (angle>=170 && angle<=190){
-          nativeEvent(33,4,0); //EVENT_ORIENTATION,GUI_UPSIDEDOWN
-        }else if (angle>=80 && angle<=100){
-          nativeEvent(33,3,0); //EVENT_ORIENTATION,GUI_SEASCAPE
+        Integer nOrientation=mOrientation;
+        if ((angle>=0 && angle<=20) ||(angle>=340 && angle<=359)){
+          nOrientation=1; //GUI_PORTRAIT
+        }else if (angle>=250 && angle<=290){
+          nOrientation=2; //GUI_LANDSCAPE
+        }else if (angle>=160 && angle<=200){
+          nOrientation=4; //GUI_UPSIDEDOWN
+        }else if (angle>=70 && angle<=110){
+          nOrientation=3; //GUI_SEASCAPE
+        }
+        if (nOrientation != mOrientation){
+          mOrientation=nOrientation;
+          nativeEvent(33,mOrientation,0); // EVENT_ORIENTATION, nOrientation
         }
       }
     };
