@@ -59,9 +59,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (mean lst)  (/ (sum lst) (length lst)))
 
 (define (median lst)
-  (let ((len (length lst)))
-    (list-ref (sort lst <)
-              (exact-floor (/ len 2)))))
+  (let* ((sorted (sort lst <))
+         (len (length lst))
+         (half (/ len 2)))
+    (if (even? len)
+      (mean (list (list-ref sorted (- half 1)) 
+                  (list-ref sorted half)))
+      (list-ref sorted
+                (exact-floor half)))))
 
 (define (first-quartile lst)
   (let ((len (length lst)))
