@@ -58,36 +58,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (mean lst)  (/ (sum lst) (length lst)))
 
-(define (median lst)
-  (let* ((sorted (sort lst <))
-         (len (length lst))
-         (half (/ len 2)))
-    (if (even? len)
-      (mean (list (list-ref sorted (- half 1)) 
-                  (list-ref sorted half)))
-      (list-ref sorted
-                (exact-floor half)))))
+(define (median lst) (percentile lst 50))
 
-(define (first-quartile lst)
-  (let ((len (length lst)))
-    (list-ref (sort lst <)
-              (exact-floor (/ len 4)))))
+(define (first-quartile lst) (percentile lst 25))
 
-(define (third-quartile lst)
-  (let ((len (length lst)))
-    (list-ref (sort lst <)
-              (min (exact-ceiling (* (/ len 4) 3)) (- len 1)))))
+(define (third-quartile lst) (percentile lst 75))
 
 (define (interquartile lst)
   (let ((first (first-quartile lst))
         (third (third-quartile lst)))
     (- third first)))
 
+(define (percentile lst prc0)
+  (let* ((sorted (sort lst <))
+         (len (- (length lst) 1))
+         (pos (max 0 (min len (/ (* len prc0) 100)))))
+    (if (= (exact-floor pos) pos)
+      (list-ref sorted (exact-floor pos))
+      (+ (* (list-ref sorted (exact-ceiling pos)) (- pos (floor pos)))
+         (* (list-ref sorted (exact-floor pos)) (- (ceiling pos) pos)))  
+    )
+  ))
+
 (define (variance lst)
   (let ((m (mean lst)))
-    (mean (map (lambda (x)
-                 (square (- x m)))
-               lst))))
+    (mean (map (lambda (x) (square (- x m))) lst))))
 
 (define (std lst) (sqrt (variance lst)))
 (define (rms lst) (sqrt (sum-of-squares lst)))
