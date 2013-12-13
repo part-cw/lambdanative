@@ -42,9 +42,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; The table of settings
 (define settings:table #f)
 
-(define settings:file (string-append (system-directory) (system-pathseparator) "config" (system-pathseparator) "settings.scm"))
+(define settings:folder (string-append (system-directory) (system-pathseparator) "config"))
+(define settings:file (string-append settings:folder (system-pathseparator) "settings.scm"))
 
 (define (settings-init defaults)
+  ;; Ensure the config folder exists
+  (if (not (file-exists? settings:folder))
+    (create-directory settings:folder))
   ;; Create the settings table from the defaults with init as the value of any keys with no value
   (set! settings:table (list->table defaults init: #f))
   ;; Load settings from file, create settings file if none found
