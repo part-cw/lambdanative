@@ -38,19 +38,25 @@
 SYS_IOSSDK=`basename $IOSSDK`
 SYS_IOSVERSION=$IOSVERSION
 CROSS=$IOSROOT/usr/bin
-SYS_CC=`ls -1 $CROSS/arm-apple-darwin*-gcc-* | sort -r | sed '/llvm/d' | head -n 1`
+SYS_CC=`ls -1 $CROSS/arm-apple-darwin*-gcc-* 2> /dev/null | sort -r | sed '/llvm/d' | head -n 1`
 if [ "X$SYS_CC" = "X" ]; then
-  SYS_CC=`ls -1 $CROSS/arm-apple-darwin*-gcc-* | sort -r | head -n 1`
+  SYS_CC=`ls -1 $CROSS/arm-apple-darwin*-gcc-* 2> /dev/null | sort -r | head -n 1`
 fi
 if [ "X$SYS_CC" = "X" ]; then
-  SYS_CC=`ls -1 $CROSS/arm-apple-darwin*-llvm-* | sort -r | head -n 1`
+  SYS_CC=`ls -1 $CROSS/arm-apple-darwin*-llvm-* 2> /dev/null | sort -r | head -n 1`
+fi
+if [ "X$SYS_CC" = "X" ]; then
+  SYS_CC=`xcrun -find -sdk iphoneos clang`" -arch armv7"
 fi
 assertfile $SYS_CC
 SYS_CC="$SYS_CC $SYS_DEBUGFLAG -isysroot $IOSSDK -DIOS -DIPHONE -miphoneos-version-min=$SYS_IOSVERSION"
 SYS_CC="$SYS_CC -fPIC -fsigned-char -fomit-frame-pointer -fforce-addr"
 SYS_AR="$CROSS/ar"
+assertfile $SYS_AR
 SYS_RANLIB="$CROSS/ranlib"
+assertfile $SYS_RANLIB
 SYS_STRIP="$CROSS/strip"
+assertfile $SYS_STRIP
 SYS_WINDRES=
 SYS_EXEFIX=
 SYS_APPFIX=".app"
