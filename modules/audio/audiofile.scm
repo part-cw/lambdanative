@@ -252,6 +252,20 @@ int audiofile_load(char *name)
   #endif
 }
 
+int audiofile_start()
+{
+#ifdef USE_IOS_REALTIME
+  return iphone_realtime_audio_start(iphone_realtime_callback);
+#endif
+}
+
+void audiofile_stop()
+{
+#ifdef USE_IOS_REALTIME
+  iphone_realtime_audio_stop();
+#endif
+}
+
 void audiofile_play(int id)
 {
 #ifdef USE_ANDROID_NATIVE
@@ -310,5 +324,8 @@ end-of-c-declare
  
 (define (audiofile-play id) (if (and id (> id 0)) ((c-lambda (int) void "audiofile_play") id)))
 (define (audiofile-forceplay id) (if (and id (> id 0)) ((c-lambda (int) void "audiofile_forceplay") id)))
+
+(define audiofile-start (c-lambda () int "audiofile_start"))
+(define audiofile-stop (c-lambda () void "audiofile_stop"))
 
 ;;eof
