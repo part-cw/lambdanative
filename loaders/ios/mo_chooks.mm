@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // glue MoMu C++ into C subsystem
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-// audio
+// audio and vibration
 
 #import "config_custom.h"
 
@@ -86,6 +86,10 @@ extern "C" int iphone_headphonepresent(){
     if (headphoneRange.location != NSNotFound) return 1;
   }
   return 0;
+}
+
+extern "C" void iphone_vibrate(){
+  MoAudio::vibrate();
 }
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%
