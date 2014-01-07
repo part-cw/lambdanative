@@ -1,0 +1,7 @@
+private void vibrate() {
+  vibrator.vibrate(400);
+}
+
+private void timedVibrate(int milli) {
+  vibrator.vibrate(milli);
+}

@@ -1,0 +1,1 @@
+vibrator = (Vibrator)getSystemService(Context.VIBRATOR_SERVICE);
