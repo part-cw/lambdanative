@@ -213,6 +213,7 @@ void SoundPoolInit(void);
 int SoundPoolLoadSFX(const char*, int);
 int SoundPoolLoadSFXAsset(const char*, int);
 int SoundPoolPlaySound(int, float, float, int, int, float);
+float SoundPoolGetVolume();
 #endif
 
 // %%%%%%%%%%%%%%%%%%%%%%
@@ -298,6 +299,17 @@ void audiofile_forceplay(int id)
   audiofile_play(id);
 }
 
+// Returns a float between 0 and 1 on Android and iOS, returns -1 on other platforms - not yet supported
+float audiofile_getvolume()
+{
+#ifdef USE_IOS_REALTIME
+  return iphone_getvolume();
+#elif ANDROID
+  return SoundPoolGetVolume();
+#endif
+return -1;
+}
+
 end-of-c-declare
 )
 
@@ -327,5 +339,7 @@ end-of-c-declare
 
 (define audiofile-start (c-lambda () int "audiofile_start"))
 (define audiofile-stop (c-lambda () void "audiofile_stop"))
+
+(define audiofile-getvolume (c-lambda () float "audiofile_getvolume"))
 
 ;;eof
