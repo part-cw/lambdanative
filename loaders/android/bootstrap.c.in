@@ -122,7 +122,8 @@ static jclass soundpool_class=NULL;
 static jmethodID s_load=NULL;
 static jmethodID s_play=NULL;
 static jmethodID s_unload=NULL;
-static jmethodID s_volume=NULL;
+static jmethodID s_setvolume=NULL;
+static jmethodID s_getvolume=NULL;
 static jmethodID s_headphonepresent=NULL;
 static jmethodID s_sdcardpresent=NULL;
 
@@ -139,7 +140,8 @@ void SoundPoolInit()
         s_load = (*env)->GetMethodID(env,soundpool_class, "LoadSound", "(Ljava/lang/String;I)I");
         s_play = (*env)->GetMethodID(env,soundpool_class, "PlaySound", "(IFFIIF)I");
         s_unload = (*env)->GetMethodID(env,soundpool_class, "UnloadSound", "(I)Z");
-        s_volume = (*env)->GetMethodID(env,soundpool_class, "SetVolume", "(F)Z");
+        s_setvolume = (*env)->GetMethodID(env,soundpool_class, "SetVolume", "(F)Z");
+        s_getvolume = (*env)->GetMethodID(env,soundpool_class, "GetVolume", "()F");
         s_headphonepresent= (*env)->GetMethodID(env,soundpool_class, "HeadphonePresent", "()Z");
 //        s_sdcardpresent= (*env)->GetMethodID(env,soundpool_class, "SDCardPresent", "()Z");
         if (getInstance) {
@@ -190,9 +192,19 @@ int SoundPoolSetVolume(float vol)
 {
   JNIEnv *env = GetJNIEnv();
   if (env&&s_globalThiz) {
-    return (*env)->CallBooleanMethod(env,s_globalThiz, s_volume, vol);
+    return (*env)->CallBooleanMethod(env,s_globalThiz, s_setvolume, vol);
   } else {
     return -1;
+  }
+}
+
+float SoundPoolGetVolume()
+{
+  JNIEnv *env = GetJNIEnv();
+  if (env&&s_globalThiz) {
+    return (*env)->CallFloatMethod(env,s_globalThiz, s_getvolume);
+  } else {
+    return 0.9;
   }
 }
 

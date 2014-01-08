@@ -282,6 +282,12 @@ class AudioHelper {
      }
      return true;
   }
+  public float GetVolume()
+  {
+     float SYSTEM_MAX_VOLUME = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+     float systemVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)/SYSTEM_MAX_VOLUME;
+     return systemVolume;
+  }
   public boolean HeadphonePresent()
   { 
     // NOTE: this requires MODIFY_AUDIO_SETTINGS in manifest!
@@ -378,6 +384,8 @@ class  xGLSurfaceView extends GLSurfaceView {
       case KeyEvent.KEYCODE_DPAD_RIGHT: t=2; x=4; break;
       case KeyEvent.KEYCODE_BACK: t=2; x=10; break;
       case KeyEvent.KEYCODE_MENU: t=2; x=9; break;
+      case KeyEvent.KEYCODE_VOLUME_DOWN: return false;
+      case KeyEvent.KEYCODE_VOLUME_UP: return false;
     }
     if (t>0) {
       queueEvent(new Runnable(){ public void run() {
