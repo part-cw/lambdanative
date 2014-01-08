@@ -101,6 +101,20 @@ unsigned int crc32(unsigned char *data, int len){
   return ~result;
 }
 
+unsigned int crc16_ccitt(unsigned char *data, int len){
+  int i;
+  unsigned short crc=0xffff;
+  for (i=0;i<len;i++){
+    unsigned short crc_new = (unsigned char)(crc >> 8) | (crc << 8);
+    crc_new ^= data[i];
+    crc_new ^= (unsigned char)(crc_new & 0xff) >> 4;
+    crc_new ^= crc_new << 12;
+    crc_new ^= (crc_new & 0xff) << 5;
+    crc = crc_new;
+  }
+  return crc;
+}
+
 end-of-c-declare
 )
 
@@ -110,6 +124,11 @@ end-of-c-declare
 (define (u8vector-crc32 v) 
   ((c-lambda (scheme-object int) unsigned-int 
       "___result=crc32(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)), ___arg2);")
+     v (u8vector-length v)))
+
+(define (u8vector-crc16-ccitt v)
+  ((c-lambda (scheme-object int) unsigned-int
+     "___result=crc16_ccitt(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)), ___arg2);")
      v (u8vector-length v)))
 
 (define (u8vector-crc8 v)
