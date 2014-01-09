@@ -48,15 +48,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let* ((casepath (instance-refvar store instance "CasePath" #f))
          (caseid (store-ref store "CaseID" #f))
          (namesuffix (instance-refvar store instance "NameSuffix" #f))
-         (now (current-time-seconds))
-         (casefile (string-append casepath (system-pathseparator) "Trends_" (seconds->string now "%Y%m%d_%H%M%S")
+         (casefile (string-append casepath (system-pathseparator) "Trends_" (seconds->string ##now "%Y%m%d_%H%M%S")
                                   (if (string? namesuffix) namesuffix "") ".csv"))
          (fh (open-output-file casefile))
          (trends (instance-refvar store instance "Trends" '())))
    (instance-setvar! store instance "Handle" fh)
    (instance-setvar! store instance "FilePath" casefile)
    (if fh (begin
-     (display (number->string now) fh) (display ", " fh) (display caseid fh) (display "\n" fh)
+     (display (number->string ##now) fh) (display ", " fh) (display caseid fh) (display "\n" fh)
      (display (system-appname) fh) (display "," fh) (display (system-builddatetime) fh) (display "," fh)
      (display (system-buildhash) fh) (display "," fh) (display (system-platform) fh) (display "\n" fh)
      (display "Time," fh)
@@ -82,12 +81,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (trendoutput:run store instance)
   (let* ((fh (instance-refvar store instance "Handle"))
          (trends (instance-refvar store instance "Trends" '()))
-         (now (current-time-seconds))
-         (deltat (fl- now (store-ref store "Start" 0.)))
+         (deltat (fl- ##now (store-ref store "Start" 0.)))
          (prv (store-ref store "Prv" 0.))
          (interval (instance-refvar store instance "Interval" 1.)))
-    (if (and fh (fl> (fl- now prv) (fl- (fl* 1. (flo interval)) 0.05))) (begin
-      (display (number->string (fix (round deltat))) fh)
+    (if (and fh (fl> (fl- ##now prv) (fl- (flo interval) 0.05))) (begin
+      (display (number->string (fix (floor deltat))) fh)
       (let loop ((ts trends))
         (if (fx= (length ts) 0)
           (begin
@@ -102,7 +100,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         )
       )
       (force-output fh)
-      (store-set! store "Prv" now)
+      (store-set! store "Prv" ##now)
     ))
   ))
 
