@@ -142,7 +142,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((timedelta (/ 5.0 (if (> (length (store-list)) 0) (length (store-list)) 1.))))
     (let loop ((sl (store-list))(n 0))
       (if (> (length sl) 0) (begin
-        (store-set! (car sl) "DispatchTime" (+ ##now (* timedelta n)))
+        (store-set! (car sl) "DispatchStart" (flo (+ ##now (* timedelta n))))
+        (store-set! (car sl) "DispatchCount" 0.)
         (loop (cdr sl) (+ n 1))
       ))
     )
@@ -188,9 +189,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (if (scheduler:doinputs) (begin
     (let loop2 ((sl (store-list)))
       (if (> (length sl) 0) (begin
-        (if (>= (- ##now (store-ref (car sl) "DispatchTime" 0)) 1.)  ;; run every 1 second
+        (if (fl>= (fl- ##now (store-ref (car sl) "DispatchStart" 0.))
+                (store-ref (car sl) "DispatchCount" 0.))  ;; run every 1 second
           (begin
-            (store-set! (car sl) "DispatchTime" ##now)
+            (store-set! (car sl) "DispatchCount" (fl+ (store-ref (car sl) "DispatchCount" 0.) 1.))
             (store-waveform-dispatch (car sl))
             (store-raw-dispatch (car sl))
             ;; provide waveform access to gui here
