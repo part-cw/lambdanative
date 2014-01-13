@@ -36,27 +36,9 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(include "unit-test.scm")
-(include "color.scm")
-(include "floatstring.scm")
-(include "flofix.scm")
-(include "list.scm")
-(include "math.scm")
-(include "list-stats.scm")
-(include "listlist.scm")
-(include "sort.scm")
-(include "string.scm")
-(include "utf8string.scm")
-(include "time.scm")
-(include "log.scm")
-(include "ipaddr.scm")
-(include "launchurl.scm")
-(include "u8vector.scm")
-(include "u8data.scm")
-(include "u8vector-crcs.scm")
-(include "u8vector-compress.scm")
-(include "file-compress.scm")
-(include "packtool.scm")
-(include "sxml2xml.scm")
-(include "misc.scm")
+(define (function-exists? str) 
+  (with-exception-catcher (lambda (e) #f)
+    (lambda () (with-input-from-string str (lambda () (eval (read)) #t)))
+  ))
 
+;; eof
