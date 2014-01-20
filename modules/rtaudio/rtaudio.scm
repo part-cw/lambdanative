@@ -101,6 +101,7 @@ int iphone_realtime_audio_init(double,unsigned int);
 int iphone_realtime_audio_start(void (*)(float*,unsigned int, void*));
 int iphone_realtime_audio_stop();
 void iphone_setvolume(double);
+void setMicrophoneGain(float);
 
 static void rtaudio_callback( float *buffer, unsigned int framesize, void* userData)
 {
@@ -209,6 +210,8 @@ void rtaudio_stop(void) {
   Pa_StopStream( stream );
 }
 
+void setMicrophoneGain(float inputGain) {}
+
 #endif // USE_PORTAUDIO
 
 // %%%%%%%%%%%%%%%%%%%%%%%%
@@ -236,6 +239,8 @@ void rtaudio_stop(void) {
   opensl_on=0;
 }
 
+void setMicrophoneGain(float inputGain) {}
+
 #endif // USE_ANDROIDAUDIO
 
 // %%%%%%%%%%%%%%%%%%%%%%%%
@@ -243,6 +248,7 @@ void rtaudio_stop(void) {
 
 void rtaudio_start(int s2, double volume)  { }
 void rtaudio_stop(void) { }
+void setMicrophoneGain(float inputGain) {}
 
 #endif // USE_BB10AUDIO
 
@@ -253,5 +259,7 @@ end-of-c-declare
 
 (define rtaudio-start (c-lambda (int double) void "rtaudio_start"))
 (define rtaudio-stop (c-lambda () void "rtaudio_stop"))
+
+(define rtaudio-set-gain (c-lambda (float) void "setMicrophoneGain"))
 
 ;; eof
