@@ -85,6 +85,25 @@ void * MoAudio::m_bindle = NULL;
 bool setupRemoteIO( AudioUnit & inRemoteIOUnit, AURenderCallbackStruct inRenderProc,
                     AudioStreamBasicDescription & outFormat);
 
+//-----------------------------------------------------------------------------
+// name: setMicrophoneGain()
+// desc: set input gain (0 ~ 1.0)
+//-----------------------------------------------------------------------------
+extern "C" void setMicrophoneGain(Float32 inputGain)
+{
+    UInt32 ui32propSize = sizeof(UInt32);
+    UInt32 inputGainAvailable = 0;
+
+    AudioSessionGetProperty(kAudioSessionProperty_InputGainAvailable
+                            , &ui32propSize
+                            , &inputGainAvailable);
+
+    if (inputGainAvailable) {
+        AudioSessionSetProperty(kAudioSessionProperty_InputGainScalar
+                             ,sizeof(inputGain)  
+                            , &inputGain);
+    } 
+}
 
 //-----------------------------------------------------------------------------
 // name: silenceData()
@@ -243,7 +262,7 @@ static void rioInterruptionListener( void * inUserData, UInt32 inInterruption )
 static void propListener( void * inClientData, AudioSessionPropertyID inID,
                           UInt32 inDataSize, const void * inData )
 {
-    // detect audio route change
+    // detect audio retain change
     if( inID == kAudioSessionProperty_AudioRouteChange )
     {
         // status code
