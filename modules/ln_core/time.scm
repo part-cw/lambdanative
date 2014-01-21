@@ -517,7 +517,7 @@ end-of-c-declare
 ;; -- these depend on time-monotonic having the same definition as time-tai!
 (define (time-monotonic->time-utc time-in)
   (if (not (eq? (time-type time-in) time-monotonic))
-      (tm:time-error 'time-monotoinc->time-utc 'incompatible-time-types time-in))
+      (tm:time-error 'time-monotonic->time-utc 'incompatible-time-types time-in))
   (let ((ntime (copy-time time-in)))
     (time-type-set! ntime time-tai)
     (tm:time-tai->time-utc! ntime ntime 'time-monotonic->time-utc)))
