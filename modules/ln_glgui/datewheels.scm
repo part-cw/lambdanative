@@ -47,6 +47,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define GUI_DAY_MONTH_YEAR 2)
 (define GUI_MONTH_DAY_YEAR 2)
 
+;; Allows an app to change the month strings into another language. This will be for all the date wheels in the app.
+(define (glgui-datewheel-update-months strlist)
+  (set! glgui:datewheel_months strlist))
+
 ;; Public shortcut procedure to call the one below to enforce the limits
 (define (glgui-datawheel-update-limits gui wgt)
   (let ((mwheel (glgui-widget-get g wgt 'monthwheel))
