@@ -524,7 +524,9 @@ void ffi_event(int t, int x, int y)
         (___DEBUG_SETTINGS_REPL_STDIO << ___DEBUG_SETTINGS_REPL_SHIFT);
       setup_params.debug_settings = debug_settings;
       ___setup(&setup_params);
-//      ___disable_heartbeat_interrupts(); //@@
+      #ifdef ANDROID
+        ___disable_heartbeat_interrupts(); //@@
+      #endif
       gambitneedsinit=0;
   }
   if (!gambitneedsinit) scm_event(t,x,y);
