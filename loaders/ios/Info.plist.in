@@ -49,6 +49,8 @@
 ### hide top status bar
 <key>UIStatusBarHidden</key>
 <true/>
+<key>UIViewControllerBasedStatusBarAppearance</key>
+<false/>
 @IOS_XML_PERMISSIONS@
 ### allow files to be accessed from iTunes
 <key>UIFileSharingEnabled</key>
