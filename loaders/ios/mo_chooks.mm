@@ -175,6 +175,11 @@ extern "C" double ios_gyro_pitch() { return ios_gyro(1); }
 extern "C" double ios_gyro_roll() { return ios_gyro(2); }
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%
+// Apple Push Notifications
+char ios_pushnotification_devicetoken[32];
+char ios_pushnotification_gottoken;
+
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%
 // device identification
 
 #import <sys/sysctl.h>

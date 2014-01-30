@@ -58,14 +58,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 @synthesize glView;
 
 - (void)applicationDidFinishLaunching:(UIApplication *)application {
-   
-   CGRect screenSize = [[UIScreen mainScreen] bounds];
 
+  CGRect screenSize = [[UIScreen mainScreen] bounds];
   window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] applicationFrame]];
   glView = [[EAGLView alloc] initWithFrame:window.frame];
-  
   [window addSubview:glView];
-  [window makeKeyAndVisible]; 
+  [window makeKeyAndVisible];
+
+#ifdef USE_PUSHNOTIFICATION
+// Let the device know we want to receive push notifications
+  [[UIApplication sharedApplication] registerForRemoteNotificationTypes:
+    (UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound | UIRemoteNotificationTypeAlert)];
+#endif
 
 #ifdef USE_NOLOCK
 // this will prevent the screen from locking up
@@ -153,6 +157,26 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   if (res>=0) ffi_event(EVENT_ORIENTATION,res,0);
 }
 #endif // USE_ORIENTATION
+
+#ifdef USE_PUSHNOTIFICATION
+extern char ios_pushnotification_devicetoken[32];
+extern char ios_pushnotification_gottoken;
+- (void)application:(UIApplication*)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken{
+  int len = [deviceToken length];
+  Byte *token = (Byte*)malloc(len);
+  memcpy(token, [deviceToken bytes], len);
+  int i;
+  for (i=0;i<len;i++){
+    ios_pushnotification_devicetoken[i]=token[i];
+  }
+  free(token);
+  ios_pushnotification_gottoken=1;
+}
+- (void)application:(UIApplication*)application didFailToRegisterForRemoteNotificationsWithError:(NSError*)error {
+  ios_pushnotification_gottoken=0;
+  NSLog(@"Failed to get APN token: %@", error);
+}
+#endif
 
 - (void)dealloc {
   [window release];
