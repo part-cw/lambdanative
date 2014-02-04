@@ -1,0 +1,77 @@
+#!/bin/sh
+
+VERSION=1.2.3
+
+PKGURL="http://mosquitto.org/files/source/mosquitto-${VERSION}.tar.gz"
+PKGSRC=`basename $PKGURL`
+
+src=@SYS_PREFIXROOT@/packages/$PKGSRC
+
+TIMESTAMP=`date "+%F %T%z"`
+
+options="-DWITH_TLS -DWITH_TLS_PSK"
+
+if [ ! -f $src -a `which wget` ]; then
+  echo "==> No source found, attempting to download.."
+  wget $PKGURL -O $src
+fi
+
+if [ ! -f $src ]; then
+  echo "==> ERROR: Unable to proceed. Please obtain $src first."
+  exit 1
+fi
+
+tmpdir=tmp_compile
+
+if [ -d $tmpdir ]; then
+  rm -rf $tmpdir
+fi
+mkdir $tmpdir
+
+here=`pwd`
+cd $tmpdir
+echo "==> Extracting source..."
+tar -zxf $src 
+
+cd *
+
+echo "==> Building library source..."
+echo "#include <time.h>" >>  config.h
+cd lib
+@SYS_CC@ -DVERSION="\"${VERSION}\"" -DTIMESTAMP="\"${TIMESTAMP}\"" \
+  $options -c *.c -I. -I.. -I@SYS_PREFIX@/include
+@SYS_AR@ ru @SYS_PREFIX@/lib/libmosquitto.a *.o
+@SYS_RANLIB@ @SYS_PREFIX@/lib/libmosquitto.a 
+cp mosquitto.h @SYS_PREFIX@/include
+
+if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
+echo "==> Building tools..."
+# clients
+cd ../client
+@SYS_CC@ -DVERSION="\"${VERSION}\"" -DTIMESTAMP="\"${TIMESTAMP}\"" \
+  $options -o @SYS_PREFIX@/bin/mosquitto_pub pub_client.c -I. -I.. -I../lib \
+  -I@SYS_PREFIX@/include  -L@SYS_PREFIX@/lib  -lmosquitto -lssl -lcrypto -lm
+@SYS_CC@ -DVERSION="\"${VERSION}\"" -DTIMESTAMP="\"${TIMESTAMP}\"" \
+  $options -o @SYS_PREFIX@/bin/mosquitto_sub sub_client.c -I. -I.. -I../lib \
+  -I@SYS_PREFIX@/include  -L@SYS_PREFIX@/lib  -lmosquitto -lssl -lcrypto -lm
+# broker
+# note: this broker build is not currently kosher, included for completeness
+cd ../src
+mv mosquitto_passwd.c mosquitto_passwd.c.tmp
+@SYS_CC@ -DVERSION="\"${VERSION}\"" -DTIMESTAMP="\"${TIMESTAMP}\"" \
+  $options -o @SYS_PREFIX@/bin/mosquitto *.c \
+  -DWITH_BROKER -DWITH_SYS_TREE -DWITH_PERSISTENCE -DWITH_BRIDGE -DWITH_THREADING \
+  -I. -I.. -I../lib \
+  -I@SYS_PREFIX@/include  -L@SYS_PREFIX@/lib  -lmosquitto -lssl -lcrypto -lm
+mv mosquitto_passwd.c.tmp mosquitto_passwd.c
+@SYS_CC@ -DVERSION="\"${VERSION}\"" -DTIMESTAMP="\"${TIMESTAMP}\"" \
+  $options -o @SYS_PREFIX@/bin/mosquitto_passwd mosquitto_passwd.c  -I. -I.. -I../lib \
+  -I@SYS_PREFIX@/include  -L@SYS_PREFIX@/lib -lssl -lcrypto -lm
+fi
+
+echo "==> Cleaning up..."
+cd "$here"
+rm -rf $tmpdir
+
+echo "==> All done."
+
