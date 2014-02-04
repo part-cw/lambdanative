@@ -1,0 +1,73 @@
+--- lib/mosquitto.h	2013-12-02 15:03:39.000000000 -0800
++++ lib/mosquitto.h	2014-02-04 15:06:42.000000000 -0800
+@@ -41,15 +41,7 @@
+ extern "C" {
+ #endif
+ 
+-#if defined(WIN32) && !defined(WITH_BROKER)
+-#	ifdef libmosquitto_EXPORTS
+-#		define libmosq_EXPORT  __declspec(dllexport)
+-#	else
+-#		define libmosq_EXPORT  __declspec(dllimport)
+-#	endif
+-#else
+-#	define libmosq_EXPORT
+-#endif
++#define libmosq_EXPORT
+ 
+ #ifdef WIN32
+ #	ifndef __cplusplus
+--- lib/net_mosq.c	2013-12-02 15:03:39.000000000 -0800
++++ lib/net_mosq.c	2014-02-04 15:10:38.000000000 -0800
+@@ -226,7 +226,7 @@
+ 	int opt;
+ #endif
+ #ifdef WIN32
+-	uint32_t val = 1;
++	u_long val = 1;
+ #endif
+ 
+ 	*sock = INVALID_SOCKET;
+--- lib/time_mosq.c	2013-12-02 15:03:39.000000000 -0800
++++ lib/time_mosq.c	2014-02-04 15:09:44.000000000 -0800
+@@ -43,6 +43,7 @@
+ #include "mosquitto.h"
+ #include "time_mosq.h"
+ 
++/*
+ #ifdef WIN32
+ static bool tick64 = false;
+ 
+@@ -61,15 +62,15 @@
+ 	}
+ }
+ #endif
++*/
+ 
+ time_t mosquitto_time(void)
+ {
+ #ifdef WIN32
+-	if(tick64){
+-		return GetTickCount64()/1000;
+-	}else{
+-		return GetTickCount()/1000; /* FIXME - need to deal with overflow. */
+-	}
++  static time_t prv=0, ofs=0;
++  time_t cur = GetTickCount()/1000;
++  if (cur<prv) ofs+=prv; prv=cur;
++  return cur+ofs;
+ #elif _POSIX_TIMERS>0 && defined(_POSIX_MONOTONIC_CLOCK)
+ 	struct timespec tp;
+ 
+--- lib/util_mosq.c	2013-12-02 15:03:39.000000000 -0800
++++ lib/util_mosq.c	2014-02-04 14:28:53.000000000 -0800
+@@ -32,6 +32,9 @@
+ 
+ #ifdef WIN32
+ #include <winsock2.h>
++
++char* strtok_r( char *, const char *, char **);
++
+ #endif
+ 
+ 
