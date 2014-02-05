@@ -80,7 +80,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (unit-test-run n)))
 
 (define (unit-test-all) 
-  (table-for-each (lambda (k v)
-     (unit-test k)) unit-test:table))
+  (let ((l (list))
+        (ret #t))
+    (table-for-each (lambda (k v)
+      (if (not (unit-test k)) (begin 
+        (set! ret #f) 
+        (set! l (append l (list k)))
+      ))
+    ) unit-test:table)
+    (if ret ret l)
+  ))
 
 ;; eof
