@@ -81,7 +81,7 @@ struct mosquitto *_mqtt_new(char *idstr, int clean_session)
 {
   struct mosquitto *mosq = mosquitto_new(idstr,clean_session,0);
   if (mosq) {
-    mosquitto_log_callback_set(mosq,_mosq_log_callback);
+//    mosquitto_log_callback_set(mosq,_mosq_log_callback);
     mosquitto_message_callback_set(mosq,_mosq_msg_callback);
   } else {
    log_c("mosquitto: FATAL: mosquitto_new() failed");
@@ -126,6 +126,24 @@ end-of-c-declare
 
 (define mosq:lut (make-table))
 
+;; prefix serialized data with magic "LN<1>"
+(define mosq:magic (u8vector 76 78 1))
+
+(define (mosq:encode msg)
+  (mqtt:log 4 "mosq:encode " msg)
+  (cond ((string? msg) (string->u8vector msg))
+        ((number? msg) (string->u8vector (number->string msg)))
+        (else (u8vector-append mosq:magic (object->u8vector msg)))))
+
+(define (mosq:decode msg)
+  (mqtt:log 4 "mosq:decode " msg)
+  (let* ((msglen (u8vector-length msg))
+         (maglen (u8vector-length mosq:magic)))
+    (if (and (> msglen maglen) (equal? (subu8vector msg 0 maglen) mosq:magic))
+      (u8vector->object (subu8vector msg maglen msglen))
+        (let ((num (string->number (u8vector->string msg))))
+          (if num num (u8vector->string msg))))))
+
 (define mosq:copypayload (c-lambda (scheme-object) void 
   "_mosq_copy_payload(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)));"))
 
@@ -137,7 +155,7 @@ end-of-c-declare
       (let ((u8data (make-u8vector len)))
         (mosq:copypayload u8data)
         (mqtt:log 3 "dispatch topic: " topic " length=" len)
-        (h topic u8data)))))
+        (h topic (mosq:decode u8data))))))
 
 (c-initialize "mosquitto_lib_init();")
 
@@ -161,11 +179,8 @@ end-of-c-declare
 
 (define (mosq:publish mosq topic msg qos retain)
   (mqtt:log 3 "mosq:publish " mosq " " topic " " msg " " qos " " retain)
-  (let* ((u8msg (cond  
-         ((u8vector? msg) msg)
-         ((string? msg) (string->u8vector msg))
-         (else (object->u8vector msg))))
-       (result ((c-lambda ((pointer void) char-string int scheme-object int int) int
+  (let* ((u8msg (mosq:encode msg))
+         (result ((c-lambda ((pointer void) char-string int scheme-object int int) int
     "___result=mosquitto_publish(___arg1, 0, ___arg2, ___arg3,
       ___CAST(void*,___BODY_AS(___arg4,___tSUBTYPED)), ___arg5, ___arg6);")
      mosq topic (u8vector-length u8msg) u8msg qos retain)))
@@ -176,11 +191,8 @@ end-of-c-declare
 
 (define (mosq:will_set mosq topic msg qos retain)
   (mqtt:log 3 "mosq:will_set " mosq " " topic " " msg " " qos " " retain)
-  (let* ((u8msg (cond
-         ((u8vector? msg) msg)
-         ((string? msg) (string->u8vector msg))
-         (else (object->u8vector msg))))
-       (result ((c-lambda ((pointer void) char-string int scheme-object int int) int
+  (let* ((u8msg (mosq:encode msg))
+         (result ((c-lambda ((pointer void) char-string int scheme-object int int) int
     "___result=mosquitto_will_set(___arg1, ___arg2, ___arg3,
       ___CAST(void*,___BODY_AS(___arg4,___tSUBTYPED)), ___arg5, ___arg6);")
      mosq topic (u8vector-length u8msg) u8msg qos retain)))
@@ -211,7 +223,7 @@ end-of-c-declare
     result))
 
 (define (mosq:loop mosq timeout max_packets)
-  (mqtt:log 3 "mosq:loop " mosq " " timeout " " max_packets)
+  (mqtt:log 6 "mosq:loop " mosq " " timeout " " max_packets)
   (let ((result ((c-lambda ((pointer void) int int) int "mosquitto_loop") 
     mosq timeout max_packets)))
     (if (not (fx= result MOSQ_ERR_SUCCESS))
