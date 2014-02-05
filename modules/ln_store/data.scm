@@ -36,6 +36,12 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
+;; hooks
+(define (store-set-extern-handler! store proc)
+  (store:setlocal! store "extern:set!" proc))
+(define (store-clear-extern-handler! store proc)
+  (store:setlocal! store "extern:clear!" proc))
+
 ;; thread-safe access to data stores
 (define store:mutex (make-mutex))
 (define (store:grab!) (mutex-lock! store:mutex))
@@ -60,6 +66,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (loop2 (cdr is))
           )
         )))
+    (if (store-ref store "extern:clear!" #f)
+      (map (lambda (id) ((store-ref store "extern:clear!" #f) store id)) ids))
   ))
 
 (define (store:clearlocal! store ids)
@@ -124,17 +132,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (store-set! store id val . category)
   (apply
-    (if (store-ref store "use_fifo_export" #f) store:setfifo! store:setlocal!)
-    (append (list store id val) category)
-  ))
+    (cond
+      ((store-ref store "use_fifo_export" #f) store:setfifo!)
+      (else store:setlocal!))
+    (append (list store id val) category))
+  (if (store-ref store "extern:set!" #f)
+    (apply (store-ref store "extern:set!" #f) (append (list store id val) category)))
+)
 
 (define (store-setnew! store id val . c)
   (let ((oldval (store-ref store id #f))
         (cat (if (fx= (length c) 1) (car c) #f)))
     (if (not (equal? oldval val))
       (store-set! store id val cat) #f)))
-
-
 
 ;; note that this doesn't clear the store, just the category field
 (define (store-clearcat! store category)
