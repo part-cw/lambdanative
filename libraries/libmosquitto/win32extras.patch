@@ -237,7 +237,6 @@ diff -Naur lib/strtok_r.c lib/strtok_r.c
 +#define strcasecmp strcmpi
 +#define strerror_r(e, b, l) strerror_s(b, l, e)
 +#define InetPton inet_pton
-+#endif
 +
 +#ifndef AI_ADDRCONFIG
 +#define AI_ADDRCONFIG 0
@@ -249,5 +248,6 @@ diff -Naur lib/strtok_r.c lib/strtok_r.c
 +
 +#ifndef EPROTO
 +#define EPROTO    134
++#endif
 +#endif
 +
