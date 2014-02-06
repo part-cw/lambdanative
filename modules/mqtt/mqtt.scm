@@ -352,7 +352,7 @@ end-of-c-declare
   (let ((connected (table-ref t 'connected #f)))
     (let ((subs (table-ref t 'subscriptions '()))) 
       (if (not (assoc topic subs)) (table-set! t 'subscriptions (append subs (list (list topic qos))))))
-    (if connected (fx= (mosq:subscribe (table-ref t 'mosq #f) topic qos) MOSQ_ERR_SUCCESS)) #f))
+    (if connected (fx= (mosq:subscribe (table-ref t 'mosq #f) topic qos) MOSQ_ERR_SUCCESS) #f)))
 
 (define (mqtt-unsubscribe t topic)
   (let ((connected (table-ref t 'connected #f)))
@@ -367,6 +367,8 @@ end-of-c-declare
 
 (define (mqtt-disconnect t)
   (let ((connected (table-ref t 'connected #f)))
-    (if connected (mosq:disconnect (table-ref t 'mosq #f)))))
+    (if connected (if (fx= (mosq:disconnect (table-ref t 'mosq #f)) MOSQ_ERR_SUCCESS)
+                    (begin (table-set! t 'mosq #f) (table-set! t 'connected #f) #t)
+                    #f) #f)))
 
 ;; eof
