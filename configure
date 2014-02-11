@@ -129,7 +129,7 @@ i686-pc-mingw32*)
 *-linux-gnu*)
   SYS_HOSTPLATFORM="linux"
 ;;
-i386-apple-darwin*)
+i386-apple-darwin*|x86_64-apple-darwin*)
   SYS_HOSTPLATFORM="macosx"
 ;;
 i386-unknown-openbsd*)
@@ -139,7 +139,7 @@ i386-unknown-netbsd*)
   SYS_HOSTPLATFORM="netbsd"
 ;;
 *)
-  echo "ERROR: this host platform is not supported."
+  echo "ERROR: this host platform is not supported [$hostsys]"
   exit 1
 ;;
 esac
