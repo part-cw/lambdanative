@@ -165,7 +165,7 @@ end-of-c-declare
 
 (define (mosq:destroy mosq)
   (mqtt:log 2 "mosq:destroy")
-  ((c-lambda ((pointer void)) void "mosquitto_destroy")))
+  ((c-lambda ((pointer void)) void "mosquitto_destroy") mosq))
 
 (define (mosq:connect mosq host port keepalive)
   (mqtt:log 2 "mosq:connect " mosq " " host " " port " " keepalive)
@@ -284,30 +284,35 @@ end-of-c-declare
 ;; ------------------------------
 ;; simple mqtt interface with automatic reconnect, re-subscription and optional TLS PSK encryption
 
-(define (mqtt-setup . args)
-  (let ((t (make-table)))
-    (let loop ((defs '(
-       (clean-session 0)
-       (host "127.0.0.1") 
-       (port 1883) 
-       (keepalive 10) 
-       (timeout 10) 
-       (max-packets 100) 
-       (handler #f)
-       (subscriptions ())
-       (will #f) ;;  ("topic" "msg" qos retain)
-       (username #f)
-       (password #f)
-       (tls-version "tlsv1.2")
-       (tls-insecure #f)
-       (psk #f) (psk_identity #f)
-       (connected #f)
-       (id #f)
-       (mosq #f) 
-      )))
-       (if (> (length defs) 0) (begin
-         (apply table-set! (append (list t) (car defs)))
-         (loop (cdr defs)))))
+(define (mqtt-reset t . args)
+  (mqtt:log 2 "mqtt-reset " t  " " args)
+  (let loop ((defs '(
+     (clean-session 0)
+     (host "127.0.0.1") 
+     (port 1883) 
+     (keepalive 10) 
+     (timeout 10) 
+     (max-packets 100) 
+     (handler #f)
+     (subscriptions ())
+     (will #f) ;;  ("topic" "msg" qos retain)
+     (username #f)
+     (password #f)
+     (tls-version "tlsv1.2")
+     (tls-insecure #f)
+     (psk #f) (psk_identity #f)
+     (connected #f)
+     (id #f)
+     (mosq #f) 
+     (subscribe ())
+     (publish ())
+     (local-namespace #f)
+     (local-variables '())
+     (local-validator #f)
+    )))
+    (if (> (length defs) 0) (begin
+      (apply table-set! (append (list t) (car defs)))
+      (loop (cdr defs)))))
     (let loop ((as args))
       (if (> (length as) 1) (begin
        (table-set! t (car as) (cadr as))
@@ -317,7 +322,8 @@ end-of-c-declare
          (let* ((tmpid (string-append "LN/" (ipaddr->string (host-ipaddr)) "-" (number->string (mqtt:pid))))
                 (tmplen (string-length tmpid)))
            (table-set! t 'id (substring tmpid 0 (min tmplen 23))))))
-    (let ((mosq (mosq:new (table-ref t 'id #f) (table-ref t 'clean-session 0))))
+    (let* ((old_mosq (table-ref t 'mosq #f))
+           (mosq (if old_mosq old_mosq (mosq:new (table-ref t 'id #f) (table-ref t 'clean-session 0)))))
       (table-set! t 'mosq  mosq)
       (table-set! mosq:lut mosq t)
       (thread-start! (make-safe-thread (lambda () (let loop ()
@@ -346,15 +352,23 @@ end-of-c-declare
           (thread-sleep! (if connected 0.01 1.0))
           (loop)))
        )))
-     ) t))
+      (if old_mosq (mosq:disconnect mosq)) ;; drop old subscriptions
+    ) t)
+
+(define (make-mqtt . args)
+  (mqtt:log 2 "make-mqtt " args)
+  (let ((t (make-table)))
+    (apply mqtt-reset (append (list t) args))))
 
 (define (mqtt-subscribe t topic qos)
+  (mqtt:log 2 "mqtt-subscribe " t " " topic " " qos)
   (let ((connected (table-ref t 'connected #f)))
     (let ((subs (table-ref t 'subscriptions '()))) 
       (if (not (assoc topic subs)) (table-set! t 'subscriptions (append subs (list (list topic qos))))))
     (if connected (fx= (mosq:subscribe (table-ref t 'mosq #f) topic qos) MOSQ_ERR_SUCCESS) #f)))
 
 (define (mqtt-unsubscribe t topic)
+  (mqtt:log 2 "mqtt-unsubscribe " t " " topic)
   (let ((connected (table-ref t 'connected #f)))
     (let loop ((subs (table-ref t 'subscriptions '()))(nsubs '()))
       (if (= (length subs) 0) (table-set! t 'subscriptions nsubs)
@@ -362,13 +376,22 @@ end-of-c-declare
     (if connected (fx= (mosq:unsubscribe (table-ref t 'mosq #f) topic) MOSQ_ERR_SUCCESS) #f)))
 
 (define (mqtt-publish t topic msg qos retain)
+  (mqtt:log 2 "mqtt-publish " t " " topic " " msg " " qos " " retain)
   (let ((connected (table-ref t 'connected #f)))
     (if connected (fx= (mosq:publish (table-ref t 'mosq #f) topic msg qos retain) MOSQ_ERR_SUCCESS) #f)))
 
 (define (mqtt-disconnect t)
+  (mqtt:log 2 "mqtt-disconnect")
   (let ((connected (table-ref t 'connected #f)))
     (if connected (if (fx= (mosq:disconnect (table-ref t 'mosq #f)) MOSQ_ERR_SUCCESS)
-                    (begin (table-set! t 'mosq #f) (table-set! t 'connected #f) #t)
+                    (begin (table-set! t 'connected #f) #t)
                     #f) #f)))
+
+(define (mqtt-destroy t)
+  (let ((mosq (table-ref t 'mosq #f)))
+    (table-set! t 'mosq #f)
+    (if mosq (mosq:destroy mosq))))
+
+(define (mqtt-connected? t) (table-ref t 'connected #f))
 
 ;; eof
