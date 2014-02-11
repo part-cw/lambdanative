@@ -326,7 +326,7 @@ end-of-c-declare
            (mosq (if old_mosq old_mosq (mosq:new (table-ref t 'id #f) (table-ref t 'clean-session 0)))))
       (table-set! t 'mosq  mosq)
       (table-set! mosq:lut mosq t)
-      (thread-start! (make-safe-thread (lambda () (let loop ()
+      (table-set! t 'thread (make-safe-thread (lambda () (let loop ()
         (let ((mosq (table-ref t 'mosq #f))
               (connected (table-ref t 'connected #f)))
           (if mosq (table-set! t 'connected (fx= (if connected 
@@ -349,9 +349,8 @@ end-of-c-declare
                      (if (> (length subs) 0) (begin
                        (apply mosq:subscribe (append (list mosq) (car subs))) (loop2 (cdr subs)))))) 
                 res))) MOSQ_ERR_SUCCESS)))
-          (thread-sleep! (if connected 0.01 1.0))
-          (loop)))
-       )))
+          (if (thread-receive (if connected 0.01 1.0) #t) (loop)))))))
+      (thread-start! (table-ref t 'thread #f))
       (if old_mosq (mosq:disconnect mosq)) ;; drop old subscriptions
     ) t)
 
@@ -380,18 +379,17 @@ end-of-c-declare
   (let ((connected (table-ref t 'connected #f)))
     (if connected (fx= (mosq:publish (table-ref t 'mosq #f) topic msg qos retain) MOSQ_ERR_SUCCESS) #f)))
 
-(define (mqtt-disconnect t)
-  (mqtt:log 2 "mqtt-disconnect")
-  (let ((connected (table-ref t 'connected #f)))
-    (if connected (if (fx= (mosq:disconnect (table-ref t 'mosq #f)) MOSQ_ERR_SUCCESS)
-                    (begin (table-set! t 'connected #f) #t)
-                    #f) #f)))
-
 (define (mqtt-destroy t)
-  (let ((mosq (table-ref t 'mosq #f)))
+  (mqtt:log 2 "mqtt-destroy")
+  (let ((mosq (table-ref t 'mosq #f))
+        (thread (table-ref t 'thread #f)))
+    (if (thread? thread) (thread-send thread #f))
     (table-set! t 'mosq #f)
-    (if mosq (mosq:destroy mosq))))
+    (if mosq (mosq:destroy mosq)
+    (table-set! t 'connected #f))))
 
-(define (mqtt-connected? t) (table-ref t 'connected #f))
+(define (mqtt-connected? t) 
+  (mqtt:log 2 "mqtt-connected?")
+  (table-ref t 'connected #f))
 
 ;; eof
