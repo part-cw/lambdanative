@@ -886,7 +886,7 @@ make_setup()
   SYS_GSC=$SYS_HOSTPREFIX/bin/gsc
   SYS_DEBUGFLAG=
   if [ "X$SYS_MODE" = "Xdebug" ]; then
-    SYS_DEBUGFLAG="-g"
+    SYS_DEBUGFLAG="-g -O0"
   fi
   mkdir -p $SYS_PREFIX/bin
   mkdir -p $SYS_PREFIX/lib
@@ -923,7 +923,11 @@ make_setup()
   if [ "$SYS_HOSTPLATFORM" = "win32" ]; then
     SYS_HOSTEXEFIX=".exe"
   fi
-  SYS_ARCH=`$SYS_CC -dumpmachine`
+  SYS_ARCH=`$SYS_CC -dumpmachine 2> /dev/null`
+  if [ "X$SYS_ARCH" = "X" ]; then
+    # qcc does not support the dumpmachine option
+    SYS_ARCH=arm-unknown-nto-qnx6.5.0eabi
+  fi
   # Adding BUILD info requires rebuilding of config module
   touch modules/config/config.scm
   # build the subtool
