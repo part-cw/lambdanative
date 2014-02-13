@@ -12,10 +12,12 @@
 # Name of author which is used for signing. Must match the developer name of your development certificate. 
 <author>@SYS_PROFILE@</author>
 # Unique author ID assigned by signing authority. Required if using debug tokens. 
-# <authorId>ABC1234YjsnUk235h</authorId> -->
+# <authorId></authorId> -->
 <initialWindow>
 <systemChrome>none</systemChrome>
 <transparent>false</transparent>
+<aspectRatio>portrait</aspectRatio>
+<autoOrients>false</autoOrients>
 </initialWindow>
 # The category where the application appears. Either core.games or core.media
 #<category>core.games</category>

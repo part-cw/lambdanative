@@ -42,7 +42,7 @@ source "$script"
 TOOLCHAIN=`wildcard_dir ${BB10SDK}/host_${bbapi}_*/darwin/x86`
 assertfile "$TOOLCHAIN" "Blackberry 10 host tool chain not found"
 CROSS=`echo $TOOLCHAIN/usr/bin/arm-*-qnx*eabi-`
-SYS_CC="qcc -Vgcc_ntoarmv7le $SYS_DEBUGFLAG -DBB10 -DQNX"
+SYS_CC="qcc -Vgcc_ntoarmv7le $SYS_DEBUGFLAG -DBB10 -DQNX -DNO_SYSLOG"
 # ix86 setup (to target simulator)
 # CROSS=`echo $TOOLCHAIN/usr/bin/i486-*-qnx*-`
 # SYS_CC="qcc -Vgcc_ntox86 $SYS_DEBUGFLAG -DBB10 -DQNX"

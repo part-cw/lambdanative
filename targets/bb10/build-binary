@@ -73,7 +73,7 @@ else
   if [ `is_gui_app` = yes ]; then
     veval "$SYS_CC -I$SYS_PREFIX/include \
       bootstrap.c -o $tgt \
-      -L$SYS_PREFIX/lib -lpayload -lglview -lGLESv1_CL -lbps -lscreen -lsocket -lasound -lm"
+      -L$SYS_PREFIX/lib -lpayload -lEGL -lGLESv1_CL -lbps -lscreen -lsocket -lasound -lm"
   else
     veval "$SYS_CC -I$SYS_PREFIX/include \
       -DUSECONSOLE main.c -o $tgt \
@@ -108,16 +108,26 @@ cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-114.png" icon.png
 
 echo " => preparing package.."
 fnlfile=$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-bb10.bar
-if [ $SYS_MODE = release ]; then
+# for now just build in release, to avoid the debug token nightmare
+#if [ $SYS_MODE = release ]; then
+if [ $SYS_MODE ]; then
   veval "blackberry-nativepackager -package $fnlfile bar-descriptor.xml"
   asserterror $?
   echo " => signing package.."
   veval "blackberry-signer -storepass $SYS_BB10PW $fnlfile"
   asserterror $?
-  # @@@@@ verify here
+  veval "blackberry-signer -verbose -verify \"$fnlfile\""
+  asserterror $?
 else
-  token="$SYS_BB10DEBUGTOKEN"
-  assertfile "$token" "No debug token found, please create and put path in PROFILE"
+  token=$SYS_PREFIX/debugtoken.bar
+  if [ ! -f "$token" ]; then
+    echo " => generating debug token.."
+    veval "blackberry-debugtokenrequest -storepass $SYS_BB10PW -devicepin $SYS_BB10DEVICEPIN $token"
+    asserterror $?
+  fi
+  assertfile "$token" "Failed to find debug token"
+  veval "blackberry-debugtokenrequest -verify \"$token\""
+  asserterror $?
   veval "blackberry-nativepackager -package $fnlfile bar-descriptor.xml -devMode -debugToken \"$token\""
   asserterror $?
 fi

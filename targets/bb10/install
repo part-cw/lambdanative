@@ -39,7 +39,11 @@ echo "==> attempting to install bb10 application $SYS_APPNAME.."
 pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-bb10.bar"
 assertfile $pkgfile
 if [ ! "X$SYS_BB10DEVICEIPADDR" = "X" ]; then
-  blackberry-deploy -installApp -launchApp $SYS_BB10DEVICEIPADDR -password $SYS_BB10DEVICEPW $pkgfile
+#  token is not needed to bars build for release
+#  token=$SYS_PREFIX/debugtoken.bar
+#  assertfile "$token"
+#  veval "blackberry-deploy -installDebugToken \"$token\" -device $SYS_BB10DEVICEIPADDR -password $SYS_BB10DEVICEPW"
+  veval "blackberry-deploy -installApp -launchApp $SYS_BB10DEVICEIPADDR -password $SYS_BB10DEVICEPW $pkgfile"
 fi
 
 #eof

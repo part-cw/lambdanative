@@ -1,6 +1,6 @@
 /*
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2014, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -36,6 +36,8 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <assert.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,20 +49,148 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <bps/bps.h>
 #include <bps/event.h>
 #include <bps/virtualkeyboard.h>
-
+#include <bps/navigator.h>
 #include <bps/sensor.h>
 #include <bps/geolocation.h>
 
 #include <bps/audiomixer.h>
 #include <bps/audiodevice.h>
 
+#include <EGL/egl.h>
 #include <GLES/gl.h>
-#include <glview/glview.h>
 
 #include <screen/screen.h>
 #include <sys/keycodes.h>
 
 #include <CONFIG.h>
+
+#ifdef DEBUG
+
+FILE *debug_fd=0;
+#define DMSG(fmt...) (fprintf(fd,"DEBUG: " fmt),fprintf(fd,"\n"),fflush(fd))
+#define EMSG(fmt...) (fprintf(fd,"ERROR: " fmt),fprintf(fd,"\n"),fflush(fd))
+#define SMSG(fmt...) (fprintf(fd,"STATUS: " fmt),fprintf(fd,"\n"),fflush(fd))
+
+#else
+
+#define DMSG(fmt...)
+#define EMSG(fmt...)
+#define SMSG(fmt...)
+
+#endif
+
+// --------------
+// EGL routines
+
+EGLDisplay egl_disp;
+EGLSurface egl_surf;
+
+static EGLConfig egl_conf;
+static EGLContext egl_ctx;
+
+static screen_context_t screen_ctx;
+static screen_window_t screen_win;
+static screen_display_t screen_disp;
+static int nbuffers = 2;
+
+void loader_egl_terminate() {
+  SMSG("loader_egl_terminate");
+  if (egl_disp != EGL_NO_DISPLAY) {
+    eglMakeCurrent(egl_disp, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    if (egl_surf != EGL_NO_SURFACE) {
+      eglDestroySurface(egl_disp, egl_surf);
+      egl_surf = EGL_NO_SURFACE;
+    }
+    if (egl_ctx != EGL_NO_CONTEXT) {
+      eglDestroyContext(egl_disp, egl_ctx);
+      egl_ctx = EGL_NO_CONTEXT;
+    }
+    if (screen_win != NULL) {
+      screen_destroy_window(screen_win);
+      screen_win = NULL;
+    }
+    eglTerminate(egl_disp);
+    egl_disp = EGL_NO_DISPLAY;
+  }
+  eglReleaseThread();
+}
+
+int loader_egl_init(screen_context_t ctx) {
+  SMSG("loader_egl_init");
+  int usage;
+  int format = SCREEN_FORMAT_RGBX8888;
+  EGLint interval = 1;
+  int rc, num_configs;
+  EGLint attrib_list[]= { EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8, EGL_SURFACE_TYPE, EGL_WINDOW_BIT, EGL_RENDERABLE_TYPE, 0, EGL_NONE};
+  usage = SCREEN_USAGE_OPENGL_ES1 | SCREEN_USAGE_ROTATION;
+  attrib_list[9] = EGL_OPENGL_ES_BIT;
+  screen_ctx = ctx;
+  egl_disp = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  if (egl_disp == EGL_NO_DISPLAY) { EMSG("eglGetDisplay() failed"); loader_egl_terminate(); return EXIT_FAILURE; } 
+  rc = eglInitialize(egl_disp, NULL, NULL);
+  if (rc != EGL_TRUE) { EMSG("eglInitialize() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  rc = eglBindAPI(EGL_OPENGL_ES_API);
+  if (rc != EGL_TRUE) { EMSG("eglBindApi() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  if (!eglChooseConfig(egl_disp, attrib_list, &egl_conf, 1, &num_configs)) { EMSG("eglChooseConfig() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  egl_ctx = eglCreateContext(egl_disp, egl_conf, EGL_NO_CONTEXT, NULL);
+  if (egl_ctx == EGL_NO_CONTEXT) { EMSG("eglCreateContext() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  rc = screen_create_window(&screen_win, screen_ctx);
+  if (rc) { EMSG("screen_create_window() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  rc = screen_set_window_property_iv(screen_win, SCREEN_PROPERTY_FORMAT, &format);
+  if (rc) { EMSG("screen_set_window_property_iv() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  rc = screen_set_window_property_iv(screen_win, SCREEN_PROPERTY_USAGE, &usage);
+  if (rc) { EMSG("screen_set_window_property_iv() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  rc = screen_get_window_property_pv(screen_win, SCREEN_PROPERTY_DISPLAY, (void **)&screen_disp);
+  if (rc) { EMSG("screen_get_window_property_pv() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  int screen_resolution[2];
+  rc = screen_get_display_property_iv(screen_disp, SCREEN_PROPERTY_SIZE, screen_resolution);
+  if (rc) { EMSG("screen_get_display_property_iv() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  int angle = atoi(getenv("ORIENTATION"));
+  screen_display_mode_t screen_mode;
+  rc = screen_get_display_property_pv(screen_disp, SCREEN_PROPERTY_MODE, (void**)&screen_mode);
+  if (rc) { EMSG("screen_get_display_property_pv() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  int size[2];
+  rc = screen_get_window_property_iv(screen_win, SCREEN_PROPERTY_BUFFER_SIZE, size);
+  if (rc) { EMSG("screen_get_window_property_iv() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  int buffer_size[2] = {size[0], size[1]};
+  if ((angle == 0) || (angle == 180)) {
+    if (((screen_mode.width > screen_mode.height) && (size[0] < size[1])) ||
+      ((screen_mode.width < screen_mode.height) && (size[0] > size[1]))) {
+        buffer_size[1] = size[0];
+        buffer_size[0] = size[1];
+    }
+  } else if ((angle == 90) || (angle == 270)){
+    if (((screen_mode.width > screen_mode.height) && (size[0] > size[1])) ||
+      ((screen_mode.width < screen_mode.height && size[0] < size[1]))) {
+        buffer_size[1] = size[0];
+        buffer_size[0] = size[1];
+    }
+  } else {
+    EMSG("unexpected orientation angle");
+    loader_egl_terminate();
+    return EXIT_FAILURE;
+  }
+  rc = screen_set_window_property_iv(screen_win, SCREEN_PROPERTY_BUFFER_SIZE, buffer_size);
+  if (rc) { EMSG("screen_set_window_property_iv() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  rc = screen_set_window_property_iv(screen_win, SCREEN_PROPERTY_ROTATION, &angle);
+  if (rc) { EMSG("screen_set_window_property_iv failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  rc = screen_create_window_buffers(screen_win, nbuffers);
+  if (rc) { EMSG("screen_create_window_buffers failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  egl_surf = eglCreateWindowSurface(egl_disp, egl_conf, screen_win, NULL);
+  if (egl_surf == EGL_NO_SURFACE) { EMSG("eglCreateWindowSurface() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  rc = eglMakeCurrent(egl_disp, egl_surf, egl_surf, egl_ctx);
+  if (rc != EGL_TRUE) { EMSG("eglMakeCurrent() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  rc = eglSwapInterval(egl_disp, interval);
+  if (rc != EGL_TRUE) { EMSG("eglSwapInterval() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
+  return EXIT_SUCCESS;
+}
+
+void loader_egl_swap() {
+ int rc = eglSwapBuffers(egl_disp, egl_surf);
+ if (rc != EGL_TRUE) { EMSG("eglSwapBuffers() failed"); }
+}
+
+// --------------
 
 static int screen_height, screen_width;
 
@@ -85,7 +215,7 @@ double qnx_location_getaltitude() { return location_altitude; }
 double qnx_location_getaccuracy() { return location_accuracy; }
 double qnx_location_gettimestamp() { return location_timestamp; }
 
-#ifdef USE_AUDIO
+// -------------------
 
 #include <sys/asoundlib.h>
 #include <bps/audiomixer.h>
@@ -93,67 +223,219 @@ double qnx_location_gettimestamp() { return location_timestamp; }
 
 static int audio_on=0;
 
-static int card = -1;
-static snd_pcm_t *pcm_handle;
-static snd_pcm_info_t info;
-static snd_pcm_channel_params_t pp;
-static snd_pcm_channel_setup_t setup;
-static snd_pcm_channel_info_t pi;
+#ifdef USE_AUDIO
 
+static snd_pcm_t *pcm_handle;
 static snd_mixer_t *mixer_handle;
-static snd_mixer_group_t group;
 
 static int audio_bufsize=0;
 static unsigned char *audio_buf=0;
 
-static void audio_setup(const char *dev_name)
+static void audio_play_setup(const char *dev_name)
 {
+  static int card = -1;
+  snd_pcm_channel_params_t pp;
+  snd_pcm_channel_setup_t setup;
+  snd_pcm_channel_info_t pi;
+  snd_mixer_group_t group;
+  SMSG("audio_setup");
   int fragsize = -1;
   int num_frags = -1;
   char *defdev_name="pcmPreferred";
-  if (snd_pcm_open_name(&pcm_handle, (dev_name?dev_name:defdev_name), SND_PCM_OPEN_PLAYBACK)<0) return;
-  if (snd_pcm_info(pcm_handle, &info) < 0) goto setup_failure; 
-  card = info.card;
+  if  (snd_pcm_open_preferred(&pcm_handle, &card, 0, SND_PCM_OPEN_PLAYBACK)<0) { EMSG("snd_pcm_open_preferred() failed"); return; }
+//  snd_pcm_plugin_set_disable(pcm_handle, PLUGIN_DISABLE_MMAP);
+//  snd_pcm_plugin_set_enable(pcm_handle, PLUGIN_ROUTING);
   memset(&pi, 0, sizeof(pi));
   pi.channel = SND_PCM_CHANNEL_PLAYBACK;
-  if (snd_pcm_plugin_info(pcm_handle, &pi)< 0) goto setup_failure; 
+  if (snd_pcm_plugin_info(pcm_handle, &pi)< 0) { EMSG("snd_pcm_plugin_info() failed"); goto setup_failure; }
   memset(&pp, 0, sizeof(pp));
   pp.mode = SND_PCM_MODE_BLOCK;
   pp.channel = SND_PCM_CHANNEL_PLAYBACK;
   pp.start_mode = SND_PCM_START_FULL;
   pp.stop_mode = SND_PCM_STOP_STOP;
-  pp.buf.block.frag_size = pi.max_fragment_size;
+//  pp.stop_mode = SND_PCM_STOP_ROLLOVER;
+ // pp.buf.block.frag_size = pi.max_fragment_size;
+  pp.buf.block.frag_size = 1024;
   if (fragsize != -1) { pp.buf.block.frag_size = fragsize; }
 //  pp.buf.block.frags_max = num_frags;
-  pp.buf.block.frags_max = 10;
+//  pp.buf.block.frags_max = 10;
+  pp.buf.block.frags_max = 4;
   pp.buf.block.frags_min = 1;
   pp.format.interleave = 1;
   pp.format.rate = 44100;
   pp.format.voices = 2;
   pp.format.format = SND_PCM_SFMT_S16_LE;
   strcpy(pp.sw_mixer_subchn_name, "Wave playback channel");
-  if (snd_pcm_plugin_params(pcm_handle, &pp) < 0) goto setup_failure; 
-  if (snd_pcm_plugin_prepare(pcm_handle, SND_PCM_CHANNEL_PLAYBACK) < 0) goto setup_failure; 
+  if (snd_pcm_plugin_params(pcm_handle, &pp) < 0) { EMSG("snd_pcm_plugin_params() failed"); goto setup_failure; }
+//  if (snd_pcm_plugin_prepare(pcm_handle, SND_PCM_CHANNEL_PLAYBACK) < 0) { EMSG("snd_pcm_plugin_prepare() failed"); goto setup_failure; }
   memset(&setup, 0, sizeof(setup));
   memset(&group, 0, sizeof(group));
   setup.channel = SND_PCM_CHANNEL_PLAYBACK;
   setup.mixer_gid = &group.gid;
-  if (snd_pcm_plugin_setup(pcm_handle, &setup) < 0) goto setup_failure; 
-  if (group.gid.name[0] == 0) goto setup_failure; 
-  if (snd_mixer_open(&mixer_handle, card, setup.mixer_device) < 0) goto setup_failure; 
+  if (snd_pcm_plugin_setup(pcm_handle, &setup) < 0) { EMSG("snd_pcm_plugin_setup() failed"); goto setup_failure; }
+  if (group.gid.name[0] == 0) { EMSG("group.gid.name[0] == 0"); goto setup_failure; }
+  if (snd_mixer_open(&mixer_handle, card, setup.mixer_device) < 0) { EMSG("snd_mixer_open() failed"); goto setup_failure; }
   audio_bufsize=setup.buf.block.frag_size;
+  SMSG("audio_bufsize=%i", audio_bufsize);
   if (audio_buf) free(audio_buf);
   audio_buf=(unsigned char*)malloc(audio_bufsize);
-  audio_on=1;
+  if (snd_pcm_plugin_prepare(pcm_handle, SND_PCM_CHANNEL_PLAYBACK) < 0) { EMSG("snd_pcm_plugin_prepare() failed"); goto setup_failure; }
+  SMSG("audio_setup successful");
   return;
 setup_failure:
   snd_pcm_close(pcm_handle);
 }
 
+#endif // USE_AUDIO
+
+#ifdef USE_RTAUDIO
+
+void rtaudio_start(int s, double v)
+{
+  SMSG("rtaudio_start()");
+}
+
+void rtaudio_stop() {
+  SMSG("rtaudio_start()");
+}
+ 
+void setMicrophoneGain(float inputGain) {
+  SMSG("setMicrophoneGain()");
+}
+
+static snd_pcm_t *pcm_play_handle;
+static snd_pcm_t *pcm_capture_handle;
+
+static unsigned int audio_manager_play_handle;
+static unsigned int audio_manager_capture_handle;
+
+static int play_buffer_size=0;
+static unsigned char *play_buffer=0;
+static int capture_buffer_size=0;
+static unsigned char *capture_buffer=0;
+
+static void audio_play_setup(const char *dev_name)
+{
+  int ret;
+  snd_pcm_channel_setup_t setup;
+  snd_pcm_channel_info_t pi;
+  snd_mixer_group_t group;
+  snd_pcm_channel_params_t pp;
+  static int card = -1;
+  if  (snd_pcm_open_preferred(&pcm_play_handle, &card, 0, SND_PCM_OPEN_PLAYBACK)<0) { EMSG("snd_pcm_open_preferred() failed"); return; }
+  snd_pcm_plugin_set_disable(pcm_play_handle, PLUGIN_DISABLE_MMAP);
+ // snd_pcm_plugin_set_enable(pcm_handle_p, PLUGIN_ROUTING);
+  memset(&pi, 0, sizeof(pi));
+  pi.channel = SND_PCM_CHANNEL_PLAYBACK;
+  if ((ret = snd_pcm_plugin_info(pcm_play_handle, &pi)) < 0) {
+    EMSG("snd_pcm_plugin_info failed: %s", snd_strerror (ret));
+    return;
+  }
+  SMSG("PLAY Minimum Rate = %d",pi.min_rate);
+  SMSG("PLAY Minimum fragment size = %d",pi.min_fragment_size);
+  memset(&pp, 0, sizeof(pp));
+  pp.mode = SND_PCM_MODE_BLOCK;
+  pp.channel = SND_PCM_CHANNEL_PLAYBACK;
+//  pp.stop_mode = SND_PCM_STOP_STOP;
+  pp.stop_mode = SND_PCM_STOP_ROLLOVER;
+  pp.start_mode = SND_PCM_START_FULL;
+  pp.buf.block.frag_size = 512;
+  pp.buf.block.frags_max = 5;
+  pp.buf.block.frags_min = 1;
+  pp.format.interleave = 1;
+  pp.format.rate = 8000;
+  pp.format.voices = 2;
+  pp.format.format = SND_PCM_SFMT_S16_LE;
+  if ((ret = snd_pcm_plugin_params(pcm_play_handle, &pp)) < 0) {
+    EMSG("pb snd_pcm_plugin_params failed: %s", snd_strerror (ret));
+    return;
+  }
+  memset(&setup, 0, sizeof(setup));
+  memset(&group, 0, sizeof(group));
+  setup.channel = SND_PCM_CHANNEL_PLAYBACK;
+  setup.mixer_gid = &group.gid;
+  if ((ret = snd_pcm_plugin_setup(pcm_play_handle, &setup)) < 0) {
+    EMSG("snd_pcm_plugin_setup failed: %s", snd_strerror (ret));
+    return;
+  }
+  SMSG("PLAY frame_size=%d", setup.buf.block.frag_size);
+  SMSG("PLAY Rate=%d", setup.format.rate);
+  play_buffer_size = setup.buf.block.frag_size;
+  if (play_buffer) free(play_buffer);
+  play_buffer=(unsigned char*)malloc(play_buffer_size);
+  if (group.gid.name[0] == 0) {
+    EMSG("FATAL Mixer Pcm Group [%s] Not Set", group.gid.name); return;
+  }
+  if ((ret = snd_pcm_plugin_prepare(pcm_play_handle, SND_PCM_CHANNEL_PLAYBACK)) < 0) {
+    EMSG("snd_pcm_plugin_prepare() failed: %s", snd_strerror (ret));
+  }
+  SMSG("audio_play_setup() complete");
+}
+
+static void audio_capture_setup(const char *dev_name)
+{
+  snd_pcm_channel_setup_t setup;
+  int ret;
+  snd_pcm_channel_info_t pi;
+  snd_mixer_group_t group;
+  snd_pcm_channel_params_t pp;
+  static int card = -1;
+  if  (snd_pcm_open_preferred(&pcm_capture_handle, &card, 0, SND_PCM_OPEN_CAPTURE)<0) { EMSG("snd_pcm_open_preferred() failed"); return; }
+//  snd_pcm_plugin_set_disable(pcm_capture_handle, PLUGIN_DISABLE_MMAP);
+//  snd_pcm_plugin_set_enable(pcm_capture_handle, PLUGIN_ROUTING);
+  memset(&pi, 0, sizeof(pi));
+  pi.channel = SND_PCM_CHANNEL_CAPTURE;
+  if ((ret = snd_pcm_plugin_info(pcm_capture_handle, &pi)) < 0) {
+    EMSG("snd_pcm_plugin_info failed: %s", snd_strerror (ret));
+    return;
+  }
+  SMSG("CAPTURE Minimum Rate = %d",pi.min_rate);
+  SMSG("CAPTURE Minimum fragment size = %d",pi.min_fragment_size);
+  memset(&pp, 0, sizeof(pp));
+  pp.mode = SND_PCM_MODE_BLOCK;
+  pp.channel = SND_PCM_CHANNEL_CAPTURE;
+  pp.start_mode = SND_PCM_START_DATA;  
+//  pp.stop_mode = SND_PCM_STOP_STOP;
+  pp.stop_mode = SND_PCM_STOP_ROLLOVER;
+  pp.buf.block.frag_size = 512; 
+  pp.buf.block.frags_max = 5;
+  pp.buf.block.frags_min = 1;
+  pp.format.interleave = 1;
+  pp.format.rate = 8000;
+  pp.format.voices = 1;
+  pp.format.format = SND_PCM_SFMT_S16_LE;
+  if ((ret = snd_pcm_plugin_params(pcm_capture_handle, &pp)) < 0) {
+    EMSG("snd_pcm_plugin_params() failed: %s", snd_strerror (ret));
+    return;
+  }
+  memset(&setup, 0, sizeof(setup));
+  memset(&group, 0, sizeof(group));
+  setup.channel = SND_PCM_CHANNEL_CAPTURE;
+  setup.mixer_gid = &group.gid;
+  if ((ret = snd_pcm_plugin_setup(pcm_capture_handle, &setup)) < 0) {
+    EMSG("snd_pcm_plugin_setup failed: %s", snd_strerror (ret));
+    return;
+  }
+  SMSG("CAPTURE frame_size=%d", setup.buf.block.frag_size);
+  SMSG("CAPTURE Rate=%d", setup.format.rate);
+  capture_buffer_size = setup.buf.block.frag_size;
+  if (capture_buffer) free(capture_buffer);
+  capture_buffer=(unsigned char*)malloc(capture_buffer_size);
+  if ((ret = snd_pcm_plugin_prepare(pcm_capture_handle, SND_PCM_CHANNEL_CAPTURE)) < 0) {
+    EMSG("snd_pcm_plugin_prepare() failed: %s\n", snd_strerror (ret));
+  }
+  SMSG("audio_capture_setup() complete");
+}
+
+#endif // USE_RTAUDIO
+
+#ifdef USE_AUDIO
+
 void audiofile_nextsample(short*,short*);
 
-void audio_play()
+int audio_play()
 {
+  int res=0;
   fd_set rfds, wfds;
   FD_ZERO (&rfds);
   FD_ZERO (&wfds);
@@ -171,29 +453,128 @@ void audio_play()
     if (written < audio_bufsize) {
       memset(&status, 0, sizeof(status));
       status.channel = SND_PCM_CHANNEL_PLAYBACK;
-      if (snd_pcm_plugin_status(pcm_handle, &status) < 0) return;
+      if (snd_pcm_plugin_status(pcm_handle, &status) < 0) return 0;
       if (status.status == SND_PCM_STATUS_READY || status.status == SND_PCM_STATUS_UNDERRUN) {
-          if (snd_pcm_plugin_prepare(pcm_handle, SND_PCM_CHANNEL_PLAYBACK) < 0) return;
+          if (snd_pcm_plugin_prepare(pcm_handle, SND_PCM_CHANNEL_PLAYBACK) < 0) return 0;
       }
       if (written < 0) written = 0;
       snd_pcm_plugin_write(pcm_handle, audio_buf + written, audio_bufsize - written);
-    }
+    } else res=1;
   }
+  return res;
 }
 
 static void *audio_play_thread(void *arg)
 {
-  while (1) { if (audio_on) audio_play(); else usleep(250); }
-  return 0;
+  while (audio_on) { audio_play(); usleep(10000); }
 }
+
+#endif // USE_AUDIO
+
+#ifdef USE_RTAUDIO
+
+#define FIX(x) ((short)(32767.*x))
+#define FLO(x) ((double)x/32767.)
+
+static int rtaudio_frame_sync = 0;
+
+extern void (*rtaudio_outputcb)(float*,float*);
+
+static void *audio_play_thread(void *arg)
+{
+  int i;
+  memset(play_buffer, 0, play_buffer_size);
+  short *buf = (short *)play_buffer;
+  while (audio_on) {
+    int n_written;
+    if (rtaudio_frame_sync>=play_buffer_size>>1) {
+      for (i=0;i<play_buffer_size>>2;i++) {
+         float l,r;
+         if (rtaudio_outputcb) rtaudio_outputcb(&l,&r);
+         buf[2*i]=FIX(l); buf[2*i+1]=FIX(r);
+      }
+      n_written = snd_pcm_plugin_write(pcm_play_handle, play_buffer, play_buffer_size);
+      if (n_written>0) rtaudio_frame_sync-=n_written>>1;
+      if (n_written < 0 || n_written != play_buffer_size) {
+	snd_pcm_channel_status_t status;
+        memset(&status, 0, sizeof(status));
+	status.channel = SND_PCM_CHANNEL_PLAYBACK;
+	if (snd_pcm_plugin_status(pcm_play_handle, &status) < 0) {
+          EMSG("FATAL Playback channel status error %d", status.status); //return; 
+        }
+        if (status.status == SND_PCM_STATUS_READY
+         || status.status == SND_PCM_STATUS_UNDERRUN
+         || status.status == SND_PCM_STATUS_CHANGE
+         || status.status == SND_PCM_STATUS_ERROR) {
+	  EMSG("PLAYBACK FAILURE:snd_pcm_plugin_status: = %d",status.status);
+          if (snd_pcm_plugin_prepare (pcm_play_handle, SND_PCM_CHANNEL_PLAYBACK) < 0) {
+            EMSG("FATAL Playback channel prepare error %d", status.status); //return;
+          }
+	}
+        if (n_written < 0) n_written = 0;
+        snd_pcm_plugin_write(pcm_play_handle, play_buffer + n_written, play_buffer_size - n_written);
+        rtaudio_frame_sync=0;
+      }
+    }
+  }
+}
+
+extern void (*rtaudio_inputcb)(float);
+
+static void *audio_capture_thread(void *arg)
+{
+  int i;
+  snd_pcm_channel_status_t status;
+  status.channel = SND_PCM_CHANNEL_CAPTURE;
+  short *buf = (short *)capture_buffer;
+  while (audio_on) {
+    int n_read = snd_pcm_plugin_read(pcm_capture_handle, capture_buffer, capture_buffer_size);
+    if (n_read < 0 || n_read != capture_buffer_size ) {
+      EMSG("CAPTURE FAILURE: snd_pcm_plugin_read: %d requested = %d",read,capture_buffer_size);
+      if (snd_pcm_plugin_status(pcm_capture_handle, &status) < 0) {
+        EMSG("Capture channel status error: %d",status.status);
+      } else {
+       if (status.status == SND_PCM_STATUS_READY
+        || status.status == SND_PCM_STATUS_OVERRUN
+        || status.status == SND_PCM_STATUS_CHANGE
+        || status.status == SND_PCM_STATUS_ERROR) {
+          EMSG("CAPTURE FAILURE:snd_pcm_plugin_status: = %d",status.status);
+          if (snd_pcm_plugin_prepare (pcm_capture_handle, SND_PCM_CHANNEL_CAPTURE) < 0) {
+            EMSG("FATAL: Capture channel prepare error 1 %d",status.status); return;
+          }
+        }
+      }
+      rtaudio_frame_sync=0;
+    } else {
+      rtaudio_frame_sync+=n_read;
+      for (i=0;i<n_read>>1;i++) {
+        float v = FLO(buf[i]);
+        if (rtaudio_inputcb) rtaudio_inputcb(v);
+      }
+    }
+  }
+}
+
+#endif // USE_RTAUDIO
 
 #include <pthread.h>
 
-static  pthread_t audio_playerthread;
+static  pthread_t audio_playthread;
+
+#ifdef USE_RTAUDIO
+static  pthread_t audio_capturethread;
+#endif // USE_RTAUDIO
 
 static void audio_init()
 {
-  audio_setup(0);
+#if defined(USE_AUDIO) || defined(USE_RTAUDIO)
+  SMSG("audio_init");
+  audiodevice_request_events(0);
+  audio_play_setup(0);
+#ifdef USE_RTAUDIO
+  audio_capture_setup(0);
+#endif // USE_RTAUDIO
+  audio_on=1;
   int policy;
   struct sched_param param;
   pthread_attr_t attr_p;
@@ -204,101 +585,88 @@ static void audio_init()
   param.sched_priority = 12;
   pthread_attr_setschedparam(&attr_p,&param);
   pthread_attr_setschedpolicy(&attr_p,SCHED_RR);
-  pthread_create(&audio_playerthread, &attr_p,&audio_play_thread,0);
+  pthread_create(&audio_playthread, &attr_p,&audio_play_thread,0);
+#ifdef USE_RTAUDIO
+  pthread_create(&audio_capturethread, &attr_p,&audio_capture_thread,0);
+#endif // USE_RTAUDIO
+#endif // USE_AUDIO || USE_RTAUDIO
 }
 
 static void audio_stop()
 {
   audio_on=0;
+#ifdef USE_AUDIO
   snd_mixer_close(mixer_handle);
+  snd_pcm_plugin_flush(pcm_handle, SND_PCM_CHANNEL_PLAYBACK);
   snd_pcm_close(pcm_handle);
-  pthread_join(audio_playerthread,NULL);
-}
-
+  pthread_join(audio_playthread,NULL);
 #endif // USE_AUDIO
-
-static void init_cb(void *p)
-{
-// virtualkeyboard_request_events(0);
-
-  glview_get_size(&screen_width, &screen_height);
-  glViewport(0, 0, screen_width, screen_height);
-
-#ifdef USE_ACCELEROMETER
-  if (sensor_is_supported(SENSOR_TYPE_ACCELEROMETER)) {
-    static const int rate = 25000;
-    sensor_set_rate(SENSOR_TYPE_ACCELEROMETER, rate);
-    sensor_set_skip_duplicates(SENSOR_TYPE_ACCELEROMETER, true);
-    sensor_request_events(SENSOR_TYPE_ACCELEROMETER);
-  }
-#endif
-
-#ifdef USE_GYROSCOPE
-  if (sensor_is_supported(SENSOR_TYPE_GYROSCOPE)) {
-    static const int rate = 25000;
-    sensor_set_rate(SENSOR_TYPE_GYROSCOPE, rate);
-    sensor_set_skip_duplicates(SENSOR_TYPE_GYROSCOPE, true);
-    sensor_request_events(SENSOR_TYPE_GYROSCOPE);
-  }
-#endif
-
-#ifdef USE_ORIENTATION
-  if (sensor_is_supported(SENSOR_TYPE_GYROSCOPE)) {
-    static const int rate = 250000;
-    sensor_set_rate(SENSOR_TYPE_ORIENTATION, rate);
-    sensor_set_skip_duplicates(SENSOR_TYPE_ORIENTATION, true);
-    sensor_request_events(SENSOR_TYPE_ORIENTATION);
-  }
-#endif
-
-#ifdef USE_GPS
-  geolocation_request_events(0);
-#endif
-
-#ifdef USE_AUDIO
-  audiodevice_request_events(0);
-  audio_init();
-#endif  
-
-  ffi_event(EVENT_INIT,screen_width,screen_height);
+#ifdef USE_RTAUDIO
+  snd_pcm_plugin_flush(pcm_play_handle, SND_PCM_CHANNEL_PLAYBACK);
+  snd_pcm_close(pcm_play_handle);
+  snd_pcm_close(pcm_capture_handle);
+  pthread_join(audio_playthread,NULL);
+  pthread_join(audio_capturethread,NULL);
+#endif // USE_RTAUDIO
 }
 
-static void display_cb(void *p)
+void audiodevice_event(bps_event_t *event)
 {
-//  audio_play();
+#if defined(USE_AUDIO) || defined(USE_RTAUDIO)
+  const char * audiodevice_path = audiodevice_event_get_path(event);
+  if (audiodevice_path) {
+//    audio_on=0;
+#ifdef USE_AUDIO
+    snd_mixer_close(mixer_handle);
+    snd_pcm_close(pcm_handle);
+    audio_play_setup(audiodevice_path);
+#endif
+#ifdef USE_RTAUDIO
+    snd_pcm_close(pcm_play_handle);
+    snd_pcm_close(pcm_capture_handle);
+    audio_play_setup(audiodevice_path);
+    audio_capture_setup(audiodevice_path);
+#endif
+  }
+#endif // USE_AUDIO || USE_RTAUDIO
+}
+
+// ---------------------------------
+
+int loader_init()
+{
+  SMSG("loader_init");
+  EGLint surface_width, surface_height;
+  eglQuerySurface(egl_disp, egl_surf, EGL_WIDTH, &surface_width);
+  eglQuerySurface(egl_disp, egl_surf, EGL_HEIGHT, &surface_height);
+  EGLint err = eglGetError();
+  if (err != 0x3000) {
+    EMSG("Unable to query EGL surface dimensions\n");
+    return !EXIT_SUCCESS;
+  }
+  screen_width = (int)surface_width;
+  screen_height= (int)surface_height;
+  glViewport(0, 0, surface_width, surface_height);
+  SMSG("loader_init initializing payload");
+  ffi_event(EVENT_INIT,screen_width,screen_height); 
+  SMSG("loader_init done initializing payload");
+  return EXIT_SUCCESS;
+}
+
+void loader_render_event()
+{
   ffi_event(EVENT_REDRAW,0,0);
+  loader_egl_swap();
 }
 
-static void resume_cb(void *p)
-{
-  ffi_event(EVENT_RESUME,0,0);
-}
-
-static void suspend_cb(void *p)
-{
-  ffi_event(EVENT_SUSPEND,0,0);
-}
-
-static void close_cb(void *p)
-{
-  ffi_event(EVENT_CLOSE,0,0);
-  ffi_event(EVENT_TERMINATE,0,0);
-#ifdef USE_AUDIO
-  audio_stop();
-#endif
-}
-
-static void event_cb(bps_event_t *event, int domain, int code, void *p)
+void loader_screen_event(bps_event_t *event) 
 {
   int screen_val, key_val, sym_val;
   int pos[2];
   int pointerid;
-
-  if (screen_get_domain() == domain) {
-    screen_event_t screen_event = screen_event_get_event(event);
-    screen_get_event_property_iv(screen_event, SCREEN_PROPERTY_TYPE, &screen_val);
-    switch (screen_val) {
-
+  screen_event_t screen_event = screen_event_get_event(event);
+  screen_get_event_property_iv(screen_event, SCREEN_PROPERTY_TYPE, &screen_val);
+  switch (screen_val) {
       case SCREEN_EVENT_MTOUCH_TOUCH:
         screen_get_event_property_iv(screen_event, SCREEN_PROPERTY_TOUCH_ID, &pointerid);
         screen_get_event_property_iv(screen_event, SCREEN_PROPERTY_SOURCE_POSITION, pos);
@@ -307,7 +675,6 @@ static void event_cb(bps_event_t *event, int domain, int code, void *p)
 #endif
         ffi_event(EVENT_BUTTON1DOWN,pos[0],screen_height-pos[1]);
         break;
-
       case SCREEN_EVENT_MTOUCH_RELEASE:
         screen_get_event_property_iv(screen_event, SCREEN_PROPERTY_TOUCH_ID, &pointerid);
         screen_get_event_property_iv(screen_event, SCREEN_PROPERTY_SOURCE_POSITION, pos);
@@ -316,7 +683,6 @@ static void event_cb(bps_event_t *event, int domain, int code, void *p)
 #endif
         ffi_event(EVENT_BUTTON1UP,pos[0],screen_height-pos[1]);
         break;
-
       case SCREEN_EVENT_MTOUCH_MOVE:
         screen_get_event_property_iv(screen_event, SCREEN_PROPERTY_TOUCH_ID, &pointerid);
         screen_get_event_property_iv(screen_event, SCREEN_PROPERTY_SOURCE_POSITION, pos);
@@ -325,7 +691,6 @@ static void event_cb(bps_event_t *event, int domain, int code, void *p)
 #endif
         ffi_event(EVENT_MOTION,pos[0],screen_height-pos[1]);
         break;
-
       case SCREEN_EVENT_KEYBOARD:
         screen_get_event_property_iv(screen_event, SCREEN_PROPERTY_KEY_FLAGS, &key_val);
         if (key_val & KEY_DOWN) {
@@ -340,75 +705,171 @@ static void event_cb(bps_event_t *event, int domain, int code, void *p)
           }
         }
         break;
-     }
-    return;
-  } 
-  if (domain == sensor_get_domain()) {
+  }
+  return;
+}
+
+// ---------------------------------
+
+void sensor_init()
+{
 #ifdef USE_ACCELEROMETER
-    if (code == SENSOR_ACCELEROMETER_READING) {
-      float x,y,z;
-      sensor_event_get_xyz(event,&x,&y,&z);
-      accel_x = (double)x; accel_y = (double)y; accel_z=(double)z;
-    }
+  if (sensor_is_supported(SENSOR_TYPE_ACCELEROMETER)) {
+    static const int rate = 25000;
+    sensor_set_rate(SENSOR_TYPE_ACCELEROMETER, rate);
+    sensor_set_skip_duplicates(SENSOR_TYPE_ACCELEROMETER, true);
+    sensor_request_events(SENSOR_TYPE_ACCELEROMETER);
+  }
 #endif
 #ifdef USE_GYROSCOPE
-    if (code == SENSOR_GYROSCOPE_READING) {
-      float x,y,z;
-      sensor_event_get_xyz(event,&x,&y,&z);
-      gyro_yaw = (double)x; gyro_pitch = (double)y; gyro_roll=(double)z;
-    }
-#endif 
+  if (sensor_is_supported(SENSOR_TYPE_GYROSCOPE)) {
+    static const int rate = 25000;
+    sensor_set_rate(SENSOR_TYPE_GYROSCOPE, rate);
+    sensor_set_skip_duplicates(SENSOR_TYPE_GYROSCOPE, true);
+    sensor_request_events(SENSOR_TYPE_GYROSCOPE);
+  }
+#endif
 #ifdef USE_ORIENTATION
-    if (code == SENSOR_ORIENTATION_READING) {
-      int angle = sensor_event_get_orientation_angle(event);
-      int orientation=-1;
-      switch (angle) {
-        case 0: orientation=1; break;
-        case 90: orientation=2; break;
-        case 180: orientation=4; break;
-        case 270: orientation=3; break;
-      }
-      if (orientation>0) {
-       ffi_event(EVENT_ORIENTATION, orientation, 0);
-      }
-    }
-#endif
-    return;
-  }
-#ifdef USE_GPS
-  if (domain == geolocation_get_domain()) {
-    if (code == GEOLOCATION_INFO) {
-      location_latitude = geolocation_event_get_latitude(event);
-      location_longitude = geolocation_event_get_longitude(event);
-      location_altitude = geolocation_event_get_altitude(event);
-      location_accuracy = geolocation_event_get_accuracy(event);
-      location_timestamp= (double)geolocation_event_get_utc_time(event);
-    }
-    return;
-  }
-#endif
-#ifdef USE_AUDIO
-  if (domain == audiodevice_get_domain()) {
-    const char * audiodevice_path = audiodevice_event_get_path(event);
-    if (audiodevice_path) { 
-      audio_on=0;
-      snd_mixer_close(mixer_handle);
-      snd_pcm_close(pcm_handle);
-      audio_setup(audiodevice_path);
-    }
-    return;
+  if (sensor_is_supported(SENSOR_TYPE_GYROSCOPE)) {
+    static const int rate = 250000;
+    sensor_set_rate(SENSOR_TYPE_ORIENTATION, rate);
+    sensor_set_skip_duplicates(SENSOR_TYPE_ORIENTATION, true);
+    sensor_request_events(SENSOR_TYPE_ORIENTATION);
   }
 #endif
 }
 
-int main(int argc, char **argv)
+void sensor_event(bps_event_t *event)
 {
-  glview_initialize(GLVIEW_API_OPENGLES_11, &display_cb);
-  glview_register_initialize_callback(&init_cb);
-  glview_register_event_callback(&event_cb);
-  glview_register_foreground_callback(&resume_cb);
-  glview_register_background_callback(&suspend_cb);
-  glview_register_finalize_callback(&close_cb);
-  return glview_loop();
+  int code = bps_event_get_code(event);
+#ifdef USE_ACCELEROMETER
+  if (code == SENSOR_ACCELEROMETER_READING) {
+    float x,y,z;
+    sensor_event_get_xyz(event,&x,&y,&z);
+    accel_x = (double)x; accel_y = (double)y; accel_z=(double)z;
+  }
+#endif
+#ifdef USE_GYROSCOPE
+  if (code == SENSOR_GYROSCOPE_READING) {
+    float x,y,z;
+    sensor_event_get_xyz(event,&x,&y,&z);
+    gyro_yaw = (double)x; gyro_pitch = (double)y; gyro_roll=(double)z;
+  }
+#endif
+#ifdef USE_ORIENTATION
+  if (code == SENSOR_ORIENTATION_READING) {
+    int angle = sensor_event_get_orientation_angle(event);
+    int orientation=-1;
+    switch (angle) {
+      case 0: orientation=1; break;
+      case 90: orientation=2; break;
+      case 180: orientation=4; break;
+      case 270: orientation=3; break;
+    }
+    if (orientation>0) {
+      ffi_event(EVENT_ORIENTATION, orientation, 0);
+    }
+  }
+#endif
 }
 
+// ---------------------------------
+
+void geolocation_init()
+{
+#ifdef USE_GPS
+  geolocation_request_events(0);
+  geolocation_set_period(1);
+#endif
+}
+
+void geolocation_event(bps_event_t *event)
+{
+  int code = bps_event_get_code(event);
+#ifdef USE_GPS
+  if (code == GEOLOCATION_INFO) {
+    location_latitude = geolocation_event_get_latitude(event);
+    location_longitude = geolocation_event_get_longitude(event);
+    location_altitude = geolocation_event_get_altitude(event);
+    location_accuracy = geolocation_event_get_accuracy(event);
+    location_timestamp= (double)geolocation_event_get_utc_time(event);
+  }
+  return;
+#endif
+}
+
+// ---------------------------------
+
+int main(int argc, char *argv[]) {
+  int rc, exit_application = 0;
+  static screen_context_t screen_cxt;
+  screen_create_context(&screen_cxt, 0);
+
+#ifdef DEBUG
+  debug_fd = fopen("./shared/documents/@SYS_APPNAME@_loader.doc","w");
+#endif
+
+  SMSG("loader starting..");
+
+  bps_initialize();
+
+  audio_init();
+  sensor_init();
+  geolocation_init();
+
+  if (EXIT_SUCCESS != loader_egl_init(screen_cxt)) { EMSG("loader_egl_init() failed"); loader_egl_terminate(); screen_destroy_context(screen_cxt); return 0; }
+  if (EXIT_SUCCESS != loader_init()) { EMSG("loader init failed"); loader_egl_terminate(); screen_destroy_context(screen_cxt); return 0; }
+  if (BPS_SUCCESS != screen_request_events(screen_cxt)) { EMSG("screen_request_events failed"); loader_egl_terminate(); screen_destroy_context(screen_cxt); return 0; }
+  if (BPS_SUCCESS != navigator_request_events(0)) { EMSG("navigator_request_events failed"); loader_egl_terminate(); screen_destroy_context(screen_cxt); return 0; }
+  if (BPS_SUCCESS != navigator_rotation_lock(true)) { EMSG("navigator_rotation_lock failed"); loader_egl_terminate(); screen_destroy_context(screen_cxt); return 0; }
+  while (!exit_application) {
+    bps_event_t *event = NULL;
+    for(;;) {
+      rc = bps_get_event(&event, 0);
+      assert(rc == BPS_SUCCESS);
+      if (event) {
+        int domain = bps_event_get_domain(event);
+        if (domain == screen_get_domain()) { loader_screen_event(event); } 
+          else if (domain == audiodevice_get_domain()) { audiodevice_event(event); }
+          else if (domain == sensor_get_domain()) { sensor_event(event); }
+          else if (domain == geolocation_get_domain()) { geolocation_event(event); }
+          else if (domain == navigator_get_domain()) {
+            switch (bps_event_get_code(event)) {
+              case NAVIGATOR_EXIT: exit_application = 1; break;
+              case NAVIGATOR_WINDOW_INACTIVE: ffi_event(EVENT_SUSPEND,0,0); break;
+              case NAVIGATOR_WINDOW_ACTIVE: ffi_event(EVENT_RESUME,0,0); break;
+            }
+          }
+      } else {
+        break;
+      }
+    }
+    loader_render_event();
+  }
+  SMSG("leaving event loop");
+
+  SMSG("sending payload CLOSE");
+  ffi_event(EVENT_CLOSE,0,0);
+
+#ifdef USE_AUDIO
+  audio_stop();
+#endif
+
+  SMSG("final cleanup");
+  screen_stop_events(screen_cxt);
+  bps_shutdown();
+  loader_egl_terminate();
+  screen_destroy_context(screen_cxt);
+
+  SMSG("sending payload TERMINATE");
+
+#ifdef DEBUG
+  if (debug_fd) fclose(debug_fd);
+#endif
+
+  ffi_event(EVENT_TERMINATE,0,0);
+
+  return 0;
+}
+
+// eof
