@@ -1,0 +1,44 @@
+#!/bin/sh
+
+VERSION=3080301
+
+PKGURL="http://www.sqlite.org/2014/sqlite-amalgamation-${VERSION}.zip"
+PKGSRC=`basename $PKGURL`
+
+src=@SYS_PREFIXROOT@/packages/$PKGSRC
+
+if [ ! -f $src -a `which wget` ]; then
+  echo "==> No source found, attempting to download.."
+  wget $PKGURL -O $src
+fi
+
+if [ ! -f $src ]; then
+  echo "==> ERROR: Unable to proceed. Please obtain $src first."
+  exit 1
+fi
+
+tmpdir=tmp_compile
+if [ -d $tmpdir ]; then
+  rm -rf $tmpdir
+fi
+mkdir $tmpdir
+here=`pwd`
+cd $tmpdir
+
+echo "==> Extracting source..."
+unzip -qq $src 
+cd *
+
+echo "==> Building library source..."
+@SYS_CC@ -c -I. -I@SYS_PREFIX@/include sqlite3.c
+@SYS_AR@ ru @SYS_PREFIX@/lib/libsqlite.a sqlite3.o  2> /dev/null
+@SYS_RANLIB@ @SYS_PREFIX@/lib/libsqlite.a  
+cp sqlite3.h @SYS_PREFIX@/include
+cp sqlite3ext.h @SYS_PREFIX@/include
+
+echo "==> Cleaning up..."
+cd "$here"
+rm -rf $tmpdir
+
+echo "==> All done."
+
