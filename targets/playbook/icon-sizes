@@ -1,0 +1,4 @@
+#!/bin/sh
+# the crazy list of artwork sizes:
+# 114:  retina iphone, bb10
+sizes="114"

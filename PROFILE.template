@@ -10,7 +10,13 @@ SYS_IOSDEVCERT="iPhone Developer: Your iOS identifier here (XXXXXXXXX)"
 SYS_ANDROIDPW="yoursecrethere"
 # BB10 developer password
 SYS_BB10PW="yoursecrethere"
-# BB10 debug device 
+# BB10 (Z10 or similar) debug device info 
 SYS_BB10DEVICEPW="yoursecrethere"
 SYS_BB10DEVICEIPADDR="development device ip address here"
-SYS_BB10DEBUGTOKEN="path to debugtoken bar"
+SYS_BB10DEVICEPIN="development device pin here"
+# Playbook developer password
+SYS_PLAYBOOKPW="yoursecrethere"
+# Playbook debug device info 
+SYS_PLAYBOOKDEVICEPW="yoursecrethere"
+SYS_PLAYBOOKDEVICEIPADDR="development device ip address here"
+SYS_PLAYBOOKDEVICEPIN="development device pin here"
