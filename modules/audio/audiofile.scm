@@ -82,6 +82,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define USE_BB10_PCM
 #endif
 
+#ifdef PLAYBOOK
+#define USE_BB10_PCM
+#endif
+
 // %%%%%%%%%%%%%%%%%%%%%%
 #ifdef USE_IOS_REALTIME
 
@@ -321,7 +325,7 @@ end-of-c-declare
   (define (autoext name)
     (string-append name (if (file-exists? (string-append name ".wav")) ".wav" ".ogg")))
   (let* ((file  (cond
-           ((member (system-platform) '("ios" "bb10"))
+           ((member (system-platform) '("ios" "bb10" "playbook"))
               (autoext (string-append (system-appdirectory) (system-pathseparator) name)))
            ((member (system-platform) '("win32" "linux" "openbsd"))
               (autoext (string-append (system-appdirectory) (system-pathseparator) "sounds" (system-pathseparator) name)))

@@ -188,6 +188,7 @@ end-of-c-declare
   (set! app:height h)
   (if (or (string=? (system-platform) "ios")
           (string=? (system-platform) "bb10")
+          (string=? (system-platform) "playbook")
           (string=? (system-platform) "android")) (begin
     (set! app:xscale xscale)
     (set! app:yscale yscale)

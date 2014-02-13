@@ -145,7 +145,7 @@ static void find_directories()
   sys_appdir=strdup(path);
   sys_dir=strdup(path);
 #endif
-#if defined(BB10)
+#if defined(BB10) || defined(PLAYBOOK)
   char path[1024], cwd[1024];
   getcwd(cwd,1023);
   sprintf(path,"%s/app/native", cwd);
