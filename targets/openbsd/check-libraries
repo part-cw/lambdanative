@@ -45,12 +45,15 @@ fi
 rmifexists gltest
 rmifexists gltest.c
 
-vecho " => checking for portaudio.."
-echo "#include <portaudio.h>" > patest.c
-echo "int main() { Pa_GetDefaultInputDevice(); }" >> patest.c
-gcc -Werror -o patest patest.c -I/usr/local/include -L/usr/local/lib -lportaudio 
-asserterror $? "portaudio is not installed? Please install patched version from ports."
-rmifexists patest
-rmifexists patest.c
+wants_pa=`echo "$libraries" | grep libportaudio`
+if [ ! "X$wants_pa" = "X" ]; then
+  vecho " => checking for portaudio.."
+  echo "#include <portaudio.h>" > patest.c
+  echo "int main() { Pa_GetDefaultInputDevice(); }" >> patest.c
+  gcc -Werror -o patest patest.c -I/usr/local/include -L/usr/local/lib -lportaudio 
+  asserterror $? "portaudio is not installed? Please install patched version from ports."
+  rmifexists patest
+  rmifexists patest.c
+fi
 
 #eof
