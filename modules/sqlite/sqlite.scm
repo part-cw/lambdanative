@@ -82,6 +82,13 @@ static int _sqlite_column_integer(struct sqlite_db *d, int i)
   return atoi((char*)field);
 }
 
+static double _sqlite_column_float(struct sqlite_db *d, int i)
+{
+  const unsigned char *field;
+  field = sqlite3_column_text(d->pst, i);
+  return atof((char*)field);
+}
+
 static char *_sqlite_column_string(struct sqlite_db *d, int i)
 {
   const unsigned char *field;
@@ -116,12 +123,14 @@ end-of-c-declare
 (define SQLITE_ERROR ((c-lambda () int "___result = SQLITE_ERROR;")))
 (define SQLITE_OK ((c-lambda () int "___result = SQLITE_OK;")))
 (define SQLITE_INTEGER ((c-lambda () int "___result = SQLITE_INTEGER;")))
+(define SQLITE_FLOAT ((c-lambda () int "___result = SQLITE_FLOAT;")))
 (define SQLITE_ROW ((c-lambda () int "___result = SQLITE_ROW;")))
 
 (define sqlite:open (c-lambda (char-string) (pointer void) "_sqlite_open"))
 (define sqlite:close (c-lambda ((pointer void)) void "_sqlite_close"))
 (define sqlite:column-type (c-lambda ((pointer void) int) int "_sqlite_column_type"))
 (define sqlite:column-integer (c-lambda ((pointer void) int) int "_sqlite_column_integer"))
+(define sqlite:column-float (c-lambda ((pointer void) int) double "_sqlite_column_float"))
 (define sqlite:column-string (c-lambda ((pointer void) int) char-string "_sqlite_column_string"))
 (define sqlite:data-count (c-lambda ((pointer void)) int "_sqlite_data_count"))
 (define sqlite:step (c-lambda ((pointer void)) int "_sqlite_step"))
@@ -146,8 +155,12 @@ end-of-c-declare
                (let loop2 ((i 0)(col '()))
                   (if (fx= i n) col
                     (let* ((type (sqlite:column-type db i))
-                           (data ((if (fx= type SQLITE_INTEGER)
-                                   sqlite:column-integer sqlite:column-string) db i)))
+                           (data ((if (fx= type SQLITE_INTEGER) 
+                                    sqlite:column-integer 
+                                    (if (fx= type SQLITE_FLOAT) 
+                                      sqlite:column-float 
+                                      sqlite:column-string
+                                    )) db i)))
                       (loop2 (fx+ i 1) (append col (list data)))))))))))) #f))
 
 ;; simple test
@@ -156,6 +169,7 @@ end-of-c-declare
     (sqlite-query db "create table tbl1(one varchar(10), two smallint)")
     (sqlite-query db "insert into tbl1 values('hello!',10)")
     (sqlite-query db "insert into tbl1 values('goodbye', 20)")
+    (sqlite-query db "insert into tbl1 values('one more', 2.3)")
     (let ((res (sqlite-query db "select * from tbl1")))
       (sqlite-close db) res)))
 
