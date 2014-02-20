@@ -2,7 +2,7 @@
 
 # check for a local library
 # this allows us to pull in a patched version (on openbsd in particular)
-if [ @SYS_PLATFORM@ = @SYS_HOSTPLATFORM@ ]; then
+if [ @SYS_PLATFORM@ = openbsd ]; then
   echo "==> checking for local installed library.."
   for dir in /usr /usr/local ; do
     if [ -f $dir/lib/libportaudio.a ]; then
