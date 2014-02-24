@@ -17,8 +17,7 @@ if [ @SYS_PLATFORM@ = openbsd ]; then
   done
 fi
 
-#PKGSRC=pa_stable_v19_20111121.tgz
-PKGSRC=pa_snapshot.tgz
+PKGSRC=pa_stable_v19_20140130.tgz
 
 src=@SYS_PREFIXROOT@/packages/$PKGSRC
 
