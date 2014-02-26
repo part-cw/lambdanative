@@ -160,6 +160,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   inside
 ))
 
+(define (glgui:list-update g wgt id val)
+  (if (eqv? id 'list)
+    ;; When the list content is changed
+    (let* ((h (flo (glgui-widget-get-dyn g wgt 'h)))
+           (dh (flo (glgui-widget-get g wgt 'dh)))
+           (n (fix (floor (/ h dh))))
+           (ofs (fix (glgui-widget-get g wgt 'offset)))
+           (nlist (length val))
+           (maxofs (max 0 (- nlist n))))
+      ;; It may be shorter than before, so make sure the offset isn't too high
+      ;; Fixes the problem where empty lines appear at the bottom when the list becomes shorter instead of auto-scrolling up
+      (if (fx> ofs maxofs)
+        (glgui-widget-set! g wgt 'offset maxofs))))
+)
+  
 (define (glgui-list g x y w h dh lst cb . kcb)
   (glgui-widget-add g
      'x x
@@ -167,6 +182,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'w w
      'h h
      'callback cb
+     'update-handle glgui:list-update
      'key_callback (if (fx= (length kcb) 1) (car kcb) #f)
      'draw-handle  glgui:list-draw
      'input-handle glgui:list-input 
