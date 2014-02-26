@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "raw.scm")
 (include "fifo.scm")
 (include "file.scm")
+(include "ln_store-tests.scm")
 
 (define store:list (make-table))
 

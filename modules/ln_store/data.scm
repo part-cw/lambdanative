@@ -52,7 +52,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (store-clear! store ids0)
   (let ((ids (if (list? ids0) ids0 (list ids0))))
-    (store:clearlocal! store ids)
     (if (store-ref store "use_fifo_export" #f)
       (let loop2 ((is ids))
         (if (> (length is) 0)
@@ -67,7 +66,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           )
         )))
     (if (store-ref store "extern:clear!" #f)
-      (map (lambda (id) ((store-ref store "extern:clear!" #f) store id)) ids))
+      (for-each (lambda (id) (if (store-ref store id)((store-ref store "extern:clear!" #f) store id))) ids))
+    (store:clearlocal! store ids)
   ))
 
 (define (store:clearlocal! store ids)
@@ -76,7 +76,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (let ((id (car is)))
         (let ((t (store:datatable store))
               (ct (store:categorytable store)))
-          (if (table? t) (begin
+          (if (and (table? t) (table-ref t id #f)) (begin
             (store:grab!)
             (table-set! t id)
             ;; clear a category entry if present
