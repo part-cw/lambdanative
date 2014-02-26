@@ -68,7 +68,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (mqtt-store-setup store . x)
   (mqtt-store:log 1 "mqtt-store-setup " store " " x)
-  (let ((m (apply mqtt-setup (append x (list 'handler (mqtt-store:callback store))))))
+  (let ((m (apply make-mqtt (append x (list 'handler (mqtt-store:callback store))))))
     (store-set! store "mqtt:handle" m)
     (let loop ((subs (table-ref m 'subscribe '())))
       (if (> (length subs) 0) 
