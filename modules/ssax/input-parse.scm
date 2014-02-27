@@ -144,7 +144,7 @@
     	((eof-object? c)
     	  (if (memq '*eof* break-chars)
     	    (substring buffer 0 i)		; was EOF expected?
-    	    (parser-error port "EOF while reading a token " comment)))
+    	    (begin (parser-error port "EOF while reading a token " comment) "")))
     	(else
     	  (if (>= i curr-buf-len)	; make space for i-th char in buffer
     	    (begin			; -> grow the buffer by the quantum
