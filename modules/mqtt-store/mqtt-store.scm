@@ -60,9 +60,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (mqtt-store:log 2 "mqtt-store:set! " store " " id " " val)
   (let ((mosq (store-ref store "mqtt:handle" #f)))
     (if mosq 
-      (let* ((topic (store-ref store (string-append id ":topic") #f))
-             (qos (if topic (store-ref store (string-append id ":qos") 0) #f))
-             (retain (if topic (store-ref store (string-append id ":retain") 0) #f)))
+      (let* ((prefix (table-ref mosq 'publish-all-topicprefix #f))
+             (topic (if prefix (string-append prefix id) (store-ref store (string-append id ":topic") #f)))
+             (qos (if prefix (table-ref mosq 'publish-all-qos #f) (if topic (store-ref store (string-append id ":qos") 0) #f)))
+             (retain (if prefix (table-ref mosq 'publish-all-retain #f) (if topic (store-ref store (string-append id ":retain") 0) #f))))
         (if (and topic qos retain)
           (mqtt-publish mosq topic val qos retain))))))
 

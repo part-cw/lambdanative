@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; bindings for the mosquitto MQTT library
 ;; MQTT is a publish/subscribe protocol for the Internet of Things (IoT)
 
-(define mqtt:debuglevel 0)
+(define mqtt:debuglevel 5)
 (define (mqtt:log level . x)
    (if (>= mqtt:debuglevel level) (apply log-system (append (list "mqtt: ") x))))
 
@@ -306,9 +306,9 @@ end-of-c-declare
      (mosq #f) 
      (subscribe ())
      (publish ())
-     (local-namespace #f)
-     (local-variables '())
-     (local-validator #f)
+     (publish-all-topicprefix #f)
+     (publish-all-qos 2)
+     (publish-all-retain 0)
     )))
     (if (> (length defs) 0) (begin
       (apply table-set! (append (list t) (car defs)))
