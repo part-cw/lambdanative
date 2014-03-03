@@ -88,7 +88,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Helper function to parse REDCAP JSON format [much easier than XML parsing]
 (define (redcap:jsonstr->list str)
-  (if (or (list? str) (fx< (string-length str) 3))
+  (if (or (list? str) (fx< (string-length str) 3) (not (string-contains str "[{")) (not (string-contains str "}]")))
     (list)
     (map (lambda (li) (if (fx> (length li) 0)
                         ;; THIRD, go through each field and recombine values that have commas in them
@@ -117,9 +117,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          ;; This split will separate into individual fields, although may split by commas in the middle of values
          (map (lambda (s) (string-split (substring s 2 (string-length s)) #\,)) 
               (string-split
-                 ;; FIRST split by } after removing end ], this splits it into records,
-                 ;; but after this the first one will begin with [{ and the others will begin with ,{
-                 (substring str 0 (- (string-length str) 1))
+                 ;; FIRST remove anything before the opening [{ or after the end }], include remove the ]
+                 ;; and split by }, this splits it into records, but after this the first one will
+                 ;; begin with [{ and the others will begin with ,{
+                 (let ((index0 (string-contains str "[{"))
+                       (index1 (string-contains str "}]")))
+                    (substring str index0 index1))
                  #\}))))
 )
 
