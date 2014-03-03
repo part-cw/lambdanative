@@ -45,7 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unistd.h>
 #include <math.h>
 
-#define RT_SRATE 8000
+#define RT_SRATE 32000
 
 #ifdef MACOSX
 #define USE_PORTAUDIO
