@@ -428,6 +428,9 @@ compile_payload()
   objs=
 #  defs="-D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
   defs="$GAMBIT_DEFS"
+  if [ `is_standalone_app` = "yes" ]; then
+     defs="$defs -DSTANDALONE"
+  fi
   echo "==> creating payload needed for $SYS_APPNAME.."
   mkdir -p "$SYS_PREFIX/build"
   dirty=no
@@ -535,9 +538,6 @@ void ffi_event(int t, int x, int y)
 }
 #endif
 _EOF
-    if [ `is_standalone_app` = "yes" ]; then
-      defs="$defs -DSTANDALONE"
-    fi
     veval "$SYS_ENV $SYS_CC $defs -c -o $hotgt $hctgt -I$SYS_PREFIX/include"
     assertfile $hotgt
   fi
@@ -1334,7 +1334,14 @@ if [ ! "X$cfg_version" = "X$cur_version" ]; then
   exit 1
 fi
 
-case "$1" in
+# override the make argument
+make_argument=$1
+if [ "X$make_argument" = "Xall" ] && [ -f "targets/$SYS_PLATFORM/make_argument" ]; then
+  make_argument=`cat "targets/$SYS_PLATFORM/make_argument"`
+  echo "WARNING: target is forcing make argument: $make_argument"
+fi
+
+case "$make_argument" in
 clean) 
   rm -rf tmp.?????? 2> /dev/null
   make_clean
@@ -1359,6 +1366,16 @@ explode)
   explode_library $2
 ;;
 payload)
+  rm -rf tmp.?????? 2> /dev/null
+  make_libraries
+  make_tools
+if [ `is_gui_app` = "yes" ]; then
+  make_artwork
+  make_textures
+  make_fonts
+  make_strings
+fi
+  update_packfile
   make_payload
 ;;
 executable)
