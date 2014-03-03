@@ -34,4 +34,7 @@ PLAYBOOKSDK=/Developer/SDKs/bbndk-2.1.0
 # ------------------------------------
 ## OpenWrt firmware cross compiler (linux)
 OPENWRTSDK=$HOME/OpenWrt-SDK-ar71xx-for-linux-i486-gcc-4.6-linaro_uClibc-0.9.33.2
+# ------------------------------------
+## Carlson-Minot cross-compiler for arm linux (mac)
+CARLSONMINOTSDK=/usr/local/carlson-minot/crosscompilers
 # eof
