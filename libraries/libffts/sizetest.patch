@@ -1,0 +1,29 @@
+diff -rupN src/ffts.c srcpatch/ffts.c
+--- src/ffts.c	2013-09-24 19:11:03.000000000 -0700
++++ srcpatch/ffts.c	2014-03-01 22:44:29.000000000 -0800
+@@ -85,6 +85,9 @@ void ffts_free_1d(ffts_plan_t *p) {
+ }
+ 
+ ffts_plan_t *ffts_init_1d(size_t N, int sign) {
++  if(N == 0 || (N & (N - 1)) != 0){
++    return NULL;
++  }
+ 	ffts_plan_t *p = malloc(sizeof(ffts_plan_t));
+ 	size_t leafN = 8;	
+ 	size_t i;	
+diff -rupN src/ffts_nd.c srcpatch/ffts_nd.c
+--- src/ffts_nd.c	2013-09-24 19:11:03.000000000 -0700
++++ srcpatch/ffts_nd.c	2014-03-03 15:08:49.000000000 -0800
+@@ -238,6 +238,12 @@ void ffts_execute_nd(ffts_plan_t *p, con
+ }
+ 
+ ffts_plan_t *ffts_init_nd(int rank, size_t *Ns, int sign) {
++  int k;
++  for (k=0;k<rank;k++){
++    if(Ns[k] == 0 || (Ns[k] & (Ns[k] - 1)) != 0){
++      return NULL;
++    }
++  }
+ 	size_t vol = 1;
+ 
+ 	ffts_plan_t *p = malloc(sizeof(ffts_plan_t));
