@@ -48,7 +48,7 @@ linux*)
 openwrt)
   EXTRACONF=--host=@SYS_OPENWRTTARGET@
 ;;
-carlson-minot)
+sitara|carlson-minot)
   EXTRACONF=--host=arm
 ;;
 *)
