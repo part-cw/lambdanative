@@ -983,6 +983,10 @@ make_setup()
   if [ -f "$appsrcdir/LIBRARIES" ]; then
     libraries=`cat $appsrcdir/LIBRARIES`
   fi
+  tool_libraries=
+  if [ "$SYS_HOSTPLATFORM" = "$SYS_PLATFORM" ]; then
+    tool_libraries="libz libpng"
+  fi
   setstate
 }
 
@@ -1125,14 +1129,9 @@ make_libraries()
 {
   setstate LIBRARIES
   echo "==> creating libraries needed for $SYS_APPNAME.."
-  libfile=`locatefile apps/$SYS_APPNAME/LIBRARIES` 
-  assertfile $libfile
-  libraries=
-  if [ -f "$libfile" ]; then
-    libraries=`cat $libfile`
-  fi
   here=`pwd`
-  for lib in $libraries; do
+  all_libraries="$tool_libraries $libraries"
+  for lib in $all_libraries; do
     libname=`echo "$lib!" | cut -f 1 -d "!"`
     excludes=`echo "$lib!" | cut -f 2- -d "!"`
     excluded=`echo "$excludes" | grep $SYS_PLATFORM`
