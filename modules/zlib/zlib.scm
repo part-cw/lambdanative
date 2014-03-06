@@ -76,13 +76,14 @@ c-declare-end
          "___result=_zlib_compress(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)),___arg2,
               ___CAST(void*,___BODY_AS(___arg3,___tSUBTYPED)),___arg4,___arg5);") inbuf inlen 
                 outbuf outlen clevel)))
-        (if (fx= retval 0) #f (u8vector-append (u8vector 1) (subu8vector outbuf 0 retval)))))) #f))
+        (if (fx= retval 0) #f (u8vector-append (u8vector 2) (subu8vector outbuf 0 retval)))))) #f))
 
 (define (zlib-u8vector-decompress inbuf)
   (if (u8vector? inbuf)
   (let ((flag (u8vector-ref inbuf 0))
         (inlen (u8vector-length inbuf)))
    (if (fx= flag 0) (subu8vector inbuf 1 inlen)
+     (if (fx= flag 1) (u8vector-decompress inbuf)
      (let expand ((outlen (* 5 inlen))) 
        (let* ((outbuf (make-u8vector outlen 0))
               (retval ((c-lambda  (scheme-object int scheme-object int) int
@@ -90,7 +91,7 @@ c-declare-end
                   ___CAST(void*,___BODY_AS(___arg3,___tSUBTYPED)),___arg4);")
                  (subu8vector inbuf 1 inlen) (- inlen 1) outbuf outlen)))
        (if (> outlen (* inlen 10000)) (begin (log-error "zlib: decompression failed") #f)
-         (if (> retval 0) (subu8vector outbuf 0 retval) (expand (* outlen 10)))))))) #f))
+         (if (> retval 0) (subu8vector outbuf 0 retval) (expand (* outlen 10))))))))) #f))
 
 (unit-test "zlib-compress" "1000 random vectors (min compression)"
   (lambda () (let loop ((n 1000))
