@@ -1,13 +1,12 @@
 #!/bin/sh
 
-URL="http://zlib.net/zlib-1.2.8.tar.gz"
-PKGSRC=`basename "$URL"`
+PKGSRC=zlib-1.2.8.tar.gz
 
 src=@SYS_PREFIXROOT@/packages/$PKGSRC
 
 if [ ! -f $src -a `which wget` ]; then
   echo "==> No source found, attempting to download.."
-  wget $URL -O $src
+  wget http://zlib.net/$PKGSRC -O $src
 fi
 
 if [ ! -f $src ]; then

@@ -1,13 +1,12 @@
 #!/bin/sh
 
-URL="ftp://ftp.simplesystems.org/pub/libpng/png/src/libpng16/libpng-1.6.9.tar.gz"
-PKGSRC=`basename "$URL"`
+PKGSRC=libpng-1.6.9.tar.gz
 
 src=@SYS_PREFIXROOT@/packages/$PKGSRC
 
 if [ ! -f $src -a `which wget` ]; then
   echo "==> No source found, attempting to download.."
-  wget $URL -O $src
+  wget http://prdownloads.sourceforge.net/libpng/$PKGSRC -O $src
 fi
 
 if [ ! -f $src ]; then
