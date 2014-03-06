@@ -23,8 +23,9 @@ mkdir $tmpdir
 
 here=`pwd`
 cd $tmpdir
+
 echo "==> Extracting source..."
-tar -zxf $src 
+tar -zxf "$src"
 
 echo "==> Configuring source..."
 cd *
@@ -39,13 +40,19 @@ if [ "X@SYS_VERBOSE@" = "X" ]; then
 makequiet="-s"
 fi
 
+if [ ! @SYS_PLATFORM@ = win32 ]; then
 CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure $confquiet --prefix="@SYS_PREFIX@" $EXTRACONF --static 
+else
+makequiet="-f win32/Makefile.gcc $makequiet"
+fi
+
 
 echo "==> Compiling source..."
 CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make $makequiet
 
 echo "==> Installing..."
-make install
+INCLUDE_PATH="@SYS_PREFIX@/include" LIBRARY_PATH="@SYS_PREFIX@/lib" BINARY_PATH="@SYS_PREFIX@/bin" make $makequiet install
+
 cd "$here"
 
 echo "==> Cleaning up..."

@@ -40,13 +40,25 @@ confquiet="--quiet"
 makequiet="-s"
 fi
 
+if [ ! @SYS_HOSTPLATFORM@ = win32 ]; then
 CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure $confquiet --prefix="@SYS_PREFIX@" $EXTRACONF --enable-static --disable-shared 
+else
+# mutilate some default windows makefile - argh!
+cat scripts/makefile.msys | sed 's|CC =|CC=@SYS_CC@ #|;s|DESTDIR=|DESTDIR=@SYS_PREFIX@ #|;s|ZLIBDIR=|ZLIBDIR=@SYS_PREFIX@/lib #|;s|ZLIBINC=|ZLIBINC=@SYS_PREFIX@/include #|' > makefile.msys
+makequiet=" -f ./makefile.msys $makequiet"
+fi
 
 echo "==> Compiling source..."
 CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make $makequiet
 
 echo "==> Installing..."
+if [ ! @SYS_HOSTPLATFORM@ = win32 ]; then
 make $makequiet install
+else
+cp *.h @SYS_PREFIX@/include
+cp libpng.a @SYS_PREFIX@/lib
+fi
+
 cd "$here"
 
 echo "==> Cleaning up..."

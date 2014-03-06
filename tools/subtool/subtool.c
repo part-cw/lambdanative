@@ -77,6 +77,15 @@ void load_pattern(char *fname)
       struct pattern *tmp = (struct pattern*)malloc(sizeof(struct pattern));
       tmp->in = strdup((char*)&buf[1]);
       tmp->out = strdup((char*)&buf[i+1]);
+
+#ifdef MINGW32
+      // mangle windows drive directives to make tar happy
+      if (tmp->out[1]==':') {
+        tmp->out[1]=tmp->out[0];
+        tmp->out[0]='/';
+      }
+#endif
+
       DMSG("%s -> [%s]", tmp->in, tmp->out);
       tmp->nxt=0;
       if (!fst) {

@@ -148,9 +148,9 @@ resetstate()
 
 assertfile()
 {
-  if [ ! -s "$1" ]; then
-    if [ -f $evallog ]; then
-      cat $evallog | sed '/^$/d'
+  if [ ! -e "$1" ]; then
+    if [ -f "$evallog" ]; then
+      cat "$evallog" | sed '/^$/d'
     fi
     echo "ERROR: failed on file $1" 1>&2
     if [ ! "X$2" = "X" ]; then 
@@ -187,7 +187,8 @@ asserterror()
 asserttool()
 {
   for tool in $@; do
-    if [ "X"`which $tool 2> /dev/null` = "X" ]; then 
+    tool_location=`which $tool 2> /dev/null` 
+    if [ "X$tool_location" = "X" ]; then 
       echo "ERROR: required tool $tool not found." 
       echo "Please install a package containing this tool before proceeding."
     if [ "X$SYS_VERBOSE" = "X" ]; then  
@@ -610,7 +611,11 @@ make_artwork()
   tmpfile="$SYS_PREFIXROOT/build/$SYS_APPNAME/tmp.png"
   if [ `isnewer $epssrc $pngsrc` = "yes" ]; then
     echo " => generating master pixmap.."
-    veval "gs -r600 -dNOPAUSE -sDEVICE=png16m -dEPSCrop -sOutputFile=$tmpfile $epssrc quit.ps"
+    gspostfix=
+    if [ $SYS_HOSTPLATFORM = win32 ]; then
+      gspostfix=win32
+    fi
+    veval "gs${gspostfix} -r600 -dNOPAUSE -sDEVICE=png16m -dEPSCrop -sOutputFile=$tmpfile $epssrc quit.ps"
     assertfile $tmpfile
     veval "convert $tmpfile -trim -transparent \"#00ff00\" $pngsrc"
     rm $tmpfile
@@ -933,7 +938,11 @@ make_setup()
   # build the subtool
   if ! `test -x  $SYS_HOSTPREFIX/bin/subtool` || 
        `test tools/subtool/subtool.c -nt $SYS_HOSTPREFIX/bin/subtool`; then
-    gcc -o $SYS_HOSTPREFIX/bin/subtool tools/subtool/subtool.c 2> /dev/null
+    flags=
+    if [ $SYS_HOSTPLATFORM = win32 ]; then
+      flags=-DMINGW32
+    fi
+    gcc $flags -o $SYS_HOSTPREFIX/bin/subtool tools/subtool/subtool.c 2> /dev/null
   fi
   ac_subst SYS_ORGTLD
   ac_subst SYS_ORGSLD
@@ -1138,7 +1147,7 @@ make_libraries()
     if [ "X$excluded" = "X" ]; then    
       libfile="$SYS_PREFIX/lib/$libname.a"
       libdir=`locatedir libraries/$libname`
-      assertfile $libdir
+      assertfile "$libdir"
       if [ `newerindir $libdir $libfile` = "yes" ]; then
         echo " => $libname.."
         cd $libdir
@@ -1225,7 +1234,12 @@ make_toolcheck()
   asserttool autoconf make gcc patch
   if [ `is_gui_app` = "yes" ]; then
     # graphics 
-    asserttool gs convert xelatex ps2eps freetype-config
+    if [ $SYS_HOSTPLATFORM = win32 ]; then
+      asserttool gswin32
+    else 
+      asserttool gs 
+    fi
+    asserttool convert xelatex ps2eps freetype-config
     # verify that xelatex works
     make_xelatexcheck
   fi
