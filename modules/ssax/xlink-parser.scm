@@ -153,7 +153,7 @@
      sxlink-arcs  ; no arc added
      (call-with-values
       (lambda ()
-        (let ((lst (string-split href (list #\#) 2)))
+        (let ((lst (ssax-string-split href (list #\#) 2)))
           (cond
             ((= (length lst) 1)  ; no XPointer fragment identifier
              (values (car lst) #f))
@@ -319,7 +319,7 @@
         position "locator element doesn't have an xlink:href attribute")
        locators+resources)
       (else
-       (let ((lst (string-split href (list #\#) 2)))
+       (let ((lst (ssax-string-split href (list #\#) 2)))
          (call-with-values
           (lambda ()
             (cond
@@ -1229,7 +1229,7 @@
                   '()
                   (call-with-values
                    (lambda ()
-                     (let ((lst (string-split (car href) (list #\#) 2)))
+                     (let ((lst (ssax-string-split (car href) (list #\#) 2)))
                        (cond
                          ((null? lst)  ; (car href)=""  - the real situation
                           (values (car href) #f))

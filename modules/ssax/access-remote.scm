@@ -225,7 +225,7 @@
                 (substring path 3 lng)))
        (else (values "" path)))))
    (lambda (root rel-path)
-     (let ((lst (string-split rel-path (list #\/ #\\))))
+     (let ((lst (ssax-string-split rel-path (list #\/ #\\))))
        (if (null? lst)  ; the relative path is empty
            (values root '() "")
            (let ((lst (reverse lst)))

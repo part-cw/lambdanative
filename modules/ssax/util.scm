@@ -97,9 +97,9 @@
 
 
 ; 
-; -- procedure+: string-split STRING
-; -- procedure+: string-split STRING '()
-; -- procedure+: string-split STRING '() MAXSPLIT
+; -- procedure+: ssax-string-split STRING
+; -- procedure+: ssax-string-split STRING '()
+; -- procedure+: ssax-string-split STRING '() MAXSPLIT
 ;
 ; Returns a list of whitespace delimited words in STRING.
 ; If STRING is empty or contains only whitespace, then the empty list
@@ -111,8 +111,8 @@
 ; applications it behooves you not to split into more fields than you
 ; really need."
 ;
-; -- procedure+: string-split STRING CHARSET
-; -- procedure+: string-split STRING CHARSET MAXSPLIT
+; -- procedure+: ssax-string-split STRING CHARSET
+; -- procedure+: ssax-string-split STRING CHARSET MAXSPLIT
 ;
 ; Returns a list of words delimited by the characters in CHARSET in
 ; STRING. CHARSET is a list of characters that are treated as delimiters.
@@ -129,17 +129,17 @@
 ;
 ; This is based on the split function in Python/Perl
 ;
-; (string-split " abc d e f  ") ==> ("abc" "d" "e" "f")
-; (string-split " abc d e f  " '() 1) ==> ("abc d e f  ")
-; (string-split " abc d e f  " '() 0) ==> ()
-; (string-split ":abc:d:e::f:" '(#\:)) ==> ("" "abc" "d" "e" "" "f" "")
-; (string-split ":" '(#\:)) ==> ("" "")
-; (string-split "root:x:0:0:Lord" '(#\:) 2) ==> ("root" "x:0:0:Lord")
-; (string-split "/usr/local/bin:/usr/bin:/usr/ucb/bin" '(#\:))
+; (ssax-string-split " abc d e f  ") ==> ("abc" "d" "e" "f")
+; (ssax-string-split " abc d e f  " '() 1) ==> ("abc d e f  ")
+; (ssax-string-split " abc d e f  " '() 0) ==> ()
+; (ssax-string-split ":abc:d:e::f:" '(#\:)) ==> ("" "abc" "d" "e" "" "f" "")
+; (ssax-string-split ":" '(#\:)) ==> ("" "")
+; (ssax-string-split "root:x:0:0:Lord" '(#\:) 2) ==> ("root" "x:0:0:Lord")
+; (ssax-string-split "/usr/local/bin:/usr/bin:/usr/ucb/bin" '(#\:))
 ; ==> ("/usr/local/bin" "/usr/bin" "/usr/ucb/bin")
-; (string-split "/usr/local/bin" '(#\/)) ==> ("" "usr" "local" "bin")
+; (ssax-string-split "/usr/local/bin" '(#\/)) ==> ("" "usr" "local" "bin")
 
-(define (string-split str . rest)
+(define (ssax-string-split str . rest)
 		; maxsplit is a positive number
   (define (split-by-whitespace str maxsplit)
     (define (skip-ws i yet-to-split-count)
