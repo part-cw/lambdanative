@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PKGSRC=opus-1.0.3.tar.gz
+PKGSRC=opus-1.1.tar.gz
 
 src=@SYS_PREFIXROOT@/packages/$PKGSRC
 
