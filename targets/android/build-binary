@@ -50,6 +50,7 @@ android_subst()
   ac_subst ANDROID_JAVA_ACTIVITYADDITIONS "@$d/ANDROID_java_activityadditions"
   ac_subst ANDROID_XML_PERMISSIONS "@$d/ANDROID_xml_permissions"
   ac_subst ANDROID_INTENT_FILTERS "@$d/ANDROID_intent_filters"
+  ac_subst ANDROID_XML_RECEIVERS "@$d/ANDROID_xml_receivers"
 }
 android_subst loaders/android
 for m in $modules; do
@@ -72,6 +73,10 @@ fi
 $ANDROIDSDK/tools/android --silent create project \
   --target $ANDROIDSDKTARGET --name $SYS_APPNAME --path $tmpdir \
   --activity $SYS_APPNAME --package $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME
+
+#$ANDROIDSDK/tools/android --silent update project \
+#  --target $ANDROIDSDKTARGET --path $tmpdir \
+#  --library $ANDROIDSDK/extras/google/google_play_services/libproject/google-play-services_lib
 
 echo " => preparing icons.."
 mkdir -p $tmpdir/res/drawable
