@@ -1,0 +1,61 @@
+#!/bin/sh
+
+PKGSRC=zlib-1.2.8.tar.gz
+
+src=@SYS_PREFIXROOT@/packages/$PKGSRC
+
+if [ ! -f $src -a `which wget` ]; then
+  echo "==> No source found, attempting to download.."
+  wget http://zlib.net/$PKGSRC -O $src
+fi
+
+if [ ! -f $src ]; then
+  echo "==> ERROR: Unable to proceed. Please obtain $src first."
+  exit 1
+fi
+
+tmpdir=tmp_compile
+
+if [ -d $tmpdir ]; then
+rm -rf $tmpdir
+fi
+mkdir $tmpdir
+
+here=`pwd`
+cd $tmpdir
+
+echo "==> Extracting source..."
+tar -zxf "$src"
+
+echo "==> Configuring source..."
+cd *
+EXTRACONF=
+if [ ! @SYS_PLATFORM@ = @SYS_HOSTPLATFORM@ ]; then
+  EXTRACONF=--host=@SYS_ARCH@
+fi
+
+confquiet=
+makequiet=
+if [ "X@SYS_VERBOSE@" = "X" ]; then
+makequiet="-s"
+fi
+
+if [ ! @SYS_PLATFORM@ = win32 ]; then
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure $confquiet --prefix="@SYS_PREFIX@" $EXTRACONF --static 
+else
+makequiet="-f win32/Makefile.gcc $makequiet"
+fi
+
+
+echo "==> Compiling source..."
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make $makequiet
+
+echo "==> Installing..."
+INCLUDE_PATH="@SYS_PREFIX@/include" LIBRARY_PATH="@SYS_PREFIX@/lib" BINARY_PATH="@SYS_PREFIX@/bin" make $makequiet install
+
+cd "$here"
+
+echo "==> Cleaning up..."
+rm -rf $tmpdir
+
+echo "==> All done."

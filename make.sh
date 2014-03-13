@@ -148,9 +148,9 @@ resetstate()
 
 assertfile()
 {
-  if [ ! -s "$1" ]; then
-    if [ -f $evallog ]; then
-      cat $evallog | sed '/^$/d'
+  if [ ! -e "$1" ]; then
+    if [ -f "$evallog" ]; then
+      cat "$evallog" | sed '/^$/d'
     fi
     echo "ERROR: failed on file $1" 1>&2
     if [ ! "X$2" = "X" ]; then 
@@ -187,7 +187,8 @@ asserterror()
 asserttool()
 {
   for tool in $@; do
-    if [ "X"`which $tool 2> /dev/null` = "X" ]; then 
+    tool_location=`which $tool 2> /dev/null` 
+    if [ "X$tool_location" = "X" ]; then 
       echo "ERROR: required tool $tool not found." 
       echo "Please install a package containing this tool before proceeding."
     if [ "X$SYS_VERBOSE" = "X" ]; then  
@@ -428,6 +429,9 @@ compile_payload()
   objs=
 #  defs="-D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
   defs="$GAMBIT_DEFS"
+  if [ `is_standalone_app` = "yes" ]; then
+     defs="$defs -DSTANDALONE"
+  fi
   echo "==> creating payload needed for $SYS_APPNAME.."
   mkdir -p "$SYS_PREFIX/build"
   dirty=no
@@ -535,9 +539,6 @@ void ffi_event(int t, int x, int y)
 }
 #endif
 _EOF
-    if [ `is_standalone_app` = "yes" ]; then
-      defs="$defs -DSTANDALONE"
-    fi
     veval "$SYS_ENV $SYS_CC $defs -c -o $hotgt $hctgt -I$SYS_PREFIX/include"
     assertfile $hotgt
   fi
@@ -610,7 +611,11 @@ make_artwork()
   tmpfile="$SYS_PREFIXROOT/build/$SYS_APPNAME/tmp.png"
   if [ `isnewer $epssrc $pngsrc` = "yes" ]; then
     echo " => generating master pixmap.."
-    veval "gs -r600 -dNOPAUSE -sDEVICE=png16m -dEPSCrop -sOutputFile=$tmpfile $epssrc quit.ps"
+    gspostfix=
+    if [ $SYS_HOSTPLATFORM = win32 ]; then
+      gspostfix=win32
+    fi
+    veval "gs${gspostfix} -r600 -dNOPAUSE -sDEVICE=png16m -dEPSCrop -sOutputFile=$tmpfile $epssrc quit.ps"
     assertfile $tmpfile
     veval "convert $tmpfile -trim -transparent \"#00ff00\" $pngsrc"
     rm $tmpfile
@@ -933,7 +938,11 @@ make_setup()
   # build the subtool
   if ! `test -x  $SYS_HOSTPREFIX/bin/subtool` || 
        `test tools/subtool/subtool.c -nt $SYS_HOSTPREFIX/bin/subtool`; then
-    gcc -o $SYS_HOSTPREFIX/bin/subtool tools/subtool/subtool.c 2> /dev/null
+    flags=
+    if [ $SYS_HOSTPLATFORM = win32 ]; then
+      flags=-DMINGW32
+    fi
+    gcc $flags -o $SYS_HOSTPREFIX/bin/subtool tools/subtool/subtool.c 2> /dev/null
   fi
   ac_subst SYS_ORGTLD
   ac_subst SYS_ORGSLD
@@ -982,6 +991,10 @@ make_setup()
   libraries=
   if [ -f "$appsrcdir/LIBRARIES" ]; then
     libraries=`cat $appsrcdir/LIBRARIES`
+  fi
+  tool_libraries=
+  if [ "$SYS_HOSTPLATFORM" = "$SYS_PLATFORM" ]; then
+    tool_libraries="libz libpng"
   fi
   setstate
 }
@@ -1125,21 +1138,16 @@ make_libraries()
 {
   setstate LIBRARIES
   echo "==> creating libraries needed for $SYS_APPNAME.."
-  libfile=`locatefile apps/$SYS_APPNAME/LIBRARIES` 
-  assertfile $libfile
-  libraries=
-  if [ -f "$libfile" ]; then
-    libraries=`cat $libfile`
-  fi
   here=`pwd`
-  for lib in $libraries; do
+  all_libraries="$tool_libraries $libraries"
+  for lib in $all_libraries; do
     libname=`echo "$lib!" | cut -f 1 -d "!"`
     excludes=`echo "$lib!" | cut -f 2- -d "!"`
     excluded=`echo "$excludes" | grep $SYS_PLATFORM`
     if [ "X$excluded" = "X" ]; then    
       libfile="$SYS_PREFIX/lib/$libname.a"
       libdir=`locatedir libraries/$libname`
-      assertfile $libdir
+      assertfile "$libdir"
       if [ `newerindir $libdir $libfile` = "yes" ]; then
         echo " => $libname.."
         cd $libdir
@@ -1226,7 +1234,12 @@ make_toolcheck()
   asserttool autoconf make gcc patch
   if [ `is_gui_app` = "yes" ]; then
     # graphics 
-    asserttool gs convert xelatex ps2eps freetype-config
+    if [ $SYS_HOSTPLATFORM = win32 ]; then
+      asserttool gswin32
+    else 
+      asserttool gs 
+    fi
+    asserttool convert xelatex ps2eps freetype-config
     # verify that xelatex works
     make_xelatexcheck
   fi
@@ -1334,7 +1347,14 @@ if [ ! "X$cfg_version" = "X$cur_version" ]; then
   exit 1
 fi
 
-case "$1" in
+# override the make argument
+make_argument=$1
+if [ "X$make_argument" = "Xall" ] && [ -f "targets/$SYS_PLATFORM/make_argument" ]; then
+  make_argument=`cat "targets/$SYS_PLATFORM/make_argument"`
+  echo "WARNING: target is forcing make argument: $make_argument"
+fi
+
+case "$make_argument" in
 clean) 
   rm -rf tmp.?????? 2> /dev/null
   make_clean
@@ -1359,6 +1379,16 @@ explode)
   explode_library $2
 ;;
 payload)
+  rm -rf tmp.?????? 2> /dev/null
+  make_libraries
+  make_tools
+if [ `is_gui_app` = "yes" ]; then
+  make_artwork
+  make_textures
+  make_fonts
+  make_strings
+fi
+  update_packfile
   make_payload
 ;;
 executable)

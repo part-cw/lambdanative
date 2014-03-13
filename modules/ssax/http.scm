@@ -51,7 +51,7 @@
   ; invoke the read-resp-status-line on the opened http-port.
   (define (make-req schema dummy host resource)
     (let* ((target-host (or http-proxy host))
-	   (target-addr-lst (string-split target-host '(#\:)))
+	   (target-addr-lst (ssax-string-split target-host '(#\:)))
 	   (target-host-proper (car target-addr-lst))
 	   (target-port
 	    (if (pair? (cdr target-addr-lst))
@@ -112,7 +112,7 @@
        ((not (string-prefix? "HTTP/1." resp-line))
 	(die 'BAD-RESP-LINE resp-headers http-port))
        (else
-	(let* ((resp-line-parts (string-split resp-line '() 3))
+	(let* ((resp-line-parts (ssax-string-split resp-line '() 3))
 	       (resp-code
 		(and (pair? resp-line-parts)
 		     (pair? (cdr resp-line-parts))
@@ -143,7 +143,7 @@
 
   ; parse the req-url and exit either to make-req, or to 
   ; the response-handler to handle the error
-  (let ((url-parts (string-split req-url '(#\/) 4)))
+  (let ((url-parts (ssax-string-split req-url '(#\/) 4)))
     ; this stub is added by Dmitry Lizorkin for handling URIs consisting of
     ; just a schema and a host, say, "http://www.plt-scheme.org"
     (let ((url-parts

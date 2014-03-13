@@ -1,12 +1,11 @@
 #!/bin/sh
-
-PKGSRC=opus-1.1.tar.gz
+PKGSRC=ffts-0.7.tar.gz
 
 src=@SYS_PREFIXROOT@/packages/$PKGSRC
 
 if [ ! -f $src -a `which wget` ]; then
   echo "==> No source found, attempting to download.."
-  wget http://downloads.xiph.org/releases/opus/$PKGSRC -O $src
+  wget http://anthonix.com/ffts/releases/$PKGSRC -O $src
 fi
 
 if [ ! -f $src ]; then
@@ -41,18 +40,27 @@ autoconf
 echo "==> Configuring source..."
 case @SYS_PLATFORM@ in
 ios)
-  EXTRACONF=--host=arm
+  EXTRAHOST=--host=arm
+  EXTRAENABLE=--enable-neon
 ;;
 android)
-  EXTRACONF=--host=arm-eabi
+  EXTRAHOST=--host=arm-eabi
+  EXTRAENABLE=--enable-neon
 ;;
 win32*)
-  EXTRACONF=--host=i386-mingw32
+  EXTRAHOST=--host=i386-mingw32
+  EXTRAENABLE=--enable-sse
 ;;
 linux*)
-  EXTRACONF=--host=i386-linux
+  EXTRAHOST=--host=i386-linux
+  EXTRAENABLE=--enable-sse
+;;
+macosx)
+  EXTRAHOST=
+  EXTRAENABLE=--enable-sse
 ;;
 *)
+  EXTRAHOST=
   EXTRACONF=
 ;;
 esac
@@ -61,10 +69,8 @@ if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
   EXTRACONF=
 fi
 
-CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure --quiet --prefix="@SYS_PREFIX@" $EXTRACONF  --enable-static --disable-shared
-
-mv Makefile tmp
-cat tmp | sed "s/-arch i386//g;s/-arch x86_64/-m32/" > Makefile
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure --quiet --prefix="@SYS_PREFIX@" $EXTRAHOST $EXTRAENABLE --enable-single
+cd src
 
 echo "==> Compiling source..."
 CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make -s

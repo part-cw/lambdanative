@@ -880,7 +880,7 @@
 (define (draft:core-normalize-space num-anc . arg-func)  ; optional argument
   (if (null? arg-func)  ; no argument supplied
       (lambda (nodeset position+size var-binding)
-        (let rpt ((src (string-split
+        (let rpt ((src (ssax-string-split
                         (sxml:string (draft:contextset->nodeset nodeset))
                         sxml:whitespace))
                   (res '()))
@@ -895,7 +895,7 @@
              (rpt (cdr src) (cons (car src) (cons " " res)))))))
       (let ((func (car arg-func)))
         (lambda (nodeset position+size var-binding)
-          (let rpt ((src (string-split
+          (let rpt ((src (ssax-string-split
                           (sxml:string
                            (draft:contextset->nodeset
                             (func nodeset position+size var-binding)))

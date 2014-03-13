@@ -350,7 +350,7 @@
 (define (sxml:core-normalize-space . arg-func)  ; optional argument
   (if (null? arg-func)  ; no argument supplied
       (lambda (nodeset root-node context var-binding)
-        (let rpt ((src (string-split (sxml:string nodeset) sxml:whitespace))
+        (let rpt ((src (ssax-string-split (sxml:string nodeset) sxml:whitespace))
                   (res '()))
           (cond
             ((null? src)
@@ -363,7 +363,7 @@
              (rpt (cdr src) (cons (car src) (cons " " res)))))))
       (let ((func (car arg-func)))
         (lambda (nodeset root-node context var-binding)
-          (let rpt ((src (string-split
+          (let rpt ((src (ssax-string-split
                           (sxml:string
                            (func nodeset root-node context var-binding))
                           sxml:whitespace))
