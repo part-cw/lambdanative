@@ -143,10 +143,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ))
 
 (define (listlist-inverse m)
-  (if (fx= (length m) 2)
-    (listlist-scale (list (list (cadadr m) (* (cadar m) -1)) (list (* (caadr m) -1) (caar m)))  
-                    (/ 1 (listlist-determinant m)))
-    (listlist-scale (transpose (listlist-cofactor m)) (/ 1 (listlist-determinant m)))
+  (let ((det (listlist-determinant m)))
+    (if (= det 0) #f
+      (if (fx= (length m) 2)
+        (listlist-scale (list (list (cadadr m) (* (cadar m) -1)) (list (* (caadr m) -1) (caar m)))  
+                        (/ 1 det))
+        (listlist-scale (transpose (listlist-cofactor m)) (/ 1 det))
+      )
+    )
   ))
 
 ;;
@@ -208,5 +212,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             '((1/5 1/5 0) (-1/5 3/10 1) (1/5 -3/10 0)))
     (equal? (listlist-inverse '((1 2 0 0) (0 0 3 0) (4 0 5 1) (0 5 0 0)))
             '((1 0 0 -2/5) (0 0 0 1/5) (0 1/3 0 0) (-4 -5/3 1 8/5)))
+    (equal? (listlist-inverse '((1 1) (1 1))) #f)
   )))
 ;;eof
