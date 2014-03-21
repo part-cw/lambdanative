@@ -77,6 +77,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "screenindicator.scm")
 (include "chat.scm")
 (include "numberwheel.scm")
+(include "verticalvaluepicker.scm")
 (include "verticalnumberwheel.scm")
 (include "lockpane.scm")
 (include "timewheels.scm")
