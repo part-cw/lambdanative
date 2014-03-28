@@ -69,4 +69,149 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (else
          (cons (car tree) (flatten (cdr tree))))))
 
-;; eof
+
+(define (listlist-add m1 m2)
+  (if (list? (car m1))
+    (map (lambda (row1 row2) (map + row1 row2)) m1 m2)
+    (map + m1 m2)
+  ))
+
+(define (listlist-subtract m1 m2)
+  (if (list? (car m1))
+    (map (lambda (row1 row2) (map - row1 row2)) m1 m2)
+    (map - m1 m2)
+  ))
+
+(define (listlist-scale m n)
+  (if (list? (car m))
+    (map (lambda (row) (map (lambda (x) (* x n)) row)) m)
+    (map (lambda (l) (* l n)) m)
+  ))
+
+(define (listlist-multiply m1 m2)
+  (cond ((number? m1) (listlist-scale m2 m1))
+         ((number? m2) (listlist-scale m1 m2))
+         (else
+           (transpose (map (lambda (row) (map (lambda (col) 
+             (apply + (map * row col))) m1)) (transpose m2)))
+         )
+  ))
+
+(define (listlist:removecolumn m n)
+  (map (lambda (row) (append (list-head row (fx- n 1)) (list-tail row n))) m))
+
+(define (listlist:deleterowcol m row col)
+  (let loop ((i 1) (res (list)))
+    (if (fx> i (length m))
+      res
+      (loop (fx+ i 1) (if (fx= i row) res (append res (let ((r (list-ref m (fx- i 1))))
+        (list (append (list-head r (fx- col 1)) (list-tail r col)))))))
+    )
+  ))
+
+(define (listlist-determinant m)
+  (if (fx= (length m) (length (car m)))
+    (if (fx= (length m) 2)
+      (- (* (caar m) (cadadr m)) (* (cadar m) (caadr m)))
+      (let loop ((i 1)(res 0))
+        (if (fx> i (length m))
+          res
+          (loop (fx+ i 1) (+ res (* (list-ref (car m) (fx- i 1)) (if (odd? i) 1 -1)
+                                    (listlist-determinant (listlist:removecolumn (cdr m) i)))))
+        )
+      ))
+    #f
+  ))
+
+(define (listlist-cofactor m)
+  (let loopr ((row 1) (resr (list)))
+    (if (fx> row (length m))
+      resr
+      (loopr (fx+ row 1) 
+             (append resr 
+                (let loopc ((col 1) (resc (list)))
+                  (if (fx> col (length (car m)))
+                    (list resc)
+                    (loopc (fx+ col 1) (append resc (list
+                      (* (if (odd? row) (if (odd? col) 1 -1) (if (odd? col) -1 1)) 
+                         (listlist-determinant (listlist:deleterowcol m row col))))
+                    ))
+                ))
+             )
+      )
+    )
+  ))
+
+(define (listlist-inverse m)
+  (let ((det (listlist-determinant m)))
+    (if (= det 0) #f
+      (if (fx= (length m) 2)
+        (listlist-scale (list (list (cadadr m) (* (cadar m) -1)) (list (* (caadr m) -1) (caar m)))  
+                        (/ 1 det))
+        (listlist-scale (transpose (listlist-cofactor m)) (/ 1 det))
+      )
+    )
+  ))
+
+;;
+;; unit tests for List of List (matrix) functions
+;; -----------------
+
+(unit-test "listlist-add" "Matrix addition"
+  (lambda() (and
+    (equal? (listlist-add '(1 2 3) '(4 5 6)) '(5 7 9))
+    (equal? (listlist-add '((1 2 3) (4 5 6)) '((1 2 3) (4 5 6))) '((2 4 6) (8 10 12)))
+    (equal? (listlist-add '(1) '(1)) '(2))
+    (equal? (listlist-add '((1) (3)) '((1) (3))) '((2) (6)))
+  )))
+
+(unit-test "listlist-subtract" "Matrix subtraction"
+  (lambda () (and
+    (equal? (listlist-subtract '(1 2 3) '(1 2 3)) '(0 0 0))
+    (equal? (listlist-subtract '((1 2 3) (4 5 6)) '((1 2 3) (4 5 6))) '((0 0 0) (0 0 0)))
+    (equal? (listlist-subtract '(9) '(9)) '(0))
+    (equal? (listlist-subtract '((1) (1)) '((2) (2))) '((-1) (-1)))
+  )))
+
+(unit-test "listlist-scale" "Matrix scaling"
+  (lambda() (and
+    (equal? (listlist-scale '(1 2 3) 2) '(2 4 6))
+    (equal? (listlist-scale '(1 1 1 1 1) 5) '(5 5 5 5 5))
+    (equal? (listlist-scale '((1 2 3)) 2) '((2 4 6)))
+    (equal? (listlist-scale '((1 0 -1) (2 2 2)) -2) '((-2 0 2)(-4 -4 -4)))
+  )))
+
+(unit-test "listlist-multiply" "Matrix multiplication"
+  (lambda() (and
+    (equal? (listlist-multiply '((1 2 3) (4 5 6)) '((7 8) (9 10) (11 12)))
+            '((58 64) (139 154)))
+    (equal? (listlist-multiply '((1 2) (3 4)) '((2 0) (1 2))) '((4 4) (10 8)))
+    (equal? (listlist-multiply '((2 0) (1 2)) '((1 2) (3 4))) '((2 4) (7 10)))
+    (equal? (listlist-multiply '((1 2 3) (4 5 6) (7 8 9)) '((1 0 0) (0 1 0) (0 0 1)))
+            '((1 2 3) (4 5 6) (7 8 9)))
+    (equal? (listlist-multiply '((1 2)) '((3) (4))) '((11)))
+  )))
+
+(unit-test "listlist-determinant" "Matrix determinant"
+  (lambda() (and
+    (equal? (listlist-determinant '((-2 2 -3) (-1 1 3) (2 0 -1))) 18)
+    (equal? (listlist-determinant '((3 8) (4 6))) -14)
+    (equal? (listlist-determinant '((1 1 1) (1 1 1) (1 1 1))) 0)
+    (equal? (listlist-determinant '((1 2 3) (1 0 2) (1 2 1))) 4)
+    (equal? (listlist-determinant '((1 2 3 4) (5 6 7 8) (9 10 11 12) (13 14 15 16))) 0)
+    (equal? (listlist-determinant '((1 2 3 4) (2 1 4 3) (3 4 1 2) (4 3 2 1))) 0)
+    (equal? (listlist-determinant '((1 2 3 0) (2 1 4 3) (3 4 1 2) (0 3 2 1))) 80)
+  )))
+
+(unit-test "listlist-inverse" "Matrix inverse"
+  (lambda() (and
+    (equal? (listlist-inverse '((4 7) (2 6))) '((3/5 -7/10) (-1/5 2/5)))
+    (equal? (listlist-inverse '((1 3 3) (1 4 3) (1 3 4)))
+            '((7 -3 -3) (-1 1 0) (-1 0 1)))
+    (equal? (listlist-inverse '((3 0 2) (2 0 -2) (0 1 1))) 
+            '((1/5 1/5 0) (-1/5 3/10 1) (1/5 -3/10 0)))
+    (equal? (listlist-inverse '((1 2 0 0) (0 0 3 0) (4 0 5 1) (0 5 0 0)))
+            '((1 0 0 -2/5) (0 0 0 1/5) (0 1/3 0 0) (-4 -5/3 1 8/5)))
+    (equal? (listlist-inverse '((1 1) (1 1))) #f)
+  )))
+;;eof
