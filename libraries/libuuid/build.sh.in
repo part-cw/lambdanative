@@ -26,8 +26,14 @@ cd $tmpdir
 echo "==> Extracting source..."
 tar -zxf $src 
 
-echo "==> Configuring source..."
 cd *
+echo "==> Patching source..."
+patches=`ls -1 ../../*.patch`
+for p in $patches; do
+  patch -p0 < $p
+  done
+
+echo "==> Configuring source..."
 EXTRACONF=
 if [ ! @SYS_PLATFORM@ = @SYS_HOSTPLATFORM@ ]; then
   EXTRACONF=--host=@SYS_ARCH@
