@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2014, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -36,6 +36,9 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
+;; Test input and output
+(include "csv-test-input.scm")
+
 ;; Useful procedures for working with csv files.
 
 (define (csv-read file)
@@ -43,9 +46,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     ;; When reading in initially split by new line character
     (let loop ((line (read-line (current-input-port) #\newline)) (res '()))
       (if (eof-object? line)
-        res
-        ;; When appending to existing lines, split by ^M (from Excel) character and then by commas
-        (loop (read-line) (append res (let sploop ((rows (string-split line #\x0d)) (leftover #f) (leftovercount 0) (finalrows '()))
+        ;; Then split the cells within each row, but keep track of where commas or new lines are actually inside quotations, so shouldn't apply
+        (let sploop ((rows res) (leftover #f) (leftovercount 0) (finalrows '()))
           (if (fx> (length rows) 0)
             (let* ((row (car rows))
                    (quotecount (+ leftovercount (string-count row "\""))))
@@ -62,8 +64,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (append finalrows (list (csv:split leftover)))
               finalrows
             )
-          )))
+          )
         )
+        ;; First, just make list of strings (one string per potential row) by breaking input on #\newline and #\x0d
+        (loop (read-line) (append res (let ((rowsplit (string-split line #\x0d)))
+                                        (if (fx= (length rowsplit) 0) (list "") rowsplit))))
       )
     )
   ))
@@ -131,5 +136,115 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (close-output-port fh)
   )
 )
+
+;; unit tests
+;; -----------------
+
+;; 1. csv-write the given list
+;; 2. csv-read it
+;; 3. compare 
+(define (csv-unit-test-list testlist)
+  (let ((f (string-append (system-directory) (system-pathseparator) "csvtest.csv")))
+      
+      ;; Remove file if it exists
+      (if (file-exists? f)
+        (delete-file f))
+      
+      ;; Write and then read
+      (csv-write f testlist)
+      (let ((output (csv-read f)))
+        (delete-file f)
+        (equal? testlist output)))
+)
+
+;; 1. write the given string to a file
+;; 2. csv-read it
+;; 3. csv-write it
+;; 4. read from the file into a string
+;; 5. compare
+(define (csv-unit-test-string inputstring outputstring)
+  (let ((f (string-append (system-directory) (system-pathseparator) "csvtest.csv")))
+
+    ;; Delete file if it already exists
+    (if (file-exists? f)
+      (delete-file f))
+
+    (let ((fh (open-output-file f))
+          (loadedlist #f)
+          (loadedstring ""))
+
+      ;; Output to the file
+      (display inputstring fh)
+      (close-output-port fh)
+
+      ;; Read, delete the file, and then write
+      (set! loadedlist (csv-read f))
+      (delete-file f)
+      (csv-write f loadedlist)
+
+      ;; Read back as a string, should be no new lines in the file
+      (with-input-from-file f (lambda ()
+                                (let loop ((line (read-line (current-input-port) #\newline)) (first #t))
+                                  (if (not (eof-object? line))
+                                    (begin
+                                      (set! loadedstring (if first line (string-append loadedstring "\n" line)))
+                                      (loop (read-line) #f))))))
+
+      ;; Delete file after
+      (delete-file f)
+
+      ;; Do comparison
+      (equal? loadedstring outputstring)))
+) 
+  
+;; 1. write the given string to a file
+;; 2. csv-read it
+;; 3. compare
+(define (csv-unit-test-read teststring testlist)
+  (let ((f (string-append (system-directory) (system-pathseparator) "csvtest.csv")))
+    
+     ;; Remove file if it exists
+     (if (file-exists? f)
+       (delete-file f))
+      
+     (let ((fh (open-output-file f)))
+
+       ;; Output to the file
+       (display teststring fh)
+       (close-output-port fh)
+    
+       ;; Write and then read=
+       (let ((output (csv-read f)))
+         (delete-file f)
+         (equal? testlist output))))
+)
+  
+(unit-test "csv-write-read" "Quotation marks and line feed"
+  (lambda ()
+    (csv-unit-test-list csv:test_line_feed))
+)
+
+(unit-test "csv-write-read" "Quotation marks and carriage return"
+  (lambda ()
+    (csv-unit-test-string csv:test_carriage_return_input csv:test_carriage_return_output))
+)
+
+(unit-test "csv-write-read" "Trend File 1"
+  (lambda () 
+    (csv-unit-test-string csv:test_trend_file1 csv:test_trend_file1))
+)
+
+(unit-test "csv-write-read" "Trend File 2 Write-Read"
+  (lambda () 
+    (csv-unit-test-list csv:test_trend_list))
+)
+
+(unit-test "csv-write-read" "Trend File 2 Read"
+  (lambda () 
+    (csv-unit-test-read csv:test_trend_file2 csv:test_trend_list))
+)
+      
+
+
 
 ;; eof
