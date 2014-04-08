@@ -47,11 +47,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (loop (cdr l))))))
     (let loop ((l lst)(tag #f)(count 0))
       (if (= (length l) 0)
-        (begin (if (and tag (> count 0))
+        (begin (if (and tag (not (eq? tag 'xml-concat)) (> count 0))
            (for-each sxml:display (list "</" tag ">"))))
         (let ((subl (car l))
               (subltype ""))
-          (cond ((symbol? subl) 
+          (cond ((and (symbol? subl) (not (eq? subl 'xml-concat)))
                    (for-each sxml:display (list "<" subl))
                    ;; try to locate attributes
                    (if (and (> (length l) 1) (list? (cadr l)) 
