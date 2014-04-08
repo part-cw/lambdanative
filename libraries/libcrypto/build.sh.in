@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PKGSRC=openssl-1.0.1f.tar.gz
+PKGSRC=openssl-1.0.1g.tar.gz
 
 src=@SYS_PREFIXROOT@/packages/$PKGSRC
 
