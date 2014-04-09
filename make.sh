@@ -1085,6 +1085,19 @@ make_install()
   setstate
 }
 
+make_install_tool()
+{
+  setstate INSTALLTOOL
+  binary="$SYS_PREFIX/${SYS_APPNAME}${SYS_APPFIX}/${SYS_APPNAME}${SYS_EXEFIX}"
+  if [ -x "$binary" ]; then
+    echo "==> installing $SYS_APPNAME as a lambdanative tool"
+    cp "$binary" $SYS_PREFIX/bin
+  else 
+    echo "Error: No binary found [$binary]"
+  fi
+  setstate
+}
+
 update_packfile()
 {
   setstate PACKTOOL
@@ -1414,6 +1427,9 @@ package)
 ;;
 install)
   make_install
+;;
+install-tool)
+  make_install_tool
 ;;
 info)
   make_info
