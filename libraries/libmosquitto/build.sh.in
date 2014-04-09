@@ -52,12 +52,12 @@ cd lib
 @SYS_RANLIB@ @SYS_PREFIX@/lib/libmosquitto.a  2> /dev/null
 cp mosquitto.h @SYS_PREFIX@/include/mosquitto.h
 
-if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ] || [ "@SYS_PLATFORM@" = linux486 ]; then
+if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ] || [ "@SYS_PLATFORM@" = linux486 ] ||  [ "@SYS_PLATFORM@" = carlson-minot ]; then
 
 echo "==> Building tools..."
 
 libs="-lssl -lcrypto -lm"
-if [ @SYS_PLATFORM@ = linux ] || [ @SYS_PLATFORM@ = linux486 ]; then
+if [ @SYS_PLATFORM@ = linux ] || [ @SYS_PLATFORM@ = linux486 ] || [ @SYS_PLATFORM@ = carlson-minot ]; then
 libs="$libs -ldl -lrt"
 fi
 libs="$libs -lm"
