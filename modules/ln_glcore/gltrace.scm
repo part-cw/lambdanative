@@ -165,7 +165,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (u8vector-fill! (table-ref t 'data) 0)
   (let loop ((x 0) (oldy 0))
     (if (fx= x (f32vector-length (table-ref t 'values)))
-      #t
+      (table-set! t 'y oldy)
       (let* ((val1 (f32vector-ref (table-ref t 'values) x))
              (val (if (nan? val1) 0. val1))
              (sval (min 1. (max 0. (/ (- val vmin) (- vmax vmin)))))
