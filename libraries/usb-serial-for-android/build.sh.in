@@ -1,7 +1,7 @@
 #!/bin/sh
 
 LIBNAME=usb-serial-for-android
-VERSION_HASH=eca40d6b
+VERSION_HASH=5c8a655
 
 tmpdir=tmp_compile
 
@@ -48,7 +48,7 @@ ant -quiet release
 
 echo " => Installing..."
 cp bin/classes.jar @SYS_PREFIX@/lib/$LIBNAME.jar
-ar q @SYS_PREFIX@/lib/$LIBNAME.a
+ar q @SYS_PREFIX@/lib/$LIBNAME.a bin/classes.jar
 cd "$here"
 
 echo " => Cleaning up..."
