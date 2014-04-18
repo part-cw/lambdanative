@@ -17,17 +17,25 @@
  
  #ifdef WIN32
  #	ifndef __cplusplus
---- lib/net_mosq.c	2013-12-02 15:03:39.000000000 -0800
-+++ lib/net_mosq.c	2014-02-04 15:10:38.000000000 -0800
-@@ -226,7 +226,7 @@
- 	int opt;
- #endif
+--- lib/net_mosq.c	2014-03-24 16:52:40.000000000 -0700
++++ lib/net_mosq.c	2014-04-17 23:27:15.000000000 -0700
+@@ -246,7 +246,7 @@
+ 	int s;
+ 	int rc;
  #ifdef WIN32
 -	uint32_t val = 1;
 +	u_long val = 1;
  #endif
  
  	*sock = INVALID_SOCKET;
+@@ -984,6 +984,7 @@
+ 		return 1;
+ 	}
+ #else
++	int opt;
+ 	opt = 1;
+ 	if(ioctlsocket(sock, FIONBIO, &opt)){
+ 		COMPAT_CLOSE(sock);
 --- lib/time_mosq.c	2013-12-02 15:03:39.000000000 -0800
 +++ lib/time_mosq.c	2014-02-04 15:09:44.000000000 -0800
 @@ -43,6 +43,7 @@
