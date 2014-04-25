@@ -194,6 +194,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (let* ((gui (car guis))
                (xofs (glgui-get gui 'xofs))
                (yofs (glgui-get gui 'yofs))
+               (cx (if (or (fx= t EVENT_KEYPRESS) (fx= t EVENT_KEYRELEASE)) x0 (- x0 xofs)))
+               (cy (if (or (fx= t EVENT_KEYPRESS) (fx= t EVENT_KEYRELEASE)) y0 (- y0 yofs)))
                (x (if (or (fx= t EVENT_KEYPRESS) (fx= t EVENT_KEYRELEASE)) x0
                     (+ (- xofs) (cond
                       ((fx= glgui:rotate 0) x0)
@@ -209,6 +211,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                       ((fx= glgui:rotate 3) (- app:height y0))
                       ))))
                (widget-list (reverse (glgui-get gui 'widget-list))))
+         (log-system "glgui:inputloop glgui:rotate=" glgui:rotate " x0=" x0 " y0=" y0 " xofs=" xofs " yofs=" yofs " x=" x " y=" y)
          (loop0 (cdr guis) (let loop ((wl widget-list)(done #f))
             (if (or (fx= (length wl) 0) done) done
                (let* ((wgt (car wl))
@@ -219,9 +222,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                       (p (glgui-widget-get gui wgt 'input-handle))
                       (container? (glgui-widget-get gui wgt 'container))
                       (r (if (and glgui:modalstate (or m minput) (not h))
-                            (if (procedure? p) (p gui wgt t x y) (if container? (glgui:inputloop t x0 y0 wgt) #f))
+                            (if (procedure? p) (p gui wgt t x y) (if container? (glgui:inputloop t cx cy wgt) #f))
                           (if (and (not glgui:modalstate) (not m) (not h))
-                            (if (procedure? p) (p gui wgt t x y) (if container? (glgui:inputloop t x0 y0 wgt) #f)) #f))))
+                            (if (procedure? p) (p gui wgt t x y) (if container? (glgui:inputloop t cx cy wgt) #f)) #f))))
                   (loop (cdr wl) (and (not (or (fx= t EVENT_BUTTON1UP) propagate glgui:propagate)) r))))))))))
 
 ;; process an input event
