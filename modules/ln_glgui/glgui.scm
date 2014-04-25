@@ -211,7 +211,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                       ((fx= glgui:rotate 3) (- app:height y0))
                       ))))
                (widget-list (reverse (glgui-get gui 'widget-list))))
-         (log-system "glgui:inputloop glgui:rotate=" glgui:rotate " x0=" x0 " y0=" y0 " xofs=" xofs " yofs=" yofs " x=" x " y=" y)
          (loop0 (cdr guis) (let loop ((wl widget-list)(done #f))
             (if (or (fx= (length wl) 0) done) done
                (let* ((wgt (car wl))
