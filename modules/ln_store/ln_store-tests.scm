@@ -63,13 +63,13 @@
 (unit-test "store-events" "Verify the Event functionality of the store"
   (lambda ()
     (define store (make-store (time->timestamp (current-time))))
-    (set! ##now 0.)
+    (set! ##now 0.5)
     ;; Event submission and retrival
     (set! part1 (let ((prio 1)
           (id "monitor")
           (payload "alarm"))
       (store-event-add store prio id payload)
-      (equal? (list (list 0. (string-append id ":" payload) prio)) (store-event-listnew store))
+      (equal? (list (list 0.5 (string-append id ":" payload) prio)) (store-event-listnew store))
     ))
     ;; Event Graylisting
     (set! part2 (let ((prio 2)
@@ -83,8 +83,20 @@
       (store-event-add store prio id payload)
       (set! ##now (+ ##now 15))
       (store-event-add store prio id payload)
-      (equal? (list (list 120. (string-append id ":" payload) prio)) (store-event-listnew store 120))
+      (equal? (list (list 120.5 (string-append id ":" payload) prio)) (store-event-listnew store 120))
     ))
-    (and part1 part2)
+    ;; Make sure none are missed
+    (set! part3 (let loop ((i 0))
+      (if (fx= i 10000) 
+        (and (= i (length (store-event-listnew store 150)))
+             (= 0 (length (store-event-listnew store ##now))))
+        (begin
+          (store-event-add store 0 "test" i)
+          (set! ##now (+ ##now (random-real)))
+          (loop (fx+ i 1))
+        )
+      )
+    ))
+    (and part1 part2 part3)
   ))
 ;;eof

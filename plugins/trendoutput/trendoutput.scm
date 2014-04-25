@@ -54,6 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (trends (instance-refvar store instance "Trends" '())))
    (instance-setvar! store instance "Handle" fh)
    (instance-setvar! store instance "FilePath" casefile)
+   (instance-setvar! store instance "NextRun" 0.)
    (if fh (begin
      (display (number->string ##now) fh) (display ", " fh) (display caseid fh) (display "\n" fh)
      (display (system-appname) fh) (display "," fh) (display (system-builddatetime) fh) (display "," fh)
@@ -83,8 +84,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (trends (instance-refvar store instance "Trends" '()))
          (deltat (fl- ##now (store-ref store "Start" 0.)))
          (prv (instance-refvar store instance "Prv" 0.))
+         (nextrun (instance-refvar store instance "NextRun" 0.))
          (interval (instance-refvar store instance "Interval" 1.)))
-    (if (and fh (fl> (fl- ##now prv) (fl- (flo interval) 0.05))) (begin
+    (if (and fh (fl>= deltat nextrun)) (begin
       (display (number->string (fix (floor deltat))) fh)
       (let loop ((ts trends))
         (if (fx= (length ts) 0)
@@ -101,6 +103,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       )
       (force-output fh)
       (instance-setvar! store instance "Prv" ##now)
+      (instance-setvar! store instance "NextRun" (fl+ nextrun (flo interval)))
     ))
   ))
 
