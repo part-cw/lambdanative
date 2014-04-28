@@ -1038,8 +1038,20 @@ make_setup()
   libraries=
   if [ -f "$appsrcdir/LIBRARIES" ]; then
     libraries=`cat $appsrcdir/LIBRARIES`
-    libraries=`filter_entries $SYS_PLATFORM $libraries`
   fi
+  for m in $modules; do
+    xlibs=`locatefile modules/$m/LIBRARIES silent`
+    if [ -f "$xlibs" ]; then
+      libraries=$libraries" "`cat "$xlibs"`
+    fi
+  done
+  for p in $plugins; do
+    xlibs=`locatefile plugins/$p/LIBRARIES silent`
+    if [ -f "$xlibs" ]; then
+      libraries=$libraries" "`cat "$xlibs"`
+    fi
+  done 
+  libraries=`filter_entries $SYS_PLATFORM $libraries`
   tool_libraries=
   if [ "$SYS_HOSTPLATFORM" = "$SYS_PLATFORM" ]; then
     tool_libraries="libz libpng"
