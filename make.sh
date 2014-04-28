@@ -378,6 +378,51 @@ is_standalone_app()
   echo $neg
 }
 
+#################################
+# conditional include/exclude filter
+
+# first argument is the filter applied to the remaining arguments
+filter_entries()
+{
+  filter=$1
+  entries=`echo "$@ " | cut -f 2- -d " "`
+  if [ "X$entries" = "X" ] || [ "X$filter" = "X" ]; then
+    echo ""
+  fi
+  res=
+  for e in $entries; do
+    entry=`echo "$e" | cut -f 1 -d "!" | cut -f 1 -d "+" `
+    includes=`echo "$e+" | cut -f 2- -d "+"`
+    if [ ! "X$includes" = "X" ]; then
+      included=no
+      for tmp in `echo "$includes" | tr '+' ' '`; do
+        if [ "X$tmp" = "X$filter" ]; then 
+          included=yes
+        fi
+      done
+      if [ $included = yes ]; then
+        res="$res $entry"
+      fi
+    fi
+    excludes=`echo "$e!" | cut -f 2- -d "!"`
+    if [ ! "X$excludes" = "X" ]; then
+      excluded=no
+      for tmp in `echo "$excludes" | tr '!' ' '`; do
+        if [ "X$tmp" = "X$filter" ]; then 
+          excluded=yes
+        fi
+      done
+      if [ $excluded = no ]; then
+        res="$res $entry"
+      fi
+    fi
+    if [ "X$includes" = "X" ] && [ "X$excludes" = "X" ]; then
+      res="$res $entry"
+    fi
+  done
+  echo $res
+}
+
 ###########################
 # general compiler functions
 
@@ -983,14 +1028,17 @@ make_setup()
   modules=
   if [ -f "$appsrcdir/MODULES" ]; then
     modules=`cat $appsrcdir/MODULES`
+    modules=`filter_entries $SYS_PLATFORM $modules`
   fi
   plugins=
   if [ -f "$appsrcdir/PLUGINS" ]; then
     plugins=`cat $appsrcdir/PLUGINS`
+    plugins=`filter_entries $SYS_PLATFORM $plugins`
   fi
   libraries=
   if [ -f "$appsrcdir/LIBRARIES" ]; then
     libraries=`cat $appsrcdir/LIBRARIES`
+    libraries=`filter_entries $SYS_PLATFORM $libraries`
   fi
   tool_libraries=
   if [ "$SYS_HOSTPLATFORM" = "$SYS_PLATFORM" ]; then
@@ -1042,16 +1090,7 @@ make_payload()
   done
   # note: textures, fonts and strings can't go before glcore!
   srcs="$coresrcs $texture_srcs $font_srcs $string_srcs $auxsrcs $appsrcdir/main.scm"
-  libs=
-  for l in $libraries; do
-    libname=`echo "$l!" | cut -f 1 -d "!"`
-    excludes=`echo "$l!" | cut -f 2- -d "!"`
-    excluded=`echo "$excludes" | grep $SYS_PLATFORM`
-    if [ "X$excluded" = "X" ]; then
-      libs="$libs $libname"
-    fi
-  done
-  compile_payload $name "$srcs" "$libs"
+  compile_payload $name "$srcs" "$libraries"
   setstate
 }
 
@@ -1153,24 +1192,23 @@ make_libraries()
   echo "==> creating libraries needed for $SYS_APPNAME.."
   here=`pwd`
   all_libraries="$tool_libraries $libraries"
-  for lib in $all_libraries; do
-    libname=`echo "$lib!" | cut -f 1 -d "!"`
-    excludes=`echo "$lib!" | cut -f 2- -d "!"`
-    excluded=`echo "$excludes" | grep $SYS_PLATFORM`
-    if [ "X$excluded" = "X" ]; then    
-      libfile="$SYS_PREFIX/lib/$libname.a"
-      libdir=`locatedir libraries/$libname`
-      assertfile "$libdir"
-      if [ `newerindir $libdir $libfile` = "yes" ]; then
-        echo " => $libname.."
-        cd $libdir
-        ac_output build.sh
-        eval "$SYS_ENV sh build.sh"
-        rm build.sh
-        cd $here
+  for libname in $all_libraries; do
+    libfile="$SYS_PREFIX/lib/$libname.a"
+    libdir=`locatedir libraries/$libname`
+    assertfile "$libdir"
+    if [ `newerindir $libdir $libfile` = "yes" ]; then
+      echo " => $libname.."
+      cd $libdir
+      ac_output build.sh
+      quiet=
+      if [ "X$SYS_VERBOSE" = "X" ]; then  
+        quiet="> /dev/null 2> /dev/null"
       fi
-      explode_library $libname
+      eval "$SYS_ENV sh build.sh $quiet"
+      rm build.sh
+      cd $here
     fi
+    explode_library $libname
   done
   setstate
 }
