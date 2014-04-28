@@ -1186,6 +1186,34 @@ make_package()
   setstate
 }
 
+make_library()
+{
+  libname=$1
+  libdir=`locatedir libraries/$libname`
+  assertfile "$libdir"
+  if [ -f "$libdir/LIB_DEPENDS" ]; then
+    dlibs=`cat $libdir/LIB_DEPENDS`
+    for dlib in $dlibs; do
+      make_library $dlib
+    done
+  fi
+  libdir=`locatedir libraries/$libname`
+  libfile="$SYS_PREFIX/lib/$libname.a"
+  if [ `newerindir $libdir $libfile` = "yes" ]; then
+    echo " => $libname.."
+    cd $libdir
+    ac_output build.sh
+    quiet=
+    if [ "X$SYS_VERBOSE" = "X" ]; then  
+      quiet="> /dev/null 2> /dev/null"
+    fi
+    eval "$SYS_ENV sh build.sh $quiet"
+    rm build.sh
+    cd $here
+  fi
+  explode_library $libname
+}
+
 make_libraries()
 {
   setstate LIBRARIES
@@ -1193,22 +1221,7 @@ make_libraries()
   here=`pwd`
   all_libraries="$tool_libraries $libraries"
   for libname in $all_libraries; do
-    libfile="$SYS_PREFIX/lib/$libname.a"
-    libdir=`locatedir libraries/$libname`
-    assertfile "$libdir"
-    if [ `newerindir $libdir $libfile` = "yes" ]; then
-      echo " => $libname.."
-      cd $libdir
-      ac_output build.sh
-      quiet=
-      if [ "X$SYS_VERBOSE" = "X" ]; then  
-        quiet="> /dev/null 2> /dev/null"
-      fi
-      eval "$SYS_ENV sh build.sh $quiet"
-      rm build.sh
-      cd $here
-    fi
-    explode_library $libname
+    make_library $libname
   done
   setstate
 }
