@@ -1206,9 +1206,10 @@ make_library()
   if [ -f "$libdir/LIB_DEPENDS" ]; then
     dlibs=`cat $libdir/LIB_DEPENDS`
     for dlib in $dlibs; do
-      make_library $dlib
+      make_library $dlib "(depedency)"
     done
   fi
+  libname=$1
   libdir=`locatedir libraries/$libname`
   libfile="$SYS_PREFIX/lib/$libname.a"
   if [ `newerindir $libdir $libfile` = "yes" ]; then
