@@ -945,7 +945,7 @@ make_setup()
   versionfile=`locatefile apps/$SYS_APPNAME/VERSION`
   assertfile $versionfile
   SYS_APPVERSION=`cat $versionfile`
-  SYS_APPVERSIONCODE=`echo $SYS_APPVERSION | sed 's/\.//'`
+  SYS_APPVERSIONCODE=`echo $SYS_APPVERSION | sed 's/\.//g'`
   echo "=== using profile $SYS_PROFILE [$profile].."
   echo "=== configured to build $SYS_APPNAME version $SYS_APPVERSION for $SYS_PLATFORM on $SYS_HOSTPLATFORM in $SYS_MODE mode"
   if [ "$SYS_MODE" = "release" ]; then
