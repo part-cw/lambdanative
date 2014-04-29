@@ -913,6 +913,29 @@ make_sounds()
 ###################################
 # platform specific stuff
 
+# search itemname diretories for ITEMNAME to populate items
+add_items()
+{
+  for newi in `filter_entries $SYS_PLATFORM $@`; do
+    idir=`locatedir $itemname/$newi`
+    assertfile "$idir"
+    isold=no
+    for oldi in $items; do
+      if [ $oldi = $newi ]; then
+        isold=yes
+      fi
+    done
+    if [ $isold = no ]; then
+      items="$items $newi"
+      capitemname=`echo "$itemname" | tr a-z A-Z`
+      xis=`locatefile $itemname/$newi/$capitemname silent`
+      if [ ! "X$xis" = "X" ] && [ -f "$xis" ]; then
+        add_items `cat "$xis"`
+      fi 
+    fi
+  done
+}
+
 make_setup()
 {
   setstate SETUP
@@ -1025,29 +1048,31 @@ make_setup()
   here=`pwd`
   appsrcdir=`locatedir apps/$name`
   apptgtdir=$SYS_PREFIX/${SYS_APPNAME}${SYS_APPFIX}
-  modules=
+  items=
+  itemname=modules
   if [ -f "$appsrcdir/MODULES" ]; then
-    modules=`cat $appsrcdir/MODULES`
-    modules=`filter_entries $SYS_PLATFORM $modules`
+    add_items `cat $appsrcdir/MODULES`
   fi
-  plugins=
+  modules=$items
+  items=
+  itemname=plugins
   if [ -f "$appsrcdir/PLUGINS" ]; then
-    plugins=`cat $appsrcdir/PLUGINS`
-    plugins=`filter_entries $SYS_PLATFORM $plugins`
+    add_items `cat $appsrcdir/PLUGINS`
   fi
+  plugins=$items
   libraries=
   if [ -f "$appsrcdir/LIBRARIES" ]; then
     libraries=`cat $appsrcdir/LIBRARIES`
   fi
   for m in $modules; do
     xlibs=`locatefile modules/$m/LIBRARIES silent`
-    if [ -f "$xlibs" ]; then
+    if [ ! "X$xlibs" = "X" ] && [ -f "$xlibs" ]; then
       libraries=$libraries" "`cat "$xlibs"`
     fi
   done
   for p in $plugins; do
     xlibs=`locatefile plugins/$p/LIBRARIES silent`
-    if [ -f "$xlibs" ]; then
+    if [ ! "X$xlibs" = "X" ] && [ -f "$xlibs" ]; then
       libraries=$libraries" "`cat "$xlibs"`
     fi
   done 
