@@ -349,12 +349,11 @@ ac_output()
 has_module()
 {
   res=no
-  modfile=`locatefile apps/$SYS_APPNAME/MODULES`
-  if [ -f "$modfile" ]; then
-    if [ ! "X"`cat "$modfile" | grep "$1" | cut -c 1` = "X" ]; then
-       res=yes
+  for m in $modules; do
+    if [ $m = $1 ]; then
+      res=yes
     fi
-  fi 
+  done
   echo $res
 }
 
