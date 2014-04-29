@@ -46,15 +46,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; ignore duplicate events for a period of time
 ;; NOTE: priority 0,1,4 event are passed without graylisting
 (define (event:graylisted? store estr now)
-  (let loop ((gl (store-ref store "EventGrayList" '()))(ngl '())(res #f))
+  ;; purge expired entries
+  (let loop ((gl (store-ref store "EventGrayList" '()))(ngl '()))
     (if (fx= (length gl) 0)
-      (begin
-        (store-set! store "EventGrayList" (append ngl (if (not res) (list (list now estr)) '())))
+      (store-set! store "EventGrayList" ngl)
+      (let* ((gentry (car gl)) (gtime (car gentry)) (gstr (cadr gentry)))
+        (loop (cdr gl) (append ngl (if (< (- now gtime) event:grayperiod) (list gentry) '())))
+      )
+    ))
+  ;; scan current entries
+  (let loop ((gl (store-ref store "EventGrayList" '()))(res #f))
+    (if (fx= (length gl) 0)
+      (let ((ogl (store-ref store "EventGrayList" '())))
+        (store-set! store "EventGrayList" (append ogl (if (not res) (list (list now estr)) '())))
         res
       )
       (let* ((gentry (car gl)) (gtime (car gentry)) (gstr (cadr gentry)))
-        (loop (cdr gl) (append ngl (if (< (- now gtime) event:grayperiod) (list gentry) '()))
-               (if (string=? gstr estr) #t res))))))
+        (loop (cdr gl) (if (string=? gstr estr) #t res))
+      )
+    )))
 
 (define (store-event-add store priority id . payload)
   (define (payload->string p)
