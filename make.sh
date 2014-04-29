@@ -1248,7 +1248,6 @@ make_library()
     rm build.sh
     cd $here
   fi
-  explode_library $libname
 }
 
 make_libraries()
@@ -1259,6 +1258,9 @@ make_libraries()
   all_libraries="$tool_libraries $libraries"
   for libname in $all_libraries; do
     make_library $libname
+  done
+  for libname in $libraries; do
+    explode_library $libname
   done
   setstate
 }
