@@ -58,6 +58,7 @@
 //-----------------------------------------------------------------------------
 #include "mo_audio.h"
 #include <AudioToolbox/AudioToolbox.h>
+#include <AVFoundation/AVAudioSession.h>
 
 extern int iphone_audioroute;
 
