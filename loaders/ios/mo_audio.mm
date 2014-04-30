@@ -105,6 +105,12 @@ extern "C" void setMicrophoneGain(Float32 inputGain)
     } 
 }
 
+extern "C" float getMicrophoneGain()
+{
+	AVAudioSession* avSession = [AVAudioSession sharedInstance];
+	return avSession.inputGain;
+}
+
 //-----------------------------------------------------------------------------
 // name: silenceData()
 // desc: zero out a buffer list of audio data
