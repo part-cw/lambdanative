@@ -945,8 +945,10 @@ make_setup()
   assertfile $versionfile
   SYS_APPVERSION=`cat $versionfile`
   SYS_APPVERSIONCODE=`echo $SYS_APPVERSION | sed 's/\.//g'`
-  echo "=== using profile $SYS_PROFILE [$profile].."
-  echo "=== configured to build $SYS_APPNAME version $SYS_APPVERSION for $SYS_PLATFORM on $SYS_HOSTPLATFORM in $SYS_MODE mode"
+  if [ ! "X$1" = "Xsilent" ]; then
+    echo "=== using profile $SYS_PROFILE [$profile].."
+    echo "=== configured to build $SYS_APPNAME version $SYS_APPVERSION for $SYS_PLATFORM on $SYS_HOSTPLATFORM in $SYS_MODE mode"
+  fi
   if [ "$SYS_MODE" = "release" ]; then
     SYS_IOSCERT=$SYS_IOSRELCERT
   else
@@ -1081,7 +1083,7 @@ make_setup()
   libraries=`filter_entries $SYS_PLATFORM $libraries`
   tool_libraries=
   if [ "$SYS_HOSTPLATFORM" = "$SYS_PLATFORM" ]; then
-    tool_libraries="libz libpng"
+    tool_libraries="libz libpng libgambc"
   fi
   setstate
 }
@@ -1247,7 +1249,7 @@ make_library()
     if [ "X$SYS_VERBOSE" = "X" ]; then  
       quiet="> /dev/null 2> /dev/null"
     fi
-    eval "$SYS_ENV sh build.sh $quiet"
+    veval "$SYS_ENV sh build.sh $quiet"
     rm build.sh
     cd $here
   fi
@@ -1279,7 +1281,11 @@ make_tools()
     assertfile $tooldir
     cd $tooldir
     ac_output build.sh
-    veval "sh build.sh"
+    quiet=
+    if [ "X$SYS_VERBOSE" = "X" ]; then  
+      quiet="> /dev/null 2> /dev/null"
+    fi
+    veval "$SYS_ENV sh build.sh $quiet"
     asserterror $?
     rm build.sh
     cd $here
@@ -1363,11 +1369,13 @@ make_lntoolcheck()
     if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
       echo " => not found, commence building lambdanative tools.."
       cp config.cache tmp.config.cache
-      SYS_PATH=$SYS_PATH ./configure $SYS_APPNAME
+      SYS_PATH=$SYS_PATH ./configure $SYS_APPNAME > /dev/null
       . ./config.cache
       rmifexists tmp.subst
-      make_setup
-      make_libraries
+      make_setup silent
+      for libname in $tool_libraries; do
+        make_library $libname
+      done
       make_tools 
       mv tmp.config.cache config.cache
       . ./config.cache
