@@ -35,8 +35,8 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-SDKROOT=$LINUXSDK/i?86-linux
-CROSS=$LINUXSDK/bin/i?86-linux-
+SDKROOT=$LINUXSDK/i?86-*linux
+CROSS=$LINUXSDK/bin/i?86-*linux-
 ## fixme: should be no need to include /usr/local/linux/i686-linux/include
 SYS_CC=$CROSS"gcc $SYS_DEBUGFLAG -isysroot $SDKROOT -DLINUX -I/usr/local/linux/i686-linux/include"
 SYS_AR=$CROSS"ar"
