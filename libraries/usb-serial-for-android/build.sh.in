@@ -37,8 +37,8 @@ if [ "@SYS_ANDROIDAPI@" -lt "12" ]; then
   exit 1
 fi
 
-TARGET=`@ANDROIDSDK@/tools/android list targets | grep "^id:" | grep "android-@SYS_ANDROIDAPI@" | cut -f 2 -d " "`
-@ANDROIDSDK@/tools/android -s create lib-project --name usbserial \
+TARGET=`@SYS_ANDROIDSDK@/tools/android list targets | grep "^id:" | grep "android-@SYS_ANDROIDAPI@" | cut -f 2 -d " "`
+@SYS_ANDROIDSDK@/tools/android -s create lib-project --name usbserial \
 --target $TARGET \
 --path . \
 --package com.hoho.android.usbserial

@@ -978,6 +978,8 @@ make_setup()
   fi
   SYS_LOCASEAPPNAME=`echo $SYS_APPNAME | tr A-Z a-z`
   SYS_ANDROIDAPI=$ANDROIDAPI 
+  SYS_ANDROIDSDK=$ANDROIDSDK
+  SYS_ANDROIDNDK=$ANDROIDNDK
   # Add git path for overlay, additional paths, and the lambdanative path
   here=`pwd`
   SYS_BUILDHASH=
@@ -1034,7 +1036,8 @@ make_setup()
   ac_subst SYS_APPVERSION
   ac_subst SYS_APPVERSIONCODE
   ac_subst SYS_ANDROIDAPI
-  ac_subst ANDROIDSDK
+  ac_subst SYS_ANDROIDSDK
+  ac_subst SYS_ANDROIDNDK
   ac_subst SYS_BUILDHASH
   ac_subst SYS_BUILDEPOCH
   ac_subst SYS_PROFILE
