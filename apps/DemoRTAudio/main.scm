@@ -44,10 +44,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 void rtaudio_register(void (*)(int), void (*)(float), void (*)(float*,float*));
 
 int mode=0;
+double srate=0;
 
 float buffer;
 
-void my_realtime_init(int flag) { buffer=0; }  
+void my_realtime_init(int samplerate) { srate=(double)samplerate; buffer=0; }  
 
 void my_realtime_input(float v) { if (mode!=0) buffer=v; }  
 
@@ -58,7 +59,7 @@ void my_realtime_output(float *v1,float *v2)
     buffer = 0.95*sin(2*M_PI*440.*t);
     *v1=*v2=(float)buffer;
   } else *v1=*v2=buffer; 
-  t+=1/8000.;
+  t+=1/srate;
 } 
 
 end-of-c-declare
@@ -90,7 +91,7 @@ end-of-c-declare
           (let ((mode (glgui-widget-get g w 'value)))
             (rtdemo-mode mode))))
     ) 
-    (rtaudio-start 0 0.5)
+    (rtaudio-start 8000 0.5)
     (let ((logdir (string-append (system-directory) "/log")))
      (if (not (file-exists? logdir)) (create-directory logdir)))
   )

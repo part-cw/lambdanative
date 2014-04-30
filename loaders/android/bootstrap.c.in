@@ -412,6 +412,9 @@ static SLresult openSLPlayOpen(OPENSL_STREAM *p)
     case 44100:
       sr = SL_SAMPLINGRATE_44_1;
       break;
+    case 48000:
+      sr = SL_SAMPLINGRATE_48;
+      break;
     case 64000:
       sr = SL_SAMPLINGRATE_64;
       break;
@@ -855,6 +858,7 @@ static OPENSL_STREAM  *p=0;
 
 // this is located in the rtaudio.scm file
 extern int opensl_on;
+extern int opensl_rate;
 
 extern void (*rtaudio_initcb)(int);
 extern void (*rtaudio_inputcb)(float);
@@ -865,7 +869,8 @@ void start_opensl()
 {
   float ival[BUFSIZE],oval[2*BUFSIZE];
   int i,s; 
-  p = android_OpenAudioDevice(RT_SRATE,1,2,BUFFERFRAMES);
+  while (!opensl_on) { usleep(100000); }
+  p = android_OpenAudioDevice(opensl_rate,1,2,BUFFERFRAMES);
   while (p) {
     s = android_AudioIn(p,ival,BUFSIZE);
     for (i=0;i<s;i++) {

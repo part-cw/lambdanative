@@ -45,8 +45,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unistd.h>
 #include <math.h>
 
-#define RT_SRATE 32000
-
 #ifdef MACOSX
 #define USE_PORTAUDIO
 #endif
@@ -78,6 +76,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef BB10
 #define USE_BB10AUDIO
 #endif 
+
+static int rtaudio_srate=0;
 
 void (*rtaudio_initcb)(int)=0;
 void (*rtaudio_inputcb)(float)=0;
@@ -118,12 +118,13 @@ static void rtaudio_callback( float *buffer, unsigned int framesize, void* userD
   }
 }
 
-static void rtaudio_start(int s2, double volume) 
+static void rtaudio_start(int samplerate, double volume) 
 {
-   static int needsinit=1;
+  static int needsinit=1;
   if (needsinit) {
-    if (rtaudio_initcb) rtaudio_initcb(s2);
-    iphone_realtime_audio_init(RT_SRATE,RT_FRAMESIZE);
+    rtaudio_srate = samplerate;
+    if (rtaudio_initcb) rtaudio_initcb(samplerate);
+    iphone_realtime_audio_init(rtaudio_srate,RT_FRAMESIZE);
     iphone_setvolume(volume);
     needsinit=0;
   }
@@ -171,13 +172,14 @@ static int rt_portaudio_cb( const void *inputBuffer, void *outputBuffer,
   return 0;
 }
 
-void rtaudio_start(int s2, double volume)  
+void rtaudio_start(int samplerate, double volume)  
 {
   PaError err;
   static int needsinit=1;
   // XXX set volume here
   if (needsinit) { 
-    if (rtaudio_initcb) rtaudio_initcb(s2);
+    rtaudio_srate=samplerate;
+    if (rtaudio_initcb) rtaudio_initcb(samplerate);
     PaStreamParameters inputParameters, outputParameters;
     err = Pa_Initialize();
     if( err != paNoError ) goto error;
@@ -193,7 +195,7 @@ void rtaudio_start(int s2, double volume)
     outputParameters.sampleFormat = SAMPLE_FORMAT;
     outputParameters.suggestedLatency = Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
     outputParameters.hostApiSpecificStreamInfo = NULL;
-    err = Pa_OpenStream( &stream, &inputParameters, &outputParameters, RT_SRATE, RT_FRAMES_PER_CALLBACK, paClipOff, rt_portaudio_cb, 0);
+    err = Pa_OpenStream( &stream, &inputParameters, &outputParameters, rtaudio_srate, RT_FRAMES_PER_CALLBACK, paClipOff, rt_portaudio_cb, 0);
     if( err != paNoError ) goto error;
     needsinit=0;
   }
@@ -218,20 +220,23 @@ void setMicrophoneGain(float inputGain) {}
 #ifdef USE_ANDROIDAUDIO
 
 int opensl_on=0;
+int opensl_rate=0;
 
 void SoundPoolInit(void);
 int SoundPoolSetVolume(float);
 
-void rtaudio_start(int s2, double volume)  
+void rtaudio_start(int samplerate, double volume)  
 {
   static int opensl_needsinit=1;
   if (opensl_needsinit) {
+    rtaudio_srate=samplerate;
     SoundPoolInit();
     if (volume>=0) SoundPoolSetVolume(volume);
-    if (rtaudio_initcb) rtaudio_initcb(s2);
+    if (rtaudio_initcb) rtaudio_initcb(samplerate);
     opensl_needsinit=0;
   }
   opensl_on=1;
+  opensl_rate=rtaudio_srate;
 }
 
 void rtaudio_stop(void) { 
@@ -246,7 +251,10 @@ void setMicrophoneGain(float inputGain) {}
 // %%%%%%%%%%%%%%%%%%%%%%%%
 #ifdef USE_BB10AUDIO
 
-void rtaudio_start(int s2, double volume)  { }
+void rtaudio_start(int samplerate, double volume) 
+{
+  rtaudio_srate=samplerate; 
+}
 void rtaudio_stop(void) { }
 void setMicrophoneGain(float inputGain) {}
 
