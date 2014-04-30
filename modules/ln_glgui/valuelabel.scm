@@ -43,16 +43,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let* ((x (glgui-widget-get-dyn g wgt 'x))
          (y (glgui-widget-get-dyn g wgt 'y))
          (c (glgui-widget-get-dyn g wgt 'color))
+         (bgcolor (glgui-widget-get-dyn g wgt 'bgcolor))
          (tc (glgui-widget-get-dyn g wgt 'titlecolor))
          (label (glgui-widget-get g wgt 'label))
          (fnt (glgui-widget-get g wgt 'font))
          (img (glgui-widget-get g wgt 'image))
          (sh (if img (cadr img) (cadr (cadr (car fnt))))))
+    (if (and label bgcolor) (let ((sw (glgui:stringwidth label fnt)))
+      (glgui:draw-box (- x 4 sw) y (+ sw 4) sh bgcolor)
+    ))
     (if label (glgui:draw-text-right (- x 2 225) y 225 sh label fnt c))
     (glgui:draw-pixmap-left (+ x 2) y 100 sh img (if label tc (color-fade tc 0.5)))
   ))
 
-(define (glgui-valuelabel g x y img fnt color)
+(define (glgui-valuelabel g x y img fnt color . bgcolor)
   (glgui-widget-add g
      'x x
      'y y
@@ -61,6 +65,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'image img
      'callback #f
      'color color
+     'bgcolor (if (fx= (length bgcolor) 1) (car bgcolor) #f)
      'titlecolor White
      'hidden #f
      'draw-handle  glgui:valuelabel-draw
