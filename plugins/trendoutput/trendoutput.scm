@@ -134,7 +134,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (trendoutput:caseend store instance)
   (if (instance-refvar store instance "Handle" #f)
-    (trendoutput:run store instance)
+    (begin
+      (store-event-add store 0 "EventNumber" (length (store-event-listnew store)))
+      (trendoutput:run store instance)
+    )
     (trendoutput:stop store instance)
   )
   #t)
