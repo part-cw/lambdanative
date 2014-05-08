@@ -138,8 +138,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (store-event-add store 0 "EventNumber" (length (store-event-listnew store)))
       (trendoutput:run store instance)
     )
-    (trendoutput:stop store instance)
   )
+  (trendoutput:stop store instance)
   #t)
 
 (define (trendoutput:end store instance)
