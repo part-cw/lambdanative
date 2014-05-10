@@ -96,7 +96,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (store-event-listnew store . tstamp)
   (let ((t (if (fx= (length tstamp) 1) (car tstamp) 0.)))
     (let loop ((es (store-ref store "EventList" '()))(result '()))
-      (if (or (fx= (length es) 0) (>= t (car (car es)))) result
+      (if (or (fx= (length es) 0) (> t (car (car es))))
+        (begin
+          (event:log 1 "store-event-listnew " result)
+          result
+        )
         (loop (cdr es) (append result (list (car es))))))))
 
 ;; eof
