@@ -44,14 +44,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (c-declare  #<<end-of-c-declare
 
 #include <stdio.h>
+
+#ifndef WIN32
 #include <ln_uuid/uuid.h>
+#else
+#include <rpc.h>
+#endif
 
 char *_make_uuid()
 {
-  uuid_t gen;
   static char str[37];
+#ifndef WIN32
+  uuid_t gen;
   uuid_generate(gen);
   uuid_unparse(gen, str);
+#else
+  int i=0,j=0;
+  UUID uuid = {0};
+  unsigned char* sz = 0;
+  UuidCreate(&uuid);
+  UuidToString(&uuid, &sz);
+  while (1) {
+    if (sz[i]>31) str[j++]=(char)sz[i];
+      else if (sz[i]==0) { str[j]=0; break; }
+    if (j>36) break;
+    i++;
+  }
+  RpcStringFree(&sz);
+#endif
   return str;
 }
 

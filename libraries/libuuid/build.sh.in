@@ -52,12 +52,7 @@ echo "==> Compiling source..."
 CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make $makequiet
 
 echo "==> Installing..."
-if [ ! @SYS_HOSTPLATFORM@ = win32 ]; then
 make $makequiet install
-else
-cp *.h @SYS_PREFIX@/include
-cp libpng.a @SYS_PREFIX@/lib
-fi
 
 cd "$here"
 
