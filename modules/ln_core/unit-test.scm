@@ -45,6 +45,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define unit-test:table (make-table init: #f))
 
+(define unit-test:stdout #f)
+
+(define (unit-test-stdout bool)
+  (set! unit-test:stdout bool))
+
+(define (unit-test:log . x)
+  (if unit-test:stdout (for-each display (append x (list "\n"))) (apply log-status x)))
+
 (define (unit-test n . x)
 
   ;; add a test to the test group
@@ -66,9 +74,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (table-for-each (lambda (tn tp)
           (let ((outcome (unit-test-try tp)))
             (if (and res (not outcome)) (set! res #f))
-            (log-status n ": " tn ".. " (if outcome "OK" "FAIL")))) t)
+            (unit-test:log n ": " tn ".. " (if outcome "OK" "FAIL")))) t)
         (begin
-          (log-status n ": no tests found.")
+          (unit-test:log n ": no tests found.")
           (set! res #f)
         )
       )
