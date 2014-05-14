@@ -134,7 +134,7 @@ smoke()
   echo "=> Launching $SYS_APPNAME.."
   (
     sleep 2
-    stillalive=`ps x | expand | sed 's/^ [ ]*//g' | grep "$appexelocal" | cut -f 1 -d " "`
+    stillalive=`ps x | expand | sed 's/^ [ ]*//g' | grep "/${SYS_APPNAME}" | cut -f 1 -d " "`
     if [ ! "X$stillalive" = "X" ]; then
       for p in $stillalive; do
         kill -KILL $p > /dev/null 2> /dev/null
