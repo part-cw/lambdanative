@@ -54,18 +54,20 @@ make_soundfile_win32()
 make_sounds make_soundfile_win32
 
 if [ `is_gui_app` = yes ]; then
-  srcimg=$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-32.png
-  tgtimg=$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-32.ico
-  assertfile $srcimg
-  if [ ! -e $tgtimg ]; then
+  srcprefix=$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork
+  sizes="256 48 32 24 16"
+  update=no
+  for size in $sizes; do
+    srcimg=${srcprefix}-${size}.png
+    assertfile "$srcimg"
+    if [ `isnewer "$srcimg" "$tgtimg"` = yes ]; then
+      update=yes
+    fi
+  done
+  tgtimg=$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork.ico
+  if [ ! -e $tgtimg ] || [ $update = yes ]; then
     echo " => preparing icon.."
-    pngtopnm $srcimg | pnmquant 256 > icon.ppm
-    asserterror $?
-    assertfile icon.ppm
-    pngtopnm -alpha $srcimg > icon.pgm
-    asserterror $?
-    assertfile icon.pgm
-    ppmtowinicon -andpgms -output $tgtimg icon.ppm icon.pgm
+    veval "convert \"${srcprefix}-256.png\" \"${srcprefix}-48.png\" \"${srcprefix}-32.png\" \"${srcprefix}-24.png\" \"${srcprefix}-16.png\" -depth 8 -channel Alpha  \"$tgtimg\""
     asserterror $?
   fi
   assertfile $tgtimg

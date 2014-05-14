@@ -1,4 +1,2 @@
 #!/bin/sh
-# the crazy list of artwork sizes:
-# 32:   win32
-sizes="32"
+sizes="256 48 32 24 16"
