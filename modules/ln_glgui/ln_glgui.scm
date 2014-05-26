@@ -81,6 +81,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "verticalnumberwheel.scm")
 (include "lockpane.scm")
 (include "timewheels.scm")
+(include "timepicker.scm")
 (include "datewheels.scm")
 (include "datepicker.scm")
 (include "dropdownbox.scm")
