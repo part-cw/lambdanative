@@ -81,7 +81,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (clabel (glgui-widget-get g wgt 'clabel)))
     (cond 
       ;; Directly update all widgets for some parameters
-      ((or (eqv? id 'y) (eqv? id 'hidden) (eqv? id 'font))
+      ((or (eqv? id 'y) (eqv? id 'h) (eqv? id 'hidden) (eqv? id 'font))
         (glgui-widget-set! g hpicker id val)
         (glgui-widget-set! g mpicker id val)
         (glgui-widget-set! g clabel id val))
@@ -118,9 +118,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let* ((time ##now)
          (dx (fix (/ (- w 2) 2)))
          ;; Create the two vertical pickers for hours and minutes and the colon in between
-         (hpicker (glgui-verticalvaluepicker g x y dx 144 #f #f colorarrows colorhighlight colorvalue colorbg font glgui:timepicker_hours))
-         (mpicker (glgui-verticalvaluepicker g (+ x dx) y dx 144 #f #f colorarrows colorhighlight colorvalue colorbg font glgui:timepicker_minutes))
-         (clabel (glgui-label g (- (+ x dx) 5) y 10 144 ":" font colorvalue colorbg))
+         (hpicker (glgui-verticalvaluepicker g x y dx h #f #f colorarrows colorhighlight colorvalue colorbg font glgui:timepicker_hours))
+         (mpicker (glgui-verticalvaluepicker g (+ x dx) y dx h #f #f colorarrows colorhighlight colorvalue colorbg font glgui:timepicker_minutes))
+         (clabel (glgui-label g (- (+ x dx) 5) y 10 h ":" font colorvalue colorbg))
          (widget (glgui-widget-add g
           'x x
           'y y

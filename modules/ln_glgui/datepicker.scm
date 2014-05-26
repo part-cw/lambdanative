@@ -180,7 +180,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (ypicker (glgui-widget-get g wgt 'yearpicker)))
     (cond 
       ;; Directly update all pickers for some parameters
-      ((or (eqv? id 'y) (eqv? id 'hidden) (eqv? id 'topdown) (eqv? id 'colorarrows) (eqv? id 'colorhighlight) (eqv? id 'colorvalue) (eqv? id 'colorbg))
+      ((or (eqv? id 'y) (eqv? id 'h) (eqv? id 'hidden) (eqv? id 'topdown) (eqv? id 'colorarrows) (eqv? id 'colorhighlight) (eqv? id 'colorvalue) (eqv? id 'colorbg))
         (glgui-widget-set! g mpicker id val)
         (glgui-widget-set! g dpicker id val)
         (glgui-widget-set! g ypicker id val))
@@ -262,11 +262,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (current (if (and (>= now dmin) (<= now dmax)) now dmax))
          ;; Create the three vertical value pickers
          (dx (fix (/ (- w 2) 3)))
-         (ypicker (glgui-verticalvaluepicker g x y dx 144 (glgui:datepicker-get-year dmin)
+         (ypicker (glgui-verticalvaluepicker g x y dx h (glgui:datepicker-get-year dmin)
             (glgui:datepicker-get-year dmax) colorarrows colorhighlight colorvalue colorbg numfont 1))
-         (mpicker (glgui-verticalvaluepicker g (+ x dx 1) y dx 144 #f #f colorarrows colorhighlight colorvalue colorbg
+         (mpicker (glgui-verticalvaluepicker g (+ x dx 1) y dx h #f #f colorarrows colorhighlight colorvalue colorbg
             monthfont glgui:datepicker_months))
-         (dpicker (glgui-verticalvaluepicker g (+ x (* dx 2) 2) y dx 144 1 31 colorarrows colorhighlight colorvalue colorbg
+         (dpicker (glgui-verticalvaluepicker g (+ x (* dx 2) 2) y dx h 1 31 colorarrows colorhighlight colorvalue colorbg
             numfont 1))
          ;; Create this date widget
          (widget (glgui-widget-add g
