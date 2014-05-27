@@ -40,9 +40,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (c-declare  #<<end-of-c-declare
 
-unsigned char reg=0;
+static unsigned char reg=0;
 
-unsigned char crc8_bytecalc(unsigned char byte){
+static unsigned char crc8_bytecalc(unsigned char byte){
   int i;
   char flag;
   unsigned char polynom = 0xd5;
@@ -57,7 +57,7 @@ unsigned char crc8_bytecalc(unsigned char byte){
   return reg;
 }
 
-unsigned char crc8(unsigned char *data, int len){
+static unsigned char crc8(unsigned char *data, int len){
   int i;
   reg=0;
   for(i=0; i<len; i++) {
@@ -69,7 +69,7 @@ unsigned char crc8(unsigned char *data, int len){
 static unsigned int crctab[256];
 #define QUOTIENT 0x04c11db7
 
-void crc32_init(void){
+static void crc32_init(void){
   int i, j;
   unsigned int crc;
   for (i = 0; i < 256; i++) {
@@ -84,7 +84,7 @@ void crc32_init(void){
   }
 }
 
-unsigned int crc32(unsigned char *data, int len){
+static unsigned int crc32(unsigned char *data, int len){
   unsigned int result;
   int i;
   unsigned char octet;
@@ -101,7 +101,7 @@ unsigned int crc32(unsigned char *data, int len){
   return ~result;
 }
 
-unsigned int crc16_ccitt(unsigned char *data, int len){
+static unsigned int crc16_ccitt(unsigned char *data, int len){
   int i;
   unsigned short crc=0xffff;
   for (i=0;i<len;i++){
