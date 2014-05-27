@@ -41,6 +41,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define glgui:verticalnumberwheel_waittime 0.6)
 (define glgui:verticalnumberwheel_incrementtime 0.15)
 
+;; Arrow texture
+(define glgui:arrow (glCoreTextureCreate 4 4 (make-u8vector 16 #xff)))
 
 (define (glgui:verticalvaluepicker-draw g wgt)
   (define (val->str v) (float->string v 1))
@@ -98,7 +100,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (list ax1 a1y2 0. 1.)
               (list ax2 a1y2 1. 1.)
               (list cx a1y1 0.5 0.))
-              (glCoreTextureCreate 4 4 (make-u8vector 16 #xff)) 0.)))
+              glgui:arrow 0.)))
 
        ;; Draw up arrow if any values more or cycle turned on
        (if (or cycle (not (= value valnxt))) 
@@ -110,7 +112,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                (list ax1 a2y1 0. 0.)
                (list cx a2y2 0.5 1.)
                (list ax2 a2y1 1. 0.))
-            (glCoreTextureCreate 4 4 (make-u8vector 16 #xff)) 0.))))
+            glgui:arrow 0.))))
         
     ;; Draw the selected value
     (if (string? valstr) 
