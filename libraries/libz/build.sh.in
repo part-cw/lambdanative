@@ -29,29 +29,27 @@ tar -zxf "$src"
 
 echo "==> Configuring source..."
 cd *
+
 EXTRACONF=
-if [ ! @SYS_PLATFORM@ = @SYS_HOSTPLATFORM@ ]; then
-  EXTRACONF=--host=@SYS_ARCH@
-fi
 
 confquiet=
 makequiet=
 if [ "X@SYS_VERBOSE@" = "X" ]; then
-makequiet="-s"
+  makequiet="-s"
 fi
 
 if [ ! @SYS_PLATFORM@ = win32 ]; then
-CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure $confquiet --prefix="@SYS_PREFIX@" $EXTRACONF --static 
+  CHOST=@SYS_ARCH@ CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure $confquiet --prefix="@SYS_PREFIX@" $EXTRACONF --static 
 else
-makequiet="-f win32/Makefile.gcc $makequiet"
+  PREFIX=`echo "@SYS_STRIP@" | sed 's/strip$//;s/ $//'`
+  cat win32/Makefile.gcc | sed "s|^PREFIX|PREFIX=$PREFIX#|" > Makefile
 fi
 
-
 echo "==> Compiling source..."
-CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make $makequiet
+CHOST=@SYS_ARCH@ CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make $makequiet
 
 echo "==> Installing..."
-INCLUDE_PATH="@SYS_PREFIX@/include" LIBRARY_PATH="@SYS_PREFIX@/lib" BINARY_PATH="@SYS_PREFIX@/bin" make $makequiet install
+CHOST=@SYS_ARCH@ INCLUDE_PATH="@SYS_PREFIX@/include" LIBRARY_PATH="@SYS_PREFIX@/lib" BINARY_PATH="@SYS_PREFIX@/bin" make $makequiet install
 
 cd "$here"
 
