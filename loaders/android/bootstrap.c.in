@@ -44,7 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pthread.h>
 #include <android/log.h>
 
-#include <CONFIG.h>
+#include <LNCONFIG.h>
 
 @ANDROID_C_DEFINES@
 

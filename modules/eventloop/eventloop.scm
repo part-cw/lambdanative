@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (c-declare  #<<end-of-c-declare
 
-#include "CONFIG.h"
+#include "LNCONFIG.h"
 
 end-of-c-declare
 )

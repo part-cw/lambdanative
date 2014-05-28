@@ -45,7 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <GL/gl.h>
 //#include <GL/glu.h>
 
-#include <CONFIG.h>
+#include <LNCONFIG.h>
 
 static const char microglClassName[]= "MicroglClass";
 

@@ -2,7 +2,7 @@
 
 #import <AppKit/AppKit.h>
 
-#include "CONFIG.h"
+#include "LNCONFIG.h"
 
 #import "SimpleOpenGLView.h"
 

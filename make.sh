@@ -532,7 +532,7 @@ compile_payload()
 cat > $hctgt  << _EOF
 // automatically generated. Do not edit.
 #include <stdlib.h>
-#include <CONFIG.h>
+#include <LNCONFIG.h>
 #define ___VERSION 407000
 #include <gambit.h>
 #define LINKER ____20_$linker
@@ -1047,7 +1047,7 @@ make_setup()
   ac_subst SYS_HOSTEXEFIX
   ac_subst SYS_OPENWRTTARGET
   ac_subst SYS_ARCH
-  ac_output CONFIG.h $SYS_PREFIX/include/CONFIG.h
+  ac_output LNCONFIG.h $SYS_PREFIX/include/LNCONFIG.h
   name=$SYS_APPNAME
   here=`pwd`
   appsrcdir=`locatedir apps/$name`

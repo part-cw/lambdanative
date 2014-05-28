@@ -44,7 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 
-#include "CONFIG.h"
+#include "LNCONFIG.h"
 
 #if defined(MACOSX) || defined(IOS)
 #include <CoreFoundation/CoreFoundation.h>

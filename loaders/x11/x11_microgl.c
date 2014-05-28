@@ -60,7 +60,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <GLES/egl.h>
 #endif
 
-#include <CONFIG.h>
+#include <LNCONFIG.h>
 
 static Display *Dpy=0;
 static int Scrn=0;

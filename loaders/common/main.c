@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 // microgl based main loop
 
-#include "CONFIG.h"
+#include "LNCONFIG.h"
 
 #include <stdio.h>
 #include <stdlib.h>

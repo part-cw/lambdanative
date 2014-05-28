@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #import <OpenGL/gl.h>
 #import <OpenGL/glu.h>
 
-#include "CONFIG.h"
+#include "LNCONFIG.h"
 
 @implementation SimpleOpenGLView
 

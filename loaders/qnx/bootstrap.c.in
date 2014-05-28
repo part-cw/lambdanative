@@ -62,7 +62,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <screen/screen.h>
 #include <sys/keycodes.h>
 
-#include <CONFIG.h>
+#include <LNCONFIG.h>
 
 #ifdef DEBUG
 

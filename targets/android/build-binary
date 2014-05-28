@@ -124,6 +124,7 @@ ac_output loaders/android/AndroidManifest.xml.in tmp.xml
 cat tmp.xml | sed '/^#/d' > "$tmpdir/AndroidManifest.xml"
 rm tmp.xml
 
+
 echo " => creating payload module.."
 cd $here
 tmpmoddir=`mktemp -d tmp.XXXXXX`
@@ -140,7 +141,7 @@ if [ `echo "$ANDROIDAPI > 9" | bc` = 1 ]; then
 else
   cat loaders/android/Android.mk.jni | sed 's/-lOpenSLES//' > $tmpdir/jni/Android.mk
 fi
-cp $SYS_PREFIX/include/CONFIG.h $tmpdir/jni
+cp $SYS_PREFIX/include/LNCONFIG.h $tmpdir/jni
 ac_output loaders/android/bootstrap.c $tmpdir/jni/bootstrap.c
 cd $tmpdir
 
