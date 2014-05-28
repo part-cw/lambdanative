@@ -428,4 +428,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (_glCoreTextureReset (car ts))
         (loop (cdr ts)))))))
 
+;; take screen shot
+(define (glCoreReadPixels x y w h)
+  (let* ((data (make-u8vector (* w h 3) 0)))
+    (glReadPixels x y w h GL_RGB GL_UNSIGNED_BYTE data)
+    data))
+
 ;; eof

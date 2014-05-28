@@ -234,4 +234,10 @@ ___result = GL_CLAMP_TO_EDGE;
 (define glDepthMask (c-lambda (int) void "glDepthMask"))
 (define glCullFace (c-lambda (int) void "glCullFace"))
 
+(define (glReadPixels arg1 arg2 arg3 arg4 arg5 arg6 arg7)
+   ((c-lambda (int int int int int int  scheme-object) void
+       "glReadPixels(___arg1,___arg2,___arg3,___arg4,___arg5,___arg6,
+        ___CAST(void*,___BODY_AS(___arg7,___tSUBTYPED)));")
+         arg1 arg2 arg3 arg4 arg5 arg6 arg7))
+
 ;; eof
