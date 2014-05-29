@@ -119,7 +119,7 @@ static int ln_png_from_u8vector(int w, int h, unsigned char *data, int datalen, 
     for (x = 0; x < w; ++x) {
       int i; 
       for (i=0;i<stride;i++) {
-        *row++ = data[stride*x + stride*y*w + i];
+        *row++ = data[stride*x + stride*(h-y-1)*w + i];
       }
     }
   }
@@ -136,7 +136,7 @@ static int ln_png_from_u8vector(int w, int h, unsigned char *data, int datalen, 
   return res;
 }
 
-static int ln_png_to_u8vector(unsigned char *data, int datalen, const char *fname)
+static int ln_png_to_u8vector(int w0, int h0, unsigned char *data, int datalen, const char *fname)
 { 
   FILE *fd=0;
   png_structp png_ptr=0;
@@ -168,6 +168,8 @@ static int ln_png_to_u8vector(unsigned char *data, int datalen, const char *fnam
     case PNG_COLOR_TYPE_RGBA: stride=4; break;
   } 
   if (!stride) goto reader_bail;
+  if (width>w0) goto reader_bail;
+  if (height>h0) goto reader_bail;
   png_set_interlace_handling(png_ptr);
   png_read_update_info(png_ptr, info_ptr);
   if (setjmp(png_jmpbuf(png_ptr))) goto reader_bail;
@@ -178,7 +180,7 @@ static int ln_png_to_u8vector(unsigned char *data, int datalen, const char *fnam
   for (y=0; y<height; y++) {
     for (x=0; x<width; x++) { 
       for (i=0;i<stride;i++) {
-        data[stride*x + stride*y*width + i] = row_pointers[y][stride*x+i];
+        data[stride*x + stride*(h0-y-1)*w0 + i] = row_pointers[y][stride*x+i];
       }
     }
   }
@@ -211,27 +213,41 @@ end-of-c-declare
            "___result=ln_png_from_u8vector(___arg1,___arg2,___CAST(void*,___BODY_AS(___arg3,___tSUBTYPED)),___arg4,___arg5);")
      w h data (u8vector-length data) fname) 0))
 
-(define (png->u8vector fname)
-  (png:log 1 "png->u8vector " fname)
+(define (png->u8vector fname . xargs)
+  (png:log 1 "png->u8vector " fname " " xargs)
   (let* ((w (png-width fname))
          (h (png-height fname))
+         (w0 (if (= (length xargs) 2) (car xargs) w))
+         (h0 (if (= (length xargs) 2) (cadr xargs) h))
          (s (png-stride fname))
-         (data (if (and w h s) (make-u8vector (* w h s)) #f)))
-    (if data
-      (if (fx= ((c-lambda (scheme-object int char-string) int 
-          "___result=ln_png_to_u8vector(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)),___arg2,___arg3);") 
-     data (u8vector-length data) fname) 0) data #f) #f)))
+         (data (if (and w0 h0 s) (make-u8vector (* w0 h0 s) 0) #f)))
+    (if data (begin
+      (if (fx= ((c-lambda (int int scheme-object int char-string) int 
+          "___result=ln_png_to_u8vector(___arg1,___arg2,___CAST(void*,___BODY_AS(___arg3,___tSUBTYPED)),___arg4,___arg5);") 
+     w0 h0 data (u8vector-length data) fname) 0) data #f)) #f)))
 
 ;; ------
 ;; opengl related functions 
 ;; eval is used to delay resolving potentially unavailable calls
 
-(define (png->texture fname)
-  (png:log 1 "png->texture " fname)
+(define (png->texture fname . xargs)
+  (png:log 1 "png->texture " fname " " xargs)
   (let* ((w (png-width fname))
          (h (png-height fname))
-         (data (png->u8vector fname)))
-    (if data ((eval 'glCoreTextureCreate) w h data) #f)))
+         (w0 (if (= (length xargs) 2) (car xargs) w))
+         (h0 (if (= (length xargs) 2) (cadr xargs) h))
+         (data (png->u8vector fname w0 h0)))
+    (if data ((eval 'glCoreTextureCreate) w0 h0 data) #f)))
+
+(define (png->img fname)
+  (png:log 1 "png->img " fname)
+  (let* ((w (png-width fname))
+         (h (png-height fname))
+         (w0 (fix (expt 2. (ceiling (/ (log w) (log 2.))))))
+         (h0 (fix (expt 2. (ceiling (/ (log h) (log 2.))))))
+         (t (png->texture fname w0 h0)))
+    (if (and w h t)
+       (list w h t 0. 0. (/ w w0 1.) (/ h h0 1.)) #f)))
 
 (define (texture->png t fname)
   (png:log 1 "texture->png " t " " fname)
@@ -239,6 +255,9 @@ end-of-c-declare
         (h ((eval 'glCoreTextureHeight) t))
         (data ((eval 'glCoreTextureData) t)))
    (u8vector->png w h data fname)))
+ 
+(define (img->png img fname)
+  (texture->png (caddr img) fname))
 
 (define (screenshot->png fname)
   (png:log 1 "screenshot->png " fname)
