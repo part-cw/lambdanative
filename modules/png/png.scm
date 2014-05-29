@@ -207,7 +207,7 @@ end-of-c-declare
 (define (png-depth fname) (png:log 1 "png-depth " fname) (png:info fname 3))
 (define (png-stride fname) (png:log 1 "png-stride " fname) (png:info fname 4))
 
-(define (u8vector->png w h data fname)
+(define (u8vector->png data fname w h)
   (png:log 1 "u8vector->png " w " " h " [] " fname)
   (fx= ((c-lambda (int int scheme-object int char-string) int
            "___result=ln_png_from_u8vector(___arg1,___arg2,___CAST(void*,___BODY_AS(___arg3,___tSUBTYPED)),___arg4,___arg5);")
@@ -230,7 +230,7 @@ end-of-c-declare
 ;; opengl related functions 
 ;; eval is used to delay resolving potentially unavailable calls
 
-(define (png->texture fname . xargs)
+(define (png:png->texture fname . xargs)
   (png:log 1 "png->texture " fname " " xargs)
   (let* ((w (png-width fname))
          (h (png-height fname))
@@ -245,26 +245,26 @@ end-of-c-declare
          (h (png-height fname))
          (w0 (fix (expt 2. (ceiling (/ (log w) (log 2.))))))
          (h0 (fix (expt 2. (ceiling (/ (log h) (log 2.))))))
-         (t (png->texture fname w0 h0)))
+         (t (png:png->texture fname w0 h0)))
     (if (and w h t)
        (list w h t 0. 0. (/ w w0 1.) (/ h h0 1.)) #f)))
 
-(define (texture->png t fname)
+(define (png:texture->png t fname)
   (png:log 1 "texture->png " t " " fname)
   (let ((w ((eval 'glCoreTextureWidth) t))
         (h ((eval 'glCoreTextureHeight) t))
         (data ((eval 'glCoreTextureData) t)))
-   (u8vector->png w h data fname)))
+   (u8vector->png data fname w h)))
  
 (define (img->png img fname)
-  (texture->png (caddr img) fname))
+  (png:texture->png (caddr img) fname))
 
 (define (screenshot->png fname)
   (png:log 1 "screenshot->png " fname)
   (let* ((w ((eval 'glgui-width-get)))
          (h ((eval 'glgui-height-get)))
          (data ((eval 'glCoreReadPixels) 0 0 w h)))
-    (u8vector->png w h data fname)))
+    (u8vector->png data fname w h)))
 
 ;; ------
 ;; unit test
@@ -278,7 +278,7 @@ end-of-c-declare
                             (h (+ 1 (random-integer 200)))
                             (stride (list-ref '(1 3 4) (random-integer 3)))
                             (data (random-u8vector (* stride w h))))
-                       (u8vector->png w h data fname)
+                       (u8vector->png data fname w h)
                        (not (and (= w (png-width fname))
                                  (= h (png-height fname))
                                  (= stride (png-stride fname))
