@@ -459,7 +459,7 @@ compile()
   veval "$SYS_GSC -prelude \"$opts\" -c -o $ctgt $src"
   assertfile "$ctgt"
   rmifexists "$otgt"
-  veval "$SYS_ENV $SYS_CC $defs -c -o $otgt $ctgt -I$SYS_PREFIX/include -I$path"
+  veval "$SYS_ENV $SYS_CC $defs -c -o $otgt $ctgt -I$SYS_PREFIX/include -I$SYS_PREFIX/include/freetype2 -I$path"
   assertfile "$otgt"
   cd $here
 }

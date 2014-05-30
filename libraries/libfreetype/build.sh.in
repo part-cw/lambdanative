@@ -1,0 +1,64 @@
+#!/bin/sh
+
+PKGURL=http://download.savannah.gnu.org/releases/freetype/freetype-2.5.3.tar.gz
+
+PKGSRC=`basename $PKGURL`
+
+src=@SYS_PREFIXROOT@/packages/$PKGSRC
+
+if [ ! -f $src -a `which wget` ]; then
+  echo "==> No source found, attempting to download.."
+  wget $PKGURL -O $src
+fi
+
+if [ ! -f $src ]; then
+  echo "==> ERROR: Unable to proceed. Please obtain $src first."
+  exit 1
+fi
+
+tmpdir=tmp_compile
+
+if [ -d $tmpdir ]; then
+rm -rf $tmpdir
+fi
+mkdir $tmpdir
+
+here=`pwd`
+cd $tmpdir
+echo "==> Extracting source..."
+tar -zxf $src 
+
+cd *
+echo "==> Patching source..."
+patches=`ls -1 ../../*.patch`
+for p in $patches; do
+  patch -p0 < $p
+done
+
+echo "==> Configuring source..."
+EXTRACONF=
+if [ ! @SYS_PLATFORM@ = @SYS_HOSTPLATFORM@ ]; then
+  EXTRACONF=--host=@SYS_ARCH@
+fi
+
+confquiet=
+makequiet=
+if [ "X@SYS_VERBOSE@" = "X" ]; then
+confquiet="--quiet"
+makequiet="-s"
+fi
+
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" ./configure $confquiet --prefix="@SYS_PREFIX@" $EXTRACONF --enable-static --disable-shared --without-png --without-harfbuzz --without-zlib --without-bzip2
+
+echo "==> Compiling source..."
+CC="@SYS_CC@" AR="@SYS_AR@" RANLIB="@SYS_RANLIB@" make $makequiet
+
+echo "==> Installing..."
+make $makequiet install
+
+cd "$here"
+
+echo "==> Cleaning up..."
+rm -rf $tmpdir
+
+echo "==> All done."
