@@ -92,18 +92,10 @@ bool setupRemoteIO( AudioUnit & inRemoteIOUnit, AURenderCallbackStruct inRenderP
 //-----------------------------------------------------------------------------
 extern "C" void setMicrophoneGain(Float32 inputGain)
 {
-    UInt32 ui32propSize = sizeof(UInt32);
-    UInt32 inputGainAvailable = 0;
+    AVAudioSession* avSession = [AVAudioSession sharedInstance];
 
-    AudioSessionGetProperty(kAudioSessionProperty_InputGainAvailable
-                            , &ui32propSize
-                            , &inputGainAvailable);
-
-    if (inputGainAvailable) {
-        AudioSessionSetProperty(kAudioSessionProperty_InputGainScalar
-                             ,sizeof(inputGain)  
-                            , &inputGain);
-    } 
+    NSError* error;
+    [avSession setInputGain:inputGain error:&error];
 }
 
 extern "C" float getMicrophoneGain()
