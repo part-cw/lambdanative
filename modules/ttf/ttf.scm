@@ -1038,6 +1038,26 @@ static int ln_font_height()
   return res;
 }
 
+#include FT_SFNT_NAMES_H
+
+static char *ln_font_name(char *fname)
+{ 
+  FT_Error error;
+  FT_Library library=0;
+  FT_Face    face=0;
+  FT_SfntName aname;
+  error = FT_Init_FreeType( &library );
+  if ( error ) goto bail_name;
+  error = FT_New_Face( library, fname, 0, &face );
+  if ( error ) goto bail_name;
+  error = FT_Get_Sfnt_Name(face, 1, &aname );
+  if ( error ) goto bail_name;
+ bail_name:
+  if (face) FT_Done_Face(face);
+  if (library) FT_Done_FreeType(library);
+  return aname.string;
+}
+
 end-of-c-declare
 )
 
@@ -1054,6 +1074,8 @@ end-of-c-declare
 (define ttf:glyph-fxinfo (c-lambda (int int) int "ln_glyph_fxinfo"))
 (define ttf:glyph-flinfo (c-lambda (int int) double "ln_glyph_flinfo"))
 (define ttf:font-height (c-lambda () int "ln_font_height"))
+
+(define ttf-name (c-lambda (char-string) char-string "ln_font_name"))
 
 ;; outputs a scheme font file to stdout for compilation
 (define (ttf-compile fname pointlist glyphlist name)
