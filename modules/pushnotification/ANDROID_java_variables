@@ -1,0 +1,7 @@
+public static final String PROPERTY_REG_ID = "registration_id";
+private static final String PROPERTY_APP_VERSION = "appVersion";
+
+Context context;
+SharedPreferences prefs;
+GoogleCloudMessaging gcm;
+String regid;

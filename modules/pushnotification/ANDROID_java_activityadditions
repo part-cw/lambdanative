@@ -1,0 +1,27 @@
+private String getRegistrationId(Context context) {
+  final SharedPreferences prefs = getGCMPreferences(context);
+  String registrationId = prefs.getString(PROPERTY_REG_ID, "");
+  if (registrationId.isEmpty()) {
+      Log.i("@SYS_APPNAME@", "Registration not found.");
+      return "";
+  }
+  int registeredVersion = prefs.getInt(PROPERTY_APP_VERSION, Integer.MIN_VALUE);
+  int currentVersion = getAppVersion(context);
+  if (registeredVersion != currentVersion) {
+    Log.i("@SYS_APPNAME@", "App version changed.");
+    return "";
+  }
+  return registrationId;
+}
+
+private SharedPreferences getGCMPreferences(Context context) {
+  return getSharedPreferences(@SYS_APPNAME@.class.getSimpleName(),Context.MODE_PRIVATE);
+}
+private static int getAppVersion(Context context) {
+  try {
+    PackageInfo packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+    return packageInfo.versionCode;
+  } catch (NameNotFoundException e) {
+    throw new RuntimeException("Could not get package name: " + e);
+  }
+}
