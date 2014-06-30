@@ -42,6 +42,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define glgui_button_r.img (list 198 40 glgui_button.raw 0.3 1. .77343750000000000000 .37500000000000000000))
 (define glgui_button_m.img (list 198 40 glgui_button.raw 0.2 1. .57343750000000000000 .37500000000000000000))
 
+;; Draw text for the button with a given alignment
+(define (glgui:button-aligned-label-draw x y w h label fnt color align)
+  (cond
+    ((= align GUI_ALIGNCENTER) (glgui:draw-text-center x y w h label fnt color))
+    ((= align GUI_ALIGNLEFT) (glgui:draw-text-left x y w h label fnt color))
+    (else (glgui:draw-text-right x y w h label fnt color))))
+
 (define (glgui:button-draw g wgt)
   (let ((x (glgui-widget-get-dyn g wgt 'x))
         (y (glgui-widget-get-dyn g wgt 'y))
@@ -57,7 +64,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (tnc (glgui-widget-get g wgt 'toggle-normal-color))
         (bsc (glgui-widget-get g wgt 'button-selected-color))
         (bnc (glgui-widget-get g wgt 'button-normal-color))
-        (f (glgui-widget-get g wgt 'font)))
+        (f (glgui-widget-get g wgt 'font))
+        (align (glgui-widget-get g wgt 'align)))
   ;; toggle button
   (if (list? (car i))
     (let* ((n (length i))
@@ -77,6 +85,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     (if (= j (- n 1)) glgui_button_r.img
                       glgui_button_m.img))) (list 0.)))))
          (if f ;; This allows string-based toggle buttons
+          (let* ((str (caar is))
+                 (multi (and str (fx> (string-length str) 0) (glgui-widget-get g wgt 'multiline)))
+                 (d (glgui-widget-get g wgt 'direction)))
            (if icons  ;; This allows the string-based toggle buttons to also have images on them
              (let* ((cx (fix (+ x (* j dw) )))
                     (sp (glgui-widget-get g wgt 'icon-space))
@@ -89,21 +100,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                ;; If icon to the left or right of the text
                (if (or (= al GUI_ALIGNLEFT) (= al GUI_ALIGNRIGHT))
                   ;; Determine where to draw icon and string
-                  (let* ((sw (glgui:stringwidth (caar is) f))
+                  (let* ((labelsplit (if multi ((if (= d GUI_RIGHTTOLEFT) string-split-width-rtl string-split-width) str (flo (- dw iw sp)) f) #f))
+                         (sw (if multi (apply max (map (lambda (s) (glgui:stringwidth s f)) labelsplit)) (glgui:stringwidth str f)))
                          (ax (fix (+ cx (/ (- dw iw sw sp) 2.))))
                          (iy (fix (+ y (/ (- h ih) 2.))))
                          (left (= al GUI_ALIGNLEFT)))
                     (apply glCoreTextureDraw (append (list (if left ax (+ ax sw sp)) iy iw ih) (cddr cicon) (list 0.)))
-                    (glgui:draw-text-center (if left (+ ax iw sp) ax) y sw h (caar is) f c))
+                    (if multi
+                      (glgui:button-draw-multiline-label (if left (+ ax iw sp) ax) y sw h labelsplit f c align)
+                      (glgui:button-aligned-label-draw (if left (+ ax iw sp) ax) y sw h str f c align)))
                   ;; Determine where to draw icon and string
                   (let* ((sh (glgui:fontheight f))
+                         (labelsplit (if multi ((if (= d GUI_RIGHTTOLEFT) string-split-width-rtl string-split-width) str (flo dw) f) #f))
                          (ix (fix (+ cx (/ (- dw iw) 2.))))
                          (ay (fix (+ y (/ (- h ih sh sp) 2.))))
                          (bottom (= al GUI_ALIGNBOTTOM)))
                     (apply glCoreTextureDraw (append (list ix (if bottom ay (+ ay sh sp)) iw ih) (cddr cicon) (list 0.)))
-                    (glgui:draw-text-center cx (if bottom (+ ay ih sp) ay) dw sh (caar is) f c))))   
+                    (if multi
+                      (glgui:button-draw-multiline-label cx (if bottom (+ ay ih sp) ay) dw sh labelsplit f c align)
+                      (glgui:button-aligned-label-draw cx (if bottom (+ ay ih sp) ay) dw sh str f c align)))))
              ;; No icon, so just draw text for the current button
-             (glgui:draw-text-center (fix (+ x (* j dw) )) y dw h (caar is) f (if (list? cs) (car cs) cs)))
+             (if multi
+               (let ((labelsplit ((if (= d GUI_RIGHTTOLEFT) string-split-width-rtl string-split-width) str (flo dw) f)))
+                 ;; Multiline text
+                 (glgui:button-draw-multiline-label (fix (+ x (* j dw) )) y dw h labelsplit f (if (list? cs) (car cs) cs) align))
+               ;; Single line text
+               (glgui:button-aligned-label-draw (fix (+ x (* j dw) )) y dw h str f (if (list? cs) (car cs) cs) align))))
            ;; Not string-based, so draw texture
            (let* ((sw (car (car is))) (sh (cadr (car is)))
               ;; (sx (fix (+ x (* j (+ dw 1)) (/ (- dw sw) 2.))))
@@ -122,7 +144,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (glCoreColor (if a bsc bnc))
         (apply glCoreTextureDraw (append (list x y w h) (cddr glgui_button.img) (list 0.)))))
     (if f 
-      (if icon
+      (let* ((str (car i))
+             (multi (and str (fx> (string-length str) 0) (glgui-widget-get g wgt 'multiline)))
+             (d (glgui-widget-get g wgt 'direction)))
+       (if icon
         ;; String based button with an icon as well
         (let ((sp (glgui-widget-get g wgt 'icon-space))
               ;; If place icon to the left of text
@@ -132,22 +157,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (glCoreColor c)
           ;; If icon to the left or right of the text
           (if (or (= al GUI_ALIGNLEFT) (= al GUI_ALIGNRIGHT))
-             ;; Determine where to draw icon and string
-             (let* ((sw (glgui:stringwidth (car i) f))
+             ;; Determine where to draw icon and string, get width of the string, max of all lines if multiple lines
+             (let* ((labelsplit (if multi ((if (= d GUI_RIGHTTOLEFT) string-split-width-rtl string-split-width) str (flo (- w iw sp)) f) #f))
+                    (sw (if multi (apply max (map (lambda (s) (glgui:stringwidth s f)) labelsplit)) (glgui:stringwidth str f)))
                     (ax (fix (+ x (/ (- w iw sw sp) 2.))))
                     (iy (fix (+ y (/ (- h ih) 2.))))
                     (left (= al GUI_ALIGNLEFT)))
                (apply glCoreTextureDraw (append (list (if left ax (+ ax sw sp)) iy iw ih) (cddr icon) (list 0.)))
-               (glgui:draw-text-center (if left (+ ax iw sp) ax) y sw h (car i) f c))
-             ;; Determine where to draw icon and string
-             (let* ((sh (glgui:fontheight f))
+               (if multi
+                 (glgui:button-draw-multiline-label (if left (+ ax iw sp) ax) y sw h labelsplit f c align)
+                 (glgui:button-aligned-label-draw (if left (+ ax iw sp) ax) y sw h str f c align)))
+             ;; Determine where to draw icon and string, determine height of text, one or more lines
+             (let* ((labelsplit (if multi ((if (= d GUI_RIGHTTOLEFT) string-split-width-rtl string-split-width) str (flo (if r (- w 10) w)) f) #f))
+                    (sh (* (glgui:fontheight f) (if multi (length labelsplit) 1)))
+                    ;; Position icon based on alignment
                     (ix (fix (+ x (/ (- w iw) 2.))))
                     (ay (fix (+ y (/ (- h ih sh sp) 2.))))
                     (bottom (= al GUI_ALIGNBOTTOM)))
                (apply glCoreTextureDraw (append (list ix (if bottom ay (+ ay sh sp)) iw ih) (cddr icon) (list 0.)))
-               (glgui:draw-text-center x (if bottom (+ ay ih sp) ay) w sh (car i) f c)))) 
+               (if multi
+                 (glgui:button-draw-multiline-label (if r (+ x 5) x) (if bottom (+ ay ih sp) ay) (if r (- w 10) w) sh labelsplit f c align)
+                 (glgui:button-aligned-label-draw x (if bottom (+ ay ih sp) ay) w sh str f c align)))))
         ;; String based regular buttons
-        (glgui:draw-text-center x y w h (car i) f c))
+        (if multi
+          (let ((labelsplit ((if (= d GUI_RIGHTTOLEFT) string-split-width-rtl string-split-width) str (flo (if r (- w 10) w)) f)))
+            ;; Multiline text, leave more padding if button background is rounded
+            (glgui:button-draw-multiline-label (if r (+ x 5) x) y (if r (- w 10) w) h labelsplit f c align))
+          ;; Single line text
+          (glgui:button-aligned-label-draw x y w h str f c align))))
       (let* ((sw (car i)) (sh (cadr i))
              (sx (fix (+ x (/ (- w sw) 2.))))
              (sy (fix (+ y (/ (- h sh) 2.)))))
@@ -155,6 +192,28 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (apply glCoreTextureDraw (append (list sx sy sw sh) (cddr i) (list 0.)))))
   ))
 ))
+
+;; Draw a multiline label where strlist is list of the text lines to use as the label.
+;; Draw it with alignment a in color c and given font f at x, y, within w, h.
+(define (glgui:button-draw-multiline-label x y w h strlist f c a)
+  (let* ((flx (flo x))
+         (fly (flo y))
+         (flw (flo w))
+         (flh (flo h))
+         (hline (flo (glgui:fontheight f)))
+         (maxlines (fix (/ flh hline)))
+         (labellines (if (fx> (length strlist) maxlines)
+                       (list-head strlist maxlines)
+                       strlist))
+         (linecount (length labellines))
+         (labelh (fl* (flo linecount) hline))
+         (starty (fl- (fl+ fly flh) hline (fl/ (fl- flh labelh) 2.))))
+    (let loop ((i 0) (yline starty))
+      (if (fx< i (length labellines))
+        (let ((linelabel (list-ref labellines i)))
+           (glgui:button-aligned-label-draw flx yline flw hline linelabel f c a)
+           (loop (fx+ i 1) (fl- yline hline))))))
+)
 
 ;; process input for the button
 (define (glgui:button-input g wgt type mx my)
@@ -231,6 +290,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'hidden #f
      'rounded #t
      'font fnt
+     'multiline #f
+     'align GUI_ALIGNCENTER
+     'direction GUI_LEFTTORIGHT
      'icon (if (fx= (length icon) 1) (car icon) #f)
      'icon-space 5      ;; If an icon used beside the string, how much space to place between them
      'icon-align GUI_ALIGNLEFT    ;: If an icon is used, the side of the string on which it is placed
