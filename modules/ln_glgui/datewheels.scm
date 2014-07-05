@@ -56,10 +56,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((mwheel (glgui-widget-get g wgt 'monthwheel))
         (dwheel (glgui-widget-get g wgt 'datewheel))
         (ywheel (glgui-widget-get g wgt 'yearwheel)))
-    (glgui:datewheel-update-wheel-limits gui wgt mwheel dwheel ywheel #t #t #t)))
+    (glgui-widget-set! gui wgt 'unlimited #f)
+    (glgui:datewheel-update-wheel-limits gui wgt mwheel dwheel ywheel #t #t)))
 
-(define (glgui:datewheel-update-wheel-limits gui widget mwheel dwheel ywheel limitday? limitmonth? forcechange?)
-  ;; Build a date string from the month, day and year
+;; Updates the limits of the month, day and year wheels based on a new value or date limits
+(define (glgui:datewheel-update-wheel-limits gui widget mwheel dwheel ywheel limitday? limitmonth?)
+  ;; Get the month, day and year as numbers
   (let* ((month (+ (fix (glgui-widget-get gui mwheel 'value)) 1))
          (day (fix (glgui-widget-get gui dwheel 'value)))
          (year (fix (glgui-widget-get gui ywheel 'value)))
@@ -67,13 +69,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (eyear (fix (string->number (seconds->string dmin "%Y"))))
          (dmax (glgui-widget-get gui widget 'datemax))
          (lyear (fix (string->number (seconds->string dmax "%Y"))))
-         ;; Make an initial date string and get the initial value
-         (initialdatestr (string-append (number->string month) "/" (number->string day) "/" (number->string year) " 00:00:00" ))
-         (initialvalue (string->seconds initialdatestr "%m/%d/%Y %H:%M:%S")))
-    
-    ;; Don't do anything if value hasn't actually changed and we aren't strictly forcing the limits
-    (if (or forcechange? (not (= (glgui-widget-get gui widget 'value) initialvalue)))
-      (begin
+         (oldvalue (glgui-widget-get gui widget 'value)))
     
          ;; Check if we are in the earliest year - ie. need to limit the other wheels (depending on limitday and limitmonth)
          (if (fx= year eyear)
@@ -135,26 +131,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                   (if (and limitday? (fx> day maxday)) (set! day maxday))
                   (if limitday?
                     (glgui-widget-set! gui dwheel 'valmax maxday)))))
-         ;; Get the date specified in the wheels as a string
-         (let ((datestr (string-append (number->string month) "/" (number->string day) "/" (number->string year) " 00:00:00" )))
-            ;; Return this new value
-            (string->seconds datestr "%m/%d/%Y %H:%M:%S")))
-      initialvalue))
+         ;; Get the date specified in the wheels as a string and set it as the value if it is different than the original
+         (let* ((datestr (string-append (number->string month) "/" (number->string day) "/" (number->string year) " 00:00:00" ))
+                ;; Get the new value in seconds
+                (newvalue (string->seconds datestr "%m/%d/%Y %H:%M:%S")))
+            (if (or (not oldvalue) (not (= oldvalue newvalue)))
+              (glgui-widget-set! gui widget 'value newvalue))))
 )
 
 (define (glgui:datewheels-callback widget mwheel dwheel ywheel)
   ;; The wgt parameter in the lambda is the specific wheel
   (lambda (g wgt . x)
           ;; Limit the date wheel values if the month or year wheels just changed
-    (let* ((limitday? (or (eqv? wgt mwheel) (eqv? wgt ywheel)))
-           ;; Limit the month wheel values if the year wheel just changed
-           (limitmonth? (eqv? wgt ywheel))
-           (oldvalue (glgui-widget-get g widget 'value))
-           ;; Update the value of the date wheels by building it from the individual wheels while possibly modifying the limits of the displayed wheels
-           (newvalue (glgui:datewheel-update-wheel-limits g widget mwheel dwheel ywheel limitday? limitmonth? #f)))
-       ;; Set the current date if modified
-       (if (not (= oldvalue newvalue)) 
-         (glgui-widget-set! g widget 'value newvalue)))
+    (let ((limitday? (or (eqv? wgt mwheel) (eqv? wgt ywheel)))
+          ;; Limit the month wheel values if the year wheel just changed
+          (limitmonth? (eqv? wgt ywheel)))
+       ;; Update the value of the date wheels by building it from the individual wheels while possibly modifying the limits of the displayed wheels
+       (glgui:datewheel-update-wheel-limits g widget mwheel dwheel ywheel limitday? limitmonth?))
     ;; Then call the callback for this component - if there is one
     (let ((cb (glgui-widget-get g widget 'callback)))
        (if cb (cb g widget)))))
@@ -186,26 +179,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (glgui-widget-set! g ywheel id val))
       ;; Change in value - update wheels
       ((eqv? id 'value)
-        (glgui-widget-set! g mwheel 'value (glgui:datewheels-get-month val))
-        (glgui-widget-set! g dwheel 'value (glgui:datewheels-get-day val))
-        (glgui-widget-set! g ywheel 'value (glgui:datewheels-get-year val))
-        ;; Then update the limits of the wheels based on the new values
-        (glgui:datewheel-update-wheel-limits g wgt mwheel dwheel ywheel #t #t #f))
+        (if val
+          (let ((enforcelimits (not (glgui-widget-get g wgt 'unlimited))))
+            (glgui-widget-set! g mwheel 'value (glgui:datewheels-get-month val))
+            (glgui-widget-set! g dwheel 'value (glgui:datewheels-get-day val))
+            (glgui-widget-set! g ywheel 'value (glgui:datewheels-get-year val))
+            ;; Then update the limits of the wheels based on the new values
+            (glgui:datewheel-update-wheel-limits g wgt mwheel dwheel ywheel enforcelimits enforcelimits))))
       ;; Update wheel limits if max or min have changed, possibly update value too
       ((eqv? id 'datemin)
          (glgui-widget-set! g ywheel 'valmin (fix (string->number (seconds->string val "%Y"))))
-         (if (< (glgui-widget-get g wgt 'value) val)
-           ;; If value is less than new minimum, update it (will trigger a call to this procedure recursively)
-           (glgui-widget-set! g wgt 'value val) 
-           ;; Otherwise just update the limits of the wheels
-           (glgui:datewheel-update-wheel-limits g wgt mwheel dwheel ywheel #t #t #f)))
+         (let ((curvalue (glgui-widget-get g wgt 'value)))
+           (if (and curvalue (< curvalue val))
+             ;; If value is less than new minimum, update it (will trigger a call to this procedure recursively)
+             (glgui-widget-set! g wgt 'value val) 
+             ;; Otherwise just update the limits of the wheels
+             (let ((enforcelimits (not (glgui-widget-get g wgt 'unlimited))))
+               (glgui:datewheel-update-wheel-limits g wgt mwheel dwheel ywheel enforcelimits enforcelimits)))))
       ((eqv? id 'datemax)
          (glgui-widget-set! g ywheel 'valmax (fix (string->number (seconds->string val "%Y"))))
-         (if (> (glgui-widget-get g wgt 'value) val)
-           ;; If value is less than new minimum, update it (will trigger a call to this procedure recursively)
-           (glgui-widget-set! g wgt 'value val)   
-           ;; Otherwise just update the limits of the wheels
-           (glgui:datewheel-update-wheel-limits g wgt mwheel dwheel ywheel #t #t #f)))
+         (let ((curvalue (glgui-widget-get g wgt 'value)))
+           (if (and curvalue (> curvalue val))
+             ;; If value is more than the new maximum, update it (will trigger a call to this procedure recursively)
+             (glgui-widget-set! g wgt 'value val)   
+             ;; Otherwise just update the limits of the wheels
+             (let ((enforcelimits (not (glgui-widget-get g wgt 'unlimited))))
+               (glgui:datewheel-update-wheel-limits g wgt mwheel dwheel ywheel enforcelimits enforcelimits)))))
       ;; Update x or w or the order of the wheels
       ((or (eqv? id 'x) (eqv? id 'w) (eqv? id 'displayorder))
         (let* ((order (glgui-widget-get g wgt 'displayorder))
@@ -245,13 +244,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 )
 
 ;; Make the date wheels go from 1-31 and the month wheel go from Jan-Dec regardless of the year wheel value or datemin or datemax
+;; ;; Also, the month and day wheels will only have limits applied if the wheels representing larger periods are modified or until
+;; the glgui-datewheel-update-limits is called to set unlimited back to false
 (define (glgui-datewheels-unlimited g wgt)
   (let ((mwheel (glgui-widget-get g wgt 'monthwheel))
         (dwheel (glgui-widget-get g wgt 'datewheel)))
     (glgui-widget-set! g mwheel 'valmin 0)
     (glgui-widget-set! g mwheel 'valmax 11)
     (glgui-widget-set! g dwheel 'valmin 1)
-    (glgui-widget-set! g dwheel 'valmax 31)))
+    (glgui-widget-set! g dwheel 'valmax 31)
+    (glgui-widget-set! g wgt 'unlimited #t)))
   
 ;; Create a set of three wheels for entering a date.
 (define (glgui-datewheels g x y w h datemin datemax colorvalue colorshade numfont1 numfont2 monthfont1 monthfont2)
@@ -297,6 +299,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            'topdown #t
            ;; Display order sets the order of the wheels from left to right
            'displayorder GUI_YEAR_MONTH_DAY
+           'unlimited #f
            'monthwheel mwheel
            'datewheel dwheel
            'yearwheel ywheel
