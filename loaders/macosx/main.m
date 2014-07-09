@@ -6,7 +6,11 @@
 
 #import "SimpleOpenGLView.h"
 
+int cmd_argc=0;
+char **cmd_argv;
+
 int main(int argc, const char *argv[]) {
+  cmd_argc=argc; cmd_argv=argv;
   [NSAutoreleasePool new];
   [NSApplication sharedApplication];
   [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
