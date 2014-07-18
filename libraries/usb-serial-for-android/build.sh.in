@@ -19,7 +19,10 @@ if [ ! -d $LIBNAME ]; then
   exit 1
 fi
 
-cd $LIBNAME/UsbSerialLibrary
+cd $LIBNAME
+echo " => Checking out target"
+git checkout $VERSION_HASH -q
+cd UsbSerialLibrary
 
 echo " => Removing old library..."
 if [ -f @SYS_PREFIX@/lib/$LIBNAME.a ]; then
@@ -30,8 +33,6 @@ if [ -f @SYS_PREFIX@/lib/$LIBNAME.jar ]; then
 fi
 
 echo " => Configuring source..."
-git checkout $VERSION_HASH -q
-
 if [ "@SYS_ANDROIDAPI@" -lt "12" ]; then
   echo " => ERROR: USB Serial functions require API Level 12+. Please adjust your ANDROIDAPI setting in the SETUP file."
   exit 1
