@@ -103,4 +103,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (list-max lst)
   (car (sort lst >)))
 
+;; Diff of list
+(define (list-diff lst)
+  (map - (cdr lst) (list-head lst (fx- (length lst) 1))))
+
+;; Inner product of lists
+(define (list-dot lst1 lst2)
+  (apply + (map * lst1 lst2)))
+(define (list-fldot lst1 lst2)
+  (apply fl+ (map fl* lst1 lst2)))
+
 ;; eof
