@@ -93,7 +93,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          ((number? m2) (listlist-scale m1 m2))
          (else
            (transpose (map (lambda (row) (map (lambda (col) 
-             (apply + (map * row col))) m1)) (transpose m2)))
+             (list-dot row col)) m1)) (transpose m2)))
          )
   ))
 

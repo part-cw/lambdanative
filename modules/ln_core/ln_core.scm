@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2014, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -59,4 +59,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "packtool.scm")
 (include "sxml2xml.scm")
 (include "misc.scm")
+(include "vector.scm")
 
+;;eof
