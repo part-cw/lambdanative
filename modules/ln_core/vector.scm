@@ -98,6 +98,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (vector-dot v1 v2)
   (vector-sum (vector-map * v1 v2)))
 
+;; Diff for vectors
+(define (vector-diff vec)
+  (let ((len (vector-length vec)))
+    (vector-map - (subvector vec 1 len) (subvector vec 0 (fx- len 1)))
+  ))
+
 ;; Unit tests for vectors
 (unit-test "vector-operations" "Vector operations"
   (lambda () (and
@@ -118,6 +124,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (lambda () (and
     (equal? (vector-dot (vector 1 2 3 4) (vector 1 2 3 4)) 30)
     (equal? (vector-dot (vector 9 3 1 4) (vector 1 8 3 4)) (list-dot (list 9 3 1 4) (list 1 8 3 4)))
+  )))
+(unit-test "vector-diff" "Vector diff"
+  (lambda () (and
+    (equal? (vector-diff (vector 1 2 3 5)) (vector 1 1 2))
+    (equal? (vector-diff (vector 9 3 1 4 1 8 3 4)) (list->vector (list-diff (list 9 3 1 4 1 8 3 4))))
   )))
 
 ;;eof
