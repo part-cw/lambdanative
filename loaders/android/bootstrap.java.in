@@ -111,8 +111,10 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     // Make sure event loop keeps getting called if we are in the background.
     keepAliveThread = new Thread(){
       public void run() {
+        // First sleep needs to be longer to have GUI initialized before EVENT_IDLE.
+        try{ sleep(1000); }catch(InterruptedException e){ }
         while (true) {
-          try{ sleep(1000); }catch(InterruptedException e){ }
+          try{ sleep(250); }catch(InterruptedException e){ }
           nativeEvent(19,0,0); // EVENT_IDLE
         }
       }
