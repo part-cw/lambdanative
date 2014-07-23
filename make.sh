@@ -577,7 +577,7 @@ void ffi_event(int t, int x, int y)
       #endif
       gambitneedsinit=0;
   }
-  if (!gambitneedsinit) scm_event(t,x,y);
+  if (!gambitneedsinit&&t) scm_event(t,x,y);
   if (t==EVENT_TERMINATE) { ___cleanup(); exit(0); }
   lock=0;
 }
@@ -954,6 +954,7 @@ make_setup()
   else
     SYS_IOSCERT=$SYS_IOSDEVCERT
   fi
+  SYS_ROOT=`pwd`
   SYS_PREFIXROOT=`pwd`"-cache"
   SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM"
   SYS_HOSTPREFIX="$SYS_PREFIXROOT/$SYS_HOSTPLATFORM"
@@ -1024,6 +1025,7 @@ make_setup()
   ac_subst SYS_IOSSDK
   ac_subst SYS_PLATFORM
   ac_subst SYS_HOSTPLATFORM
+  ac_subst SYS_ROOT
   ac_subst SYS_PREFIX
   ac_subst SYS_PREFIXROOT
   ac_subst SYS_HOSTPREFIX
@@ -1159,6 +1161,7 @@ make_install()
   setstate INSTALL
   if [ -s targets/$SYS_PLATFORM/install ]; then
     . targets/$SYS_PLATFORM/install
+    stty sane
   else
     echo "==> no install setup for this platform ($SYS_PLATFORM)"
   fi
