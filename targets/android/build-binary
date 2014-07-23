@@ -145,12 +145,22 @@ cp $SYS_PREFIX/include/LNCONFIG.h $tmpdir/jni
 ac_output loaders/android/bootstrap.c $tmpdir/jni/bootstrap.c
 cd $tmpdir
 
+APP_ABI=armeabi
+case "X$ANDROIDARCH" in
+Xx86) 
+  APP_ABI=x86
+;;
+Xmips) 
+  APP_ABI=mips
+;;
+esac
+
 if [ $SYS_MODE = "debug" ]; then
   echo " => compiling payload module with debug options.."
-  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build NDK_LOG=1 NDK_DEBUG=1"
+  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build APP_ABI=$APP_ABI NDK_LOG=1 NDK_DEBUG=1"
 else
   echo " => compiling payload module.."
-  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build --silent"
+  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build --silent APP_ABI=$APP_ABI"
 fi
 asserterror $?
 

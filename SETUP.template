@@ -6,6 +6,8 @@ ANDROIDSDK=`find /usr/local/android-sdk-*  -maxdepth 0 -print 2> /dev/null | tai
 ANDROIDNDK=`find /usr/local/android-ndk-*  -maxdepth 0 -print  2> /dev/null| tail -n 1`
 # minimum version to support (a matching target must be installed)
 ANDROIDAPI=10
+#android target cpu, either arm (default), x86 or mips
+ANDROIDARCH=arm
 # ------------------------------------
 ## Linux cross compiler (mac)
 LINUXSDK=`find /usr/local/i?86-linux-*  -maxdepth 0 -print 2> /dev/null | tail -n 1`
