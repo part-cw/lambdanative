@@ -983,6 +983,7 @@ make_setup()
   SYS_ANDROIDAPI=$ANDROIDAPI 
   SYS_ANDROIDSDK=$ANDROIDSDK
   SYS_ANDROIDNDK=$ANDROIDNDK
+  SYS_ANDROIDARCH=$ANDROIDARCH
   # Add git path for overlay, additional paths, and the lambdanative path
   here=`pwd`
   SYS_BUILDHASH=
@@ -1042,6 +1043,7 @@ make_setup()
   ac_subst SYS_ANDROIDAPI
   ac_subst SYS_ANDROIDSDK
   ac_subst SYS_ANDROIDNDK
+  ac_subst SYS_ANDROIDARCH
   ac_subst SYS_BUILDHASH
   ac_subst SYS_BUILDEPOCH
   ac_subst SYS_PROFILE
