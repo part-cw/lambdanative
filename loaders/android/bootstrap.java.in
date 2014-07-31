@@ -49,6 +49,7 @@ import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.BatteryManager;
 import android.os.PowerManager;
+import android.os.Handler;
 import android.view.MotionEvent;
 import android.view.KeyEvent;
 import android.view.Window;
@@ -70,7 +71,6 @@ import android.hardware.SensorManager;
 
 public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@ SensorEventListener{
   Thread openSLThread;  // OpenSL real-time sound
-  Thread keepAliveThread; //Background events
   private SensorManager mSensorManager;
   //Battery information variables
   private IntentFilter batteryLevelFilter;
@@ -79,6 +79,15 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   private static int batteryLevel = -1;
   //Variable declarations needed for modules, e.g. gps
   @ANDROID_JAVA_VARIABLES@
+
+  Handler idleHandler = new Handler();
+  Runnable idleRunnable = new Runnable() {
+    @Override
+    public void run() {
+      nativeEvent(19,0,0); // EVENT_IDLE
+      idleHandler.postDelayed(this, 250);
+    }
+  };
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -108,18 +117,8 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONCREATE@
 
-    // Make sure event loop keeps getting called if we are in the background.
-    keepAliveThread = new Thread(){
-      public void run() {
-        // First sleep needs to be longer to have GUI initialized before EVENT_IDLE.
-        try{ sleep(1000); }catch(InterruptedException e){ }
-        while (true) {
-          try{ sleep(250); }catch(InterruptedException e){ }
-          nativeEvent(19,0,0); // EVENT_IDLE
-        }
-      }
-    };
-    keepAliveThread.start();
+    // start EVENT_IDLE 
+    idleHandler.postDelayed(idleRunnable, 1000);
 
     // Get battery level changes
     // Added battery status change
@@ -159,8 +158,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     nativeStopOpenSL();
     try { openSLThread.join(); } catch (InterruptedException e) { }
     openSLThread = null;
-    try { keepAliveThread.join(); } catch (InterruptedException e) { }
-    keepAliveThread = null;
+    idleHandler.removeCallbacks(idleRunnable);
     super.onDestroy();
   }
   @Override
