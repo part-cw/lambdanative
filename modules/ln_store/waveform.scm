@@ -108,6 +108,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (tdata (store:wdatatable store))
         (tscaling (store:wscalingtable store)))
     (store-clear! store (map car (store-listcat store c)))
+    (store-set! store "waveform-timestamp" ##now c)
     (let loop ((ids (table-ref tdata 'IdList '())))
       (if (= (length ids) 0)
         (store-waveform-clear! store)
