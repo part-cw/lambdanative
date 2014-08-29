@@ -866,7 +866,7 @@ make_strings()
   for m in $modules; do
     srcfile=`locatefile modules/$m/STRINGS silent`
     if [ ! "X$srcfile" = "X" ]; then
-      make_stringfile "$srcdir" "$m-"
+      make_stringfile "$srcfile" "${m}-"
     fi
   done
   setstate
