@@ -65,7 +65,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (glgui-widget-set! gui wgt 'align GUI_ALIGNCENTER))
       (set! gyrolabel (glgui-label gui 0 (- (/ h 2.) 0.) w 30 ":" ascii_30.fnt White))
       (glgui-widget-set! gui gyrolabel 'align GUI_ALIGNCENTER)
-      (let ((wgt (glgui-label gui 0  (+ (/ h 2.) -50 30) w 16 "GPS [LNG:LAT]" ascii_12.fnt White)))
+      (let ((wgt (glgui-label gui 0  (+ (/ h 2.) -50 30) w 16 "GPS [LAT:LNG]" ascii_12.fnt White)))
         (glgui-widget-set! gui wgt 'align GUI_ALIGNCENTER))
       (set! gpslabel (glgui-label gui 0 (- (/ h 2.) 50 ) w 30 ":" ascii_30.fnt White))
       (glgui-widget-set! gui gpslabel 'align GUI_ALIGNCENTER)
@@ -84,8 +84,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (string-append (float->choppedstring curyaw 6) ":"
           (float->choppedstring curpitch 6) ":" (float->choppedstring curroll 6)))
       (glgui-widget-set! gui gpslabel 'label 
-        (string-append (float->choppedstring curlng 8) ":"
-          (float->choppedstring curlat 8)))
+        (string-append (float->choppedstring curlat 8) ":"
+          (float->choppedstring curlng 8)))
       (if (= t EVENT_KEYPRESS) (begin 
         (if (= x EVENT_KEYESCAPE) (terminate))))
       (glgui-event gui t x y)))

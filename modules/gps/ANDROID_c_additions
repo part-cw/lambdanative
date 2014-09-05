@@ -1,12 +1,11 @@
 // FFI for getting GPS data to Scheme
-static double gps_lon, gps_lat, gps_altitude, gps_accuracy;
-static long gps_timestamp;
+static double gps_lon, gps_lat, gps_altitude, gps_accuracy, gps_timestamp;
 void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_gpsEvent(JNIEnv* e, jobject o, jdouble lat, jdouble lon, jdouble altitude, jdouble accuracy, jlong timestamp) {
   gps_lat=(double)lat;
   gps_lon=(double)lon;
   gps_altitude=(double)altitude;
   gps_accuracy=(double)accuracy;
-  gps_timestamp=(int)timestamp;
+  gps_timestamp=(double)timestamp;
 }
 android_location_getlatitude(){ return gps_lat; }
 android_location_getlongitude(){ return gps_lon; }

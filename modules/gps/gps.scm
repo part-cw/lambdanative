@@ -112,7 +112,7 @@ static double accuracy(void){
 #endif
 }
 
-static int timestamp(void){
+static double timestamp(void){
 #ifdef IOS
    return ios_location_gettimestamp();
 #elif ANDROID
@@ -132,5 +132,5 @@ end-of-c-declare
 (define gps-longitude (c-lambda () double "longitude"))
 (define gps-accuracy (c-lambda () double "accuracy"))
 (define gps-altitude (c-lambda () double "altitude"))
-(define gps-timestamp (c-lambda () int "timestamp"))
+(define gps-timestamp (c-lambda () double "timestamp"))
 ;; eof
