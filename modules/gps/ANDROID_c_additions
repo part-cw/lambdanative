@@ -5,7 +5,7 @@ void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_gpsEvent(J
   gps_lon=(double)lon;
   gps_altitude=(double)altitude;
   gps_accuracy=(double)accuracy;
-  gps_timestamp=(double)timestamp;
+  gps_timestamp=(double)timestamp/1000; // getTime is in msec, we want epoch
 }
 android_location_getlatitude(){ return gps_lat; }
 android_location_getlongitude(){ return gps_lon; }
