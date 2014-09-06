@@ -64,7 +64,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   ;; run a test and catch all errors
   (define (unit-test-try p)
-    (with-exception-catcher (lambda (e) #f) (lambda () (p))))
+    (with-exception-catcher log:exception-handler (lambda () (p))))
 
   ;; run all tests with-in a group
   (define (unit-test-run n)
