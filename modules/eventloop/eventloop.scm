@@ -102,6 +102,7 @@ end-of-c-declare
 
 (define app:mustinit #t)
 (define app:suspended #f)
+(define app:android? (string=? (system-platform) "android"))
 
 (define event:fifo '())
 (define (event-push t x y)
@@ -123,11 +124,11 @@ end-of-c-declare
     (cond 
       ((fx= t EVENT_REDRAW) 
         (hook:event t 0 0)
-        (if (string=? (system-platform) "android") (##thread-heartbeat!))
+        (if app:android? (##thread-heartbeat!))
       )
       ((fx= t EVENT_IDLE)
         (hook:event t 0 0)
-        (if (string=? (system-platform) "android") (##thread-heartbeat!))
+        (if app:android? (##thread-heartbeat!))
       )
       ((or (fx= t EVENT_BUTTON1DOWN) (fx= t EVENT_BUTTON1UP)
            (fx= t EVENT_BUTTON2DOWN) (fx= t EVENT_BUTTON2UP)
