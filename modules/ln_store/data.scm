@@ -53,62 +53,47 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (store-clear! store ids0)
   (let ((ids (if (list? ids0) ids0 (list ids0))))
     (if (store-ref store "use_fifo_export" #f)
-      (let loop2 ((is ids))
-        (if (> (length is) 0)
-          (begin
-            (let loop3 ((fifos (store-ref store (string-append (car is) ":fifoexportlist") '())))
-              (if (fx> (length fifos) 0)
-                (begin
-                  (fifo:write (car fifos) (list (car is)))
-                  (loop3 (cdr fifos))
-                )))
-            (loop2 (cdr is))
-          )
-        )))
+      (for-each (lambda (id)
+        (let ((fifos (store-ref store (string-append id ":fifoexportlist") '())))
+          (for-each (lambda (fifo) (fifo:write fifo (list id))) fifos)
+        )) ids)
+    )
     (if (store-ref store "extern:clear!" #f)
       (for-each (lambda (id) (if (store-ref store id)((store-ref store "extern:clear!" #f) store id))) ids))
     (store:clearlocal! store ids)
   ))
 
 (define (store:clearlocal! store ids)
-  (let loop0 ((is (if (list? ids) ids (list ids))))
-    (if (fx> (length is) 0)
-      (let ((id (car is)))
-        (let ((t (store:datatable store))
-              (ct (store:categorytable store)))
-          (if (and (table? t) (table-ref t id #f)) (begin
-            (store:grab!)
-            (table-set! t id)
-            ;; clear a category entry if present
-            (if ct 
-              (let loop ((cats (table->list ct))) (begin
-                (if (fx> (length cats) 0) 
-                  (let ((cat (car cats)))
-                    (if (member id (cdr cat))
-                      (let ((newlist (let loop2 ((cs (cdr cat))(res '()))
-                            (if (fx= (length cs) 0) res
-                              (loop2 (cdr cs) (append res 
-                                (if (equal? id (car cs)) '() (list (car cs)))))))))
+  (let ((is (if (list? ids) ids (list ids))))
+    (for-each (lambda (id) 
+      (let ((t (store:datatable store))
+            (ct (store:categorytable store)))
+        (if (and (table? t) (table-ref t id #f)) (begin
+          (store:grab!)
+          (table-set! t id)
+          ;; clear a category entry if present
+          (if ct
+            (for-each (lambda (cat)
+               (if (member id (cdr cat))
+                  (let ((newlist (let loop2 ((cs (cdr cat))(res '()))
+                    (if (fx= (length cs) 0) res
+                       (loop2 (cdr cs) (append res
+                         (if (equal? id (car cs)) '() (list (car cs)))))))))
                     (table-set! ct (car cat) newlist)
-                  ))
-                  (loop (cdr cats))))
-            )))
-            (store:release!)
-          #t) #f)
-        ) (loop0 (cdr is)))))
-)
+                  ))) (table->list ct))
+          )
+         (store:release!)
+       #t) #f))) is)))
 
 (define (store-clearexpired! store timeout ids . thunk)
-  (let ((cb (if (fx= (length thunk) 1) (car thunk) #f)))
-    (let loop ((is (if (list? ids) ids (list ids))))
-      (if (fx> (length is) 0)  
-        (let* ((id (car is))
-               (tstamp (store-timestamp store id)))
-          (if (fl> (fl- ##now tstamp) (flo timeout)) (begin 
-            (if (and cb (fl> tstamp 0.)) (cb store id))
-            (store-clear! store id)))
-          (loop (cdr is)))))))
-
+  (let ((cb (if (fx= (length thunk) 1) (car thunk) #f))
+        (is (if (list? ids) ids (list ids))))
+    (for-each (lambda (id)
+       (let ((tstamp (store-timestamp store id)))
+         (if (fl> (fl- ##now tstamp) (flo timeout)) (begin 
+           (if (and cb (fl> tstamp 0.)) (cb store id))
+           (store-clear! store id)))
+       )) is)))
 
 (define (store:setlocal! store id val . category)
   (if (not val)
