@@ -137,34 +137,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (glgui:renderloop g1 . gx)
   (let ((guis (append (list g1) gx)))
-    (let gloop ((gs guis))
-      (if (fx> (length gs) 0)
-        (let* ((g (car gs))
-               (xofs (glgui-get g 'xofs))
+    (for-each (lambda (g)
+        (let* ((xofs (glgui-get g 'xofs))
                (yofs (glgui-get g 'yofs)))
           (glPushMatrix)
           (glTranslatef (flo xofs) (flo yofs) 0.)
-          (let loop ((wl (glgui-get g 'widget-list)))
-            (if (fx> (length wl) 0)
-               (let* ((wgt (car wl))
-                      (h (glgui-widget-get g wgt 'hidden))
-                      (m (glgui-widget-get g wgt 'modal))
-                      (p (glgui-widget-get g wgt 'draw-handle))
-                      (wl2 (glgui-widget-get g wgt 'widget-list)))
-                  (if (and (if glgui:modalstate #t (not m)) (not h))
-                    (if (procedure? p) (p g wgt)
-                      (if (list? wl2) 
-                         (let ((xofs (glgui-get wgt 'xofs))
-                               (yofs (glgui-get wgt 'yofs))
-                               (w (glgui-get wgt 'w #f))
-                               (h (glgui-get wgt 'h #f)))
-                           (glCoreClipPush 0 0 w h)
-                           (glgui:renderloop wgt)
-                           (glCoreClipPop)
-                      ))))
-                  (loop (cdr wl)))))
-          (glPopMatrix)
-          (gloop (cdr gs)))))))
+          (for-each (lambda (wgt) 
+            (let* ((h (glgui-widget-get g wgt 'hidden))
+                   (m (glgui-widget-get g wgt 'modal))
+                   (p (glgui-widget-get g wgt 'draw-handle))
+                   (wl2 (glgui-widget-get g wgt 'widget-list)))
+              (if (and (if glgui:modalstate #t (not m)) (not h))
+                (if (procedure? p) (p g wgt)
+                  (if (list? wl2)
+                    (let ((xofs (glgui-get wgt 'xofs))
+                       (yofs (glgui-get wgt 'yofs))
+                       (w (glgui-get wgt 'w #f))
+                       (h (glgui-get wgt 'h #f)))
+                       (glCoreClipPush 0 0 w h)
+                       (glgui:renderloop wgt)
+                       (glCoreClipPop)
+               )))))) 
+             (glgui-get g 'widget-list))
+          (glPopMatrix))) 
+    guis)))
 
 ;; render one or more guis to a window
 ;; 20100804: support gui offset
@@ -188,11 +184,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (glPopMatrix)
 )
 
+(define (glgui:for-each-done func lst)
+  (let ((len (length lst)))
+    (let loop ((i 0)(done #f))
+      (if (or (fx= i len) done) done 
+        (loop (fx+ i 1) (func (list-ref lst i)))))))
+
 (define (glgui:inputloop t x0 y0 . gs)
-    (let loop0 ((guis (reverse gs)) (done0 #f))
-      (if (or done0 (fx= (length guis) 0)) done0
-        (let* ((gui (car guis))
-               (xofs (glgui-get gui 'xofs))
+    (let ((guis (reverse gs)))
+      (glgui:for-each-done (lambda (gui)
+        (let* ((xofs (glgui-get gui 'xofs))
                (yofs (glgui-get gui 'yofs))
                (cx (if (or (fx= t EVENT_KEYPRESS) (fx= t EVENT_KEYRELEASE)) x0 (- x0 xofs)))
                (cy (if (or (fx= t EVENT_KEYPRESS) (fx= t EVENT_KEYRELEASE)) y0 (- y0 yofs)))
@@ -211,10 +212,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                       ((fx= glgui:rotate 3) (- app:height y0))
                       ))))
                (widget-list (reverse (glgui-get gui 'widget-list))))
-         (loop0 (cdr guis) (let loop ((wl widget-list)(done #f))
-            (if (or (fx= (length wl) 0) done) done
-               (let* ((wgt (car wl))
-                      (h (glgui-widget-get gui wgt 'hidden))
+            (glgui:for-each-done (lambda (wgt)
+               (let* ((h (glgui-widget-get gui wgt 'hidden))
                       (propagate (glgui-widget-get gui wgt 'propagate)) ;; per widget event fall through
                       (m (glgui-widget-get gui wgt 'modal))
                       (minput (glgui-widget-get gui wgt 'modalinput))  ;; allow input to non-modal in modal mode!
@@ -224,7 +223,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             (if (procedure? p) (p gui wgt t x y) (if container? (glgui:inputloop t cx cy wgt) #f))
                           (if (and (not glgui:modalstate) (not m) (not h))
                             (if (procedure? p) (p gui wgt t x y) (if container? (glgui:inputloop t cx cy wgt) #f)) #f))))
-                  (loop (cdr wl) (and (not (or (fx= t EVENT_BUTTON1UP) propagate glgui:propagate)) r))))))))))
+                  (and (not (or (fx= t EVENT_BUTTON1UP) propagate glgui:propagate)) r))) 
+               widget-list)))
+            guis)))
 
 ;; process an input event
 ;; 20100519: allow multiple guis
@@ -235,5 +236,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (if (fx= t EVENT_REDRAW) (apply glgui:render gs)
         (apply glgui:inputloop (append (list t x0 y0) gs)))
    )))
+
+;; provide a screen shot
+(define (glgui-screenshot)
+  (let ((w (glgui-width-get))
+        (h (glgui-height-get)))
+    (glCoreReadPixels 0 0 w h)))
 
 ;; eof
