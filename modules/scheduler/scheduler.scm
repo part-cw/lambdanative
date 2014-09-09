@@ -101,50 +101,36 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; run case init on all stores with new cases
 (define (scheduler:initnewcases now nowstr)
-  (let loop ((p scheduler:pendingstart))
-    (if (= (length p) 0)
-      (set! scheduler:pendingstart '())
-      (let ((s (car (car p)))
-            (n (cadr (car p))))
-         (scheduler:log 1 "starting case " n)
-         (store-set! s "CaseID" n)
-         (store-set! s "Start" now)
-         (store-set! s "StartStr" nowstr)
-         (let loop2 ((is (instance:all s)))
-           (if (> (length is) 0) (begin
-             (instance:caseinit s (car is))
-             (loop2 (cdr is))
-           ))
-         )
-         (loop (cdr p))
-       )
-     )
-  ))
+  (for-each (lambda (p)
+    (let ((s (car p)) (c (cadr p)))
+      (scheduler:log 1 "starting case " c)
+      (store-set! s "CaseID" c)
+      (store-set! s "Start" now)
+      (store-set! s "StartStr" nowstr)
+      (for-each (lambda (i) (instance:caseinit s i)) (instance:all s))
+    )
+  ) scheduler:pendingstart)
+  (set! scheduler:pendingstart '())
+)
 
 ;; run case end on all stores with finished cases
 (define (scheduler:endoldcases)
-  (let loop ((sl scheduler:pendingend))
-    (if (= (length sl) 0)
-      (set! scheduler:pendingend '())
-      (begin
-        (let loop2 ((is (instance:all (car sl))))
-          (if (> (length is) 0) (begin
-            (instance:caseend (car sl) (car is))
-            (loop2 (cdr is))
-          ))
-        )
-        (scheduler:log 1 "ending case " (store-ref (car sl) "CaseID" #f))
-        (store-set! (car sl) "CaseID" #f)
-        (loop (cdr sl))))))
+  (for-each (lambda (s)
+    (for-each (lambda (i) (instance:caseend s i)) (instance:all s))
+    (scheduler:log 1 "ending case " (store-ref s "CaseID" #f))
+    (store-set! s "CaseID" #f)
+  ) scheduler:pendingend)
+  (set! scheduler:pendingend '())
+)
 
 ;; set store  timestamps (with offset for better performance)
 (define (scheduler:initdispatchtimes)
-  (let ((timedelta (/ 5.0 (if (> (length (store-list)) 0) (length (store-list)) 1.))))
+  (let ((timedelta (/ 5.0 (if (fx> (length (store-list)) 0) (length (store-list)) 1.))))
     (let loop ((sl (store-list))(n 0))
       (if (> (length sl) 0) (begin
         (store-set! (car sl) "DispatchStart" (flo (+ ##now (* timedelta n))))
         (store-set! (car sl) "DispatchCount" 0.)
-        (loop (cdr sl) (+ n 1))
+        (loop (cdr sl) (fx+ n 1))
       ))
     )
   ))
@@ -154,17 +140,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (scheduler-init . timefunc)
   (scheduler:log 2 "initializing all instances")
-  (let loop ((sl (store-list)))
-    (if (> (length sl) 0) (begin
-      (let loop2 ((is (instance:all (car sl))))
-         (if (> (length is) 0) (begin
-           (instance:init (car sl) (car is))
-           (loop2 (cdr is))
-         ))
-      )
-      (loop (cdr sl))
-    ))
-  )
+  (for-each (lambda (s) (for-each (lambda (i) (instance:init s i)) (instance:all s))) (store-list))
+
   (if (fx= (length timefunc) 1) (begin
     (set! current-time-seconds (car timefunc))
     ;; If this is not done and we are replaying file scheduler:initdispatchtimes prevents stores from ever dispatching.
@@ -176,80 +153,43 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 )
 
 (define (scheduler-iterate . guiwaveproc)
-  (let loopt ((sl (store-list)))
-    (if (> (length sl) 0)
-      (begin
-        (store-set! (car sl) "Now" ##now)
-        (loopt (cdr sl))
-      )
-    )
-  )
+  (for-each (lambda (s) (store-set! s "Now" ##now)) (store-list))
   (scheduler:endoldcases)
   (scheduler:initnewcases ##now (seconds->string (fix ##now) "%T"))
-  (if (scheduler:doinputs) (begin
-    (let loop2 ((sl (store-list)))
-      (if (> (length sl) 0) (begin
-        (if (fl>= (fl- ##now (store-ref (car sl) "DispatchStart" 0.))
-                (store-ref (car sl) "DispatchCount" 0.))  ;; run every 1 second
+  (if (scheduler:doinputs)
+    (begin
+      (for-each (lambda (s)
+        (if (fl>= (fl- ##now (store-ref s "DispatchStart" 0.)) (store-ref s "DispatchCount" 0.))  ;; run every 1 second
           (begin
-            (store-set! (car sl) "DispatchCount" (fl+ (store-ref (car sl) "DispatchCount" 0.) 1.))
-            (store-waveform-dispatch (car sl))
-            (store-raw-dispatch (car sl))
+            (store-set! s "DispatchCount" (fl+ (store-ref s "DispatchCount" 0.) 1.))
+            (store-waveform-dispatch s)
+            (store-raw-dispatch s)
             ;; provide waveform access to gui here
             (if (= (length guiwaveproc) 1) ((car guiwaveproc)))
 
             ;; run all algorithms, even if case not active
-            (let algloop ((is (instance:allalgs (car sl))))
-              (if (> (length is) 0) (begin
-                (instance:run (car sl) (car is))
-                (algloop (cdr is))
-              ))
-            )
-            (if (store-ref (car sl) "CaseID" #f) (begin
+            (for-each (lambda (i) (instance:run s i)) (instance:allalgs s))
+            (if (store-ref s "CaseID" #f) (begin
               ;; run all dse instances
-              (let dseloop ((is (instance:alldses (car sl))))
-                (if (> (length is) 0) (begin
-                  (instance:run (car sl) (car is))
-                  (dseloop (cdr is))
-                ))
-              )
+              (for-each (lambda (i) (instance:run s i)) (instance:alldses s))
               ;; run all output instances
-              (let outloop ((is (instance:alloutputs (car sl))))
-                (if (> (length is) 0) (begin
-                  (instance:run (car sl) (car is))
-                  (outloop (cdr is))
-                ))
-              )
+              (for-each (lambda (i) (instance:run s i)) (instance:alloutputs s))
             ))
           )
-        )
-        (loop2 (cdr sl))
-      ))
+        ))
+      (store-list))
+      ;; (watchdog)
+      ;; (##gc)
+      #t
     )
-    ;; (watchdog)
-    ;; (##gc)
-    #t)
     #f
   )
 )
 
 (define (scheduler-cleanup)
   (scheduler:log 2 "cleanup on all instances")
-  (let loop ((sl (store-list)))
-    (if (> (length sl) 0)
-      (begin
-        (let loop2 ((is (instance:all (car sl))))
-          (if (> (length is) 0)
-            (begin
-              (instance:end (car sl) (car is))
-              (loop2 (cdr is))
-            )
-          )
-        )
-        (loop (cdr sl))
-      )
-    )
-  ))
+  (for-each (lambda (s) (for-each (lambda (i) (instance:end s i)) (instance:all s))) (store-list))
+)
 
 ;; All rolling logfiles at start of cases.. useful for a separate log of each case
 (define log:lastrolled 0.)

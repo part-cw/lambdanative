@@ -75,12 +75,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (store-set! store "InstanceList" (append is (list instance)))
         (instance-setvar! store instance "PluginName" plugin)
         (instance-setvar! store instance "PluginType" (plugin:type plugin))
-        (let loop ((c config))
-          (if (> (length c) 0) (begin
-            (instance-setvar! store instance (car (car c)) (cadr (car c)))
-            (loop (cdr c))
-          ))
-        )
+        (for-each (lambda (c) (instance-setvar! store instance (car c) (cadr c))) config)
         ;; usually defer initialization to scheduler-init, unless it's already been done
         (if (scheduler-initialized?) (begin
           (instance:init store instance)
