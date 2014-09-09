@@ -125,11 +125,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              (list (string (car strlst)))) res)))))))
 
 
-(define (string-index str a-char cmp)
-  (let loop ((pos 0)) (cond
-      ((>= pos (string-length str)) #f)
-      ((cmp a-char (string-ref str pos)) pos)
-      (else (loop (fx+ pos 1))))))
+(define (string-index str a-char . comp)
+  (let ((cmp (if (= (length comp) 1) (car comp) char=?)))
+    (let loop ((pos 0)) (cond
+        ((>= pos (string-length str)) #f)
+        ((cmp a-char (string-ref str pos)) pos)
+        (else (loop (fx+ pos 1)))))))
 
 (define (string:contains str pattern cmp)
   (let* ((pat-len (string-length pattern))
@@ -241,5 +242,42 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;   Returns a modified version of string str which is wrapped 
 ;;   to fit into a window of width w using the fontsize obtained from font
 ;; --> Moved to glgui/glgui-primitives to prevent warning in Console apps.
+
+(define (string-prefix? pattern str)
+  (let loop ((i 0))
+    (cond
+      ((>= i (string-length pattern)) #t)
+      ((>= i (string-length str)) #f)
+      ((char=? (string-ref pattern i) (string-ref str i))
+        (loop (fx+ i 1)))
+      (else #f))))
+
+(define (string-prefix-ci? pattern str)
+  (let loop ((i 0))
+    (cond
+      ((>= i (string-length pattern)) #t)
+      ((>= i (string-length str)) #f)
+      ((char-ci=? (string-ref pattern i) (string-ref str i))
+        (loop (fx+ i 1)))
+      (else #f))))
+
+(define (string-suffix? pattern str)
+  (let loop ((i (fx- (string-length pattern) 1)) (j (fx- (string-length str) 1)))
+    (cond
+      ((negative? i) #t)
+      ((negative? j) #f)
+      ((char=? (string-ref pattern i) (string-ref str j))
+        (loop (fx- i 1) (fx- j 1)))
+      (else #f))))
+
+(define (string-suffix-ci? pattern str)
+  (let loop ((i (fx- (string-length pattern) 1)) (j (fx- (string-length str) 1)))
+    (cond
+      ((negative? i) #t)
+      ((negative? j) #f)
+      ((char-ci=? (string-ref pattern i) (string-ref str j))
+        (loop (fx- i 1) (fx- j 1)))
+      (else #f))))
+
 
 ;; eof
