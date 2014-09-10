@@ -38,9 +38,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; this is the main dispatch for all devices
 (define (graphout:dispatch g)
-  (let loop ((cmds (vector->list (table-ref g 'commands))))
-    (if (and (> (length cmds) 0) (car cmds))
-      (let ((cmdname (car (car cmds)))(cmdargs (cdr (car cmds))))
+  (for-each (lambda (cmd)
+    (if cmd
+      (let ((cmdname (car cmd))(cmdargs (cdr cmd)))
         (cond 
           ((eq? cmdname '@axisenable) (apply graphout:axisenable (append (list g) cmdargs)))
           ((eq? cmdname '@aorigin) (apply graphout:aorigin (append (list g) cmdargs)))
@@ -83,10 +83,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           ((eq? cmdname '@ylabel) (apply graphout:ylabel (append (list g) cmdargs)))
           ((eq? cmdname '@ylinear) (apply graphout:ylinear (append (list g) cmdargs)))
           ((eq? cmdname '@ylog) (apply graphout:ylog (append (list g) cmdargs)))
-          (else  (log-error (car (car cmds)) " is not implemented\n")
+          (else  (log-error (car cmd) " is not implemented\n")
         ))
-      (loop (cdr cmds))
-    ))
+    ))) (vector->list (table-ref g 'commands))
   ))
 
 ;; output pdf graph
