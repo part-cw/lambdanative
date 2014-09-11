@@ -53,10 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui:draw-linestrip data color)
   (glCoreColor color)
   (glCoreBegin GL_LINE_STRIP)
-  (let loop ((d data))
-    (if (> (length d) 0) (begin
-       (glCoreVertex2f (flo (car (car d))) (flo (cadr (car d))))
-       (loop (cdr d)))))
+  (for-each (lambda (d) (glCoreVertex2f (flo (car d)) (flo (cadr d)))) data)
   (glCoreEnd))
 
 ;; ----------

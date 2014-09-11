@@ -104,10 +104,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; set the same parameter in all widgets
 ;; for example: (glgui-widget-setglobal! mygui 'focus #f)
 (define (glgui-widget-setglobal! g id val)
-  (let ((l (glgui-get g 'widget-list)))
-    (let loop ((ws l))
-      (if (fx> (length ws) 0) (begin
-        (glgui-widget-set! g (car ws) id val)
-        (loop (cdr ws)))))))
-
+  (for-each (lambda (w) (glgui-widget-set! g w id val)) (glgui-get g 'widget-list))
+)
 ;; eof
