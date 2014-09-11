@@ -72,13 +72,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (fifo:reader! name proc pause)
   (thread-start! (make-safe-thread (lambda ()
-    (let loop () 
-      (let loop2 ((data (fifo:read name)))
-        (if (fx> (length data) 0) (begin
-          (apply proc (car data))
-          (loop2 (cdr data)))))
+    (let loop ()
+      (for-each (lambda (data) (apply proc data)) (fifo:read name))
       (thread-sleep! pause)
-      (loop))))))
+      (loop))
+  ))))
 
 (define (store-fifo-import! store name)
   (fifo:reader! name 
@@ -100,21 +98,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (store-fifo-export store name parameters)
   (store:setlocal! store "use_fifo_export" #t)
-  (let loop ((ps parameters))
-    (if (fx> (length ps) 0) 
-      (let* ((listlabel (string-append (car ps) ":fifoexportlist"))
-             (curlist (store-ref store listlabel '())))
-        (store:setlocal! store listlabel (append curlist (list name)))
-        (loop (cdr ps))))))
+  (for-each (lambda (p)
+    (let* ((listlabel (string-append p ":fifoexportlist"))
+           (curlist (store-ref store listlabel '())))
+      (store:setlocal! store listlabel (append curlist (list name)))
+    )
+  ) parameters))
 
 (define (store:setfifo! store id val . category)
   (apply store:setlocal! store id val category)
-  (let loop ((fifos (store-ref store (string-append id ":fifoexportlist") '())))
-    (if (fx> (length fifos) 0)
-      (begin
-        (fifo:write (car fifos) (list id val))
-        (loop (cdr fifos))
-      ))
-  ))
+  (for-each (lambda (f)
+    (fifo:write f (list id val))
+  )(store-ref store (string-append id ":fifoexportlist") '())))
 
 ;; eof

@@ -46,12 +46,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (file->store store fname)
   (if (file-exists? fname)
-    (let loop ((data (with-input-from-file fname read)))
-      (if (fx> (length data) 0)
-        (begin
-          (apply store-set! (append (list store) (car data)))
-          (loop (cdr data))
-        ))
-    )))
+    (for-each (lambda (data)
+      (apply store-set! (append (list store) data))
+    )(with-input-from-file fname read))
+  ))
 
 ;; eof
