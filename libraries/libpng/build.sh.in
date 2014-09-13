@@ -1,16 +1,21 @@
 #!/bin/sh
-
-PKGSRC=libpng-1.6.9.tar.gz
+PKGHASH=6bcd6efa7f20ccee51e70453426d7f4aea7cf4bb
+PKGSRC=libpng-1.6.12.tar.gz
 
 src=@SYS_PREFIXROOT@/packages/$PKGSRC
 
 if [ ! -f $src -a `which wget` ]; then
   echo "==> No source found, attempting to download.."
-  wget http://prdownloads.sourceforge.net/libpng/$PKGSRC -O $src
+  wget https://prdownloads.sourceforge.net/libpng/$PKGSRC -O $src
 fi
 
 if [ ! -f $src ]; then
   echo "==> ERROR: Unable to proceed. Please obtain $src first."
+  exit 1
+fi
+
+if [ `shasum $src | cut -f 1 -d " "` != "$PKGHASH" ]; then
+  echo "==> ERROR: Unable to proceed! SHA hash of download failed."
   exit 1
 fi
 

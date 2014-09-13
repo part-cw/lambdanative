@@ -1,8 +1,8 @@
 #!/bin/sh
+PKGHASH=6f6ab5ee38eed46ee0d9a8cd8f1e13f94bba99b3
+VERSION=3080600
 
-VERSION=3080301
-
-PKGURL="http://www.sqlite.org/2014/sqlite-amalgamation-${VERSION}.zip"
+PKGURL="https://www.sqlite.org/2014/sqlite-amalgamation-${VERSION}.zip"
 PKGSRC=`basename $PKGURL`
 
 src=@SYS_PREFIXROOT@/packages/$PKGSRC
@@ -14,6 +14,11 @@ fi
 
 if [ ! -f $src ]; then
   echo "==> ERROR: Unable to proceed. Please obtain $src first."
+  exit 1
+fi
+
+if [ `shasum $src | cut -f 1 -d " "` != "$PKGHASH" ]; then
+  echo "==> ERROR: Unable to proceed! SHA hash of download failed."
   exit 1
 fi
 

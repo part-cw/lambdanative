@@ -28,14 +28,6 @@
  #endif
  
  	*sock = INVALID_SOCKET;
-@@ -984,6 +984,7 @@
- 		return 1;
- 	}
- #else
-+	int opt;
- 	opt = 1;
- 	if(ioctlsocket(sock, FIONBIO, &opt)){
- 		COMPAT_CLOSE(sock);
 --- lib/time_mosq.c	2013-12-02 15:03:39.000000000 -0800
 +++ lib/time_mosq.c	2014-02-04 15:09:44.000000000 -0800
 @@ -43,6 +43,7 @@

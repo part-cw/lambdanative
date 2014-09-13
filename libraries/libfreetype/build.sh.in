@@ -1,5 +1,5 @@
 #!/bin/sh
-
+PKGHASH=d4a17b42505b23dab022f877e1849940aa3b64f3
 PKGURL=http://download.savannah.gnu.org/releases/freetype/freetype-2.5.3.tar.gz
 
 PKGSRC=`basename $PKGURL`
@@ -13,6 +13,11 @@ fi
 
 if [ ! -f $src ]; then
   echo "==> ERROR: Unable to proceed. Please obtain $src first."
+  exit 1
+fi
+
+if [ `shasum $src | cut -f 1 -d " "` != "$PKGHASH" ]; then
+  echo "==> ERROR: Unable to proceed! SHA hash of download failed."
   exit 1
 fi
 

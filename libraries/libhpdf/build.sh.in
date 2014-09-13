@@ -1,5 +1,5 @@
 #!/bin/sh
-
+PKGHASH=b75ec6052b8d72aa7f23d67adcdf9df4847b64ca
 PKGSRC=libharu-2.2.1.tar.gz
 
 src=@SYS_PREFIXROOT@/packages/$PKGSRC
@@ -11,6 +11,11 @@ fi
 
 if [ ! -f $src ]; then
   echo "==> ERROR: Unable to proceed. Please obtain $src first."
+  exit 1
+fi
+
+if [ `shasum $src | cut -f 1 -d " "` != "$PKGHASH" ]; then
+  echo "==> ERROR: Unable to proceed! SHA hash of download failed."
   exit 1
 fi
 

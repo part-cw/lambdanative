@@ -1,16 +1,21 @@
 #!/bin/sh
-
-PKGSRC=libuuid-1.0.2.tar.gz
+PKGHASH=46eaedb875ae6e63677b51ec583656199241d597
+PKGSRC=libuuid-1.0.3.tar.gz
 
 src=@SYS_PREFIXROOT@/packages/$PKGSRC
 
 if [ ! -f $src -a `which wget` ]; then
   echo "==> No source found, attempting to download.."
-  wget http://downloads.sourceforge.net/project/libuuid/$PKGSRC -O $src
+  wget https://downloads.sourceforge.net/project/libuuid/$PKGSRC -O $src
 fi
 
 if [ ! -f $src ]; then
   echo "==> ERROR: Unable to proceed. Please obtain $src first."
+  exit 1
+fi
+
+if [ `shasum $src | cut -f 1 -d " "` != "$PKGHASH" ]; then
+  echo "==> ERROR: Unable to proceed! SHA hash of download failed."
   exit 1
 fi
 

@@ -1,19 +1,21 @@
 #!/bin/sh
-
-# version of gambit to use:
-#GAMBIT=gambc-v4_6_9.tgz
-#GAMBIT=gambc-v4_6_7.tgz
+PKGHASH=2091784f1e332e8b5918718417abe75c2c9ada45
 GAMBIT=gambc-v4_7_0.tgz
 
 src=@SYS_PREFIXROOT@/packages/$GAMBIT
 
 if [ ! -f $src -a `which wget` ]; then
   echo "==> No source found, attempting to download.."
-  wget http://www.iro.umontreal.ca/~gambit/download/gambit/v4.7/source/$GAMBIT -O $src
+  wget https://www.iro.umontreal.ca/~gambit/download/gambit/v4.7/source/$GAMBIT -O $src
 fi
 
 if [ ! -f $src ]; then
   echo "ERROR: no source code found"
+  exit 1
+fi
+
+if [ `shasum $src | cut -f 1 -d " "` != "$PKGHASH" ]; then
+  echo "==> ERROR: Unable to proceed! SHA hash of download failed."
   exit 1
 fi
 

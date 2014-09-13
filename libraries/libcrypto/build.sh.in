@@ -1,16 +1,21 @@
 #!/bin/sh
-
-PKGSRC=openssl-1.0.1h.tar.gz
+PKGHASH=74eed314fa2c93006df8d26cd9fc630a101abd76
+PKGSRC=openssl-1.0.1i.tar.gz
 
 src=@SYS_PREFIXROOT@/packages/$PKGSRC
 
 if [ ! -f $src -a `which wget` ]; then
   echo "==> No source found, attempting to download.."
-  wget http://www.openssl.org/source/$PKGSRC -O $src
+  wget https://www.openssl.org/source/$PKGSRC -O $src
 fi
 
 if [ ! -f $src ]; then
   echo "==> ERROR: Unable to proceed. Please obtain $src first."
+  exit 1
+fi
+
+if [ `shasum $src | cut -f 1 -d " "` != "$PKGHASH" ]; then
+  echo "==> ERROR: Unable to proceed! SHA hash of download failed."
   exit 1
 fi
 

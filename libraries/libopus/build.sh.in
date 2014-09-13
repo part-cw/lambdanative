@@ -1,5 +1,5 @@
 #!/bin/sh
-
+PKGHASH=35005f5549e2583f5770590135984dcfce6f3d58
 PKGSRC=opus-1.1.tar.gz
 
 src=@SYS_PREFIXROOT@/packages/$PKGSRC
@@ -11,6 +11,11 @@ fi
 
 if [ ! -f $src ]; then
   echo "==> ERROR: Unable to proceed. Please obtain $src first."
+  exit 1
+fi
+
+if [ `shasum $src | cut -f 1 -d " "` != "$PKGHASH" ]; then
+  echo "==> ERROR: Unable to proceed! SHA hash of download failed."
   exit 1
 fi
 

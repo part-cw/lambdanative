@@ -17,6 +17,7 @@ if [ @SYS_PLATFORM@ = openbsd ]; then
   done
 fi
 
+PKGHASH=526a7955de59016a06680ac24209ecb6ce05527d
 PKGSRC=pa_stable_v19_20140130.tgz
 
 src=@SYS_PREFIXROOT@/packages/$PKGSRC
@@ -28,6 +29,11 @@ fi
 
 if [ ! -f $src ]; then
   echo "==> ERROR: Unable to proceed. Please obtain $src first."
+  exit 1
+fi
+
+if [ `shasum $src | cut -f 1 -d " "` != "$PKGHASH" ]; then
+  echo "==> ERROR: Unable to proceed! SHA hash of download failed."
   exit 1
 fi
 

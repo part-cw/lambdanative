@@ -1,4 +1,5 @@
 #!/bin/sh
+PKGHASH=8318dc460413d952d2468c8bc9aa2e484bb72d98
 PKGSRC=ffts-0.7.tar.gz
 
 src=@SYS_PREFIXROOT@/packages/$PKGSRC
@@ -10,6 +11,11 @@ fi
 
 if [ ! -f $src ]; then
   echo "==> ERROR: Unable to proceed. Please obtain $src first."
+  exit 1
+fi
+
+if [ `shasum $src | cut -f 1 -d " "` != "$PKGHASH" ]; then
+  echo "==> ERROR: Unable to proceed! SHA hash of download failed."
   exit 1
 fi
 
