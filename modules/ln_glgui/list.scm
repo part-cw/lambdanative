@@ -142,12 +142,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (if (not (integer? val))
            (glgui-widget-set! g wgt 'offset (flfloor (fl+ val 0.5))) ;; snap to place
          )
-         (if (and (not drag) inside cb)
+         (if (and (not drag) inside (or cb cbb))
            (let ((cur (fix (fl+ val (fl/ (fl- (fl+ (flo y) (flo h)) (fl+ (flo my) space)) (flo dh)) 0.))))
-             (if (and (fx>= cur 0) (fx>= cur (fix val)) (or (fx< cur (length lst)) cbb)) (begin
+             (if (and (fx>= cur 0) (fx>= cur (fix val)) (fx< cur (length lst))) (begin
                (glgui-widget-set! g wgt 'current cur)
                (if (procedure? cb) (cb g wgt type mx my))
-            ))))
+            )
+            (if (and (procedure? cbb) (fx>= cur (length lst))) (cbb g wgt type mx my)))))
          (glgui-widget-set! g wgt 'old #f)
          (glgui-widget-set! g wgt 'drag #f)
        )
@@ -183,7 +184,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'w w
      'h h
      'callback cb
-     'callbackbeyond #f        ;; Trigger the callback even if they click below all items - on empty rows
+     'callbackbeyond #f        ;; Separate callback for clicking below all items - on empty rows
      'update-handle glgui:list-update
      'key_callback (if (fx= (length kcb) 1) (car kcb) #f)
      'draw-handle  glgui:list-draw
