@@ -105,6 +105,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (w (fix (glgui-widget-get-dyn g wgt 'w)))
          (h (fix (glgui-widget-get-dyn g wgt 'h)))
          (cb (glgui-widget-get g wgt 'callback))
+         (cbb (glgui-widget-get g wgt 'callbackbeyond))
          (dh (fix (glgui-widget-get g wgt 'dh)))
          (n  (fix (floor (/ h dh))))
          (lst (glgui-widget-get g wgt 'list))
@@ -143,7 +144,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          )
          (if (and (not drag) inside cb)
            (let ((cur (fix (fl+ val (fl/ (fl- (fl+ (flo y) (flo h)) (fl+ (flo my) space)) (flo dh)) 0.))))
-             (if (and (fx>= cur 0) (fx>= cur (fix val)) (fx< cur (length lst))) (begin
+             (if (and (fx>= cur 0) (fx>= cur (fix val)) (or (fx< cur (length lst)) cbb)) (begin
                (glgui-widget-set! g wgt 'current cur)
                (if (procedure? cb) (cb g wgt type mx my))
             ))))
@@ -182,6 +183,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'w w
      'h h
      'callback cb
+     'callbackbeyond #f        ;; Trigger the callback even if they click below all items - on empty rows
      'update-handle glgui:list-update
      'key_callback (if (fx= (length kcb) 1) (car kcb) #f)
      'draw-handle  glgui:list-draw
@@ -189,7 +191,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'hidden #f
      'list lst
      'offset 0.
-     'fxoffset 0
      'current -1
      'focus #t
      'dh dh        ;; height of line
