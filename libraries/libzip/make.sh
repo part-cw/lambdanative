@@ -14,6 +14,8 @@ cd lib
 package_make
 package_make install
 cd ..
+cp $SYS_PREFIX/lib/libzip/include/zipconf.h $SYS_PREFIX/include
+
 package_cleanup
 
 # eof
