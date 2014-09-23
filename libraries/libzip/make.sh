@@ -1,0 +1,19 @@
+
+PKGURL=http://www.nih.at/libzip/libzip-0.11.2.tar.gz
+PKGHASH=eeb3b5567fcf3532fa4bcb6440a87c7ad8507d2d
+
+package_download $PKGURL $PKGHASH
+
+EXTRACONF=
+if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
+  EXTRACONF=--host=$SYS_ARCH
+fi
+
+package_configure $EXTRACONF --enable-static --disable-shared
+cd lib
+package_make
+package_make install
+cd ..
+package_cleanup
+
+# eof

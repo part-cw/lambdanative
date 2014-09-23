@@ -1,4 +1,3 @@
-#!/bin/sh
 
 LIBNAME=usb-serial-for-android
 VERSION_HASH=5c8a655
@@ -25,21 +24,21 @@ git checkout $VERSION_HASH -q
 cd UsbSerialLibrary
 
 echo " => Removing old library..."
-if [ -f @SYS_PREFIX@/lib/$LIBNAME.a ]; then
-  rm @SYS_PREFIX@/lib/$LIBNAME.a
+if [ -f $SYS_PREFIX/lib/$LIBNAME.a ]; then
+  rm $SYS_PREFIX/lib/$LIBNAME.a
 fi
-if [ -f @SYS_PREFIX@/lib/$LIBNAME.jar ]; then
-  rm @SYS_PREFIX@/lib/$LIBNAME.jar
+if [ -f $SYS_PREFIX/lib/$LIBNAME.jar ]; then
+  rm $SYS_PREFIX/lib/$LIBNAME.jar
 fi
 
 echo " => Configuring source..."
-if [ "@SYS_ANDROIDAPI@" -lt "12" ]; then
+if [ "$SYS_ANDROIDAPI" -lt "12" ]; then
   echo " => ERROR: USB Serial functions require API Level 12+. Please adjust your ANDROIDAPI setting in the SETUP file."
   exit 1
 fi
 
-TARGET=`@SYS_ANDROIDSDK@/tools/android list targets | grep "^id:" | grep "android-@SYS_ANDROIDAPI@" | cut -f 2 -d " "`
-@SYS_ANDROIDSDK@/tools/android -s create lib-project --name usbserial \
+TARGET=`$SYS_ANDROIDSDK/tools/android list targets | grep "^id:" | grep "android-$SYS_ANDROIDAPI" | cut -f 2 -d " "`
+$SYS_ANDROIDSDK/tools/android -s create lib-project --name usbserial \
 --target $TARGET \
 --path . \
 --package com.hoho.android.usbserial
@@ -48,11 +47,11 @@ echo " => Compiling source..."
 ant -quiet release
 
 echo " => Installing..."
-cp bin/classes.jar @SYS_PREFIX@/lib/$LIBNAME.jar
-ar q @SYS_PREFIX@/lib/$LIBNAME.a bin/classes.jar
+cp bin/classes.jar $SYS_PREFIX/lib/$LIBNAME.jar
+ar q $SYS_PREFIX/lib/$LIBNAME.a bin/classes.jar
 cd "$here"
 
 echo " => Cleaning up..."
 rm -rf $tmpdir
 
-echo " => All done."
+#eof
