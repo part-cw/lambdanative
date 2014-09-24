@@ -197,7 +197,11 @@ asserterror $?
 echo " => zipaligning.."
 assertfile $fnlfile
 mv $fnlfile tmp.apk
-$ANDROIDSDK/tools/zipalign -f 4 tmp.apk $fnlfile
+if [ -x $ANDROIDSDK/tools/zipalign ]; then
+  $ANDROIDSDK/tools/zipalign -f 4 tmp.apk $fnlfile
+else
+  `ls -1 $ANDROIDSDK/build-tools/*/zipalign | tail -n 1` -f 4 tmp.apk $fnlfile
+fi
 asserterror $?
 rmifexists tmp.apk
 
