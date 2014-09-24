@@ -1,4 +1,3 @@
-#!/bin/sh
 
 VERSION=1.3.4
 PKGURL="http://mosquitto.org/files/source/mosquitto-${VERSION}.tar.gz"

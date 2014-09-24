@@ -1,4 +1,3 @@
-#!/bin/sh
 
 PKGURL=https://www.iro.umontreal.ca/~gambit/download/gambit/v4.7/source/gambc-v4_7_0.tgz
 PKGHASH=2091784f1e332e8b5918718417abe75c2c9ada45

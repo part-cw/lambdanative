@@ -1,4 +1,3 @@
-#!/bin/sh
 
 # check for a local library
 # this allows us to pull in a patched version (on openbsd in particular)

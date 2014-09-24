@@ -1,5 +1,4 @@
 
-echo " => All done."
 PKGURL=https://prdownloads.sourceforge.net/libpng/libpng-1.6.12.tar.gz
 PKGHASH=6bcd6efa7f20ccee51e70453426d7f4aea7cf4bb
 

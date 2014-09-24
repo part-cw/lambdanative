@@ -1,4 +1,3 @@
-#!/bin/sh
 
 VERSION=3080600
 PKGURL="https://www.sqlite.org/2014/sqlite-amalgamation-${VERSION}.zip"

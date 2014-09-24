@@ -10,6 +10,9 @@ if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
 fi
 
 package_configure $EXTRACONF --enable-static --disable-shared
+
+package_patch
+
 cd lib
 package_make
 package_make install

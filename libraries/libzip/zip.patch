@@ -1,0 +1,11 @@
+--- lib/zip.h	2013-09-22 02:35:53.000000000 -0700
++++ lib/zip.h.new	2014-09-24 14:23:47.000000000 -0700
+@@ -38,7 +38,7 @@
+ 
+ #ifndef ZIP_EXTERN
+ #ifdef _WIN32
+-#define ZIP_EXTERN __declspec(dllimport)
++#define ZIP_EXTERN
+ #elif defined(__GNUC__) && __GNUC__ >= 4
+ #define ZIP_EXTERN __attribute__ ((visibility ("default")))
+ #else

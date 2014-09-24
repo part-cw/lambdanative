@@ -4,29 +4,9 @@ PKGHASH=b75ec6052b8d72aa7f23d67adcdf9df4847b64ca
 
 package_download $PKGURL $PKGHASH
 
-package_patch
-autoconf
-
-case $SYS_PLATFORM in
-ios)
-  EXTRACONF=--host=arm
-;;
-android)
-  EXTRACONF=--host=arm-eabi
-;;
-win32*)
-  EXTRACONF=--host=i386-mingw32
-;;
-linux*)
-  EXTRACONF=--host=i386-linux
-;;
-*)
-  EXTRACONF=
-;;
-esac
-
+EXTRACONF=
 if [ ! "$SYS_PLATFORM" = "$SYS_HOSTPLATFORM" ]; then
-  EXTRACONF=--host=$SYS_ARCH
+  EXTRACONF=--host=`echo "${SYS_ARCH}-" | cut -f 1 -d "-"`
 fi
 
 package_configure $EXTRACONF  --without-zlib --without-png --disable-shared
