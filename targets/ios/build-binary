@@ -105,7 +105,12 @@ fi
 assertfile $tmpappdir
 
 echo " => verifying application.."
-checkfail=`codesign --verify $tmpappdir 2>&1`
+sdkver=`xcodebuild -version | grep Xcode | awk '{print $2}'`
+if [ `echo "6.0\n$sdkver" | sort -g | head -1` == "6.0" ]; then
+  checkfail=`codesign --verify --no-strict $tmpappdir 2>&1`
+else
+  checkfail=`codesign --verify $tmpappdir 2>&1`
+fi
 if [ "$checkfail" ]; then
   echo "ERROR: $SYS_APPNAME build was not successful"
   exit 1
