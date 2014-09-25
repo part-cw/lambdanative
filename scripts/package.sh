@@ -7,8 +7,14 @@ package_valid()
   pkg_valid_hash=$2
   pkg_valid=no
   if [ -f $pkg ]; then
-    if [ `shasum $pkg_valid_file | cut -f 1 -d " "` = "$pkg_valid_hash" ]; then
-      pkg_valid=yes
+    if [ $SYS_HOSTPLATFORM = openbsd ]; then
+      if [ `sha1 -q $pkg_valid_file` = "$pkg_valid_hash" ]; then
+        pkg_valid=yes
+      fi
+    else
+      if [ `shasum $pkg_valid_file | cut -f 1 -d " "` = "$pkg_valid_hash" ]; then
+        pkg_valid=yes
+      fi
     fi
   fi
   echo $pkg_valid
@@ -60,7 +66,11 @@ package_download()
   pkg_url=$1
   pkg_hash=$2
   pkg=$SYS_PREFIXROOT/packages/`basename $pkg_url`
-  asserttool shasum
+  if [ $SYS_HOSTPLATFORM = openbsd ]; then
+    asserttool sha1
+  else 
+    asserttool shasum
+  fi
   if [ `package_valid "$pkg" $pkg_hash` = no ]; then
     echo " => downloading ${pkg_url}.."
     rmifexists $pkg
@@ -69,9 +79,13 @@ package_download()
     if [ ! "X$SYS_VERBOSE" = "X" ]; then
       wget_quiet=
     fi
-    wget $pkg_url $wget_quiet -O $pkg
+    wget $pkg_url $wget_quiet --no-check-certificate -O $pkg
     asserterror $?  "download of $pkg_url failed"
-    echo " == hash "`shasum $pkg | cut -f 1 -d " "`
+    if [ $SYS_HOSTPLATFORM = openbsd ]; then
+      echo " == hash "`sha1 -q $pkg`
+    else
+      echo " == hash "`shasum $pkg | cut -f 1 -d " "`
+    fi
     if [ `package_valid "$pkg" $pkg_hash` = no ]; then
       rmifexists $pkg
       assert "Unable to proceed! package download failed (checksum error)"
@@ -112,7 +126,7 @@ package_make()
 {
   pkg_make=make
   if [ ! "X"`which gmake 2> /dev/null` = "X" ]; then
-    echo " == found gmake, using instead of make"
+    vecho " == found gmake, using instead of make"
     pkg_make="gmake -j 9"
   fi
   pkg_make_opt=$@
