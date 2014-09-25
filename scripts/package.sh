@@ -79,7 +79,12 @@ package_download()
     if [ ! "X$SYS_VERBOSE" = "X" ]; then
       wget_quiet=
     fi
-    wget $pkg_url $wget_quiet --no-check-certificate -O $pkg
+    wget $pkg_url $wget_quiet -O $pkg
+    if [ ! $? = 0 ]; then
+       echo "WARNING: wget failed, retrying without certificate check.."
+       rmifexists $pkg
+       wget $pkg_url $wget_quiet --no-check-certificate -O $pkg
+    fi
     asserterror $?  "download of $pkg_url failed"
     if [ $SYS_HOSTPLATFORM = openbsd ]; then
       echo " == hash "`sha1 -q $pkg`
