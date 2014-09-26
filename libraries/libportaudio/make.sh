@@ -15,6 +15,10 @@ if [ $SYS_PLATFORM = openbsd ]; then
     fi 
   done
 fi
+if [ "$localinstall" = "yes" ]; then
+  cd $here
+  continue # continues the libary building loop here
+fi
 
 PKGURL=http://www.portaudio.com/archives/pa_stable_v19_20140130.tgz
 PKGHASH=526a7955de59016a06680ac24209ecb6ce05527d
