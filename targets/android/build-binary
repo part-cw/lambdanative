@@ -172,7 +172,7 @@ for lib in $libs; do
 done
 
 echo " => compiling application.."
-veval "ant -quiet release"
+veval "ant release"
 asserterror $?
 cd $here
 pkgfile="$tmpdir/bin/$(echo $SYS_APPNAME)-release-unsigned.apk"
