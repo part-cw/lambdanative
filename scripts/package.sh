@@ -24,7 +24,7 @@ package_unpack()
 {
   pkg_unpack_file=$1
   echo " => extracting $pkg_unpack_file.."
-  pkg_unpack_extension=`echo ".${pkg_unpack_file}" | rev | cut -f 1 -d "." | rev`
+  pkg_unpack_extension=`echo "${pkg_unpack_file}" | sed 's/.*\.//'`
   case $pkg_unpack_extension in
     zip) 
          asserttool unzip
@@ -61,7 +61,28 @@ package_patch()
   done
 }
 
-package_download()
+package_download_git()
+{
+  pkg_git_url=$1
+  pkg_git_hash=$2
+  if [ -d tmp_install ]; then
+    rm -rf tmp_install
+  fi
+  mkdir tmp_install
+  assertfile tmp_install
+  pkg_here=`pwd`
+  cd tmp_install
+  echo " => cloning ${pkg_git_url}.."
+  veval "git clone $pkg_git_url"
+  asserterror $? "repository cloning failed [$pkg_git_url]"
+  cd *
+  if [ ! "X$pkg_git_hash" = "X" ]; then
+    veval "git checkout $pkg_git_hash"
+    asserterror $? "repository checkout failed [$pkg_git_url]"
+  fi
+}
+
+package_download_ball()
 {
   pkg_url=$1
   pkg_hash=$2
@@ -107,6 +128,19 @@ package_download()
   package_unpack $pkg
   asserterror $? "package extraction failed [$pkg]"
   cd *
+}
+
+package_download()
+{
+  pkg_dnl_ext=`echo "$1" | sed 's/.*\.//'`
+  case $pkg_dnl_ext in
+    git)
+      package_download_git $@
+      ;;
+    *)
+      package_download_ball $@
+      ;;
+  esac
 }
 
 package_configure()
