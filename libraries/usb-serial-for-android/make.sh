@@ -1,57 +1,45 @@
 
-LIBNAME=usb-serial-for-android
-VERSION_HASH=5c8a655
+PKGURL=https://github.com/mik3y/usb-serial-for-android.git
+PKGHASH=5c8a655
 
-tmpdir=tmp_compile
+package_download $PKGURL $PKGHASH
 
-if [ -d $tmpdir ]; then
-  rm -rf $tmpdir
-fi
-mkdir $tmpdir
+USBSER_LIBNAME=usb-serial-for-android
 
-here=`pwd`
-cd $tmpdir
-echo " => Obtaining source..."
-git clone https://github.com/mik3y/usb-serial-for-android.git -q
-if [ ! -d $LIBNAME ]; then
-  echo " => ERROR: Unable to proceed. Please obtain $src first."
-  exit 1
-fi
-
-cd $LIBNAME
-echo " => Checking out target"
-git checkout $VERSION_HASH -q
 cd UsbSerialLibrary
 
-echo " => Removing old library..."
-if [ -f $SYS_PREFIX/lib/$LIBNAME.a ]; then
-  rm $SYS_PREFIX/lib/$LIBNAME.a
+if [ -f $SYS_PREFIX/lib/$USBSER_LIBNAME.a ]; then
+  echo " => removing old library..."
+  rm $SYS_PREFIX/lib/$USBSER_LIBNAME.a
 fi
-if [ -f $SYS_PREFIX/lib/$LIBNAME.jar ]; then
-  rm $SYS_PREFIX/lib/$LIBNAME.jar
+if [ -f $SYS_PREFIX/lib/$USBSER_LIBNAME.jar ]; then
+  echo " => removing old jar library..."
+  rm $SYS_PREFIX/lib/$USBSER_LIBNAME.jar
 fi
 
-echo " => Configuring source..."
+echo " => configuring source..."
 if [ "$SYS_ANDROIDAPI" -lt "12" ]; then
-  echo " => ERROR: USB Serial functions require API Level 12+. Please adjust your ANDROIDAPI setting in the SETUP file."
-  exit 1
+  assert "USB Serial functions require API Level 12+. Please adjust your ANDROIDAPI setting in the SETUP file."
 fi
 
-TARGET=`$SYS_ANDROIDSDK/tools/android list targets | grep "^id:" | grep "android-$SYS_ANDROIDAPI" | cut -f 2 -d " "`
-$SYS_ANDROIDSDK/tools/android -s create lib-project --name usbserial \
---target $TARGET \
+USBSER_TARGET=`$SYS_ANDROIDSDK/tools/android list targets | grep "^id:" | grep "android-$SYS_ANDROIDAPI" | cut -f 2 -d " "`
+veval "$SYS_ANDROIDSDK/tools/android -s create lib-project --name usbserial \
+--target $USBSER_TARGET \
 --path . \
---package com.hoho.android.usbserial
+--package com.hoho.android.usbserial"
+asserterror $? "android create failed"
 
-echo " => Compiling source..."
-ant -quiet release
+echo " => compiling source..."
+veval "ant release"
+asserterror $? "compilation failed"
 
-echo " => Installing..."
-cp bin/classes.jar $SYS_PREFIX/lib/$LIBNAME.jar
-ar q $SYS_PREFIX/lib/$LIBNAME.a bin/classes.jar
-cd "$here"
+echo " => installing..."
+assertfile bin/classes.jar
+cp bin/classes.jar $SYS_PREFIX/lib/$USBSER_LIBNAME.jar
+ar q $SYS_PREFIX/lib/$USBSER_LIBNAME.a bin/classes.jar
 
-echo " => Cleaning up..."
-rm -rf $tmpdir
+cd ..
+
+package_cleanup
 
 #eof
