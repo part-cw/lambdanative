@@ -14,3 +14,5 @@ if(provider.equals("")){
   Intent intent = new Intent(Settings.ACTION_SECURITY_SETTINGS);
   startActivity(intent);
 }
+
+locationlistener = this;

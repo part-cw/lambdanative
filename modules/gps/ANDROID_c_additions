@@ -7,6 +7,16 @@ void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_gpsEvent(J
   gps_accuracy=(double)accuracy;
   gps_timestamp=(double)timestamp/1000; // getTime is in msec, we want epoch
 }
+
+void android_location_toggleGPS(int status){
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "toggleGPS", "(I)V");
+    (*env)->CallVoidMethod(env, globalObj, method, status);
+  }
+}
+
 double android_location_getlatitude(){ return gps_lat; }
 double android_location_getlongitude(){ return gps_lon; }
 double android_location_getaltitude(){ return gps_altitude; }

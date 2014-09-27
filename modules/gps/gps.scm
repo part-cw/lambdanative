@@ -40,6 +40,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (c-declare  #<<end-of-c-declare
 
+#include <android/log.h>
+
 #ifdef IOS
   double ios_location_getlatitude(void);
   double ios_location_getlongitude(void);
@@ -49,6 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #ifdef ANDROID
+  void android_location_toggleGPS(int);
   double android_location_getlatitude(void);
   double android_location_getlongitude(void);
   double android_location_getaltitude(void);
@@ -63,6 +66,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   double qnx_location_getaccuracy(void);
   double qnx_location_gettimestamp(void);
 #endif
+
+void enable_gps(void){
+#ifdef IOS
+
+#elif ANDROID
+  android_location_toggleGPS(1);
+#elif BB10
+
+#else
+   return;
+#endif
+}
+
+void disable_gps(void){
+#ifdef IOS
+
+#elif ANDROID
+  android_location_toggleGPS(0);
+#elif BB10
+
+#else
+   return;
+#endif
+}
+
 
 static double longitude(void){
 #ifdef IOS
@@ -128,6 +156,8 @@ static double timestamp(void){
 end-of-c-declare
 )
 
+(define gps-enable (c-lambda () void "enable_gps"))
+(define gps-disable (c-lambda () void "disable_gps"))
 (define gps-latitude (c-lambda () double "latitude"))
 (define gps-longitude (c-lambda () double "longitude"))
 (define gps-accuracy (c-lambda () double "accuracy"))

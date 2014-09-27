@@ -1,2 +1,3 @@
 private LocationManager locationManager;
 private String provider;
+private LocationListener locationlistener;
