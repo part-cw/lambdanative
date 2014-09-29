@@ -16,17 +16,35 @@ public void onStatusChanged(String provider, int status, Bundle extras) {
 // status (1 = on, 0 = off)
 public void toggleGPS(int status){
   if (status == 1) {
+    gpsStatus = 1;
     // Enable GPS
     runOnUiThread(new Runnable() {
       public void run() {
           runOnUiThread(new Runnable() {
               public void run(){
                   locationManager.requestLocationUpdates(provider, 1000, 1, locationlistener);
+                  locationManager.addGpsStatusListener(gpslistener);
               }
           });
       }});
   } else {
+    gpsStatus = 0;
     // Disable GPS
-    locationManager.removeUpdates(this);
+    locationManager.removeUpdates(locationlistener);
+    locationManager.removeGpsStatusListener(gpslistener);
   }
+}
+
+native void satelliteEvent(int satInView, int satInFix);
+public void onGpsStatusChanged(int event) {
+    int satellites = 0;
+    int satellitesInFix = 0;
+    int timetofix = locationManager.getGpsStatus(null).getTimeToFirstFix();
+    for (GpsSatellite sat : locationManager.getGpsStatus(null).getSatellites()) {
+        if(sat.usedInFix()) {
+            satellitesInFix++;
+        }
+        satellites++;
+    }
+    satelliteEvent(satellites, satellitesInFix);
 }

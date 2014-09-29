@@ -40,8 +40,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (c-declare  #<<end-of-c-declare
 
-#include <android/log.h>
-
 #ifdef IOS
   double ios_location_getlatitude(void);
   double ios_location_getlongitude(void);
@@ -57,6 +55,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   double android_location_getaltitude(void);
   double android_location_getaccuracy(void);
   double android_location_gettimestamp(void);
+  int android_location_getsatviewed(void);
+  int android_location_getsatfixed(void);
 #endif
 
 #ifdef BB10
@@ -91,6 +91,25 @@ void disable_gps(void){
 #endif
 }
 
+static int sat_view(void){
+#ifdef IOS
+#elif ANDROID
+  return android_location_getsatviewed();
+#elif BB10
+#else
+  return 0;
+#endif
+}
+
+static int sat_fix(void){
+#ifdef IOS
+#elif ANDROID
+  return android_location_getsatfixed();
+#elif BB10
+#else
+  return 0;
+#endif
+}
 
 static double longitude(void){
 #ifdef IOS
@@ -163,4 +182,7 @@ end-of-c-declare
 (define gps-accuracy (c-lambda () double "accuracy"))
 (define gps-altitude (c-lambda () double "altitude"))
 (define gps-timestamp (c-lambda () double "timestamp"))
+
+(define gps-sat-in-view (c-lambda () int "sat_view"))
+(define gps-sat-in-fix (c-lambda () int "sat_fix"))
 ;; eof
