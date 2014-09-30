@@ -73,9 +73,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; canadian postal code
 (define (sanestring-capostal s)
-  (let* ((part1 "(?x: [A-Z][0-9][A-Z] )")
-         (part2 "(?x: [0-9][A-Z][0-9] )")
-         (postal (string-append "^" part1 "\\-" part2 "$")))
+  (let* ((part1 "(?x: [a-zA-Z][0-9][a-zA-Z] )")
+         (part2 "(?x: [0-9][a-zA-Z][0-9] )")
+         (postal (string-append "^" part1 "\\s?" part2 "$")))
     (pregexp-match postal s)))
 
 ;; north american phone no (xxx-xxx-xxxx) 
@@ -92,7 +92,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; human height in cm
 (define (sanestring-height-cm s)
-  (pregexp-match "^(?x: [3-9][0-9] | 1[0-9][0-9] )$" s))
+  (pregexp-match "^(?x: [3-9][0-9] | 1[0-9][0-9] | 2[0-2][0-9] )$" s))
 
 ;; human weight in kg
 (define (sanestring-weight-kg s)
