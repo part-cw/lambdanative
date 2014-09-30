@@ -42,16 +42,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; lines
 ;; this is for completeness. Line drawing is very inefficient on some platforms. Use textures instead.
 
-(define (glgui:draw-line x1 y1 x2 y2 color)
+(define (glgui:draw-line x1 y1 x2 y2 color . width)
   (glCoreColor color)
+  (if (fx= (length width) 1) (glLineWidth (flo (car width))))
   (glCoreBegin GL_LINES)
   (glCoreVertex2f (flo x1) (flo y1))
   (glCoreVertex2f (flo x2) (flo y2))
   (glCoreEnd)
 )
 
-(define (glgui:draw-linestrip data color)
+(define (glgui:draw-linestrip data color . width)
   (glCoreColor color)
+  (if (fx= (length width) 1) (glLineWidth (flo (car width))))
   (glCoreBegin GL_LINE_STRIP)
   (for-each (lambda (d) (glCoreVertex2f (flo (car d)) (flo (cadr d)))) data)
   (glCoreEnd))
