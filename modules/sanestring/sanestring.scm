@@ -38,6 +38,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; misc sanity checks on formatted strings
 
+(define (sanestring-hours s)
+  (pregexp-match "^(?x: [0-9] | 1[0-9] | 2[0-3] )$" s))
+
 ;; hours HH
 (define (sanestring-hh s)
   (pregexp-match "^(?x: [0-1][0-9] | 2[0-3] )$" s))
@@ -94,5 +97,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; human weight in kg
 (define (sanestring-weight-kg s)
   (pregexp-match "^(?x: [2-9] | [1-9][0-9] | [1-2][0-9][0-9] )$" s))
+
+(define (sanestring-alpha s)
+  (pregexp-match "^([a-zA-Z]+)$" s))
+
+(define (sanestring-alphanum s)
+  (pregexp-match "^([a-zA-Z0-9]+)$" s))
+
+(define (sanestring-num s)
+  (pregexp-match "^([0-9]+)$" s))
+
+(define (sanestring-nonempty s)
+  (fx> (string-length s) 0))
 
 ;; eof     
