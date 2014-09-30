@@ -502,11 +502,30 @@ int main(int argc, char *argv[])
 }
 #else 
 #include <stdio.h>
+#if defined(ANDROID) || defined(MACOSX) || defined(IOS) || defined(LINUX) || defined(OPENBSD) || defined(BB10) || defined(PLAYBOOK) || defined(NETBSD)
+  #include <pthread.h>
+  pthread_mutex_t ffi_event_lock;
+  #define FFI_EVENT_INIT  pthread_mutex_init(&ffi_event_lock, 0);
+  #define FFI_EVENT_LOCK  pthread_mutex_lock( &ffi_event_lock); 
+  #define FFI_EVENT_UNLOCK  pthread_mutex_unlock( &ffi_event_lock); 
+#else
+  #ifdef WIN32
+    #include <windows.h>
+    CRITICAL_SECTION ffi_event_cs;
+    #define FFI_EVENT_INIT  InitializeCriticalSection(&ffi_event_cs);
+    #define FFI_EVENT_LOCK  EnterCriticalSection(&ffi_event_cs);
+    #define FFI_EVENT_UNLOCK LeaveCriticalSection( &ffi_event_cs);
+  #else
+    static int ffi_event_lock;
+    #define FFI_EVENT_INIT ffi_event_lock=0;
+    #define FFI_EVENT_LOCK { while (ffi_event_lock) { }; ffi_event_lock=1; }
+    #define FFI_EVENT_UNLOCK  ffi_event_lock=0; 
+  #endif
+#endif
 void ffi_event(int t, int x, int y)
 {
-  static int lock=0;
   static int gambitneedsinit=1;
-  if (lock) { return; } else { lock=1; }
+  FFI_EVENT_LOCK
   if (gambitneedsinit) { 
       ___setup_params_reset (&setup_params);
       setup_params.version = ___VERSION;
@@ -515,14 +534,15 @@ void ffi_event(int t, int x, int y)
         (___DEBUG_SETTINGS_REPL_STDIO << ___DEBUG_SETTINGS_REPL_SHIFT);
       setup_params.debug_settings = debug_settings;
       ___setup(&setup_params);
+      FFI_EVENT_INIT
       #ifdef ANDROID
-        ___disable_heartbeat_interrupts(); //@@
+        ___disable_heartbeat_interrupts(); 
       #endif
       gambitneedsinit=0;
   }
   if (!gambitneedsinit&&t) scm_event(t,x,y);
   if (t==EVENT_TERMINATE) { ___cleanup(); exit(0); }
-  lock=0;
+  FFI_EVENT_UNLOCK
 }
 #endif
 _EOF

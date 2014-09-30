@@ -127,8 +127,10 @@ end-of-c-declare
         (if app:android? (##thread-heartbeat!))
       )
       ((fx= t EVENT_IDLE)
-        (hook:event t 0 0)
-        (if app:android? (##thread-heartbeat!))
+        (if app:suspended (begin
+          (hook:event t 0 0)
+          (if app:android? (##thread-heartbeat!))
+        ))
       )
       ((or (fx= t EVENT_BUTTON1DOWN) (fx= t EVENT_BUTTON1UP)
            (fx= t EVENT_BUTTON2DOWN) (fx= t EVENT_BUTTON2UP)
