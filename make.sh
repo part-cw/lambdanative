@@ -1202,7 +1202,8 @@ make_library()
   assertfile "$libdir"
   if [ -f "$libdir/LIB_DEPENDS" ]; then
     dlibs=`cat $libdir/LIB_DEPENDS`
-    for dlib in $dlibs; do
+    filtered_dlibs=`filter_entries $SYS_PLATFORM $dlibs` 
+    for dlib in $filtered_dlibs; do
       make_library $dlib "(depedency)"
     done
   fi
