@@ -525,7 +525,6 @@ int main(int argc, char *argv[])
 void ffi_event(int t, int x, int y)
 {
   static int gambitneedsinit=1;
-  FFI_EVENT_LOCK
   if (gambitneedsinit) { 
       ___setup_params_reset (&setup_params);
       setup_params.version = ___VERSION;
@@ -534,12 +533,13 @@ void ffi_event(int t, int x, int y)
         (___DEBUG_SETTINGS_REPL_STDIO << ___DEBUG_SETTINGS_REPL_SHIFT);
       setup_params.debug_settings = debug_settings;
       ___setup(&setup_params);
-      FFI_EVENT_INIT
       #ifdef ANDROID
         ___disable_heartbeat_interrupts(); 
       #endif
+      FFI_EVENT_INIT
       gambitneedsinit=0;
   }
+  FFI_EVENT_LOCK
   if (!gambitneedsinit&&t) scm_event(t,x,y);
   if (t==EVENT_TERMINATE) { ___cleanup(); exit(0); }
   FFI_EVENT_UNLOCK
