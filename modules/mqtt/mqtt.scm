@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; bindings for the mosquitto MQTT library
 ;; MQTT is a publish/subscribe protocol for the Internet of Things (IoT)
 
-(define mqtt:debuglevel 5)
+(define mqtt:debuglevel 1)
 (define (mqtt:log level . x)
    (if (>= mqtt:debuglevel level) (apply log-system (append (list "mqtt: ") x))))
 
@@ -133,6 +133,7 @@ end-of-c-declare
   (mqtt:log 4 "mosq:encode " msg)
   (cond ((string? msg) (string->u8vector msg))
         ((number? msg) (string->u8vector (number->string msg)))
+        ((port? msg) (u8vector-append mosq:magic (object->u8vector #f))) ;; we can't serialize ports
         (else (u8vector-append mosq:magic (object->u8vector msg)))))
 
 (define (mosq:decode msg)

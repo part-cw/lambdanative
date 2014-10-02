@@ -36,6 +36,8 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
+(include "mqtt-web.scm")
+
 ;; share stores between processes using MQTT
 ;; this allows seamless integration of distributed data stores
 ;; 
@@ -58,8 +60,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (mqtt-store:set! store id val . category)
   (mqtt-store:log 2 "mqtt-store:set! " store " " id " " val)
-  (let ((mosq (store-ref store "mqtt:handle" #f)))
-    (if mosq 
+  (let* ((mosq (store-ref store "mqtt:handle" #f))
+         ;; Exclude instance variables, and blacklisted ones
+         (publish? (not (or (string-contains id "#")
+           (member id (table-ref mosq 'publish-all-exclude '()))))))
+    (if (and mosq publish?)
       (let* ((prefix (table-ref mosq 'publish-all-topicprefix #f))
              (topic (if prefix (string-append prefix id) (store-ref store (string-append id ":topic") #f)))
              (qos (if prefix (table-ref mosq 'publish-all-qos #f) (if topic (store-ref store (string-append id ":qos") 0) #f)))
@@ -91,8 +96,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (store-set! store (string-append localname ":retain") retain)
       )
     ) (table-ref m 'publish '()))
+    (let ((web (table-ref m 'web #f))
+          (port (table-ref m 'web-port 8080)))
+      (if web (mqtt-web store port))
+    )
     (store-set-extern-handler! store mqtt-store:set!)
     (store-clear-extern-handler! store mqtt-store:clear!)
+    m
  ))
 
 (define (mqtt-store:callback store)
