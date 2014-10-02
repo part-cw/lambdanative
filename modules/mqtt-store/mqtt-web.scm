@@ -37,12 +37,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
 ;; basic mqtt inspector (for test and debugging) - this starts a webserver
-(define mqttweb:serverupdaterate 1)
+(define mqttweb:serverupdaterate 2)
 
 (define (mqttweb:format val)
   (cond 
     ((string? val) val)
     ((number? val) (number->string val))
+    ((list? val) (string-append "list[" (number->string (length val)) "]"))
+    ((u8vector? val) (string-append "u8vector[" (number->string (u8vector-length val))"]"))
     ((boolean? val) (if val "TRUE" "FALSE"))
     (else "??")
   ))
@@ -92,14 +94,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             (tr (th "Topic") (th "Value")))))
            (if (fx= (length es) 0) res
              (loop (if (string=? color "#ffffff") "#eeeeee" "#ffffff") (cdr es)
-                   (append res `((tr (@ (bgcolor ,color)) (td (@ (width 800))
-             ,(car (car es))
-            )(td
-             ,(let ((val (cadr (car es))))
-               (mqttweb:format val)))))))))
+               (append res `((tr (@ (bgcolor ,color))
+                                 (td (@ (width 800)) ,(car (car es)))
+                                 (td ,(let ((val (cadr (car es)))) (mqttweb:format val))))))
+             )
+           ))
         (hr)
-        ,(system-appname) " ver. " ,(system-appversion)  " [" ,(system-builddate) "]" (p)
-        (b "Powered by " (a (@ (href http://www.lambdanative.org)) "[LambdaNative]")) (p)
+        ,(system-appname) " v" ,(system-appversion) " [" ,(system-buildhash)  " built " ,(system-builddate) "]" (p)
+        (b "Powered by " (a (@ (href http://www.lambdanative.org)) "LambdaNative")) (p)
      ))
    ) port))
 
