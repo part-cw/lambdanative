@@ -27,6 +27,7 @@ linux*)
 ;;
 esac
 
+cp Configure configure   # openssl ships a Configure script
 NOQUIET=yes package_configure --openssldir="$SYS_PREFIX" $EXTRACONF no-shared no-threads no-zlib no-asm no-dso no-sse2
 package_make build_ssl build_crypto
 
