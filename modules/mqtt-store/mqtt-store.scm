@@ -113,11 +113,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (k (if mqtt (table-ref mqtt (string-append topic ":localname") kdef) #f))
            (v msg))
       (if k
-        (let ((kl (string-length k)))
-          (if (and (fx> kl 5) (string=? (substring k (fx- kl 5) kl) "Alarm")) (begin
+        (if (string-suffix? "Alarm" k)
+          (begin
             (mqtt-store:log 4 "mqtt-store:callback local alarm dispatch")
-            (apply store-event-add (append (list store) (car v)))
-          ) 
+            (apply store-event-add (append (list store) v))
+          )
           (if (mqtt-store:clearflag? v)
             (begin 
               (mqtt-store:log 4 "mqtt-store:callback local clear dispatch")
@@ -128,7 +128,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (store:setlocal! store k v "mqtt")
             )
           )
-        )) (mqtt-store:log 0 "mqtt-store:callback failed on topic=" topic " msg=" msg))
-     )))
+        )
+        (mqtt-store:log 0 "mqtt-store:callback failed on topic=" topic " msg=" msg)
+      )
+    )))
 
 ;; eof
