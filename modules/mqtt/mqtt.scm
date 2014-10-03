@@ -269,6 +269,15 @@ end-of-c-declare
        (mqtt:log 0 "ERROR: mosquitto_tls_insecure_set() failed with error " (mosq:error->string result)))
     result))
 
+(define (mosq:tls_set_cafile mosq cafile)
+  (mqtt:log 2 "mosq:tls_set" mosq " " cafile)
+  (let ((result ((c-lambda ((pointer void) char-string) int
+          "___result=mosquitto_tls_set(___arg1,___arg2,NULL,NULL,NULL,NULL);")
+          mosq cafile)))
+    (if (not (fx= result MOSQ_ERR_SUCCESS))
+       (mqtt:log 0 "ERROR: mosquitto_tls_set() failed with error " (mosq:error->string result)))
+    result))
+
 (define (mosq:tls_set mosq cafile capath certfile keyfile)
   (mqtt:log 2 "mosq:tls_set" mosq " " cafile " " capath " " certfile " " keyfile)
   (let ((result ((c-lambda ((pointer void) char-string char-string char-string char-string) int
@@ -302,6 +311,7 @@ end-of-c-declare
      (tls-version "tlsv1.2")
      (tls-insecure #f)
      (psk #f) (psk_identity #f)
+     (cafile #f)
      (connected #f)
      (id #f)
      (mosq #f) 
@@ -340,10 +350,18 @@ end-of-c-declare
                     (tls-version (table-ref t 'tls-version #f))
                     (tls-insecure (table-ref t 'tls-insecure #f)))
                 (if (and psk psk-identity) (begin
+                  (mosq:tls_insecure_set mosq (if tls-insecure 1 0))
+                  (mosq:tls_psk_set mosq psk psk-identity)
+                  (if tls-version (mosq:tls_opts_set mosq 1 tls-version))
+                )))
+              (let ((cafile (table-ref t 'cafile #f))
+                    (tls-version (table-ref t 'tls-version #f))
+                    (tls-insecure (table-ref t 'tls-insecure #f)))
+                (if cafile (begin
+                   (mosq:tls_set_cafile mosq cafile)
                    (mosq:tls_insecure_set mosq (if tls-insecure 1 0))
-                   (mosq:tls_psk_set mosq psk psk-identity)
                    (if tls-version (mosq:tls_opts_set mosq 1 tls-version))
-                 )))
+                )))
               (let ((res (mosq:connect mosq (table-ref t 'host #f)  (table-ref t 'port #f) (table-ref t 'keepalive #f))))
                 (if (fx= res MOSQ_ERR_SUCCESS) 
                   (let loop2 ((subs (table-ref t 'subscriptions '())))
