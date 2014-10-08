@@ -82,4 +82,12 @@ end-of-c-declare
   (uuid:log 1 "make-uuid")
   ((c-lambda () char-string "_make_uuid")))
 
+(define (system-uuid)
+  (let* ((uuidfile (string-append (system-directory) (system-pathseparator) "uuid"))
+         (id (if (file-exists? uuidfile)
+           (with-input-from-file uuidfile (lambda () (read-line)))
+           (let ((newid (string-downcase (make-uuid))))
+             (with-output-to-file uuidfile (lambda () (display newid) (newline))) newid))))
+    id))
+
 ;; eof
