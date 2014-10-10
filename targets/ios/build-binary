@@ -106,7 +106,7 @@ assertfile $tmpappdir
 
 echo " => verifying application.."
 osxver=`sw_vers -productVersion`
-if [ `echo "10.9.5\n$osxver" | sort -g | head -1` == "10.9.5" ]; then
+if [ `echo "10.9.5\n$osxver" | sed 's/^10\.//' | sort -g | head -1` == "9.5" ]; then
   checkfail=`codesign --verify --no-strict $tmpappdir 2>&1`
 else
   checkfail=`codesign --verify $tmpappdir 2>&1`
