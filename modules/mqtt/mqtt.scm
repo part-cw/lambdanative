@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; bindings for the mosquitto MQTT library
 ;; MQTT is a publish/subscribe protocol for the Internet of Things (IoT)
 
-(define mqtt:debuglevel 1)
+(define mqtt:debuglevel 0)
 (define (mqtt:log level . x)
    (if (>= mqtt:debuglevel level) (apply log-system (append (list "mqtt: ") x))))
 
@@ -414,9 +414,9 @@ end-of-c-declare
      (clean-session 0)
      (host "127.0.0.1") 
      (port 1883) 
-     (keepalive 10) 
-     (timeout 10) 
-     (max-packets 100) 
+     (keepalive 0) 
+     (timeout 100) 
+     (max-packets 1) 
      (handler #f)
      (subscriptions ())
      (will #f) ;;  ("topic" "msg" qos retain)
