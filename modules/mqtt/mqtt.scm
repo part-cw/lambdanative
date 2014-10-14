@@ -52,39 +52,148 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <mosquitto.h>
 
-void _scm_msg_callback(void *, char *, int);
-void log_c(char *);
+// #define DEBUG_MOSQUITTO 1
 
-static const struct mosquitto_message *msg=0;
+#ifdef DEBUG_MOSQUITTO
+#define DMSG(fmt...) (fprintf(stderr,"DEBUG: mqtt: " fmt),fprintf(stderr,"\n"))
+#else
+#define DMSG(fmt...)
+#endif
 
-void _mosq_copy_payload(unsigned char *data)
+#define MOSQ_MSG_MAX 100
+
+struct mosq_meta {
+  struct mosquitto *m;
+  struct mosquitto_message *msg_ring[MOSQ_MSG_MAX];
+  int msg_head, msg_tail;
+  struct mosq_meta *nxt;
+};
+
+static struct mosq_meta *fst=0;
+static struct mosq_meta *lst=0;
+
+static void mosq_meta_add(struct mosquitto *m)
 {
-  if (msg) { memcpy(data,msg->payload,msg->payloadlen); msg=0; }
+  struct mosq_meta *tmp = (struct mosq_meta *)malloc(sizeof(struct mosq_meta));
+  if (!tmp) { DMSG("mosq_meta_add: malloc() failed"); return; }
+  tmp->m = m;
+  tmp->nxt=0;
+  int i;
+  for (i=0;i<MOSQ_MSG_MAX;i++) { tmp->msg_ring[i]=0; }
+  tmp->msg_head=tmp->msg_tail=0;
+  if (!fst) fst=tmp;
+  if (lst) lst->nxt=tmp;
+  lst=tmp;
 }
 
-void _mosq_msg_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
+static void mosq_meta_del(struct mosquitto *m)
 {
-  while (msg) { }  // lock
-  msg=message; 
-  _scm_msg_callback(mosq, message->topic, message->payloadlen);
+  struct mosq_meta *tmp = fst, *prv=0;
+  while (tmp) {
+    if (tmp->m == m) {
+      if (prv) prv->nxt=tmp->nxt;
+      if (tmp==fst) fst=tmp->nxt;
+      if (tmp==lst) lst=prv;
+      free(tmp);
+      break;
+    }
+    prv=tmp;
+    tmp=tmp->nxt;
+  }
+  if (tmp) free(tmp); else { DMSG("mosq_meta_del: non-existing pointer %p", m); }
+}
+
+static void mosq_meta_msg_push(struct mosquitto *m, struct mosquitto_message *msg)
+{
+  DMSG("mosq_meta_msg_push");
+  struct mosq_meta *tmp = fst;
+  while (tmp) { if (tmp->m==m) break; tmp=tmp->nxt; }
+  if (!tmp) { DMSG("mosq_meta_msg_push: handle %p not found", m); return; }
+  if (tmp->msg_ring[tmp->msg_head]) {
+    DMSG("message queue overrun");
+    mosquitto_message_free(&(tmp->msg_ring[tmp->msg_head]));
+    tmp->msg_ring[tmp->msg_head]=0;
+  }
+  tmp->msg_ring[tmp->msg_head]=(struct mosquitto_message*)malloc(sizeof(struct mosquitto_message));
+  if (mosquitto_message_copy(tmp->msg_ring[tmp->msg_head],msg)!=MOSQ_ERR_SUCCESS) {
+    DMSG("mosq_meta_msg_push: mosquitto_message_copy() failed");
+  }
+  tmp->msg_head++; if (tmp->msg_head==MOSQ_MSG_MAX) tmp->msg_head=0;
+}
+
+static void mosq_meta_msg_pop(struct mosquitto *m)
+{
+  DMSG("mosq_meta_msg_pop");
+  struct mosq_meta *tmp = fst;
+  while (tmp) { if (tmp->m==m) break; tmp=tmp->nxt; }
+  if (!tmp) { DMSG("mosq_meta_msg_pop: handle %p not found", m); return; }
+  if (tmp->msg_tail!=tmp->msg_head) {
+    if (tmp->msg_ring[tmp->msg_tail]) {
+      mosquitto_message_free(&(tmp->msg_ring[tmp->msg_tail]));
+    }
+    tmp->msg_ring[tmp->msg_tail]=0;
+    tmp->msg_tail++; if (tmp->msg_tail==MOSQ_MSG_MAX) tmp->msg_tail=0;
+  }
+}
+
+static int mosq_meta_msg_ready(struct mosquitto *m)
+{
+  struct mosq_meta *tmp = fst;
+  while (tmp) { if (tmp->m==m) break; tmp=tmp->nxt; }
+  if (!tmp) { DMSG("mosq_meta_msg_ready: handle %p not found", m); return -1; }
+  int res=-1;
+  if (tmp->msg_tail!=tmp->msg_head) {
+    DMSG("mosq_meta_msg_ready on handle %p", m);
+    res=tmp->msg_ring[tmp->msg_tail]->payloadlen;
+  }
+  return res;
+}
+
+static void mosq_meta_msg_payload(struct mosquitto *m, unsigned char *data)
+{
+  DMSG("mosq_meta_msg_payload");
+  struct mosq_meta *tmp = fst;
+  while (tmp) { if (tmp->m==m) break; tmp=tmp->nxt; }
+  if (!tmp) { DMSG("mosq_meta_msg_payload: handle %p not found", m); return; }
+  struct mosquitto_message *msg = tmp->msg_ring[tmp->msg_tail];
+  if (msg) { memcpy(data,msg->payload,msg->payloadlen); }
+  mosq_meta_msg_pop(m);
+}
+
+static char *mosq_meta_msg_topic(struct mosquitto *m)
+{
+  DMSG("mosq_meta_msg_topic");
+  struct mosq_meta *tmp = fst;
+  while (tmp) { if (tmp->m==m) break; tmp=tmp->nxt; }
+  if (!tmp) { DMSG("mosq_meta_msg_topic: handle %p not found", m); return 0; }
+  return tmp->msg_ring[tmp->msg_tail]->topic;
 }
 
 void _mosq_log_callback(struct mosquitto *mosq, void *obj, int level, const char *str)
 {
-  char buf[1024]="mosquitto: ";
-  strncat(buf,str,1023);
-  // MOSQ_LOG_INFO MOSQ_LOG_NOTICE MOSQ_LOG_WARNING MOSQ_LOG_ERR MOSQ_LOG_DEBUG
-  log_c(buf);
+  DMSG("mosquitto: %s", str);
 }
+
+void _mosq_msg_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg)
+{
+  mosq_meta_msg_push(mosq,msg);
+}
+
+void _mosq_destroy(struct mosquitto *m)
+{
+  mosq_meta_del(m);
+  mosquitto_destroy(m);
+} 
 
 struct mosquitto *_mqtt_new(char *idstr, int clean_session)
 {
   struct mosquitto *mosq = mosquitto_new(idstr,clean_session,0);
   if (mosq) {
-//    mosquitto_log_callback_set(mosq,_mosq_log_callback);
+    mosquitto_log_callback_set(mosq,_mosq_log_callback);
     mosquitto_message_callback_set(mosq,_mosq_msg_callback);
+    mosq_meta_add(mosq);
   } else {
-   log_c("mosquitto: FATAL: mosquitto_new() failed");
+    DMSG("mosquitto: FATAL: mosquitto_new() failed");
   }
   return mosq;
 }
@@ -145,18 +254,23 @@ end-of-c-declare
         (let ((num (string->number (u8vector->string msg))))
           (if num num (u8vector->string msg))))))
 
-(define mosq:copypayload (c-lambda (scheme-object) void 
-  "_mosq_copy_payload(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)));"))
+(define mosq:msg-payload (c-lambda ((pointer void) scheme-object) void
+  "mosq_meta_msg_payload(___arg1,___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)));"))
+(define mosq:msg-ready (c-lambda ((pointer void)) int "mosq_meta_msg_ready"))
+(define mosq:msg-topic (c-lambda ((pointer void)) char-string "mosq_meta_msg_topic"))
 
-(c-define (c-event mosq topic len) ((pointer void) char-string int) void "_scm_msg_callback" ""
-  (mqtt:log 3 "enter _scm_mqtt_message: " topic " " len)
-  (let* ((m (table-ref mosq:lut mosq #f))
-         (h (if m (table-ref m 'handler #f) #f)))
-    (if (procedure? h)
-      (let ((u8data (make-u8vector len)))
-        (mosq:copypayload u8data)
-        (mqtt:log 3 "dispatch topic: " topic " length=" len)
-        (h topic (mosq:decode u8data))))))
+(define (mosq:msgloop handle)
+  (let loop ((n 0))
+    (let ((msglen (mosq:msg-ready handle)))
+      (if (fx= msglen -1) #t
+        (let* ((m (table-ref mosq:lut handle #f))
+               (h (if m (table-ref m 'handler #f) #f))
+               (topic (mosq:msg-topic handle))
+               (u8data (make-u8vector msglen)))
+          (mosq:msg-payload handle u8data)
+          (mqtt:log 1 "[" n "] dispatch topic: " topic " length=" msglen " handle=" handle)
+          (if (procedure? h) (h topic (mosq:decode u8data)))
+          (loop (fx+ n 1)))))))
 
 (c-initialize "mosquitto_lib_init();")
 
@@ -166,7 +280,7 @@ end-of-c-declare
 
 (define (mosq:destroy mosq)
   (mqtt:log 2 "mosq:destroy")
-  ((c-lambda ((pointer void)) void "mosquitto_destroy") mosq))
+  ((c-lambda ((pointer void)) void "_mosq_destroy") mosq))
 
 (define (mosq:connect mosq host port keepalive)
   (mqtt:log 2 "mosq:connect " mosq " " host " " port " " keepalive)
@@ -340,8 +454,9 @@ end-of-c-declare
       (table-set! t 'thread (make-safe-thread (lambda () (let loop ()
         (let ((mosq (table-ref t 'mosq #f))
               (connected (table-ref t 'connected #f)))
-          (if mosq (table-set! t 'connected (fx= (if connected 
-            (mosq:loop mosq (table-ref t 'timeout #f) (table-ref t 'max-packets #f))
+          (if mosq (table-set! t 'connected (fx= (if connected  (begin
+            (mosq:msgloop mosq)
+            (mosq:loop mosq (table-ref t 'timeout #f) (table-ref t 'max-packets #f)))
             (begin 
               (let ((will (table-ref t 'will #f)))
                 (if will (apply mosq:will_set (append (list mosq) will)) (mosq:will_clear mosq)))
