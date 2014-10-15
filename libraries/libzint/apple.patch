@@ -1,0 +1,28 @@
+--- backend/code1.c	2014-10-15 12:00:32.000000000 -0700
++++ backend/code1.c	2014-10-15 12:01:47.000000000 -0700
+@@ -36,9 +36,8 @@
+ #include "large.h"
+ #include <stdio.h>
+ #include <string.h>
+-#ifdef __APPLE__
+-#include <sys/malloc.h>
+-#else
++
++#if !defined(IOS) && !defined(MACOSX)
+ #include <malloc.h>
+ #endif
+ 
+--- backend/maxicode.c	2014-10-15 12:00:32.000000000 -0700
++++ backend/maxicode.c	2014-10-15 12:02:10.000000000 -0700
+@@ -37,9 +37,8 @@
+ #include "reedsol.h"
+ #include <string.h>
+ #include <stdlib.h>
+-#ifdef __APPLE__
+-#include <sys/malloc.h> 
+-#else
++
++#if !defined(IOS) && !defined(MACOSX)
+ #include <malloc.h> 
+ #endif
+ 
