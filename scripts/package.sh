@@ -132,13 +132,21 @@ package_download_ball()
 
 package_download()
 {
+  pkg_dnl_hdr=`echo "$1" | cut -f 1 -d ":"`
   pkg_dnl_ext=`echo "$1" | sed 's/.*\.//'`
   case $pkg_dnl_ext in
     git)
       package_download_git $@
       ;;
     *)
-      package_download_ball $@
+      case $pkg_dnl_hdr in
+        git) 
+          package_download_git $@
+        ;;
+        *)
+          package_download_ball $@
+        ;;
+      esac
       ;;
   esac
 }
