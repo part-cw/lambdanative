@@ -39,6 +39,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; basic mqtt inspector (for test and debugging) - this starts a webserver
 (define mqttweb:serverupdaterate 2)
 
+(define (mqttweb:safecall x . y)
+  (with-exception-catcher
+    (lambda (e) (log-error "mqttweb:safecall : exception: " (exception->string e)) #f)
+    (lambda () (apply x y))))
+
 (define (mqttweb:format val)
   (cond 
     ((string? val) val)
@@ -66,7 +71,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (mqttweb:serve store port)
   (with-exception-catcher 
-    (lambda (e) (log-error "MQTTweb:" e) (close-port port) #f)
+    (lambda (e) (log-error "MQTTweb:" e) (mqttweb:safecall close-port port) #f)
     (lambda () (let ((request (read-line port)))
       (if (string? request)
         (let* ((r (string-split request #\space))
