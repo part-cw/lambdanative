@@ -1,6 +1,6 @@
 
 PKGURL=https://github.com/eclipse/paho.mqtt.c.git
-PKGHASH=
+PKGHASH=8ffd07f12cfbea0a8dfa9ffdb3fbe8ca74acbbf0
 
 package_download $PKGURL $PKGHASH
 

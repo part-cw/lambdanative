@@ -1,6 +1,6 @@
 
 PKGURL=https://github.com/dlbeer/quirc.git
-PKGHASH=
+PKGHASH=42c79481e78bf5d13ed046b0722c6a1f78b29681
 
 package_download $PKGURL $PKGHASH
 
