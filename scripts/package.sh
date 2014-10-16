@@ -79,6 +79,8 @@ package_download_git()
   if [ ! "X$pkg_git_hash" = "X" ]; then
     veval "git checkout $pkg_git_hash"
     asserterror $? "repository checkout failed [$pkg_git_url]"
+  else
+    echo " == "`git log | head -n 1`
   fi
 }
 
