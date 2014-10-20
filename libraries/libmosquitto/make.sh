@@ -29,7 +29,6 @@ libs="-lssl -lcrypto -lm"
 if [ $SYS_PLATFORM = linux ] || [ $SYS_PLATFORM = linux486 ] || [ $SYS_PLATFORM = carlson-minot ]; then
 libs="$libs -ldl -lrt"
 fi
-libs="$libs -lm"
 
 # clients
 cd ../client
