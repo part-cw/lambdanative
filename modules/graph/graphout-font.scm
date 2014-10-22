@@ -55,7 +55,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       )
       ((= otype GRAPH_SVG)
         (table-set! g 'svg-font fname)
-        (table-set! g 'svg-fsize fsize)
+        (table-set! g 'svg-fontsize fsize)
       )
     )
   ))

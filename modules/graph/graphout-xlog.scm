@@ -188,8 +188,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (udecx (table-ref g 'udecx))
          (xrang (log10 (/ xma xmi)))
          (axisx2dev (/ (* physxsize phys2dev) xrang))
-        ;; (numdist (+ (* lognumdist fsizex 0.1) 1))
-         (numdist (+ (* lognumdist fsizex 0.1) 3)) ;; @@
+         (numdist (+ (* lognumdist fsizex 0.1) 3)) 
          (tb (if (or (= logtnposition 3) (= logtnposition 4)) 0 (- logticlen)))
          (tb1 (if (or (= logtnposition 3) (= logtnposition 4)) 0 (- logticlen10)))
          (tt (if (or (= logtnposition 1) (= logtnposition 6)) 0 logticlen))
