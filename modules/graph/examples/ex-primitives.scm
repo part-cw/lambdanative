@@ -47,5 +47,6 @@
 (graph-closepathstroke g)
 
 (graph-output g GRAPH_PDF "ex-primitives.pdf")
+(graph-output g GRAPH_SVG "ex-primitives.svg")
 
 ;;eof

@@ -61,6 +61,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; output types
 (define GRAPH_PDF 1)
+(define GRAPH_SVG 2)
 
 ;; user coordinates
 (define GRAPH_PHYS 0)
@@ -253,6 +254,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((filename (if (= (length xtra) 1) (car xtra) "graph.out")))
   (cond 
      ((= type GRAPH_PDF) (graphout:pdf g filename))
+     ((= type GRAPH_SVG) (graphout:svg g filename))
      (else (log-error "graph-output: unsupported output format.")))))
 
 ;; eof
