@@ -49,27 +49,10 @@ fi
 
 . ./scripts/assert.sh
 . ./scripts/package.sh
+. ./scripts/verbose.sh
 
 #########################
 # general functions
-
-veval()
-{
-  if [ $SYS_VERBOSE ]; then 
-    echo "$1"
-    eval $1
-  else 
-    echo "$1" > $evallog
-    eval $1 >> $evallog 2>&1
-  fi
-}
-
-vecho()
-{
-  if [ $SYS_VERBOSE ]; then 
-    echo "$1"
-  fi
-}
 
 getparam()
 {
@@ -533,7 +516,7 @@ void ffi_event(int t, int x, int y)
         (___DEBUG_SETTINGS_REPL_STDIO << ___DEBUG_SETTINGS_REPL_SHIFT);
       setup_params.debug_settings = debug_settings;
       ___setup(&setup_params);
-      #ifdef ANDROID
+      #if defined(ANDROID)
         ___disable_heartbeat_interrupts(); 
       #endif
       FFI_EVENT_INIT
