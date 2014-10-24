@@ -81,6 +81,7 @@ configsrc=loaders/ios/Info.plist.in
 ac_output $configsrc tmp.xml
 assertfile tmp.xml
 cat tmp.xml | sed '/^#/d' > "$SYS_PREFIXROOT/build/$SYS_APPNAME/Info.plist"
+cp "$IOSSDK/ResourceRules.plist" "$SYS_PREFIXROOT/build/$SYS_APPNAME/ResourceRules.plist"
 
 echo " => preparing custom config.."
 headersrc=loaders/ios/config_custom.h.in
