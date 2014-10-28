@@ -266,7 +266,12 @@ static void _paho_connectionLost(void *context, char *cause)
 static int _paho_onMsgArrived(void *context, char *topicName, int topicLen, MQTTAsync_message *message)
 {
   DMSG("_paho_onMsgArrived from context %p msgid=%i", context, message->msgid);
-  paho_meta_msg_push(context,topicName,message);
+  if (!message->dup) {
+    paho_meta_msg_push(context,topicName,message);
+  } else {  // drop duplicates
+    MQTTAsync_freeMessage(&message);
+    MQTTAsync_free(topicName);
+  }
   return 1;
 }
 
