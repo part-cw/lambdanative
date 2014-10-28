@@ -1,7 +1,7 @@
 
-VERSION=1.3.4
+VERSION=1.3.5
 PKGURL="http://mosquitto.org/files/source/mosquitto-${VERSION}.tar.gz"
-PKGHASH=b818672cc0db723995d7c3201ef6962931dd891a
+PKGHASH=2d30ffbf1c1b310581735e7ea10465e7c310e580
 
 package_download $PKGURL $PKGHASH
 
