@@ -1,10 +1,11 @@
 
-PKGURL=https://www.openssl.org/source/openssl-1.0.1i.tar.gz
-PKGHASH=74eed314fa2c93006df8d26cd9fc630a101abd76
+PKGURL=https://www.openssl.org/source/openssl-1.0.1j.tar.gz
+PKGHASH=cff86857507624f0ad42d922bb6f77c4f1c2b819
 
 package_download $PKGURL $PKGHASH
 
 package_patch
+rmifexists $SYS_PREFIX/include/openssl
 
 EXTRACONF=
 case $SYS_PLATFORM in

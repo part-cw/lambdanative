@@ -28,7 +28,7 @@ win32*)
   EXTRACONF=--host=i386-mingw32
 ;;
 linux*)
-  EXTRACONF=--host=i386-linux
+  EXTRACONF="--host=i386-linux --with-pcap=linux"
 ;;
 openwrt)
   EXTRACONF=--host=$SYS_OPENWRTTARGET
