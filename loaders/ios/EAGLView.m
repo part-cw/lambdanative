@@ -1,6 +1,6 @@
 /*
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2014, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -35,6 +35,7 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
 #import <LNCONFIG.h>
 
 #import "config_custom.h"
@@ -65,29 +66,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 @synthesize context;
 @synthesize animationTimer;
 @synthesize animationInterval;
-@synthesize label;
 
 + (Class)layerClass {
-	return [CAEAGLLayer class];
+  return [CAEAGLLayer class];
 }
 
 - (id)initWithFrame:(CGRect)frame {
-      if ((self = [super initWithFrame:frame])) {
-		CAEAGLLayer *eaglLayer = (CAEAGLLayer *)self.layer;
-		eaglLayer.opaque = YES;
-		eaglLayer.drawableProperties = [NSDictionary dictionaryWithObjectsAndKeys:
-		   [NSNumber numberWithBool:NO], 
-                    kEAGLDrawablePropertyRetainedBacking, 
-                    kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat, nil];
-		context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES1];
-		if (!context || ![EAGLContext setCurrentContext:context]) {
-			[self release];
-			return nil;
-		}
+  DMSG("EAGLView: initWithFrame");
+  if ((self = [super initWithFrame:frame])) {
+    CAEAGLLayer *eaglLayer = (CAEAGLLayer *)self.layer;
+    eaglLayer.opaque = YES;
+    eaglLayer.drawableProperties = [NSDictionary dictionaryWithObjectsAndKeys:
+    [NSNumber numberWithBool:NO], 
+    kEAGLDrawablePropertyRetainedBacking, 
+    kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat, nil];
+    context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES1];
+    if (!context || ![EAGLContext setCurrentContext:context]) {
+      [self release];
+      return nil;
+    }
+
 // 20100422: fiddling around with this seems to have no effect on device performance
 //	animationInterval = 1.0 / 60.0;
-	animationInterval = 1.0 / 20.0;
-	}
+    animationInterval = 1.0 / 20.0;
+  }
    
 // 20100603: battery hack
   batterydev=[UIDevice currentDevice];
@@ -105,6 +107,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // equivalent to button press
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
+  DMSG("EAGLView: touchesBegan");
   for( UITouch *t in touches ) {
     CGPoint p= [t locationInView:self];
 #ifdef USE_MULTITOUCH
@@ -116,6 +119,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // dragging motion
 - (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event {
+  DMSG("EAGLView: touchesMoved");
   for( UITouch *t in touches ) {
     CGPoint p= [t locationInView:self];
 #ifdef USE_MULTITOUCH
@@ -127,6 +131,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // equivalent to button release 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
+  DMSG("EAGLView: touchesEnded");
   for( UITouch *t in touches ) {
     CGPoint p= [t locationInView:self];
 #ifdef USE_MULTITOUCH
@@ -138,119 +143,121 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // ??
 - (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event {
+  DMSG("EAGLView: touchesCancelled");
 //    touches_cancelled(touches, event);
 }
 
-//// Rendering
-
+// Rendering
 - (void)drawView {
-    if (render) {		
-      NSString *labelText = [[NSString alloc] initWithCString:"" encoding: NSASCIIStringEncoding];
-      [self.label setText:labelText];
-      [EAGLContext setCurrentContext:context];
-      glBindFramebufferOES(GL_FRAMEBUFFER_OES, viewFramebuffer);
-      glViewport(0, 0, backingWidth, backingHeight);
-    } 
+  DMSG("EAGLView: drawView render=%i",render);
+  if (render) {		
+    [EAGLContext setCurrentContext:context];
+    glBindFramebufferOES(GL_FRAMEBUFFER_OES, viewFramebuffer);
+    glViewport(0, 0, backingWidth, backingHeight);
+  } 
 
 // 20100603: battery update
-     if (batteryidx==0) {
-       ffi_event(EVENT_BATTERY,(int)(100.*[batterydev batteryLevel]),0);
-     }
-     if (batteryidx++==100) batteryidx=0;
+  if (batteryidx==0) {
+    ffi_event(EVENT_BATTERY,(int)(100.*[batterydev batteryLevel]),0);
+  }
+  if (batteryidx++==100) batteryidx=0;
 
-     ffi_event(EVENT_REDRAW,render,0);
+  ffi_event(EVENT_REDRAW,render,0);
 
-     if (render) {
-       glBindRenderbufferOES(GL_RENDERBUFFER_OES, viewRenderbuffer);
-      	[context presentRenderbuffer:GL_RENDERBUFFER_OES];
-     }
+  if (render) {
+    glBindRenderbufferOES(GL_RENDERBUFFER_OES, viewRenderbuffer);
+    [context presentRenderbuffer:GL_RENDERBUFFER_OES];
+  }
 }
-
 
 - (void)layoutSubviews {
-	[EAGLContext setCurrentContext:context];
-	[self destroyFramebuffer];
-	[self createFramebuffer];
-	[self drawView];
+  DMSG("EAGLView: layoutSubviews");
+  [EAGLContext setCurrentContext:context];
+  [self destroyFramebuffer];
+  [self createFramebuffer];
+  [self drawView];
 }
-
 
 - (BOOL)createFramebuffer {
-	glGenFramebuffersOES(1, &viewFramebuffer);
-	glGenRenderbuffersOES(1, &viewRenderbuffer);
-	glBindFramebufferOES(GL_FRAMEBUFFER_OES, viewFramebuffer);
-	glBindRenderbufferOES(GL_RENDERBUFFER_OES, viewRenderbuffer);
-	[context renderbufferStorage:GL_RENDERBUFFER_OES fromDrawable:(CAEAGLLayer*)self.layer];
-	glFramebufferRenderbufferOES(GL_FRAMEBUFFER_OES, GL_COLOR_ATTACHMENT0_OES, GL_RENDERBUFFER_OES, viewRenderbuffer);
-	glGetRenderbufferParameterivOES(GL_RENDERBUFFER_OES, GL_RENDERBUFFER_WIDTH_OES, &backingWidth);
-	glGetRenderbufferParameterivOES(GL_RENDERBUFFER_OES, GL_RENDERBUFFER_HEIGHT_OES, &backingHeight);
-	if (USE_DEPTH_BUFFER) {
-		glGenRenderbuffersOES(1, &depthRenderbuffer);
-		glBindRenderbufferOES(GL_RENDERBUFFER_OES, depthRenderbuffer);
-		glRenderbufferStorageOES(GL_RENDERBUFFER_OES, GL_DEPTH_COMPONENT16_OES, backingWidth, backingHeight);
-		glFramebufferRenderbufferOES(GL_FRAMEBUFFER_OES, GL_DEPTH_ATTACHMENT_OES, GL_RENDERBUFFER_OES, depthRenderbuffer);
-	}
-	if(glCheckFramebufferStatusOES(GL_FRAMEBUFFER_OES) != GL_FRAMEBUFFER_COMPLETE_OES) {
-		NSLog(@"failed to make complete framebuffer object %x", glCheckFramebufferStatusOES(GL_FRAMEBUFFER_OES));
-		return NO;
-	}
-	return YES;
+  DMSG("EAGLView: createFramebuffer");
+  glGenFramebuffersOES(1, &viewFramebuffer);
+  glGenRenderbuffersOES(1, &viewRenderbuffer);
+  glBindFramebufferOES(GL_FRAMEBUFFER_OES, viewFramebuffer);
+  glBindRenderbufferOES(GL_RENDERBUFFER_OES, viewRenderbuffer);
+  [context renderbufferStorage:GL_RENDERBUFFER_OES fromDrawable:(CAEAGLLayer*)self.layer];
+  glFramebufferRenderbufferOES(GL_FRAMEBUFFER_OES, GL_COLOR_ATTACHMENT0_OES, GL_RENDERBUFFER_OES, viewRenderbuffer);
+  glGetRenderbufferParameterivOES(GL_RENDERBUFFER_OES, GL_RENDERBUFFER_WIDTH_OES, &backingWidth);
+  glGetRenderbufferParameterivOES(GL_RENDERBUFFER_OES, GL_RENDERBUFFER_HEIGHT_OES, &backingHeight);
+  if (USE_DEPTH_BUFFER) {
+    glGenRenderbuffersOES(1, &depthRenderbuffer);
+    glBindRenderbufferOES(GL_RENDERBUFFER_OES, depthRenderbuffer);
+    glRenderbufferStorageOES(GL_RENDERBUFFER_OES, GL_DEPTH_COMPONENT16_OES, backingWidth, backingHeight);
+    glFramebufferRenderbufferOES(GL_FRAMEBUFFER_OES, GL_DEPTH_ATTACHMENT_OES, GL_RENDERBUFFER_OES, depthRenderbuffer);
+    }
+  if(glCheckFramebufferStatusOES(GL_FRAMEBUFFER_OES) != GL_FRAMEBUFFER_COMPLETE_OES) {
+    NSLog(@"failed to make complete framebuffer object %x", glCheckFramebufferStatusOES(GL_FRAMEBUFFER_OES));
+    return NO;
+  }
+  return YES;
 }
-
 
 - (void)destroyFramebuffer {
-	
-	glDeleteFramebuffersOES(1, &viewFramebuffer);
-	viewFramebuffer = 0;
-	glDeleteRenderbuffersOES(1, &viewRenderbuffer);
-	viewRenderbuffer = 0;
-	if(depthRenderbuffer) {
-		glDeleteRenderbuffersOES(1, &depthRenderbuffer);
-		depthRenderbuffer = 0;
-	}
+  DMSG("EAGLView: destroyFramebuffer");
+  glDeleteFramebuffersOES(1, &viewFramebuffer);
+  viewFramebuffer = 0;
+  glDeleteRenderbuffersOES(1, &viewRenderbuffer);
+  viewRenderbuffer = 0;
+  if(depthRenderbuffer) {
+    glDeleteRenderbuffersOES(1, &depthRenderbuffer);
+    depthRenderbuffer = 0;
+  }
 }
 
-
 - (void)startRender {
+  DMSG("EAGLView: startRender");
   render=1;
 }
 
 - (void)stopRender {
+  DMSG("EAGLView: stopRender");
   render=0;
 }
 
 - (void)startAnimation {
-	self.animationTimer = [NSTimer scheduledTimerWithTimeInterval:animationInterval target:self selector:@selector(drawView) userInfo:nil repeats:YES];
-	render=1;
+  DMSG("EAGLView: startAnimation");
+  self.animationTimer = [NSTimer scheduledTimerWithTimeInterval:animationInterval 
+                          target:self selector:@selector(drawView) userInfo:nil repeats:YES];
+  render=1;
 }
-
 
 - (void)stopAnimation {
-	self.animationTimer = nil;
+  DMSG("EAGLView: stopAnimation");
+  self.animationTimer = nil;
 }
-
 
 - (void)setAnimationTimer:(NSTimer *)newTimer {
-	[animationTimer invalidate];
-	animationTimer = newTimer;
+  DMSG("EAGLView: setAnimationTimer");
+  [animationTimer invalidate];
+  animationTimer = newTimer;
 }
 
-
 - (void)setAnimationInterval:(NSTimeInterval)interval {
-	animationInterval = interval;
-	if (animationTimer) {
-		[self stopAnimation];
-		[self startAnimation];
-	}
+  DMSG("EAGLView: setAnimationTimer");
+  animationInterval = interval;
+  if (animationTimer) {
+    [self stopAnimation];
+    [self startAnimation];
+  }
 }
 
 - (void)dealloc {
-	[self stopAnimation];
-	if ([EAGLContext currentContext] == context) {
-		[EAGLContext setCurrentContext:nil];
-	}
-	[context release];	
-	[super dealloc];
+  DMSG("EAGLView: dealloc");
+  [self stopAnimation];
+  if ([EAGLContext currentContext] == context) {
+    [EAGLContext setCurrentContext:nil];
+  }
+  [context release];	
+  [super dealloc];
 }
 
 @end

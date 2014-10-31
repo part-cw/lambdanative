@@ -38,21 +38,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #import <UIKit/UIKit.h>
 
-#import "EAGLView.h"
-#import "GLViewController.h"
-
 @class EAGLView;
-@class GLViewController;
 
-@interface launcherAppDelegate : NSObject <UIApplicationDelegate> {
-  UIWindow         *window;
-  GLViewController *controller;
-  EAGLView         *glView;
+@interface GLViewController : UIViewController {
+  EAGLView *glView;
 }
-
-@property (nonatomic, retain) UIWindow *window;
-@property (nonatomic, retain) EAGLView *glView;
-@property (nonatomic, retain) GLViewController *controller;
+- (void)actionDrawView:(EAGLView*)view;
+- (void)actionSetupView:(EAGLView*)view;
 
 @end
+
 

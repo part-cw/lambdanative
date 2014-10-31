@@ -1,0 +1,5 @@
+
+#import "config_custom.h"
+
+@IOS_OBJCPP_ADDITIONS@
+

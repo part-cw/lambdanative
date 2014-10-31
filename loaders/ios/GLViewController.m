@@ -36,23 +36,48 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#import <UIKit/UIKit.h>
+#import "config_custom.h"
 
-#import "EAGLView.h"
+#import <OpenGLES/EAGLDrawable.h>
+
 #import "GLViewController.h"
 
 @class EAGLView;
-@class GLViewController;
 
-@interface launcherAppDelegate : NSObject <UIApplicationDelegate> {
-  UIWindow         *window;
-  GLViewController *controller;
-  EAGLView         *glView;
+@implementation GLViewController
+
+- (void)loadView 
+{
+  DMSG("GLViewController: loadView");
+  self.view = [[UIView alloc] initWithFrame:[UIScreen mainScreen].bounds];
 }
 
-@property (nonatomic, retain) UIWindow *window;
-@property (nonatomic, retain) EAGLView *glView;
-@property (nonatomic, retain) GLViewController *controller;
+-(void)viewDidLoad
+{
+  DMSG("GLViewController: viewDidLoad");
+  [super viewDidLoad];
+  glView = [[EAGLView alloc] initWithFrame:[UIScreen mainScreen].bounds];
+  [self.view addSubview:glView];
+  [glView startAnimation];
+}
+
+-(void)actionSetupView:(EAGLView*)view {
+  DMSG("GLViewController: actionSetupView");
+}
+
+- (void)actionDrawView:(EAGLView*)view {
+  DMSG("GLViewController: actionDrawView");
+}
+
+- (void)didReceiveMemoryWarning 
+{
+  DMSG("GLViewController: didReceiveMemoryWarning");
+  [super didReceiveMemoryWarning]; 
+}
+
+- (void)dealloc {
+  DMSG("GLViewController: dealloc");
+  [super dealloc];
+}
 
 @end
-

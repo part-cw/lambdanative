@@ -1,6 +1,6 @@
 /*
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2014, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -35,30 +35,33 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
 #import <UIKit/UIKit.h>
 #import <OpenGLES/EAGL.h>
 #import <OpenGLES/ES1/gl.h>
 #import <OpenGLES/ES1/glext.h>
 
+#import "GLViewController.h"
+
+@class GLViewController;
+
 @interface EAGLView : UIView<UIAccelerometerDelegate> {
 	
 @private
-	GLint backingWidth;
-	GLint backingHeight;
-	EAGLContext *context;
-	GLuint viewRenderbuffer, viewFramebuffer;
-	GLuint depthRenderbuffer;
-	NSTimer *animationTimer;
-	NSTimeInterval animationInterval;
+  GLint backingWidth;
+  GLint backingHeight;
+  EAGLContext *context;
+  GLuint viewRenderbuffer, viewFramebuffer;
+  GLuint depthRenderbuffer;
+  NSTimer *animationTimer;
+  NSTimeInterval animationInterval;
+  int render;
 // 20100603: added battery feed
-        UIDevice *batterydev;
-        int batteryidx;
-	int render;
-    IBOutlet UILabel *label;
+  UIDevice *batterydev;
+  int batteryidx;
 }
 
 @property (nonatomic) NSTimeInterval animationInterval;
-@property (nonatomic, retain) UILabel *label;
                               
 - (void)startRender;
 - (void)stopRender;
@@ -67,3 +70,4 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - (void)drawView;
 
 @end
+
