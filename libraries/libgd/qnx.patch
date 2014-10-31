@@ -1,0 +1,11 @@
+--- src/gd_errors.h	2013-06-25 02:58:23.000000000 -0700
++++ src/gd_errors.h.new	2014-10-31 14:54:29.000000000 -0700
+@@ -1,7 +1,7 @@
+ #ifndef GD_ERRORS_H
+ #define GD_ERRORS_H
+ 
+-#ifndef _WIN32
++#if !defined(_WIN32) && !defined(QNX)
+ # include <syslog.h>
+ #else
+ /*
