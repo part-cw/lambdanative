@@ -734,7 +734,7 @@ make_string_gd()
   string="$3"
   name=$4
   scmfile="$5"
-  $SYS_HOSTPREFIX/bin/stringfile $fontpath$tgtfont $size "$string" $name.png
+  veval "$SYS_HOSTPREFIX/bin/stringfile \"$fontpath$tgtfont\" $size \"$string\" $name.png"
   assertfile $name.png
   $SYS_HOSTPREFIX/bin/png2scm $name.png > $scmfile
   cd $oldpath

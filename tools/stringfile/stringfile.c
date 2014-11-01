@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int main(int argc, char *argv[]){
   if (argc != 5){
+    fprintf(stderr,"Wrong number of arguments %d\n",argc);
     return 1;
   }
   // Command line arguments are Font, Fontsize, String, and PNG file name
