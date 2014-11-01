@@ -719,7 +719,29 @@ make_fonts()
   setstate
 }
 
-make_string_aux()
+make_string_gd()
+{
+  oldpath=`pwd`
+  newpath=`mktemp -d tmp.XXXXXX`
+  cd $newpath
+  srcfont=$1
+  assertfile $srcfont
+  fontname=`$SYS_HOSTPREFIX/bin/ttfname $srcfont`
+  tgtfont="$fontname".ttf
+  cp "$srcfont" "$tgtfont"
+  fontpath=`pwd`"/"
+  size=$2
+  string="$3"
+  name=$4
+  scmfile="$5"
+  $SYS_HOSTPREFIX/bin/stringfile $fontpath$tgtfont $size "$string" $name.png
+  assertfile $name.png
+  $SYS_HOSTPREFIX/bin/png2scm $name.png > $scmfile
+  cd $oldpath
+  rm -rf $newpath
+}
+
+make_string_latex()
 {
   oldpath=`pwd`
   newpath=`mktemp -d tmp.XXXXXX`
@@ -791,7 +813,11 @@ make_stringfile()
       string_srcs="$string_srcs $scmfile"
       if [ `isnewer $srcfile $scmfile` = "yes" ]; then
          echo " => $name.."
-         make_string_aux $font $size "$label" $name $scmfile $opt
+         if [ -n "$USE_XETEX" ]; then
+           make_string_latex $font $size "$label" $name $scmfile $opt
+         else
+           make_string_gd $font $size "$label" $name $scmfile
+         fi
          assertfile $scmfile
       fi
     fi
@@ -1033,7 +1059,7 @@ make_setup()
   libraries=`filter_entries $SYS_PLATFORM $libraries`
   tool_libraries=
   if [ "$SYS_HOSTPLATFORM" = "$SYS_PLATFORM" ]; then
-    tool_libraries="libz libpng libgambc"
+    tool_libraries="libgd libgambc"
   fi
   setstate
 }
@@ -1278,7 +1304,12 @@ check
 END
   veval "xelatex check.tex"
   veval "cat check.log"
-  assertfile check.pdf "xelatex environment is not complete. Please install necessary XeTeX packages." 
+  if [ ! -e "check.pdf" ]; then
+    echo "** ERROR: xelatex environment is not complete. Please install necessary XeTeX packages."
+    echo " => Using GD to render strings"
+  else
+    USE_XETEX=1
+  fi
   cd ..
   rm -rf $chkdir
 }
