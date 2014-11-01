@@ -1338,8 +1338,8 @@ make_toolcheck()
     else 
       asserttool gs 
     fi
-    asserttool convert xelatex ps2eps freetype-config
-    # verify that xelatex works
+    asserttool convert freetype-config
+    # test if xelatex works
     make_xelatexcheck
   fi
   # platform specific tools
