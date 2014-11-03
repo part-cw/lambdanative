@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #import <OpenGLES/EAGLDrawable.h>
 
 #import "GLViewController.h"
+#import "EAGLView.h"
 
 @class EAGLView;
 
@@ -78,6 +79,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 - (void)dealloc {
   DMSG("GLViewController: dealloc");
   [super dealloc];
+}
+
+- (BOOL)shouldAutorotate
+{
+  DMSG("GLViewController: shouldAutorotate");
+  return NO;
 }
 
 @end
