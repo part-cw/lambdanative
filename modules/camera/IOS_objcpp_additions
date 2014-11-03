@@ -1,0 +1,78 @@
+
+#import <UIKit/UIKit.h>
+
+@interface PickerDelegate : UIViewController<UINavigationControllerDelegate, UIImagePickerControllerDelegate> {
+  UIImagePickerController *imagePicker;
+  char *filename;
+};
+
+@property (retain)UIImagePickerController *imagePicker;
+@property (assign)char *filename;
+
+-(id)init;
+-(void)dealloc;
+-(void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info;
+-(void)imagePickerControllerDidCancel:(UIImagePickerController *)picker;
+
+@end
+
+@implementation PickerDelegate;
+
+-(id)init
+{
+  DMSG("camera: init");
+  imagePicker = [[UIImagePickerController alloc]init];
+  imagePicker.delegate = self;
+  imagePicker.allowsEditing = NO;
+  return [super init];
+}
+
+-(void)dealloc
+{
+  DMSG("camera: dealloc");
+  [imagePicker release];
+  imagePicker = nil;
+  [super dealloc];
+}
+
+- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
+  DMSG("camera: image data ready [%s]",filename);
+  NSString* fileString = [NSString stringWithUTF8String: filename];
+  UIImage *img = [info objectForKey:UIImagePickerControllerOriginalImage];
+  NSData* pickedData = UIImageJPEGRepresentation(img, 0.6);
+  //NSData* pickedData = UIImagePNGRepresentation(img);
+  [pickedData writeToFile:fileString atomically:YES];
+  free(filename);
+  [[UIApplication sharedApplication].keyWindow.rootViewController dismissViewControllerAnimated:NO completion:NULL];
+}
+
+- (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
+  DMSG("camera: image cancelled");
+  [[UIApplication sharedApplication].keyWindow.rootViewController dismissViewControllerAnimated:NO completion:NULL];
+}
+
+@synthesize imagePicker;
+@synthesize filename;
+
+@end
+
+static PickerDelegate* pickerDele = NULL;
+
+#import "EAGLView.h"
+#import "GLViewController.h"
+
+extern "C" void ios_camera_start(char *filename)
+{
+  DMSG("ios_camera_start");
+  if (pickerDele==NULL) pickerDele=[[PickerDelegate alloc] init];
+  pickerDele.filename = strdup(filename);
+  if([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera]) {
+    pickerDele.imagePicker.sourceType = UIImagePickerControllerSourceTypeCamera;
+//    UIViewController *c = [UIApplication sharedApplication].keyWindow.rootViewController;
+//    NSLog(@"**ios_camera_start about to launch camera %p **", c);
+    [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:pickerDele.imagePicker animated:NO completion:NULL];
+//    NSLog(@"**ios_camera_start done launching camera**");
+  }
+}
+
+// eof

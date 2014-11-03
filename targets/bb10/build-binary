@@ -73,7 +73,7 @@ else
   if [ `is_gui_app` = yes ]; then
     veval "$SYS_CC -I$SYS_PREFIX/include \
       bootstrap.c -o $tgt \
-      -L$SYS_PREFIX/lib -lpayload -lEGL -lGLESv1_CL -lbps -lscreen -lsocket -lasound -lm"
+      -L$SYS_PREFIX/lib -lpayload -lEGL -lGLESv1_CL -lbps -lscreen -lsocket -lasound -lcamapi -lm"
   else
     veval "$SYS_CC -I$SYS_PREFIX/include \
       -DUSECONSOLE main.c -o $tgt \

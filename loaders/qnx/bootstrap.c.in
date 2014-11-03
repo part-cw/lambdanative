@@ -43,6 +43,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <math.h>
 
+#include <fcntl.h>
+
 @BB10_C_DEFINES@
 
 #include <bps/screen.h>
@@ -67,9 +69,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef DEBUG
 
 FILE *debug_fd=0;
-#define DMSG(fmt...) (fprintf(fd,"DEBUG: " fmt),fprintf(fd,"\n"),fflush(fd))
-#define EMSG(fmt...) (fprintf(fd,"ERROR: " fmt),fprintf(fd,"\n"),fflush(fd))
-#define SMSG(fmt...) (fprintf(fd,"STATUS: " fmt),fprintf(fd,"\n"),fflush(fd))
+#define DMSG(fmt...) (fprintf(debug_fd,"DEBUG: " fmt),fprintf(debug_fd,"\n"),fflush(debug_fd))
+#define EMSG(fmt...) (fprintf(debug_fd,"ERROR: " fmt),fprintf(debug_fd,"\n"),fflush(debug_fd))
+#define SMSG(fmt...) (fprintf(debug_fd,"STATUS: " fmt),fprintf(debug_fd,"\n"),fflush(debug_fd))
 
 #else
 
@@ -79,6 +81,147 @@ FILE *debug_fd=0;
 
 #endif
 
+static screen_context_t screen_ctx;
+static screen_window_t screen_win;
+static screen_display_t screen_disp;
+static int nbuffers = 2;
+
+// ---------------------------------
+
+#ifdef USE_CAMERA
+
+#include <camera/camera_api.h>
+
+#define STATE_CAMERA_OFF 0
+#define STATE_CAMERA_STARTING 1
+#define STATE_CAMERA_VIEWFINDER 2
+#define STATE_CAMERA_TAKINGPHOTO 3
+
+static int camera_state=STATE_CAMERA_OFF;
+static bool shouldmirror = false;
+static bool touch = false;
+static const char vf_group[] = "viewfinder_window_group";
+static screen_window_t vf_win = NULL;
+static int photo_done_domain = -1;
+static int main_bps_chid = -1;
+
+static char camera_fnlname[CAMERA_ROLL_NAMELEN];
+static camera_handle_t handle = CAMERA_HANDLE_INVALID;
+
+static void camera_down()
+{
+  DMSG("camera_down");
+  camera_stop_photo_viewfinder(handle);
+  camera_close(handle);
+  camera_state=STATE_CAMERA_OFF;
+  handle = CAMERA_HANDLE_INVALID;
+}
+
+static void camera_callback(camera_handle_t handle, camera_buffer_t* buf, void* arg)
+{
+  int fd;
+  char filename[CAMERA_ROLL_NAMELEN];
+  DMSG("camera_callback");
+  if (buf->frametype == CAMERA_FRAMETYPE_JPEG) {
+    DMSG("still image size: %lld", buf->framedesc.jpeg.bufsize);
+    if (camera_roll_open_photo(handle, &fd, filename, sizeof(filename), CAMERA_ROLL_PHOTO_FMT_JPG) == CAMERA_EOK) {
+       DMSG("saving: %s", camera_fnlname);
+       int index = 0;
+       while(index < (int)buf->framedesc.jpeg.bufsize) {
+         int rc = write(fd, &buf->framebuf[index], buf->framedesc.jpeg.bufsize-index);
+         if (rc > 0) {
+           index += rc;
+         } else if (rc == -1) {
+           if ((errno == EAGAIN) || (errno == EINTR)) continue;
+           DMSG("write failed");
+           break;
+         }
+       }
+     close(fd);
+   }
+  }
+  rename(filename,camera_fnlname);
+  bps_event_t* photo_done_event;
+  bps_event_create(&photo_done_event, photo_done_domain, 0, NULL, NULL);
+  bps_channel_push_event((int)arg, photo_done_event);
+}
+
+static void camera_snap()
+{
+  DMSG("camera_snap");
+  camera_error_t err;
+  touch=false;
+  err = camera_take_photo(handle, NULL, NULL, NULL, &camera_callback, (void*)main_bps_chid, false);
+  if (err != CAMERA_EOK) {
+    DMSG("camera_take_photo() error %d", err);
+    camera_state = STATE_CAMERA_OFF;
+  } else {
+    camera_state = STATE_CAMERA_TAKINGPHOTO;
+  }
+}
+
+static void handle_photo_done_event(bps_event_t *event) {
+  DMSG("received photo-done event");
+  touch = false;
+  camera_down();
+}
+
+static int camera_up(camera_unit_t unit)
+{
+  DMSG("camera_up");
+  camera_error_t err;
+  err = camera_open(unit, CAMERA_MODE_RW | CAMERA_MODE_ROLL, &handle);
+  if (err != CAMERA_EOK) {
+    DMSG("camera_open() failed: %d\n", err);
+    return err;
+  }
+  screen_display_mode_t screen_mode;
+  int rc = screen_get_display_property_pv(screen_disp, SCREEN_PROPERTY_MODE, (void**)&screen_mode);
+  err = camera_set_photovf_property(handle,
+          CAMERA_IMGPROP_WIN_GROUPID, vf_group,
+          CAMERA_IMGPROP_WIN_ID, "my_viewfinder"
+        );
+  if (err != CAMERA_EOK) {
+    DMSG("camera_set_photovf_property() failed: %d", err);
+  } else {
+    err = camera_start_photo_viewfinder(handle, NULL, NULL, NULL);
+    if (err != CAMERA_EOK) {
+      DMSG("camera_start_photo_viewfinder() failed: %d", err);
+    } else {
+      // successfully started viewfinder
+      // if it's a front-facing camera, we should mirror the viewfinder once
+      // we receive it.
+      if (unit == CAMERA_UNIT_FRONT) { shouldmirror = true; }
+      camera_state=STATE_CAMERA_STARTING;
+      return 0;
+    }
+  }
+  // clean up on error
+  camera_close(handle);
+  handle = CAMERA_HANDLE_INVALID;
+  camera_state=STATE_CAMERA_OFF;
+  return err;
+}
+
+void qnx_camera_start(char *fnl_name)
+{
+  DMSG("camera_start %s", fnl_name);
+  sprintf(camera_fnlname,"%s",fnl_name);
+  camera_up(CAMERA_UNIT_REAR);
+}
+
+static void camera_eventhook()
+{
+  DMSG("camera_eventhook state=%i",camera_state);
+  switch(camera_state) {
+    case STATE_CAMERA_VIEWFINDER:
+      if (touch) camera_snap();
+      break;
+  }
+}
+
+#endif // USE_CAMERA
+
 // --------------
 // EGL routines
 
@@ -87,11 +230,6 @@ EGLSurface egl_surf;
 
 static EGLConfig egl_conf;
 static EGLContext egl_ctx;
-
-static screen_context_t screen_ctx;
-static screen_window_t screen_win;
-static screen_display_t screen_disp;
-static int nbuffers = 2;
 
 void loader_egl_terminate() {
   SMSG("loader_egl_terminate");
@@ -135,6 +273,9 @@ int loader_egl_init(screen_context_t ctx) {
   egl_ctx = eglCreateContext(egl_disp, egl_conf, EGL_NO_CONTEXT, NULL);
   if (egl_ctx == EGL_NO_CONTEXT) { EMSG("eglCreateContext() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
   rc = screen_create_window(&screen_win, screen_ctx);
+#ifdef USE_CAMERA
+  screen_create_window_group(screen_win, vf_group);
+#endif
   if (rc) { EMSG("screen_create_window() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
   rc = screen_set_window_property_iv(screen_win, SCREEN_PROPERTY_FORMAT, &format);
   if (rc) { EMSG("screen_set_window_property_iv() failed"); loader_egl_terminate(); return EXIT_FAILURE; }
@@ -668,6 +809,10 @@ void loader_screen_event(bps_event_t *event)
   screen_get_event_property_iv(screen_event, SCREEN_PROPERTY_TYPE, &screen_val);
   switch (screen_val) {
       case SCREEN_EVENT_MTOUCH_TOUCH:
+        DMSG("SCREEN_EVENT_MTOUCH_TOUCH");
+#ifdef USE_CAMERA
+        if (camera_state==STATE_CAMERA_VIEWFINDER) touch=true;
+#endif
         screen_get_event_property_iv(screen_event, SCREEN_PROPERTY_TOUCH_ID, &pointerid);
         screen_get_event_property_iv(screen_event, SCREEN_PROPERTY_SOURCE_POSITION, pos);
 #ifdef USE_MULTITOUCH
@@ -705,6 +850,37 @@ void loader_screen_event(bps_event_t *event)
           }
         }
         break;
+#ifdef USE_CAMERA
+      case SCREEN_EVENT_CREATE:
+        DMSG("SCREEN_EVENT_CREATE");
+        if (screen_get_event_property_pv(screen_event, SCREEN_PROPERTY_WINDOW, (void **)&vf_win) == -1) {
+            DMSG("screen_get_event_property_pv(SCREEN_PROPERTY_WINDOW) failed");
+          } else {
+            DMSG("viewfinder window found");
+
+            int rc;
+            int screen_resolution[2];
+            rc = screen_get_display_property_iv(screen_disp, SCREEN_PROPERTY_SIZE, screen_resolution);
+            rc = screen_set_window_property_iv(vf_win, SCREEN_PROPERTY_SIZE, screen_resolution);
+            int angle = 90; //atoi(getenv("ORIENTATION"));
+            rc = screen_set_window_property_iv(vf_win, SCREEN_PROPERTY_ROTATION, &angle);
+             
+            int i=0;
+
+            // place viewfinder in front of the black application background window
+            // child window z-orders are relative to their parent, not absolute.
+            i = +1;
+            screen_set_window_property_iv(vf_win, SCREEN_PROPERTY_ZORDER, &i);
+            // make viewfinder window visible
+            i = 1;
+            screen_set_window_property_iv(vf_win, SCREEN_PROPERTY_VISIBLE, &i);
+            screen_flush_context(screen_ctx, 0);
+            // we should now have a visible viewfinder
+            touch = false;
+            camera_state = STATE_CAMERA_VIEWFINDER;
+          }
+          break;
+#endif // USE_CAMERA
   }
   return;
 }
@@ -802,8 +978,8 @@ void geolocation_event(bps_event_t *event)
 
 int main(int argc, char *argv[]) {
   int rc, exit_application = 0;
-  static screen_context_t screen_cxt;
-  screen_create_context(&screen_cxt, 0);
+
+  screen_create_context(&screen_ctx, 0);
 
 #ifdef DEBUG
   debug_fd = fopen("./shared/documents/@SYS_APPNAME@_loader.doc","w");
@@ -812,16 +988,49 @@ int main(int argc, char *argv[]) {
   SMSG("loader starting..");
 
   bps_initialize();
-
   audio_init();
   sensor_init();
   geolocation_init();
 
-  if (EXIT_SUCCESS != loader_egl_init(screen_cxt)) { EMSG("loader_egl_init() failed"); loader_egl_terminate(); screen_destroy_context(screen_cxt); return 0; }
-  if (EXIT_SUCCESS != loader_init()) { EMSG("loader init failed"); loader_egl_terminate(); screen_destroy_context(screen_cxt); return 0; }
-  if (BPS_SUCCESS != screen_request_events(screen_cxt)) { EMSG("screen_request_events failed"); loader_egl_terminate(); screen_destroy_context(screen_cxt); return 0; }
-  if (BPS_SUCCESS != navigator_request_events(0)) { EMSG("navigator_request_events failed"); loader_egl_terminate(); screen_destroy_context(screen_cxt); return 0; }
-  if (BPS_SUCCESS != navigator_rotation_lock(true)) { EMSG("navigator_rotation_lock failed"); loader_egl_terminate(); screen_destroy_context(screen_cxt); return 0; }
+#ifdef USE_CAMERA
+  main_bps_chid = bps_channel_get_active();
+#endif
+
+  if (EXIT_SUCCESS != loader_egl_init(screen_ctx)) { 
+    EMSG("loader_egl_init() failed"); 
+    loader_egl_terminate(); 
+    screen_destroy_context(screen_ctx); 
+    return 0;
+  }
+  if (EXIT_SUCCESS != loader_init()) { 
+    EMSG("loader init failed"); 
+    loader_egl_terminate(); 
+    screen_destroy_context(screen_ctx); 
+    return 0; 
+  }
+  if (BPS_SUCCESS != screen_request_events(screen_ctx)) { 
+    EMSG("screen_request_events failed"); 
+    loader_egl_terminate(); 
+    screen_destroy_context(screen_ctx); 
+    return 0; 
+  }
+  if (BPS_SUCCESS != navigator_request_events(0)) { 
+    EMSG("navigator_request_events failed"); 
+    loader_egl_terminate(); 
+    screen_destroy_context(screen_ctx); 
+    return 0; 
+  }
+  if (BPS_SUCCESS != navigator_rotation_lock(true)) { 
+    EMSG("navigator_rotation_lock failed"); 
+    loader_egl_terminate(); 
+    screen_destroy_context(screen_ctx); 
+    return 0; 
+  }
+
+#ifdef USE_CAMERA
+ photo_done_domain = bps_register_domain();
+#endif
+
   while (!exit_application) {
     bps_event_t *event = NULL;
     for(;;) {
@@ -837,9 +1046,17 @@ int main(int argc, char *argv[]) {
             switch (bps_event_get_code(event)) {
               case NAVIGATOR_EXIT: exit_application = 1; break;
               case NAVIGATOR_WINDOW_INACTIVE: ffi_event(EVENT_SUSPEND,0,0); break;
-              case NAVIGATOR_WINDOW_ACTIVE: ffi_event(EVENT_RESUME,0,0); break;
+              case NAVIGATOR_WINDOW_ACTIVE: 
+               ffi_event(EVENT_RESUME,0,0); 
+               break;
             }
-          }
+          } 
+#ifdef USE_CAMERA
+         else if (domain == photo_done_domain) {
+            handle_photo_done_event(event);
+        }
+        camera_eventhook();
+#endif
       } else {
         break;
       }
@@ -856,10 +1073,10 @@ int main(int argc, char *argv[]) {
 #endif
 
   SMSG("final cleanup");
-  screen_stop_events(screen_cxt);
+  screen_stop_events(screen_ctx);
   bps_shutdown();
   loader_egl_terminate();
-  screen_destroy_context(screen_cxt);
+  screen_destroy_context(screen_ctx);
 
   SMSG("sending payload TERMINATE");
 
