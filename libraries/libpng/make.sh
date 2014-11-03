@@ -14,7 +14,7 @@ if [ ! $SYS_HOSTPLATFORM = win32 ]; then
   package_make
 else
   # mutilate some default windows makefile - argh!
-  cat scripts/makefile.msys | sed 's|CC =|CC=@SYS_CC@ #|;s|DESTDIR=|DESTDIR=@SYS_PREFIX@ #|;s|ZLIBDIR=|ZLIBDIR=@SYS_PREFIX@/lib #|;s|ZLIBINC=|ZLIBINC=@SYS_PREFIX@/include #|' > makefile.msys
+  cat scripts/makefile.msys | sed "s|CC =|CC=$SYS_CC #|;s|DESTDIR=|DESTDIR=$SYS_PREFIX #|;s|ZLIBDIR=|ZLIBDIR=$SYS_PREFIX/lib #|;s|ZLIBINC=|ZLIBINC=$SYS_PREFIX/include #|" > makefile.msys
   package_make -f ./makefile.msys 
 fi
 
