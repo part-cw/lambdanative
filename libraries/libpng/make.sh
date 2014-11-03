@@ -9,8 +9,9 @@ if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
   EXTRACONF=--host=$SYS_ARCH
 fi
 
+package_configure $EXTRACONF --with-zlib-prefix="$SYS_PREFIX" --enable-static --disable-shared
+
 if [ ! $SYS_HOSTPLATFORM = win32 ]; then
-  package_configure $EXTRACONF --with-zlib-prefix="$SYS_PREFIX" --enable-static --disable-shared
   package_make
 else
   # mutilate some default windows makefile - argh!
@@ -23,6 +24,7 @@ if [ ! $SYS_HOSTPLATFORM = win32 ]; then
 else
   cp *.h $SYS_PREFIX/include
   cp libpng.a $SYS_PREFIX/lib
+  cp libpng-config $SYS_PREFIX/bin
 fi
 
 package_cleanup
