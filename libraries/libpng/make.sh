@@ -24,6 +24,7 @@ if [ ! $SYS_HOSTPLATFORM = win32 ]; then
 else
   cp *.h $SYS_PREFIX/include
   cp libpng.a $SYS_PREFIX/lib
+  cp libpng.a $SYS_PREFIX/lib/libpng16.a
   cp libpng-config $SYS_PREFIX/bin
 fi
 

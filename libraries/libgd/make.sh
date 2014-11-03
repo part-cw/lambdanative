@@ -18,9 +18,15 @@ rm tmp
 package_configure $EXTRACONF --disable-shared --enable-static --with-png=$SYS_PREFIX --with-freetype=$SYS_PREFIX --with-jpeg=$SYS_PREFIX --without-tiff --without-xpm --without-fontconfig
 
 cd src
-package_make
+package_make libgd.la
 asserterror $? "compilation failed"
-package_make install
+
+assertfile ./.libs/libgd.a
+cp ./.libs/libgd.a $SYS_PREFIX/lib
+cp gd.h $SYS_PREFIX/include
+cp gdfx.h $SYS_PREFIX/include
+cp gd_io.h $SYS_PREFIX/include
+
 cd ..
 
 package_cleanup
