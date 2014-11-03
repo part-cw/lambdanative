@@ -1,0 +1,16 @@
+--- configure.ac	2013-06-25 06:53:26.000000000 -0700
++++ configure.ac.new	2014-11-03 09:14:47.000000000 -0800
+@@ -255,10 +255,9 @@
+   withval=yes)
+ 
+ if test "$withval" != no; then
+-  AC_CHECK_LIB(jpeg,jpeg_set_defaults,
+-    [LIBS="-ljpeg $LIBS" 
+-     FEATURES="GD_JPEG $FEATURES"
+-     AC_DEFINE(HAVE_LIBJPEG, 1, [ Define if you have the jpeg library. ])])
++   LIBS="-ljpeg $LIBS" 
++   FEATURES="GD_JPEG $FEATURES"
++   AC_DEFINE(HAVE_LIBJPEG, 1, [ Define if you have the jpeg library. ])
+ else
+   ac_cv_lib_jpeg_jpeg_set_defaults=no
+ fi
