@@ -92,6 +92,8 @@ static int nbuffers = 2;
 
 #include <camera/camera_api.h>
 
+#include <gd.h>
+
 #define STATE_CAMERA_OFF 0
 #define STATE_CAMERA_STARTING 1
 #define STATE_CAMERA_VIEWFINDER 2
@@ -104,6 +106,7 @@ static const char vf_group[] = "viewfinder_window_group";
 static screen_window_t vf_win = NULL;
 static int photo_done_domain = -1;
 static int main_bps_chid = -1;
+static uint32_t rotation = 0;
 
 static char camera_fnlname[CAMERA_ROLL_NAMELEN];
 static camera_handle_t handle = CAMERA_HANDLE_INVALID;
@@ -138,6 +141,23 @@ static void camera_callback(camera_handle_t handle, camera_buffer_t* buf, void* 
          }
        }
      close(fd);
+     
+     FILE *fdr = fopen(filename,"r");
+     gdImagePtr srcimg = gdImageCreateFromJpeg(fdr);
+     int srcw = gdImageSX(srcimg);
+     int srch = gdImageSY(srcimg);
+     int dstw = (rotation==90||rotation==270?srch:srcw);
+     int dsth = (rotation==90||rotation==270?srcw:srch);
+     gdImagePtr dstimg = gdImageCreateTrueColor(dstw,dsth);
+     gdImageCopyRotated(dstimg,srcimg,dstw/2,dsth/2,0,0,srcw,srch,rotation);
+     fclose(fdr); 
+
+     FILE *fdw = fopen(filename,"w");
+     gdImageJpeg(dstimg, fdw, -1);
+     fclose(fdw);
+
+     gdImageDestroy(srcimg);
+     gdImageDestroy(dstimg);
    }
   }
   rename(filename,camera_fnlname);
@@ -177,6 +197,13 @@ static int camera_up(camera_unit_t unit)
   }
   screen_display_mode_t screen_mode;
   int rc = screen_get_display_property_pv(screen_disp, SCREEN_PROPERTY_MODE, (void**)&screen_mode);
+
+  uint32_t rotations[8];
+  int numRotations = 0;
+  bool nonsquare = false;
+  rc = camera_get_photo_rotations(handle, CAMERA_FRAMETYPE_JPEG, true, 8, &numRotations, rotations, &nonsquare);
+  rotation = rotations[0];
+
   err = camera_set_photovf_property(handle,
           CAMERA_IMGPROP_WIN_GROUPID, vf_group,
           CAMERA_IMGPROP_WIN_ID, "my_viewfinder"
