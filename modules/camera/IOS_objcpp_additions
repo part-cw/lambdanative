@@ -3,11 +3,11 @@
 
 @interface PickerDelegate : UIViewController<UINavigationControllerDelegate, UIImagePickerControllerDelegate> {
   UIImagePickerController *imagePicker;
-  char *filename;
+  char *img_filename;
 };
 
 @property (retain)UIImagePickerController *imagePicker;
-@property (assign)char *filename;
+@property (assign)char *img_filename;
 
 -(id)init;
 -(void)dealloc;
@@ -36,13 +36,74 @@
 }
 
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
-  DMSG("camera: image data ready [%s]",filename);
-  NSString* fileString = [NSString stringWithUTF8String: filename];
+  DMSG("camera: image data ready [%s]",img_filename);
+  NSString* fileString = [NSString stringWithUTF8String: img_filename];
   UIImage *img = [info objectForKey:UIImagePickerControllerOriginalImage];
-  NSData* pickedData = UIImageJPEGRepresentation(img, 0.6);
-  //NSData* pickedData = UIImagePNGRepresentation(img);
+
+  CGAffineTransform transform = CGAffineTransformIdentity;
+  switch (img.imageOrientation) {
+    case UIImageOrientationDown:
+    case UIImageOrientationDownMirrored:
+        transform = CGAffineTransformTranslate(transform, img.size.width, img.size.height);
+        transform = CGAffineTransformRotate(transform, M_PI);
+        break;
+    case UIImageOrientationLeft:
+    case UIImageOrientationLeftMirrored:
+        transform = CGAffineTransformTranslate(transform, img.size.width, 0);
+        transform = CGAffineTransformRotate(transform, M_PI_2);
+        break;
+    case UIImageOrientationRight:
+    case UIImageOrientationRightMirrored:
+        transform = CGAffineTransformTranslate(transform, 0, img.size.height);
+        transform = CGAffineTransformRotate(transform, -M_PI_2);
+        break;
+    case UIImageOrientationUp:
+    case UIImageOrientationUpMirrored:
+        break;
+  }
+  switch (img.imageOrientation) {
+    case UIImageOrientationUpMirrored:
+    case UIImageOrientationDownMirrored:
+        transform = CGAffineTransformTranslate(transform, img.size.width, 0);
+        transform = CGAffineTransformScale(transform, -1, 1);
+        break;
+    case UIImageOrientationLeftMirrored:
+    case UIImageOrientationRightMirrored:
+        transform = CGAffineTransformTranslate(transform, img.size.height, 0);
+        transform = CGAffineTransformScale(transform, -1, 1);
+        break;
+    case UIImageOrientationUp:
+    case UIImageOrientationDown:
+    case UIImageOrientationLeft:
+    case UIImageOrientationRight:
+        break;
+  }
+  CGContextRef ctx = CGBitmapContextCreate(NULL, img.size.width, img.size.height,
+                                         CGImageGetBitsPerComponent(img.CGImage), 0,
+                                         CGImageGetColorSpace(img.CGImage),
+                                         CGImageGetBitmapInfo(img.CGImage));
+  CGContextConcatCTM(ctx, transform);
+  switch (img.imageOrientation) {
+    case UIImageOrientationLeft:
+    case UIImageOrientationLeftMirrored:
+    case UIImageOrientationRight:
+    case UIImageOrientationRightMirrored:
+        CGContextDrawImage(ctx, CGRectMake(0,0,img.size.height,img.size.width), img.CGImage);
+        break;
+    default:
+        CGContextDrawImage(ctx, CGRectMake(0,0,img.size.width,img.size.height), img.CGImage);
+        break;
+  }
+  CGImageRef cgimg = CGBitmapContextCreateImage(ctx);
+  UIImage *fixedimg = [UIImage imageWithCGImage:cgimg];
+  CGContextRelease(ctx);
+  CGImageRelease(cgimg);
+
+  NSData* pickedData = UIImageJPEGRepresentation(fixedimg, 0.6);
+
   [pickedData writeToFile:fileString atomically:YES];
-  free(filename);
+
+  free(img_filename);
   [[UIApplication sharedApplication].keyWindow.rootViewController dismissViewControllerAnimated:NO completion:NULL];
 }
 
@@ -52,7 +113,7 @@
 }
 
 @synthesize imagePicker;
-@synthesize filename;
+@synthesize img_filename;
 
 @end
 
@@ -61,17 +122,14 @@ static PickerDelegate* pickerDele = NULL;
 #import "EAGLView.h"
 #import "GLViewController.h"
 
-extern "C" void ios_camera_start(char *filename)
+extern "C" void ios_camera_start(char *img_filename)
 {
   DMSG("ios_camera_start");
   if (pickerDele==NULL) pickerDele=[[PickerDelegate alloc] init];
-  pickerDele.filename = strdup(filename);
+  pickerDele.img_filename = strdup(img_filename);
   if([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera]) {
     pickerDele.imagePicker.sourceType = UIImagePickerControllerSourceTypeCamera;
-//    UIViewController *c = [UIApplication sharedApplication].keyWindow.rootViewController;
-//    NSLog(@"**ios_camera_start about to launch camera %p **", c);
     [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:pickerDele.imagePicker animated:NO completion:NULL];
-//    NSLog(@"**ios_camera_start done launching camera**");
   }
 }
 
