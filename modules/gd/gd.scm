@@ -43,6 +43,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <gd.h>
 
+void gdImageTrueColorRGBA(gdImagePtr im, unsigned char *data, int w2, int h2)
+{
+  int i,j;
+  int w = gdImageSX(im);
+  int h = gdImageSY(im);
+  for (i=0;i<w;i++) {
+    for (j=0;j<h;j++) {
+      unsigned int c=gdImageGetTrueColorPixel(im,i,j);
+      data[4*(i+w2*j)]=gdTrueColorGetRed(c);
+      data[4*(i+w2*j)+1]=gdTrueColorGetGreen(c);
+      data[4*(i+w2*j)+2]=gdTrueColorGetBlue(c);
+      data[4*(i+w2*j)+3]=~gdTrueColorGetAlpha(c);
+    }
+  }
+}
+
 end-of-c-declare
 )
 
@@ -254,5 +270,27 @@ end-of-c-declare
 (gd-function gdFontCacheShutdown () void)
 (gd-function gdFreeFontCache () void)
 (gd-function gdImageStringFT ((pointer void) (pointer void) int char-string double double int int char-string) char-string)
+
+;; ------
+;; opengl related functions
+;; eval is used to delay resolving potentially unavailable calls
+
+(define (gdImageTrueColorRGBA arg1 arg2 arg3 arg4)
+  ((c-lambda ((pointer void) scheme-object int int) void
+     "gdImageTrueColorRGBA(___arg1,___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)),___arg3,___arg4);")
+       arg1 arg2 arg3 arg4))
+
+(define (gd->img ptr)
+  (let* ((w (gdImageSX ptr))
+         (h (gdImageSY ptr))
+         (w2 (fix (expt 2. (ceiling (/ (log w) (log 2.))))))
+         (h2 (fix (expt 2. (ceiling (/ (log h) (log 2.))))))
+         (data (make-u8vector (* w2 h2 4)))
+         (t (begin (gdImageTrueColorRGBA ptr data w2 h2) ((eval 'glCoreTextureCreate) w2 h2 data))))
+   ;; (list w h t 0. (- 1. (/ h h2 1.)) (/ w w2 1.) 1.)
+   ;; (list w h t 0. 0. (/ w w2 1.) (/ h h2 1.))
+    (list w h t 0. (/ h h2 1.) (/ w w2 1.) 0.)
+  ))
+
 
 ;; eof
