@@ -69,6 +69,8 @@ import android.hardware.SensorManager;
 // Imports needed for modules, e.g. gps
 @ANDROID_JAVA_IMPORTS@
 
+@ANDROID_JAVA_ADDITIONS@
+
 public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@ SensorEventListener{
   Thread openSLThread;  // OpenSL real-time sound
   private SensorManager mSensorManager;
