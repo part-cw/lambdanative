@@ -68,12 +68,16 @@ gdImagePtr dmtx_enc_gd(unsigned char *str)
   return gd;
 }
 
-char *dmtx_dec_gd(gdImagePtr gd)
+char *dmtx_dec_gd(gdImagePtr gd0)
 {
   int i,j;
-  int w = gdImageSX(gd);
-  int h = gdImageSY(gd);
-  static char data[1024];
+  int w0 = gdImageSX(gd0);
+  int h0 = gdImageSY(gd0);
+  int w = 400;
+  int h = ( h0 * w )/ w0;
+  gdImagePtr gd = gdImageCreateTrueColor(w,h);
+  gdImageCopyResampled(gd,gd0,0,0,0,0,w,h,w0,h0);
+  static char data[2335+1];
   data[0]=0;
   unsigned char *pxl = (unsigned char *)malloc(w*h);
   for (i=0;i<w;i++) {
@@ -85,9 +89,10 @@ char *dmtx_dec_gd(gdImagePtr gd)
   }
   DmtxImage *img = dmtxImageCreate(pxl, w, h, DmtxPack8bppK);
   DmtxDecode *dec = dmtxDecodeCreate(img, 1);
-  DmtxRegion *reg = dmtxRegionFindNext(dec, NULL);
+  DmtxTime timeout = dmtxTimeAdd(dmtxTimeNow(),1000);
+  DmtxRegion *reg = dmtxRegionFindNext(dec, &timeout);
   DmtxMessage *msg;
-  if(reg != NULL) {
+  if (reg != NULL) {
     msg = dmtxDecodeMatrixRegion(dec, reg, DmtxUndefined);
     if(msg != NULL) {
       memcpy(data,msg->output, msg->outputIdx);
@@ -98,6 +103,7 @@ char *dmtx_dec_gd(gdImagePtr gd)
   }
   dmtxDecodeDestroy(&dec);
   dmtxImageDestroy(&img);
+  gdImageDestroy(gd);
   free(pxl);
   return data;
 }
