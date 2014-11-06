@@ -1338,7 +1338,7 @@ make_toolcheck()
     else 
       asserttool gs 
     fi
-    asserttool convert freetype-config
+    asserttool convert
     # test if xelatex works
     make_xelatexcheck
   fi

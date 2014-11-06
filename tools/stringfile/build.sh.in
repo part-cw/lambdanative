@@ -6,7 +6,7 @@ if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
     echo " => $tgt.."
     mkdir -p @SYS_HOSTPREFIX@/bin
     @SYS_CC@ -c $src -I@SYS_PREFIX@/include -I@SYS_PREFIX@/include/freetype2
-    @SYS_CC@ -o $tgt *.o -L@SYS_PREFIX@/lib -lm -lgd -lfreetype -lpng -lz
+    @SYS_CC@ -o $tgt *.o -L@SYS_PREFIX@/lib -lgd -lfreetype -lpng -lz -lm
     if [ ! $? = 0 ]; then exit 1; fi
     rm *.o
   fi

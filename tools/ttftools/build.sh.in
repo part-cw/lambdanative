@@ -2,8 +2,8 @@
 COMMON_SRCS="texture-atlas.c texture-font.c vector.c fastlz.c"
 COMMON_OBJS=`echo "$COMMON_SRCS" | sed 's/\.c/\.o/g'`
 COMMON_HS=`echo "$COMMON_SRCS" | sed 's/\.c/\.h/g'`" vec234.h"
-FTINC=`freetype-config --cflags`
-FTLIB=`freetype-config --libs`
+FTINC="-I@SYS_PREFIX@/include/freetype2"
+FTLIB="-L@SYS_PREFIX@/lib -lfreetype -lz"
 
 if [ "@SYS_PLATFORM@" = "@SYS_HOSTPLATFORM@" ]; then
   if [ "@SYS_PLATFORM@" = "macosx" ]; then
