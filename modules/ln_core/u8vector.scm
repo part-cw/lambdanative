@@ -70,19 +70,15 @@ end-of-c-declare
   (let ((file (open-output-file filename)))
     (write-subu8vector u8v 0 (u8vector-length u8v) file)
     (close-port file)))
-read a u8vector from a file ;M @deffn {procedure}
-file->u8vector filename ;M Read a u8vector from a file ;M
-@end deffn (define (file->u8vector filename)
-  (let* ((len  (file-size filename))
-	 (file (open-input-file filename)) (u8v
-	 (make-u8vector len)))
-;; read-subu8vector appears to read one character too few??
-;;    (read-subu8vector u8v 0 (- len 1) file)
-    (let loop ((i 0))
-      (if (< i len)  (begin
-	 (u8vector-set! u8v i (read-u8 file)) (loop (+ i
-	 1)))))
-    (close-port file) u8v))
+
+(define (file->u8vector file)
+  (if (file-exists? file) 
+    (let* ((len (file-size file))
+           (u8v (make-u8vector len))
+           (fh (open-input-file file)))
+      (read-subu8vector u8v 0 len fh)
+      (close-port fh) 
+   u8v) #f))
 
 ;; number conversions (big endian)
 (define (u8vector->uXX v bytecount . o)
