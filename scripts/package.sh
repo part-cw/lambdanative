@@ -66,6 +66,7 @@ package_download_git()
 {
   pkg_git_url=$1
   pkg_git_hash=$2
+  pkg_git_file="$SYS_PREFIXROOT/packages/"`basename $pkg_git_url`"-$pkg_git_hash.tgz"
   if [ -d tmp_install ]; then
     rm -rf tmp_install
   fi
@@ -73,15 +74,26 @@ package_download_git()
   assertfile tmp_install
   pkg_here=`pwd`
   cd tmp_install
-  echo " => cloning ${pkg_git_url}.."
-  veval "git clone $pkg_git_url"
-  asserterror $? "repository cloning failed [$pkg_git_url]"
-  cd *
-  if [ ! "X$pkg_git_hash" = "X" ]; then
-    veval "git checkout $pkg_git_hash"
-    asserterror $? "repository checkout failed [$pkg_git_url]"
+  if [ ! -f $pkg_git_file ]; then
+    echo " => cloning ${pkg_git_url}.."
+    veval "git clone $pkg_git_url"
+    asserterror $? "repository cloning failed [$pkg_git_url]"
+    cd *
+    if [ ! "X$pkg_git_hash" = "X" ]; then
+      veval "git checkout $pkg_git_hash"
+      asserterror $? "repository checkout failed [$pkg_git_url]"
+    else
+      echo " == "`git log | head -n 1`
+    fi
+    cd ..
+    veval "tar -zcvf $pkg_git_file *"
+    assertfile "$pkg_git_file"
+    cd *
   else
-    echo " == "`git log | head -n 1`
+    assertfile "$pkg_git_file"
+    package_unpack "$pkg_git_file"
+    asserterror $? "package extraction failed [$pkg_git_file]"
+    cd *
   fi
 }
 
