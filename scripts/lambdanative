@@ -1,0 +1,94 @@
+#!/bin/sh
+# LambdaNative initialization script to be placed in system path
+
+# Override this with actual lambdanative location
+LAMBDANATIVE=
+
+if [ "X$LAMBDANATIVE" = "X" ]; then
+  echo "ERROR: this script has not been configured."
+  exit
+fi
+
+if [ ! -d $LAMBDANATIVE ] || [ ! -d $LAMBDANATIVE/apps ]; then
+  echo "ERROR: script misconfiguration: $LAMBDANATIVE not found"
+  exit
+fi
+
+cmd=$1
+
+usage()
+{
+  echo "usage: lambdanative [init | version ]"
+  echo "Initialize the lambdanative build structure"
+  exit
+}
+
+if [ "X$cmd" = "X" ]; then
+  usage
+fi
+
+if [ $cmd = version ]; then
+  echo "LambdaNative Ver. "`cat $LAMBDANATIVE/VERSION | sed '/^#/d'`
+  echo "Install path: $LAMBDANATIVE"
+  if [ ! "X"`which git` = "X" ]; then 
+    here=`pwd`
+    cd $LAMBDANATIVE
+    git log | head -n 1 | sed 's/commit/Git hash:/'
+    cd $here
+  fi
+  echo "Visit http://lambdanative.org for more information"
+  exit
+fi
+
+if [ $cmd = init ]; then 
+ dircontent=`ls -1`
+ if [ ! "X$dircontent" = "X" ]; then
+   echo "Error: init can only be done in an empty directory"
+   exit 1
+ fi
+fi
+
+mkdir -p apps 
+mkdir -p modules
+
+if [ ! -f $LAMBDANATIVE/SETUP ] && [ ! -f SETUP ]; then
+  cp $LAMBDANATIVE/SETUP.template SETUP
+  echo "SETUP is stock, please customize with compiler locations etc"
+fi
+
+if [ ! -f $LAMBDANATIVE/PROFILE ] && [ ! -f PROFILE ]; then
+  cp $LAMBDANATIVE/PROFILE.template PROFILE
+  echo "PROFILE is stock, please customize with organization, developer ID etc"
+fi
+
+cat > ./configure << _EOF
+# Automatically generated. Do not edit
+here=`pwd`
+cd $LAMBDANATIVE
+SYS_PATH=\$here ./configure \$@
+cd \$here
+_EOF
+chmod +x ./configure
+
+cat > ./Makefile << _EOF
+# Automatically generated. Do not edit
+HERE != pwd
+# gmake only 
+# HERE = \$(shell pwd) 
+
+all:
+	cd $LAMBDANATIVE; SYS_PATH=\$(HERE) make; cd \$(HERE)
+
+clean:
+	cd $LAMBDANATIVE; SYS_PATH=\$(HERE) make clean; cd \$(HERE)
+
+scrub:
+	cd $LAMBDANATIVE; SYS_PATH=\$(HERE) make scrub; cd \$(HERE)
+
+install:
+	cd $LAMBDANATIVE; SYS_PATH=\$(HERE) make install; cd \$(HERE)
+
+#eof
+_EOF
+
+#eof
