@@ -1,4 +1,4 @@
-/*
+#|
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2014, University of British Columbia
 All rights reserved.
@@ -34,21 +34,18 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+|#
+
+;; this is a tool used by the lambdanative build system
+
+(c-declare  #<<end-of-c-declare
 
 #include <stdio.h>
 #include <gd.h>
 
-int main(int argc, char *argv[]){
-  if (argc != 5){
-    fprintf(stderr,"Wrong number of arguments %d\n",argc);
-    return 1;
-  }
-  // Command line arguments are Font, Fontsize, String, and PNG file name
-  char *fnt = argv[1];
-  double size = (double)atol(argv[2])*0.75; // To match Latex size scale down
-  char *str = argv[3];
-  char *fname = argv[4];
+int stringfile(char *fnt, char *fntsize, char *str, char *fname)
+{
+  double size = (double)atol(fntsize)*0.75; // To match Latex size scale down
 
   int brect[8];
   char *err = gdImageStringFT(NULL,&brect[0],0,fnt,size,0.,0,0,str);
@@ -83,3 +80,51 @@ int main(int argc, char *argv[]){
   gdImageDestroy(im);
   return 0;
 }
+
+end-of-c-declare
+)
+
+(define (usage)
+  (for-each display (list
+    "Usage: ttftool [stringfile <ttffont> <fontsize> <string> <pngfile> | fontname <ttffont> | fnt2scm <ttfont> ]\n"
+    "stringfile: generate pngfile with string rendered with specified font & size\n"
+    "fontname: output name of font\n"
+    "fnt2scm: output scheme font atlas representation\n"))
+  (exit))
+
+(define (glyph-set file)
+  (with-input-from-file file (lambda ()
+    (let loop ((res '()))
+      (let ((line (read-line)))
+        (if (not (string? line)) res 
+          (let ((newentry 
+                  (if (and (> (string-length line) 2) 
+                           (char=? (string-ref line 0) #\U))
+                    (let ((data (string-split (substring line 2 (string-length line)) #\-)))
+                       (if (= (length data) 1) (list (string->number (car data) 16))
+                          (let ((a (string->number (car data) 16))
+                                (b (string->number (cadr data) 16)))
+                            (let loop2 ((n a)(lst '()))
+                              (if (> n b) lst (loop2 (+ n 1) (append lst (list n))))))
+                       )) '())))
+            (loop (append res newentry)))))))))
+
+(cond
+  ((and (= (system-cmdargc) 3)
+        (string=? (system-cmdargv 1) "fontname"))
+     (display (ttf-name (system-cmdargv 2))) (newline))
+  ((and (= (system-cmdargc) 6)
+        (string=? (system-cmdargv 1) "stringfile"))
+      ((c-lambda (char-string char-string char-string char-string) int "stringfile")
+         (system-cmdargv 2) (system-cmdargv 3) (system-cmdargv 4) (system-cmdargv 5)))
+  ((and (= (system-cmdargc) 6)
+         (string=? (system-cmdargv 1) "fnt2scm"))
+      (let ((font (system-cmdargv 2))
+            (bits (glyph-set (system-cmdargv 3)))
+            (sizes (map string->number (string-split (system-cmdargv 4) #\,)))
+            (name (system-cmdargv 5)))
+        (ttf-compile font sizes bits name)
+      ))
+  (else (usage)))
+
+;; eof

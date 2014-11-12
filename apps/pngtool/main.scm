@@ -1,6 +1,6 @@
-/*
+#|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2014, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -34,8 +34,13 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-// tool to convert png images to scheme textures
+|#
+
+;; this is a tool used by the lambanative build system
+
+(c-declare  #<<end-of-c-declare
+
+// convert png images to scheme textures
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -131,13 +136,6 @@ unsigned char *png_load(char *fname)
   return buffer;
 }
 
-void usage(void)
-{
-  printf("usage: png2scm <png filename w/o suffix>\n");
-  printf("convert an alpha channel png to rgba texture scheme structure on standard out\n");
-  exit(1);
-}
-
 int fastlz_compress(const void*, int, void*);
 
 int compressed_len=0;
@@ -191,52 +189,88 @@ void printcompressedtexture(unsigned char *data,int type, int w, int h)
   free(clean_data);
 }
 
-int main(int argc, char *argv[])
+void png2scm(char *pngname)
 {
   char name[1024];memset(name,0,1024);
-  if (argc!=2) usage();
-  {
-    int i,j,mark=-1;
-    for (i=0;i<strlen(argv[1]);i++) {
-      if (argv[1][i]=='/') mark=i;
+  int i,j,mark=-1;
+  for (i=0;i<strlen(pngname);i++) {
+    if (pngname[i]=='/') mark=i;
+  }
+  strncpy(name,pngname+mark+1,strlen(pngname)-mark-4-1);
+  unsigned char *data=(unsigned char*)png_load(pngname), *data2;
+  int w2 = (int)pow(2.,ceil(log(w)/log(2.)));
+  int h2 = (int)pow(2.,ceil(log(h)/log(2.)));
+  data2=(unsigned char*)malloc(w2*h2*4);
+  memset(data2,0,w2*h2*4);
+  for (i=0;i<h;i++) {
+    memcpy(data2+4*i*w2,data+4*i*w,4*w);
+  }
+  if (type==TYPE_RGB) { 
+    int i=0, bail=0;
+    while (i++<w*h&&!bail) { 
+      if (data[4*i]!=data[4*i+1]) bail=1;
+      if (data[4*i+1]!=data[4*i+2]) bail=1;
     }
-    strncpy(name,argv[1]+mark+1,strlen(argv[1])-mark-4-1);
-    unsigned char *data=(unsigned char*)png_load(argv[1]), *data2;
-    int w2 = (int)pow(2.,ceil(log(w)/log(2.)));
-    int h2 = (int)pow(2.,ceil(log(h)/log(2.)));
-    data2=(unsigned char*)malloc(w2*h2*4);
-    memset(data2,0,w2*h2*4);
-    for (i=0;i<h;i++) {
-      memcpy(data2+4*i*w2,data+4*i*w,4*w);
+    if (!bail) type=TYPE_ALPHA;
+  }
+  if (data) {
+    char sane_name[1024];
+    for (i=0;i<strlen(name);i++) {
+      sane_name[i]='_';
+      if (name[i]>='a'&&name[i]<='z') sane_name[i]=name[i];
+      if (name[i]>='A'&&name[i]<='Z') sane_name[i]=name[i];
+      if (name[i]>='0'&&name[i]<='9') sane_name[i]=name[i];
     }
-    if (type==TYPE_RGB) { 
-      int i=0, bail=0;
-      while (i++<w*h&&!bail) { 
-        if (data[4*i]!=data[4*i+1]) bail=1;
-        if (data[4*i+1]!=data[4*i+2]) bail=1;
-      }
-      if (!bail) type=TYPE_ALPHA;
-    }
-    if (data) {
-      char sane_name[1024];
-      for (i=0;i<strlen(name);i++) {
-        sane_name[i]='_';
-        if (name[i]>='a'&&name[i]<='z') sane_name[i]=name[i];
-        if (name[i]>='A'&&name[i]<='Z') sane_name[i]=name[i];
-        if (name[i]>='0'&&name[i]<='9') sane_name[i]=name[i];
-      }
-      sane_name[strlen(name)]=0;
-      printf(";; Automatically generated. Do not edit.\n");
-      printf(";; png2scm ver 3.0. type=%i\n", type);
-      printf("(c-declare  #<<end-of-c-declare\n#include <string.h>\nstatic unsigned char %s_texture[]={\n",sane_name);
-      printcompressedtexture(data2,type,w2,h2);
-      printf("};\nend-of-c-declare\n)\n");
-      printf("(define %s.z  (let ((u8v (make-u8vector %i))) ((c-lambda (scheme-object int) void \"memcpy(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)),%s_texture,___arg2);\") u8v %i) u8v))\n", name, compressed_len+1, sane_name, compressed_len+1);
-      printf("(define %s.raw (glCoreTextureCreate %i %i (u8vector-decompress %s.z)))",name, w2 ,h2, name );
-      printf("(define %s.img (list %i %i %s.raw 0. 0. %f %f))\n", name,w,h,name,(double)w/(double)w2, (double)h/(double)h2);
-    } else {
-     fprintf(stderr,"ERROR!\n");
-    }
+    sane_name[strlen(name)]=0;
+    printf(";; Automatically generated. Do not edit.\n");
+    printf(";; png2scm ver 3.0. type=%i\n", type);
+    printf("(c-declare  #<<end-of-c-declare\n#include <string.h>\nstatic unsigned char %s_texture[]={\n",sane_name);
+    printcompressedtexture(data2,type,w2,h2);
+    printf("};\nend-of-c-declare\n)\n");
+    printf("(define %s.z  (let ((u8v (make-u8vector %i))) ((c-lambda (scheme-object int) void \"memcpy(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)),%s_texture,___arg2);\") u8v %i) u8v))\n", name, compressed_len+1, sane_name, compressed_len+1);
+    printf("(define %s.raw (glCoreTextureCreate %i %i (u8vector-decompress %s.z)))",name, w2 ,h2, name );
+    printf("(define %s.img (list %i %i %s.raw 0. 0. %f %f))\n", name,w,h,name,(double)w/(double)w2, (double)h/(double)h2);
+  } else {
+   fprintf(stderr,"ERROR!\n");
   }
 }
 
+end-of-c-declare
+)
+
+(define (pngscale srcfile dim tgtfile)
+  (let* ((fd (gdFileOpen srcfile "r"))
+         (gd (gdImageCreateFromPng fd))
+         (gd2 (gdImageCreateTrueColor dim dim))
+         (w0 (gdImageSX gd))
+         (h0 (gdImageSY gd))
+         (fd2 (gdFileOpen tgtfile "w")))
+    (gdImageAlphaBlending gd2 GD_FALSE)
+    (gdImageSaveAlpha gd2 GD_TRUE)
+    (gdImageCopyResampled gd2 gd 0 0 0 0 dim dim w0 h0)
+    (gdImagePng gd2 fd2)
+    (gdImageDestroy gd)
+    (gdImageDestroy gd2)
+    (gdFileClose fd)
+    (gdFileClose fd2)
+  ))
+
+(define (usage)
+  (for-each display (list   
+    "Usage: pngtool [scale srcfile dim tgtfile | png2scm pngfile]\n"
+    "scale: resample square png srcfile to dimxdim\n"
+    "png2scm: output scheme texture representation\n"))
+  (exit))
+
+(if (not (> (system-cmdargc) 1)) (usage))
+
+(cond 
+  ((and (= (system-cmdargc) 3)
+        (string=? (system-cmdargv 1) "png2scm"))
+     ((c-lambda (char-string) void "png2scm") (system-cmdargv 2)))
+  ((and (= (system-cmdargc) 5) 
+        (string=? (system-cmdargv 1) "scale"))
+     (pngscale (system-cmdargv 2) (string->number (system-cmdargv 3)) (system-cmdargv 4)))
+  (else (usage)))
+
+;; eof

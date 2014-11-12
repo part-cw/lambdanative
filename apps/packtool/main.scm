@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2014, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -36,7 +36,8 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-;; tool to package files for scheme inclusion
+;; lambdanative tool to package files for scheme inclusion
+
 (define srcfile "EMBED")
 (define tgtfile "embed.scm")
 
@@ -67,4 +68,5 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (loop (cdr files))))))
      (display " => embedded data is up to date, nothing to do.\n")))
 )
+
 ;; eof

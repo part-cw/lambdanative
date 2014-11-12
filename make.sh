@@ -573,7 +573,7 @@ make_artwork()
       tgt="$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-$s.png"
       if [ `isnewer $epssrc $tgt` = "yes" ]; then
         echo " => generating "$s"x"$s" pixmap.."
-        convert $pngsrc -resize $s"x"$s $tgt
+        veval "$SYS_HOSTPREFIX/bin/pngtool scale $pngsrc $s $tgt"
         assertfile $tgt
       fi
     done
@@ -594,7 +594,7 @@ make_texturedir()
       texture_srcs="$texture_srcs $scmfile"
       if [ `isnewer $imgfile $scmfile` = "yes" ]; then
         echo " => $imgfile.."
-        $SYS_HOSTPREFIX/bin/png2scm "$imgfile" > "$scmfile"
+        $SYS_HOSTPREFIX/bin/pngtool png2scm "$imgfile" > "$scmfile"
       fi
     done
   fi
@@ -648,7 +648,7 @@ make_fontfile()
         font_srcs="$font_srcs $scmfile"
         if [ `isnewer $srcfile $scmfile` = "yes" ]; then
            echo " => $name using glyph set $bits.."
-           $SYS_HOSTPREFIX/bin/ttffnt2scm $font "$bits" $sizes $name > $scmfile
+           veval "$SYS_HOSTPREFIX/bin/ttftool fnt2scm $font \"$bits\" $sizes $name > $scmfile"
            assertfile $scmfile
         fi
       fi
@@ -682,7 +682,7 @@ make_string_gd()
   cd $newpath
   srcfont=$1
   assertfile $srcfont
-  fontname=`$SYS_HOSTPREFIX/bin/ttfname $srcfont`
+  fontname=`$SYS_HOSTPREFIX/bin/ttftool fontname $srcfont`
   tgtfont="$fontname".ttf
   cp "$srcfont" "$tgtfont"
   fontpath=`pwd`"/"
@@ -690,9 +690,9 @@ make_string_gd()
   string="$3"
   name=$4
   scmfile="$5"
-  veval "$SYS_HOSTPREFIX/bin/stringfile \"$fontpath$tgtfont\" $size \"$string\" $name.png"
+  veval "$SYS_HOSTPREFIX/bin/ttftool stringfile \"$fontpath$tgtfont\" $size \"$string\" $name.png"
   assertfile $name.png
-  $SYS_HOSTPREFIX/bin/png2scm $name.png > $scmfile
+  $SYS_HOSTPREFIX/bin/pngtool png2scm $name.png > $scmfile
   cd $oldpath
   rm -rf $newpath
 }
@@ -704,7 +704,7 @@ make_string_latex()
   cd $newpath
   srcfont=$1
   assertfile $srcfont
-  fontname=`$SYS_HOSTPREFIX/bin/ttfname $srcfont`
+  fontname=`$SYS_HOSTPREFIX/bin/ttftool fontname $srcfont`
   tgtfont="$fontname".ttf
   cp "$srcfont" "$tgtfont"
   fontpath=`pwd`"/"
@@ -743,7 +743,7 @@ __EOF
   veval "gs -r300 -dNOPAUSE -sDEVICE=pnggray -dEPSCrop -sOutputFile=$name.png tmp.eps quit.ps"
   assertfile $name.png
   veval "convert $name.png  -bordercolor White -border 5x5 -negate -scale 25% $name.png"
-  $SYS_HOSTPREFIX/bin/png2scm $name.png > $scmfile
+  $SYS_HOSTPREFIX/bin/pngtool png2scm $name.png > $scmfile
   cd $oldpath
   rm -rf $newpath
 }
@@ -769,7 +769,7 @@ make_stringfile()
       string_srcs="$string_srcs $scmfile"
       if [ `isnewer $srcfile $scmfile` = "yes" ]; then
          echo " => $name.."
-         if [ -n "$USE_XETEX" ]; then
+         if [ -n "$USE_XETEX" ]; then 
            make_string_latex $font $size "$label" $name $scmfile $opt
          else
            make_string_gd $font $size "$label" $name $scmfile
@@ -1218,29 +1218,6 @@ make_libraries()
   setstate
 }
 
-make_tools()
-{
-  setstate TOOLS
-  echo "==> creating tools needed for $SYS_APPNAME.."
-  tools=`ls -1 tools`
-  here=`pwd`
-  for tool in $tools; do
-    tooldir=tools/$tool
-    assertfile $tooldir
-    cd $tooldir
-    ac_output build.sh
-    quiet=
-    if [ "X$SYS_VERBOSE" = "X" ]; then  
-      quiet="> /dev/null 2> /dev/null"
-    fi
-    veval "$SYS_ENV sh build.sh $quiet"
-    asserterror $?
-    rm build.sh
-    cd $here
-  done
-  setstate
-}
-
 make_info()
 {
   echo " => Application	: $SYS_APPNAME"
@@ -1318,25 +1295,31 @@ make_toolcheck()
 make_lntoolcheck()
 {
   echo "==> checking for lambdanative tools.."
-  if [ ! -x $SYS_HOSTPREFIX/bin/gsc ]; then
-    if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
-      echo " => not found, commence building lambdanative tools.."
-      cp config.cache tmp.config.cache
-      SYS_PATH=$SYS_PATH ./configure $SYS_APPNAME > /dev/null
+  rmifexists tmp.config.cache
+  lntools="pngtool packtool ttftool"
+  for tool in $lntools; do
+    if [ ! -x $SYS_HOSTPREFIX/bin/$tool$SYS_EXEFIX ] || [ `newerindir apps/$tool $SYS_HOSTPREFIX/bin/$tool$SYS_EXEFIX` = "yes" ]; then
+      echo " => building lambdanative tool $tool.."
+      if [ ! -f tmp.config.cache ]; then
+        cp config.cache tmp.config.cache
+      fi
+      SYS_PATH= ./configure $tool > /dev/null
       . ./config.cache
       rmifexists tmp.subst
       make_setup silent
-      for libname in $tool_libraries; do
-        make_library $libname
-      done
-      make_tools 
-      mv tmp.config.cache config.cache
-      . ./config.cache
-      rmifexists tmp.subst
-      make_setup
-      echo " => lambdanative tools build complete"
+      make_libraries     
+      make_payload
+      make_executable
+      make_install_tool
     fi
+  done 
+  if [ -f tmp.config.cache ]; then
+    mv tmp.config.cache config.cache
+    . ./config.cache
+    rmifexists tmp.subst
+    make_setup
   fi
+  vecho " => lambdanative tools complete"
 }
 
 ##############################
@@ -1430,9 +1413,6 @@ scrub)
   rm -rf tmp.?????? 2> /dev/null
   make_scrub
 ;;
-tools)
-  make_tools
-;;
 resources)
   make_artwork
   make_textures
@@ -1448,7 +1428,6 @@ explode)
 payload)
   rm -rf tmp.?????? 2> /dev/null
   make_libraries
-  make_tools
 if [ `is_gui_app` = "yes" ]; then
   make_artwork
   make_textures
@@ -1464,7 +1443,6 @@ executable)
 all)
   rm -rf tmp.?????? 2> /dev/null
   make_libraries
-  make_tools
 if [ `is_gui_app` = "yes" ]; then
   make_artwork
   make_textures
