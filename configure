@@ -37,32 +37,22 @@
 
 SYS_VERSION=`cat ./VERSION | sed '/^#/d'`
 
-locatefile()
-{
-  file=
-  dirs=$(echo "$SYS_PATH" | tr ":" "\n")
-  for dir in $dirs; do
-    tmp="$dir/$1"
-    if [ ! "X$tmp" = "X" ]; then
-      if [ -e $tmp ]; then
-        file=$tmp
-      fi
-    fi
-  done
-  echo $file
-}
-
-# Allow use of a permanently overlay by declaring $OVERLAY_PATH in SETUP file
-. ./SETUP
-if [ ! "X$OVERLAY_PATH" = "X" ]; then
-  SYS_PATH="$OVERLAY_PATH"
-fi
+. ./scripts/assert.sh
+. ./scripts/locate.sh 
 
 if [ "X$SYS_PATH" = "X" ]; then
   SYS_PATH=`pwd`
 else
-#  SYS_PATH="$SYS_PATH:"`pwd`
   SYS_PATH=`pwd`":$SYS_PATH"
+fi
+
+setupfile=`locatefile SETUP`
+assertfile "$setupfile"
+. "$setupfile"
+
+# Allow use of a permanently overlay by declaring $OVERLAY_PATH in SETUP file
+if [ ! "X$OVERLAY_PATH" = "X" ]; then
+  SYS_PATH="$SYS_PATH:$OVERLAY_PATH"
 fi
 
 if [ "X$1$2$3$4" = "X" ]; then
@@ -112,7 +102,7 @@ if [ "X$with_app" = "X" ]; then
 fi 
 
 # search for application
-appdir=`locatefile "apps/$with_app"`
+appdir=`locatedir "apps/$with_app"`
 if [ ! -d "$appdir" ]; then
   echo "ERROR: application $with_app not found"
   exit 1
