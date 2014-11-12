@@ -928,6 +928,16 @@ make_setup()
   fi
   SYS_ROOT=`pwd`
   SYS_PREFIXROOT=`pwd`"-cache"
+  if [ ! -d $SYS_PREFIXROOT ]; then
+    case $SYS_HOSTPLATFORM in
+      win32|linux*|openbsd)
+        SYS_PREFIXROOT=/var/cache/lambdanative
+      ;;
+      macosx) 
+        SYS_PREFIXROOT=$HOME/Library/Caches/lambdanative 
+      ;;
+    esac
+  fi
   SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM"
   SYS_HOSTPREFIX="$SYS_PREFIXROOT/$SYS_HOSTPLATFORM"
   SYS_GSC=$SYS_HOSTPREFIX/bin/gsc
