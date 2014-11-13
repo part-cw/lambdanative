@@ -886,11 +886,15 @@ make_setup()
   SYS_PREFIXROOT=`pwd`"-cache"
   if [ ! -d $SYS_PREFIXROOT ]; then
     case $SYS_HOSTPLATFORM in
-      win32|linux*|openbsd)
-        SYS_PREFIXROOT=/var/cache/lambdanative
-      ;;
       macosx) 
         SYS_PREFIXROOT=$HOME/Library/Caches/lambdanative 
+      ;;
+      *)
+        if [ "X$XDG_CACHE_HOME" = "X" ]; then
+          SYS_PREFIXROOT=$HOME/.cache/lambdanative
+        else
+          SYS_PREFIXROOT=$XDG_CACHE_HOME/lambdanative
+        fi
       ;;
     esac
   fi
