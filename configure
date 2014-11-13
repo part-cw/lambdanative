@@ -37,6 +37,7 @@
 
 SYS_VERSION=`cat ./VERSION | sed '/^#/d'`
 
+. ./scripts/tmpdir.sh
 . ./scripts/assert.sh
 . ./scripts/locate.sh 
 
@@ -149,7 +150,7 @@ SYS_MODE=$with_mode
 echo "==> configured to build $SYS_APPNAME for $SYS_PLATFORM in $SYS_MODE ${SYS_VERBOSE}mode"
 echo " == using source in $appdir"
 
-cat > config.cache << EOF
+cat > $SYS_TMPDIR/config.cache << EOF
 SYS_PATH=$SYS_PATH
 SYS_APPNAME=$SYS_APPNAME
 SYS_HOSTPLATFORM=$SYS_HOSTPLATFORM
@@ -160,6 +161,8 @@ SYS_VERSION=$SYS_VERSION
 EOF
 
 #cleanup state file
-if [ -f make.state ]; then
-  rm make.state
+if [ -f $SYS_TMPDIR/make.state ]; then
+  rm $SYS_TMPDIR/make.state
 fi
+
+#eof

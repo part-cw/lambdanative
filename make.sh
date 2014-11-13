@@ -37,16 +37,17 @@
 
 # application building, packaging and installation
 
-. ./config.cache
-
+. ./scripts/tmpdir.sh
 . ./scripts/assert.sh
 . ./scripts/locate.sh
+
+. $SYS_TMPDIR/config.cache
 
 setupfile=`locatefile SETUP`
 assertfile "$setupfile"
 . "$setupfile"
 
-evallog=`pwd`"/eval.log"
+evallog="$SYS_TMPDIR/eval.log"
 
 if [ -f $evallog ]; then
   rm $evallog
@@ -90,7 +91,7 @@ string_contains() {
 ###############################
 # keep track of state to reset partial builds
 
-statefile=`pwd`"/make.state"
+statefile="$SYS_TMPDIR/make.state"
 
 setstate()
 {
@@ -193,7 +194,7 @@ newerindir()
 #################################
 # autoconf-like parameter substitution
 
-ac_cache=`pwd`/tmp.subst
+ac_cache="$SYS_TMPDIR/tmp.subst"
 
 if [ -f $ac_cache ]; then
   rm $ac_cache
@@ -678,7 +679,7 @@ make_fonts()
 make_string_gd()
 {
   oldpath=`pwd`
-  newpath=`mktemp -d tmp.XXXXXX`
+  newpath=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
   cd $newpath
   srcfont=$1
   assertfile $srcfont
@@ -700,7 +701,7 @@ make_string_gd()
 make_string_latex()
 {
   oldpath=`pwd`
-  newpath=`mktemp -d tmp.XXXXXX`
+  newpath=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
   cd $newpath
   srcfont=$1
   assertfile $srcfont
@@ -883,6 +884,7 @@ make_setup()
     SYS_IOSCERT=$SYS_IOSDEVCERT
   fi
   SYS_ROOT=`pwd`
+  mkdir -p $SYS_TMPDIR
   SYS_PREFIXROOT=`pwd`"-cache"
   if [ ! -d $SYS_PREFIXROOT ]; then
     case $SYS_HOSTPLATFORM in
@@ -1299,17 +1301,21 @@ make_toolcheck()
 make_lntoolcheck()
 {
   echo "==> checking for lambdanative tools.."
-  rmifexists tmp.config.cache
+  rmifexists $SYS_TMPDIR/tmp.config.cache
   lntools="pngtool packtool ttftool"
   for tool in $lntools; do
     if [ ! -x $SYS_HOSTPREFIX/bin/$tool$SYS_EXEFIX ] || [ `newerindir apps/$tool $SYS_HOSTPREFIX/bin/$tool$SYS_EXEFIX` = "yes" ]; then
       echo " => building lambdanative tool $tool.."
-      if [ ! -f tmp.config.cache ]; then
-        cp config.cache tmp.config.cache
+      if [ ! -f $SYS_TMPDIR/tmp.config.cache ]; then
+        cp $SYS_TMPDIR/config.cache $SYS_TMPDIR/tmp.config.cache
       fi
-      SYS_PATH= ./configure $tool > /dev/null
-      . ./config.cache
-      rmifexists tmp.subst
+      lntool_verbose=
+      if [ ! "X$SYS_VERBOSE" = "X" ]; then
+        lntool_verbose=verbose
+      fi
+      SYS_PATH= ./configure $tool $lntool_verbose > /dev/null
+      . $SYS_TMPDIR/config.cache
+      rmifexists $SYS_TMPDIR/tmp.subst
       make_setup silent
       make_libraries     
       make_payload
@@ -1317,10 +1323,10 @@ make_lntoolcheck()
       make_install_tool
     fi
   done 
-  if [ -f tmp.config.cache ]; then
-    mv tmp.config.cache config.cache
-    . ./config.cache
-    rmifexists tmp.subst
+  if [ -f $SYS_TMPDIR/tmp.config.cache ]; then
+    mv $SYS_TMPDIR/tmp.config.cache $SYS_TMPDIR/config.cache
+    . $SYS_TMPDIR/config.cache
+    rmifexists $SYS_TMPDIR/tmp.subst
     make_setup
   fi
   vecho " => lambdanative tools complete"
@@ -1342,7 +1348,7 @@ make_gcc()
   fi
   assertfile $tgt
   oldpath=`pwd`
-  newpath=`mktemp -d tmp.XXXXXX`
+  newpath=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
   cd $newpath
   tar -zxf $tgt
   cd *
@@ -1396,7 +1402,7 @@ fi
 if [ ! "X$cfg_version" = "X$cur_version" ]; then
   echo " ** NEW FRAMEWORK VERSION DETECTED - scrubbing cache"
   make_scrub
-  rm config.cache
+  rmifexists $SYS_TMPDIR/config.cache
   echo " ** FRAMEWORK VERSION CHANGE - please rerun configure for the local host"
   exit 1
 fi
@@ -1410,11 +1416,11 @@ fi
 
 case "$make_argument" in
 clean) 
-  rm -rf tmp.?????? 2> /dev/null
+  rm -rf $SYS_TMPDIR/tmp.?????? 2> /dev/null
   make_clean
 ;;
 scrub)
-  rm -rf tmp.?????? 2> /dev/null
+  rm -rf $SYS_TMPDIR/tmp.?????? 2> /dev/null
   make_scrub
 ;;
 resources)
@@ -1430,7 +1436,7 @@ explode)
   explode_library $2
 ;;
 payload)
-  rm -rf tmp.?????? 2> /dev/null
+  rm -rf $SYS_TMPDIR/tmp.?????? 2> /dev/null
   make_libraries
 if [ `is_gui_app` = "yes" ]; then
   make_artwork
@@ -1445,7 +1451,7 @@ executable)
   make_executable
 ;;
 all)
-  rm -rf tmp.?????? 2> /dev/null
+  rm -rf $SYS_TMPDIR/tmp.?????? 2> /dev/null
   make_libraries
 if [ `is_gui_app` = "yes" ]; then
   make_artwork
@@ -1478,13 +1484,8 @@ gcc)
 ;;
 esac
 
-if [ -f $evallog ]; then
-  rm $evallog
-fi
-
-if [ -f $ac_cache ]; then
-  rm $ac_cache
-fi
+rmifexists $evallog
+rmifexists $ac_cache
 
 # all is well if we got here, so clear the state cache
 resetstate

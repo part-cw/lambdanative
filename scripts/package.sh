@@ -1,6 +1,8 @@
 
 # procedures to handle download and compilation of packages
 
+tmp_install=$SYS_TMPDIR/tmp_install
+
 package_valid()
 {
   pkg_valid_file="$1"
@@ -52,7 +54,7 @@ package_unpack()
 package_patch()
 {
   echo " => patching source..."
-  pkg_patches=`ls -1 ../../*.patch 2> /dev/null`
+  pkg_patches=`ls -1 ../*.patch 2> /dev/null`
   for p in $pkg_patches; do
     if [ ! "X$p" = "X" ] && [ -f $p ]; then
       echo " => applying patches from $p"
@@ -67,13 +69,13 @@ package_download_git()
   pkg_git_url=$1
   pkg_git_hash=$2
   pkg_git_file="$SYS_PREFIXROOT/packages/"`basename $pkg_git_url`"-$pkg_git_hash.tgz"
-  if [ -d tmp_install ]; then
-    rm -rf tmp_install
+  if [ -d $tmp_install ]; then
+    rm -rf $tmp_install
   fi
-  mkdir tmp_install
-  assertfile tmp_install
+  mkdir $tmp_install
+  assertfile $tmp_install
   pkg_here=`pwd`
-  cd tmp_install
+  cd $tmp_install
   if [ ! -f $pkg_git_file ]; then
     echo " => cloning ${pkg_git_url}.."
     veval "git clone $pkg_git_url"
@@ -95,6 +97,7 @@ package_download_git()
     asserterror $? "package extraction failed [$pkg_git_file]"
     cd *
   fi
+  cp $pkg_here/*.patch $tmp_install 2> /dev/null
 }
 
 package_download_ball()
@@ -133,16 +136,17 @@ package_download_ball()
     fi
   fi
   assertfile $pkg
-  if [ -d tmp_install ]; then
-    rm -rf tmp_install
+  if [ -d $tmp_install ]; then
+    rm -rf $tmp_install
   fi
-  mkdir tmp_install
-  assertfile tmp_install
+  mkdir $tmp_install
+  assertfile $tmp_install
   pkg_here=`pwd`
-  cd tmp_install
+  cd $tmp_install
   package_unpack $pkg
   asserterror $? "package extraction failed [$pkg]"
   cd *
+  cp $pkg_here/*.patch $tmp_install 2> /dev/null
 }
 
 package_download()
@@ -211,8 +215,8 @@ package_cleanup()
 {
   echo " => cleaning up.."
   cd $pkg_here
-  if [ -d tmp_install ]; then
-    rm -rf tmp_install
+  if [ -d $tmp_install ]; then
+    rm -rf $tmp_install
   fi
 }
 
