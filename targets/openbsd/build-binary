@@ -37,7 +37,7 @@
 
 rmifexists "$apptgtdir"
 mkdir "$apptgtdir"
-tmpdir=`mktemp -d tmp.XXXXXX`
+tmpdir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 if [ `is_gui_app` = yes ]; then
   cp loaders/x11/x11_microgl.c $tmpdir 
 fi

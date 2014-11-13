@@ -1,6 +1,6 @@
 #!/bin/sh
 # LambdaNative - a cross-platform Scheme framework
-# Copyright (c) 2009-2013, University of British Columbia
+# Copyright (c) 2009-2014, University of British Columbia
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or
@@ -37,7 +37,7 @@
 
 rmifexists "$apptgtdir"
 mkdir "$apptgtdir"
-tmpdir=`mktemp -d tmp.XXXXXX`
+tmpdir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 if [ `is_gui_app` = yes ]; then
   cp loaders/x11/x11_microgl.c $tmpdir 
 fi

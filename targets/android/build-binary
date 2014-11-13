@@ -62,9 +62,7 @@ done
 android_subst `locatedir apps/$SYS_APPNAME`
 
 echo " => creating android project.."
-tmpdir=`mktemp -d tmp.XXXXXX`
-tmpdir=`pwd`"/$tmpdir"
-cd $here
+tmpdir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 ANDROIDSDKTARGET=`$ANDROIDSDK/tools/android list targets | grep "^id:" | grep "android-$ANDROIDAPI" | cut -f 2 -d " "`
 if [ "X$ANDROIDSDKTARGET" = "X" ]; then
   echo "ERROR: API $ANDROIDAPI not a target."
@@ -122,15 +120,13 @@ echo " => transferring java hook.."
 ac_output loaders/android/bootstrap.java.in $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
 
 echo " => preparing manifest.."
-ac_output loaders/android/AndroidManifest.xml.in tmp.xml
-cat tmp.xml | sed '/^#/d' > "$tmpdir/AndroidManifest.xml"
-rm tmp.xml
+ac_output loaders/android/AndroidManifest.xml.in $SYS_TMPDIR/tmp.xml
+cat $SYS_TMPDIR/tmp.xml | sed '/^#/d' > "$tmpdir/AndroidManifest.xml"
+rmifexists $SYS_TMPDIR/tmp.xml
 
 
 echo " => creating payload module.."
-cd $here
-tmpmoddir=`mktemp -d tmp.XXXXXX`
-tmpmoddir=`pwd`"/$tmpmoddir"
+tmpmoddir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 mkdir $tmpmoddir/libpayload
 cp loaders/android/Android.mk.module $tmpmoddir/libpayload/Android.mk
 cp $SYS_PREFIX/lib/libpayload.a $tmpmoddir/libpayload
@@ -198,14 +194,14 @@ asserterror $?
 
 echo " => zipaligning.."
 assertfile $fnlfile
-mv $fnlfile tmp.apk
+mv $fnlfile $SYS_TMPDIR/tmp.apk
 if [ -x $ANDROIDSDK/tools/zipalign ]; then
-  $ANDROIDSDK/tools/zipalign -f 4 tmp.apk $fnlfile
+  $ANDROIDSDK/tools/zipalign -f 4 $SYS_TMPDIR/tmp.apk $fnlfile
 else
-  `ls -1 $ANDROIDSDK/build-tools/*/zipalign | tail -n 1` -f 4 tmp.apk $fnlfile
+  `ls -1 $ANDROIDSDK/build-tools/*/zipalign | tail -n 1` -f 4 $SYS_TMPDIR/tmp.apk $fnlfile
 fi
 asserterror $?
-rmifexists tmp.apk
+rmifexists $SYS_TMPDIR/tmp.apk
 
 echo " => cleaning up.."
 rm -rf $tmpmoddir

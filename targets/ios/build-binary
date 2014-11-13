@@ -52,9 +52,7 @@ ios_subst `locatedir apps/$SYS_APPNAME`
 
 tgtdir="$SYS_PREFIX/$SYS_APPNAME$SYS_APPFIX"
 srcdir=`pwd`"/loaders/ios"
-cmakedir=`mktemp -d tmp.XXXXXX`
-cmakedir=`pwd`"/$cmakedir"
-cd $here
+cmakedir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 ac_output $srcdir/CMakeLists.txt $cmakedir/CMakeLists.txt
 ac_output $srcdir/objc_additions.m $cmakedir/objc_additions.m
 ac_output $srcdir/objcpp_additions.mm $cmakedir/objcpp_additions.mm
@@ -82,9 +80,9 @@ make_sounds make_soundfile_ios
 
 echo " => preparing plist.."
 configsrc=loaders/ios/Info.plist.in
-ac_output $configsrc tmp.xml
-assertfile tmp.xml
-cat tmp.xml | sed '/^#/d' > "$SYS_PREFIXROOT/build/$SYS_APPNAME/Info.plist"
+ac_output $configsrc $SYS_TMPDIR/tmp.xml
+assertfile $SYS_TMPDIR/tmp.xml
+cat $SYS_TMPDIR/tmp.xml | sed '/^#/d' > "$SYS_PREFIXROOT/build/$SYS_APPNAME/Info.plist"
 cp "$IOSSDK/ResourceRules.plist" "$SYS_PREFIXROOT/build/$SYS_APPNAME/ResourceRules.plist"
 
 echo " => preparing custom config.."
@@ -93,9 +91,7 @@ ac_output loaders/ios/config_custom.h.in "$cmakedir/config_custom.h"
 assertfile "$cmakedir/config_custom.h"
 
 echo " => building loader.."
-xcodedir=`mktemp -d tmp.XXXXXX`
-xcodedir=`pwd`"/$xcodedir"
-cd $here
+xcodedir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 cd $xcodedir
 veval "cmake -GXcode $cmakedir"
 asserterror $?
