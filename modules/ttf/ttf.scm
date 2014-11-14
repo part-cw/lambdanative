@@ -967,6 +967,7 @@ static int ln_atlas_make(char *fname, int *pointlist, int *glyphlist, char *comp
   return 1; // texture capacity exceeded
 success:
   if (strlen(compiletag)) ln_atlas_try(sizes[i],sizes[j],fname,pointlist, compiletag);
+  fflush(stdout);
   return 0;
 }
 
