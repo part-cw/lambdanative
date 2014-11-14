@@ -233,6 +233,7 @@ void png2scm(char *pngname)
   } else {
    fprintf(stderr,"ERROR!\n");
   }
+  fflush(stdout);
 }
 
 end-of-c-declare
