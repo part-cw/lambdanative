@@ -534,47 +534,56 @@ make_artwork()
 {
   setstate ARTWORK
   echo "==> creating artwork needed for $SYS_APPNAME.."
-  objsrc=`locatefile "apps/$SYS_APPNAME/artwork.obj" silent`
-  epssrc=`locatefile "apps/$SYS_APPNAME/artwork.eps" silent`
-  if [ "X$epssrc" = "X" ]; then
-    if [ "X$objsrc" = "X" ]; then
-      echo "ERROR: artwork not found"
-      exit 1
-    fi
-    assertfile $objsrc
-    epssrc=`echo $objsrc | sed 's/obj$/eps/'`
-  fi
-  if [ `isnewer $objsrc $epssrc` = "yes" ]; then
-    if [ ! "X$objsrc" = "X" ]; then
-      assertfile $objsrc
-      echo " => generating eps artwork.."
-      tgif -print -stdout -eps -color $objsrc > $epssrc
-    fi
-  fi
-  assertfile $epssrc
   mkdir -p "$SYS_PREFIX/build"
   mkdir -p "$SYS_PREFIXROOT/build/$SYS_APPNAME"
-  pngsrc="$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork.png"
-  tmpfile="$SYS_PREFIXROOT/build/$SYS_APPNAME/tmp.png"
-  if [ `isnewer $epssrc $pngsrc` = "yes" ]; then
-    echo " => generating master pixmap.."
-    gspostfix=
-    if [ $SYS_HOSTPLATFORM = win32 ]; then
-      gspostfix=win32
+  pngtgt="$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork.png"
+  objsrc=`locatefile "apps/$SYS_APPNAME/artwork.obj" silent`
+  epssrc=`locatefile "apps/$SYS_APPNAME/artwork.eps" silent`
+  pngsrc=`locatefile "apps/$SYS_APPNAME/artwork.png" silent`
+  if [ "X$pngsrc" = "X" ]; then
+    if [ "X$epssrc" = "X" ]; then
+      if [ "X$objsrc" = "X" ]; then
+        echo "ERROR: artwork not found"
+        exit 1
+      fi
+      assertfile $objsrc
+      epssrc=`echo $objsrc | sed 's/obj$/eps/'`
     fi
-    veval "gs${gspostfix} -r600 -dNOPAUSE -sDEVICE=png16m -dEPSCrop -sOutputFile=$tmpfile $epssrc quit.ps"
-    assertfile $tmpfile
-    veval "convert $tmpfile -trim -transparent \"#00ff00\" $pngsrc"
-    rm $tmpfile
+    if [ `isnewer $objsrc $epssrc` = "yes" ]; then
+      if [ ! "X$objsrc" = "X" ]; then
+        assertfile $objsrc
+        echo " => generating eps artwork.."
+        asserttool tgif
+        tgif -print -stdout -eps -color $objsrc > $epssrc
+      fi
+    fi
+    assertfile $epssrc
+    tmpfile="$SYS_PREFIXROOT/build/$SYS_APPNAME/tmp.png"
+    if [ `isnewer $epssrc $pngsrc` = "yes" ]; then
+      echo " => generating master pixmap.."
+      gspostfix=
+      if [ $SYS_HOSTPLATFORM = win32 ]; then
+        gspostfix=win32
+      fi
+      asserttool gs${gspostfix}
+      veval "gs${gspostfix} -r600 -dNOPAUSE -sDEVICE=png16m -dEPSCrop -sOutputFile=$tmpfile $epssrc quit.ps"
+      assertfile $tmpfile
+      asserttool convert
+      veval "convert $tmpfile -trim -transparent \"#00ff00\" $pngtgt"
+      rm $tmpfile
+    fi
+  else
+    assertfile $pngsrc
+    cp $pngsrc $pngtgt
   fi
-  assertfile $pngsrc
+  assertfile $pngtgt
   if [ -s targets/$SYS_PLATFORM/icon-sizes ]; then
     . targets/$SYS_PLATFORM/icon-sizes
     for s in $sizes; do
       tgt="$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-$s.png"
       if [ `isnewer $epssrc $tgt` = "yes" ]; then
         echo " => generating "$s"x"$s" pixmap.."
-        veval "$SYS_HOSTPREFIX/bin/pngtool scale $pngsrc $s $tgt"
+        veval "$SYS_HOSTPREFIX/bin/pngtool scale $pngtgt $s $tgt"
         assertfile $tgt
       fi
     done
@@ -734,15 +743,24 @@ __EOF
   veval "xelatex tmp.tex"
   assertfile tmp.pdf
   if [ "X"`which pdftops 2> /dev/null` = "X" ]; then
+    asserttool pdf2ps
     veval "pdf2ps tmp.pdf"
   else
+    asserttool pdftops
     veval "pdftops tmp.pdf"
   fi
   assertfile tmp.ps
+  asserttool ps2eps
   veval "ps2eps -B -C tmp.ps"
   assertfile tmp.eps
-  veval "gs -r300 -dNOPAUSE -sDEVICE=pnggray -dEPSCrop -sOutputFile=$name.png tmp.eps quit.ps"
+  gspostfix=
+  if [ $SYS_HOSTPLATFORM = win32 ]; then
+    gspostfix=win32
+  fi
+  asserttool gs${gspostfix}
+  veval "gs${gspostfix} -r300 -dNOPAUSE -sDEVICE=pnggray -dEPSCrop -sOutputFile=$name.png tmp.eps quit.ps"
   assertfile $name.png
+  asserttool convert
   veval "convert $name.png  -bordercolor White -border 5x5 -negate -scale 25% $name.png"
   $SYS_HOSTPREFIX/bin/pngtool png2scm $name.png > $scmfile
   cd $oldpath
@@ -1239,8 +1257,9 @@ make_info()
 make_xelatexcheck()
 {
   vecho " => checking for working xelatex.."
-  chkdir=check.xelatex
+  chkdir=$SYS_TMPDIR/check.xelatex
   mkdir -p $chkdir
+  here_xelatex=`pwd`
   cd $chkdir
 cat > check.tex << END
 \batchmode
@@ -1254,12 +1273,13 @@ END
   veval "xelatex check.tex"
   veval "cat check.log"
   if [ ! -e "check.pdf" ]; then
-    echo "** ERROR: xelatex environment is not complete. Please install necessary XeTeX packages."
+    echo "** WARNING: xelatex environment is not complete. Consider installing necessary XeTeX packages."
     echo " => Using GD to render strings"
+    USE_XETEX=
   else
     USE_XETEX=1
   fi
-  cd ..
+  cd $here_xelatex
   rm -rf $chkdir
 }
 
@@ -1281,14 +1301,6 @@ make_toolcheck()
   # language 
   asserttool autoconf make gcc patch
   if [ `is_gui_app` = "yes" ]; then
-    # graphics 
-    if [ $SYS_HOSTPLATFORM = win32 ]; then
-      asserttool gswin32
-    else 
-      asserttool gs 
-    fi
-    asserttool convert
-    # test if xelatex works
     make_xelatexcheck
   fi
   # platform specific tools
