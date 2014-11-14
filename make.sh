@@ -591,8 +591,6 @@ make_artwork()
   setstate
 }
 
-texture_srcs=
-
 make_texturedir()
 {
   srcdir=$1
@@ -628,8 +626,6 @@ make_textures()
   done
   setstate
 }
-
-font_srcs=
 
 make_fontfile()
 {
@@ -767,14 +763,12 @@ __EOF
   rm -rf $newpath
 }
 
-string_srcs=
-
 make_stringfile()
 {
   srcfile=$1
   prefix=$2
-  cat $srcfile | sed '/^#/d' > tmp.STRINGS
-  echo >> tmp.STRINGS
+  cat $srcfile | sed '/^#/d' > $SYS_TMPDIR/tmp.STRINGS
+  echo >> $SYS_TMPDIR/tmp.STRINGS
   while read -r fline; do
     if [ "$fline" ]; then 
       fontname=`eval "getparam 1 $fline"`
@@ -796,8 +790,8 @@ make_stringfile()
          assertfile $scmfile
       fi
     fi
-  done < tmp.STRINGS
-  rm tmp.STRINGS
+  done < $SYS_TMPDIR/tmp.STRINGS
+  rm $SYS_TMPDIR/tmp.STRINGS
 }
 
 make_strings()
@@ -1051,6 +1045,9 @@ make_setup()
   if [ "$SYS_HOSTPLATFORM" = "$SYS_PLATFORM" ]; then
     tool_libraries="libgd libgambc"
   fi
+  texture_srcs=
+  string_srcs=
+  font_srcs=
   setstate
 }
 
@@ -1380,6 +1377,118 @@ make_gcc()
 }
 
 ##############################
+# smoke test
+
+smoke_result()
+{
+   echo ">> $1 $2"
+   echo "$1 $2" >> $SYS_TMPDIR/smoke.result
+}
+
+smoke_one() 
+{
+  smoker=$1
+  echo "SMOKING $smoker.."
+  rmifexists $SYS_TMPDIR/tmp.subst
+  rmifexists $SYS_TMPDIR/config.cache
+  ./configure $smoker > /dev/null
+  if [ ! "X$?" = "X0" ]; then
+    smoke_result $smoker "**FAIL"
+    echo "ERROR: configure failed"
+    return
+  fi
+  if [ ! -f $SYS_TMPDIR/config.cache ]; then
+    smoke_result $smoker "**FAIL"
+    echo "ERROR: configure failed"
+    return
+  fi
+  . $SYS_TMPDIR/config.cache
+  echo "=> Configured $SYS_APPNAME for platform $SYS_PLATFORM."
+  echo "=> Building $SYS_APPNAME.."
+  make_setup silent
+  make_libraries     
+  if [ `is_gui_app` = "yes" ]; then
+    make_artwork
+    make_textures
+    make_fonts
+    make_strings
+  fi
+  update_packfile
+  make_payload
+  make_executable
+  result=$?
+  if [ ! "X$result" = "X0" ]; then
+     smoke_result $smoker "**FAIL"
+     echo "ERROR: make failed"
+     return
+  fi  
+  appdir=`ls -1d $SYS_HOSTPREFIX/${SYS_APPNAME}${SYS_APPFIX}`
+  appexe=`ls -1 $SYS_HOSTPREFIX/${SYS_APPNAME}${SYS_APPFIX}/${SYS_APPNAME}*`
+  appexelocal="./"`basename $appexe`
+  if [ "X$appexe" = "X" ] || [ ! -x "$appexe" ]; then
+     smoke_result $smoker "**FAIL"
+     echo "ERROR: make failed"
+     return
+  fi
+  echo "=> Launching $SYS_APPNAME.."
+  (
+    sleep 2
+    stillalive=`ps x | expand | sed 's/^ [ ]*//g' | grep "/${SYS_APPNAME}" | cut -f 1 -d " "`
+    if [ ! "X$stillalive" = "X" ]; then
+      for p in $stillalive; do
+        kill -KILL $p > /dev/null 2> /dev/null
+      done
+    fi
+    ) &
+  here=`pwd`
+  cd "$appdir"
+  $appexelocal
+  res=$?
+  cd $here
+  if [ $res = 0 ] || [ $res = 137 ]; then
+     smoke_result $smoker "PASS"
+  else
+     echo "ERROR: launch failed"
+     smoke_result $smoker "**FAIL"
+  fi
+}
+
+make_smoke()
+{
+  echo "SMOKE TESTING..."
+  echo "------------------"
+  if [ -f $SYS_TMPDIR/config.cache ]; then
+    cp $SYS_TMPDIR/config.cache $SYS_TMPDIR/smoke.config.cache
+  else
+    rmifexists $SYS_TMPDIR/smoke.config.cache
+  fi
+  rmifexists $SYS_TMPDIR/smoke.result
+  touch $SYS_TMPDIR/smoke.result
+  apps=`ls -1d apps/* | sed 's:apps/::'`
+  for smoke_app in $apps; do
+    smoke_one $smoke_app
+  done
+  echo "------------------"
+  cat $SYS_TMPDIR/smoke.result
+  failed=`cat $SYS_TMPDIR/smoke.result | sed '/PASS/d' | wc -l | expand | sed 's/^ [ ]*//g'`
+  passed=`cat $SYS_TMPDIR/smoke.result | sed '/FAIL/d' | wc -l | expand | sed 's/^ [ ]*//g'`
+  count=`expr $failed + $passed`
+  echo "------------------"
+  echo "SMOKE TEST COMPLETE"
+  echo "SMOKED $count apps of which $failed failed"
+  if [ "X$failed" = "X0" ]; then
+  echo "++ Success: No Smokers"
+  fi
+  echo "All done."
+  echo "------------------"
+  rmifexists $SYS_TMPDIR/smoke.result
+  if [ -f $SYS_TMPDIR/smoke.config.cache ]; then
+    mv $SYS_TMPDIR/smoke.config.cache $SYS_TMPDIR/config.cache
+  fi
+  stty sane
+}
+
+##############################
 
 usage()
 {
@@ -1490,6 +1599,9 @@ info)
 ;;
 gcc)
   make_gcc
+;;
+smoke)
+  make_smoke
 ;;
 *)
   usage
