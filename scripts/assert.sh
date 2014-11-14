@@ -43,6 +43,18 @@ asserterror()
   fi
 }
 
+havetool()
+{
+  havetool_result=yes
+  for tool in $@; do
+    tool_location=`which $tool 2> /dev/null`
+    if [ "X$tool_location" = "X" ]; then
+      havetool_result=no
+    fi
+  done
+  echo $havetool_result
+}
+  
 asserttool()
 {
   for tool in $@; do

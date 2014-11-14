@@ -739,24 +739,19 @@ __EOF
   veval "xelatex tmp.tex"
   assertfile tmp.pdf
   if [ "X"`which pdftops 2> /dev/null` = "X" ]; then
-    asserttool pdf2ps
-    veval "pdf2ps tmp.pdf"
+    veval "pdf2ps tmp.pdf tmp.ps"
   else
-    asserttool pdftops
     veval "pdftops tmp.pdf"
   fi
   assertfile tmp.ps
-  asserttool ps2eps
   veval "ps2eps -B -C tmp.ps"
   assertfile tmp.eps
   gspostfix=
   if [ $SYS_HOSTPLATFORM = win32 ]; then
     gspostfix=win32
   fi
-  asserttool gs${gspostfix}
   veval "gs${gspostfix} -r300 -dNOPAUSE -sDEVICE=pnggray -dEPSCrop -sOutputFile=$name.png tmp.eps quit.ps"
   assertfile $name.png
-  asserttool convert
   veval "convert $name.png  -bordercolor White -border 5x5 -negate -scale 25% $name.png"
   $SYS_HOSTPREFIX/bin/pngtool png2scm $name.png > $scmfile
   cd $oldpath
@@ -782,7 +777,7 @@ make_stringfile()
       string_srcs="$string_srcs $scmfile"
       if [ `isnewer $srcfile $scmfile` = "yes" ]; then
          echo " => $name.."
-         if [ -n "$USE_XETEX" ]; then 
+         if [ $USE_XETEX = yes ]; then 
            make_string_latex $font $size "$label" $name $scmfile $opt
          else
            make_string_gd $font $size "$label" $name $scmfile
@@ -1254,6 +1249,11 @@ make_info()
 make_xelatexcheck()
 {
   vecho " => checking for working xelatex.."
+  USE_XETEX=no
+  gspostfix=
+  if [ $SYS_HOSTPLATFORM = win32 ]; then
+    gspostfix=win32
+  fi
   chkdir=$SYS_TMPDIR/check.xelatex
   mkdir -p $chkdir
   here_xelatex=`pwd`
@@ -1271,13 +1271,20 @@ END
   veval "cat check.log"
   if [ ! -e "check.pdf" ]; then
     echo "** WARNING: xelatex environment is not complete. Consider installing necessary XeTeX packages."
-    echo " => Using GD to render strings"
-    USE_XETEX=
   else
-    USE_XETEX=1
+    if [ `havetool pdf2ps` = yes ] || [ `havetool pdftops` = yes ]; then
+      if [ `havetool ps2eps convert gs${gspostfix}` = yes ]; then
+        USE_XETEX=yes
+      else
+        echo "** WARNING: xelatex rendering needs ps2eps, convert, gs${gspostfix}, and pdf2ps/pdftops, some of which are missing."
+      fi
+    fi
   fi
   cd $here_xelatex
   rm -rf $chkdir
+  if [ $USE_XETEX = no ]; then
+    echo " ** Using GD to render strings"
+  fi
 }
 
 make_libarycheck(){
