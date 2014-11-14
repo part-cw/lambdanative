@@ -66,7 +66,11 @@ package_patch()
 
 package_download_git()
 {
-  pkg_git_url=$1
+  if [ $SYS_HOSTPLATFORM = win32 ]; then
+    pkg_git_url=`echo "$1" | sed 's/^git:/http:/'`
+  else 
+    pkg_git_url=$1
+  fi
   pkg_git_hash=$2
   pkg_git_file="$SYS_PREFIXROOT/packages/"`basename $pkg_git_url`"-$pkg_git_hash.tgz"
   if [ -d $tmp_install ]; then
