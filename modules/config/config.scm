@@ -78,7 +78,7 @@ static void find_directories()
   int len=readlink("/proc/self/exe", buf, 1024);
   if (len>0) {
     int i;
-    for (i=len;i>0;i--){
+    for (i=len-1;i>0;i--){
       if (buf[i]=='/') {
         buf[i]='\0';
         break;
@@ -93,7 +93,7 @@ static void find_directories()
   int len=GetModuleFileName(NULL,buf,1024);
   if (len>0) {
     int i;
-    for (i=len;i>0;i--){
+    for (i=len-1;i>0;i--){
       if (buf[i]=='\\'){
         buf[i]='\0';
         break;
