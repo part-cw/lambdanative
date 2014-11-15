@@ -35,25 +35,16 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-if [ $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
+wants_gl=`echo "$modules" | grep ln_glcore`
+if [ $SYS_PLATFORM = $SYS_HOSTPLATFORM ] && [ ! "X$wants_gl" = "X" ]; then
   vecho " => checking for sane localhost OpenGL setup.."
   echo "#include <GL/gl.h>" > $SYS_TMPDIR/gltest.c
   echo "int main() { glOrtho(0,0,0,0,0,0); }" >> $SYS_TMPDIR/gltest.c
   gcc -Werror -o $SYS_TMPDIR/gltest $SYS_TMPDIR/gltest.c -I/usr/X11/include -I/usr/X11R6/include -L/usr/X11/lib -L/usr/X11R6/lib -lGL  > /dev/null 2> /dev/null
-  asserterror $? "OpenGL headers are missing?"
-fi
-rmifexists $SYS_TMPDIR/gltest
-rmifexists $SYS_TMPDIR/gltest.c
-
-wants_pa=`echo "$libraries" | grep libportaudio`
-if [ ! "X$wants_pa" = "X" ]; then
-  vecho " => checking for portaudio.."
-  echo "#include <portaudio.h>" > $SYS_TMPDIR/patest.c
-  echo "int main() { Pa_GetDefaultInputDevice(); }" >> $SYS_TMPDIR/patest.c
-  gcc -Werror -o $SYS_TMPDIR/patest $SYS_TMPDIR/patest.c -I/usr/local/include -L/usr/local/lib -lportaudio 
-  asserterror $? "portaudio is not installed? Please install patched version from ports."
-  rmifexists $SYS_TMPDIR/patest
-  rmifexists $SYS_TMPDIR/patest.c
+  gl_res=$?
+  rmifexists $SYS_TMPDIR/gltest
+  rmifexists $SYS_TMPDIR/gltest.c
+  asserterror $gl_res "OpenGL headers are missing?"
 fi
 
 #eof

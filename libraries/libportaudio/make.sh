@@ -1,25 +1,4 @@
 
-# check for a local library
-# this allows us to pull in a patched version (on openbsd in particular)
-localinstall=no
-if [ $SYS_PLATFORM = openbsd ]; then
-  echo "==> checking for local installed library.."
-  for dir in /usr /usr/local ; do
-    if [ -f $dir/lib/libportaudio.a ]; then
-      if [ -f $dir/include/portaudio.h ]; then
-        echo " => using portaudio from $dir"
-        cp $dir/lib/libportaudio.a $SYS_PREFIX/lib
-        cp $dir/include/portaudio.h $SYS_PREFIX/include
-        localinstall=yes
-      fi
-    fi 
-  done
-fi
-if [ "$localinstall" = "yes" ]; then
-  cd $here
-  continue # continues the libary building loop here
-fi
-
 PKGURL=http://www.portaudio.com/archives/pa_stable_v19_20140130.tgz
 PKGHASH=526a7955de59016a06680ac24209ecb6ce05527d
 
@@ -53,7 +32,11 @@ if [ "$SYS_PLATFORM" = "$SYS_HOSTPLATFORM" ]; then
   EXTRACONF=
 fi
 
-package_configure $EXTRACONF --enable-static --disable-shared --with-jack=no
+if [ $SYS_HOSTPLATFORM = openbsd ]; then
+  EXTRACONF="--without-alsa --without-oss"
+fi
+
+package_configure $EXTRACONF --enable-static --disable-shared --without-jack
 
 mv Makefile tmp
 cat tmp | sed "s/-arch i386//g;s/-arch x86_64//;s/Werror/Wall/g" > Makefile
