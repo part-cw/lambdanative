@@ -1047,6 +1047,7 @@ static char *ln_font_name(char *fname)
   FT_Library library=0;
   FT_Face    face=0;
   FT_SfntName aname;
+  static char result[128];
   error = FT_Init_FreeType( &library );
   if ( error ) goto bail_name;
   error = FT_New_Face( library, fname, 0, &face );
@@ -1056,7 +1057,8 @@ static char *ln_font_name(char *fname)
  bail_name:
   if (face) FT_Done_Face(face);
   if (library) FT_Done_FreeType(library);
-  return aname.string;
+  snprintf(result,128,aname.string);
+  return result;
 }
 
 end-of-c-declare
