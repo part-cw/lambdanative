@@ -44,7 +44,8 @@ SYS_VERSION=`cat ./VERSION | sed '/^#/d'`
 if [ "X$SYS_PATH" = "X" ]; then
   SYS_PATH=`pwd`
 else
-  SYS_PATH=`pwd`":$SYS_PATH"
+  here=`pwd`
+  SYS_PATH=`pwd`":"`echo "$SYS_PATH" | sed "s|${here}:||"`
 fi
 
 setupfile=`locatefile SETUP`

@@ -1329,7 +1329,7 @@ make_lntoolcheck()
       if [ ! "X$SYS_VERBOSE" = "X" ]; then
         lntool_verbose=verbose
       fi
-      SYS_PATH= ./configure $tool $lntool_verbose > /dev/null
+      SYS_PATH="$SYS_PATH" ./configure $tool $lntool_verbose > /dev/null
       . $SYS_TMPDIR/config.cache
       rmifexists $SYS_TMPDIR/tmp.subst
       make_setup silent
