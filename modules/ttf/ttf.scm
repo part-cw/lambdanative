@@ -1047,7 +1047,8 @@ static char *ln_font_name(char *fname)
   FT_Library library=0;
   FT_Face    face=0;
   FT_SfntName aname;
-  static char result[128];
+  aname.string=0;
+  static char result[256];
   error = FT_Init_FreeType( &library );
   if ( error ) goto bail_name;
   error = FT_New_Face( library, fname, 0, &face );
@@ -1057,7 +1058,16 @@ static char *ln_font_name(char *fname)
  bail_name:
   if (face) FT_Done_Face(face);
   if (library) FT_Done_FreeType(library);
-  snprintf(result,128,aname.string);
+  memset(result,0,256);
+  if (aname.string) {
+    int i,len = aname.string_len+1;
+    if (len>256) len=256;
+    memcpy(result,aname.string,len-1);
+    if (len>2&&result[0]==0) {
+      for (i=0;i<len/2;i++) { result[i]=result[2*i+1]; }
+      result[len>>1]=0;
+    }
+  }
   return result;
 }
 
