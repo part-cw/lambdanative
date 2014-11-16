@@ -45,8 +45,15 @@ if [ "X$TOOLCHAIN" = "X" ]; then
 fi
 assertfile "$TOOLCHAIN"
 SYSROOT=`echo $ANDROIDNDK/platforms/android-${ANDROIDAPI}/arch-${ANDROIDARCH}`
-if [ ! -d "$SYSROOT" ] && [ "${ANDROIDAPI}" = "10" ]; then
-  SYSROOT=`echo $ANDROIDNDK/platforms/android-9/arch-${ANDROIDARCH}`
+if [ ! -d "$SYSROOT" ]; then
+  API=${ANDROIDAPI}
+  while [ $API -ge 3 ]; do
+    SYSROOT=`echo $ANDROIDNDK/platforms/android-${API}/arch-${ANDROIDARCH}`
+    if [ -d "$SYSROOT" ] ; then
+      break
+    fi
+    API=`expr $API - 1`
+  done
 fi
 assertfile "$SYSROOT"
 
