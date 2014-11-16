@@ -1056,8 +1056,6 @@ static char *ln_font_name(char *fname)
   error = FT_Get_Sfnt_Name(face, 1, &aname );
   if ( error ) goto bail_name;
  bail_name:
-  if (face) FT_Done_Face(face);
-  if (library) FT_Done_FreeType(library);
   memset(result,0,256);
   if (aname.string) {
     int i,len = aname.string_len+1;
@@ -1068,6 +1066,8 @@ static char *ln_font_name(char *fname)
       result[len>>1]=0;
     }
   }
+  if (face) FT_Done_Face(face);
+  if (library) FT_Done_FreeType(library);
   return result;
 }
 
