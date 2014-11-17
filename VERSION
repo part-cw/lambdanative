@@ -1,3 +1,7 @@
-# version history
-# 1.0:	start of versioning
-1.0
+# version history - see https://github.com/part-cw/lambdanative/releases
+# 1.0:	Initial release
+# 1.0.1: Documentation complete, ~100 improvements
+# 1.0.2: Bug fixes, build flow, more platforms, new modules
+# 1.0.3: Increased performance, new modules, new libraries
+# 1.0.4: Reduced dependencies, added standalone installer
+1.0.4
