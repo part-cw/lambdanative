@@ -12,7 +12,7 @@ locatetest()
         if [ "X$file" = "X" ]; then
           file=$tmp
         else
-          if [ ! "X$3" = "Xsilent" ]; then
+          if [ ! "X$3" = "Xsilent" ] && [ ! "X$file" = "X$tmp" ]; then
              echo "WARNING: $file shadows $tmp" 1>&2
           fi
         fi
