@@ -44,8 +44,7 @@ SYS_VERSION=`cat ./VERSION | sed '/^#/d'`
 if [ "X$SYS_PATH" = "X" ]; then
   SYS_PATH=`pwd`
 else
-  here=`pwd`
-  SYS_PATH=`pwd`":"`echo "$SYS_PATH" | sed "s|${here}:||"`
+  SYS_PATH=`pwd`":$SYS_PATH"
 fi
 
 setupfile=`locatefile SETUP`
@@ -56,6 +55,8 @@ assertfile "$setupfile"
 if [ ! "X$OVERLAY_PATH" = "X" ]; then
   SYS_PATH="$SYS_PATH:$OVERLAY_PATH"
 fi
+
+SYS_PATH=`echo "$SYS_PATH" | tr ':' '\n' | uniq | tr '\n' ':'`
 
 if [ "X$1$2$3$4" = "X" ]; then
   echo "usage: ./configure <application> [platform] [release|debug] [verbose]"

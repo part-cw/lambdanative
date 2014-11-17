@@ -1320,7 +1320,7 @@ make_lntoolcheck()
   rmifexists $SYS_TMPDIR/tmp.config.cache
   lntools="pngtool packtool ttftool"
   for tool in $lntools; do
-    if [ ! -x $SYS_HOSTPREFIX/bin/$tool$SYS_EXEFIX ] || [ `newerindir apps/$tool $SYS_HOSTPREFIX/bin/$tool$SYS_EXEFIX` = "yes" ]; then
+    if [ ! -x $SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX ] || [ `newerindir apps/$tool $SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX` = "yes" ]; then
       echo " => building lambdanative tool $tool.."
       if [ ! -f $SYS_TMPDIR/tmp.config.cache ]; then
         cp $SYS_TMPDIR/config.cache $SYS_TMPDIR/tmp.config.cache
