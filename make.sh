@@ -851,22 +851,30 @@ make_sounds()
 # search itemname diretories for ITEMNAME to populate items
 add_items()
 {
-  for newi in `filter_entries $SYS_PLATFORM $@`; do
-    idir=`locatedir $itemname/$newi`
-    assertfile "$idir"
-    isold=no
-    for oldi in $items; do
-      if [ $oldi = $newi ]; then
+  for optnewi in `filter_entries $SYS_PLATFORM $@`; do
+    newi=`echo "$optnewi" | sed 's/^?//'`
+    idir=`locatedir $itemname/$newi silent`
+    if [ ! "X$idir" = "X" ]; then
+      isold=no
+      for oldi in $items; do
+        if [ $oldi = $newi ]; then
         isold=yes
+        fi
+      done
+      if [ $isold = no ]; then
+        items="$items $newi"
+        capitemname=`echo "$itemname" | tr a-z A-Z`
+        xis=`locatefile $itemname/$newi/$capitemname silent`
+        if [ ! "X$xis" = "X" ] && [ -f "$xis" ]; then
+          add_items `cat "$xis"`
+        fi 
       fi
-    done
-    if [ $isold = no ]; then
-      items="$items $newi"
-      capitemname=`echo "$itemname" | tr a-z A-Z`
-      xis=`locatefile $itemname/$newi/$capitemname silent`
-      if [ ! "X$xis" = "X" ] && [ -f "$xis" ]; then
-        add_items `cat "$xis"`
-      fi 
+    else
+      if [ $newi = $optnewi ]; then 
+        assert "$newi in $itemname not found"
+      else
+        echo "INFO: optional $newi in $itemname not found, skipping"
+      fi
     fi
   done
 }
