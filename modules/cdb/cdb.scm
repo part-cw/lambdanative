@@ -39,6 +39,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; wrapper for CDB, a very fast constant database
 ;; both keys and values can be arbitrary scheme code
 
+(define cdb:debuglevel 0)
+(define (cdb:log level . x)
+   (if (>= cdb:debuglevel level) (apply log-system (append (list "cdb: ") x))))
+
 (c-declare #<<c-declare-end
 
 #include <stdio.h>
@@ -56,6 +60,30 @@ struct cdb_make *_make_cdb(char *fname)
   struct cdb_make *cdbm = (struct cdb_make *)malloc(sizeof(struct cdb_make));
   if (cdbm) cdb_make_start(cdbm, fd);
   return cdbm;
+}
+
+int _cdb_make_merge(struct cdb_make *cdbm, char *fname)
+{
+  int tmpfd = open(fname,O_RDONLY);
+  if (!tmpfd) return 0;
+  struct cdb tmpcdb;
+  if (cdb_init(&tmpcdb, tmpfd)<0) return 0;
+  unsigned int cpos;
+  cdb_seqinit(&cpos,&tmpcdb);
+  while (cdb_seqnext(&cpos,&tmpcdb)>0) {
+    int klen = cdb_keylen(&tmpcdb);
+    char *key = (char*)malloc(klen);
+    cdb_read(&tmpcdb, key, klen, cdb_keypos(&tmpcdb));
+    int vlen = cdb_datalen(&tmpcdb);
+    char *val = (char*)malloc(vlen);
+    cdb_read(&tmpcdb, val, vlen, cdb_datapos(&tmpcdb));
+    cdb_make_add(cdbm,key,klen,val,vlen);
+    free(key);
+    free(val);
+  }
+  cdb_free(&tmpcdb);
+  close(tmpfd);
+  return 1;
 }
 
 int _cdb_make_finish(struct cdb_make *cdbm)
@@ -81,6 +109,25 @@ void _cdb_finish(struct cdb *cdb)
   if (fd) close(fd);
 }
 
+___SCMOBJ _cdb_index(struct cdb *cdb)
+{
+  ___SCMOBJ s,lst=___NUL,tmp;
+  unsigned int cpos;
+  cdb_seqinit(&cpos,cdb);
+  while (cdb_seqnext(&cpos,cdb)>0) {
+    int klen = cdb_keylen(cdb);
+    char *key = (char*)malloc(klen);
+    cdb_read(cdb, key, klen, cdb_keypos(cdb));
+    s = ___EXT(___alloc_scmobj)(___sU8VECTOR, klen, ___STILL);
+    memcpy(___BODY(s), key, klen);
+    tmp = ___EXT(___make_pair)(s,lst,___STILL);
+    ___EXT(___release_scmobj)(lst);
+    lst=tmp;
+    free(key);
+  }
+  return lst;
+}
+
 c-declare-end
 )
 
@@ -88,6 +135,10 @@ c-declare-end
 
 (define cdb:encode object->u8vector)
 (define cdb:decode u8vector->object)
+
+(define (cdb-io enc dec)
+  (set! cdb:encode enc)
+  (set! cdb:decode dec))
 
 ;; create interface
 
@@ -98,6 +149,7 @@ c-declare-end
 (define make-cdb (c-lambda (char-string) (pointer void) "_make_cdb"))
 
 (define (cdb-make-add cdb key val)
+  (cdb:log 2 "cdb-make-add " cdb  " " key " " val)
   (let ((u8key (cdb:encode key))
         (u8val (cdb:encode val)))
     (fx= 0 ((c-lambda ((pointer void) scheme-object int scheme-object int) int
@@ -107,6 +159,7 @@ c-declare-end
        cdb u8key (u8vector-length u8key) u8val (u8vector-length u8val)))))
 
 (define (cdb-make-put cdb key val flag)
+  (cdb:log 2 "cdb-make-put " cdb  " " key " " val " " flag)
   (let ((u8key (cdb:encode key))
         (u8val (cdb:encode val)))
     (fx= 0 ((c-lambda ((pointer void) scheme-object int scheme-object int int) int
@@ -116,10 +169,15 @@ c-declare-end
        cdb u8key (u8vector-length u8key) u8val (u8vector-length u8val) flag))))
 
 (define (cdb-make-exists cdb key)
+    (cdb:log 2 "cdb-make-exists " cdb  " " key)
     (let ((u8key (cdb:encode key)))
       (not (fx= ((c-lambda ((pointer void) scheme-object int) int
          "___result=cdb_make_exists(___arg1, ___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)), ___arg3);")
          cdb u8key (u8vector-length u8key)) 0))))
+
+(define (cdb-make-merge cdb file)
+  (cdb:log 2 "cdb-make-merge " cdb  " " file)
+  (fx= 1 ((c-lambda ((pointer void) char-string) int "_cdb_make_merge") cdb file)))
 
 (define cdb-make-finish (c-lambda ((pointer void)) int "_cdb_make_finish"))
 
@@ -137,12 +195,17 @@ c-declare-end
    "___result=cdb_read(___arg1, ___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)), ___arg3, ___arg4);"))
 
 (define (cdb-find cdb key)
+  (cdb:log 2 "cdb-find" cdb " " key)
   (let* ((u8key (cdb:encode key))
          (res (cdb:find cdb u8key (u8vector-length u8key)))
          (vpos (if (> res 0) (cdb:datapos cdb) #f))
          (vlen (if (> res 0) (cdb:datalen cdb) #f))
          (u8val (if vlen (make-u8vector vlen) #f)))
     (if u8val (begin (cdb:read cdb u8val vlen vpos) (cdb:decode u8val)) #f)))
+
+(define (cdb-index cdb) 
+  (cdb:log 2 "cdb-index " cdb)
+  (map cdb:decode ((c-lambda ((pointer void)) scheme-object "_cdb_index") cdb)))
 
 (define cdb-finish (c-lambda ((pointer void)) void "_cdb_finish"))
 
