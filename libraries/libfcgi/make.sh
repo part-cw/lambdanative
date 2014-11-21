@@ -8,7 +8,7 @@ if [ ! "$SYS_PLATFORM" = "$SYS_HOSTPLATFORM" ]; then
 fi
 
 # the shipping config.guess is out of date, fix that
-cp ../../../../config.guess .
+cp $SYS_ROOT/config.guess .
 package_configure $EXTRACONF --disable-shared --enable-static
 
 cd libfcgi

@@ -31,7 +31,7 @@ esac
 if [ "$SYS_PLATFORM" = "$SYS_HOSTPLATFORM" ]; then
   EXTRACONF=
 fi
-if [ -f ../../../../targets/$SYS_PLATFORM/libgambc_enablesinglehost ]; then
+if [ -f $SYS_ROOT/targets/$SYS_PLATFORM/libgambc_enablesinglehost ]; then
   EXTRACONF="$EXTRACONF --enable-single-host"
 fi
 

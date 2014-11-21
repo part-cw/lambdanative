@@ -16,7 +16,7 @@ linux486*)
   EXTRACONF=linux-generic32
 ;;
 linux*)
-  cpu=`../../../../config.guess | cut -f 1 -d "-"`
+  cpu=`$SYS_ROOT/config.guess | cut -f 1 -d "-"`
   if [ "X$cpu" = "Xx86_64" ]; then
     EXTRACONF=linux-x86_64
   else

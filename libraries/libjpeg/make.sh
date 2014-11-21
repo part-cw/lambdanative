@@ -3,7 +3,7 @@ PKGHASH=7079f0d6c42fad0cfba382cf6ad322add1ace8f9
 
 package_download $PKGURL $PKGHASH
 
-veval "wget -O config.guess 'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD'"
+cp $SYS_ROOT/config.guess .
 veval "wget -O config.sub 'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD'"
 
 package_patch
