@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <fcntl.h>
 
@@ -107,25 +108,6 @@ void _cdb_finish(struct cdb *cdb)
 {
   int fd = cdb->cdb_fd;
   if (fd) close(fd);
-}
-
-___SCMOBJ _cdb_index(struct cdb *cdb)
-{
-  ___SCMOBJ s,lst=___NUL,tmp;
-  unsigned int cpos;
-  cdb_seqinit(&cpos,cdb);
-  while (cdb_seqnext(&cpos,cdb)>0) {
-    int klen = cdb_keylen(cdb);
-    char *key = (char*)malloc(klen);
-    cdb_read(cdb, key, klen, cdb_keypos(cdb));
-    s = ___EXT(___alloc_scmobj)(___sU8VECTOR, klen, ___STILL);
-    memcpy(___BODY(s), key, klen);
-    tmp = ___EXT(___make_pair)(s,lst,___STILL);
-    ___EXT(___release_scmobj)(lst);
-    lst=tmp;
-    free(key);
-  }
-  return lst;
 }
 
 c-declare-end
@@ -191,6 +173,9 @@ c-declare-end
 (define cdb:datapos (c-lambda ((pointer void)) unsigned-int "___result=cdb_datapos((struct cdb*)___arg1);"))
 (define cdb:datalen (c-lambda ((pointer void)) unsigned-int "___result=cdb_datalen((struct cdb*)___arg1);"))
 
+(define cdb:keypos (c-lambda ((pointer void)) unsigned-int "___result=cdb_keypos((struct cdb*)___arg1);"))
+(define cdb:keylen (c-lambda ((pointer void)) unsigned-int "___result=cdb_keylen((struct cdb*)___arg1);"))
+
 (define cdb:read (c-lambda ((pointer void) scheme-object int unsigned-int) int
    "___result=cdb_read(___arg1, ___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)), ___arg3, ___arg4);"))
 
@@ -203,9 +188,53 @@ c-declare-end
          (u8val (if vlen (make-u8vector vlen) #f)))
     (if u8val (begin (cdb:read cdb u8val vlen vpos) (cdb:decode u8val)) #f)))
 
-(define (cdb-index cdb) 
+(define cdb:seqinit (c-lambda (scheme-object (pointer void)) int
+  "___result=cdb_seqinit(___CAST(int*,___BODY_AS(___arg1,___tSUBTYPED)), ___arg2);"))
+
+(define cdb:seqnext (c-lambda (scheme-object (pointer void)) int
+  "___result=cdb_seqnext(___CAST(int*,___BODY_AS(___arg1,___tSUBTYPED)), ___arg2);"))
+
+(define (cdb-index cdb)
   (cdb:log 2 "cdb-index " cdb)
-  (map cdb:decode ((c-lambda ((pointer void)) scheme-object "_cdb_index") cdb)))
+  (let ((tmp (u32vector 0)))
+    (cdb:seqinit tmp cdb)
+    (let loop ((idx '()))
+      (let* ((res (cdb:seqnext tmp cdb))
+             (kpos (if (> res 0) (cdb:keypos cdb) #f))
+             (klen (if (> res 0) (cdb:keylen cdb) #f))
+             (u8key (if klen (make-u8vector klen) #f)))
+         (if (= res 0) idx
+           (loop (append idx (list 
+             (begin (cdb:read cdb u8key klen kpos) (cdb:decode u8key))))))))
+   ))
+
+(define (cdb->table cdbfile)
+  (cdb:log 2 "cdb->table " cdbfile)
+  (if (not (file-exists? cdbfile)) #f
+    (let ((cdb (init-cdb cdbfile))
+          (tmp (u32vector 0))
+          (t (make-table)))
+      (cdb:seqinit tmp cdb)
+      (let loop ()
+        (let* ((res (cdb:seqnext tmp cdb))
+              (kpos (if (> res 0) (cdb:keypos cdb) #f))
+              (klen (if (> res 0) (cdb:keylen cdb) #f))
+              (vpos (if (> res 0) (cdb:datapos cdb) #f))
+              (vlen (if (> res 0) (cdb:datalen cdb) #f))
+              (u8val (if vlen (make-u8vector vlen) #f))
+              (u8key (if klen (make-u8vector klen) #f)))
+           (if (= res 0) t (begin
+              (cdb:read cdb u8key klen kpos) 
+              (cdb:read cdb u8val vlen vpos) 
+              (table-set! t (cdb:decode u8key) (cdb:decode u8val))
+              (loop)))))
+      )))
+            
+(define (table->cdb t cdbfile)
+  (cdb:log 2 "table->cdb " t " " cdbfile)
+  (let ((cdbm (make-cdb cdbfile)))
+    (table-for-each (lambda (k v) (cdb-make-add cdbm k v)) t)
+    (cdb-make-finish cdbm) #t))
 
 (define cdb-finish (c-lambda ((pointer void)) void "_cdb_finish"))
 
