@@ -99,10 +99,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (pregexp-match "^(?x: [2-9] | [1-9][0-9] | [1-2][0-9][0-9] )$" s))
 
 (define (sanestring-alpha s)
-  (pregexp-match "^([a-zA-Z]+)$" s))
+  (pregexp-match "^([a-zA-Z\\s]+)$" s))
 
 (define (sanestring-alphanum s)
-  (pregexp-match "^([a-zA-Z0-9]+)$" s))
+  (pregexp-match "^([a-zA-Z0-9\\s]+)$" s))
 
 (define (sanestring-num s)
   (pregexp-match "^([0-9]+)$" s))
