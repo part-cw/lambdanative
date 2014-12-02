@@ -62,7 +62,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (mm   "(?x: 0[0-9] | 1[0-2] )")
          (dd   "(?x: [0-2][0-9] | 3[0-1] )")
          (dob (string-append "^" yyyy "\\-" mm "\\-" dd "$")))
-    (pregexp-match dob s)))
+    (if (pregexp-match dob s)
+      ;; Check that it is a valid date within each month
+      (string=? s (seconds->string (string->seconds s "%Y-%m-%d") "%Y-%m-%d"))
+      #f)))
 
 ;; ip address (from pregexp example)
 (define (sanestring-ipaddr s)
