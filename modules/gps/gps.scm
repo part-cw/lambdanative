@@ -57,6 +57,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   double android_location_gettimestamp(void);
   int android_location_getsatviewed(void);
   int android_location_getsatfixed(void);
+  int android_location_service(void);
 #endif
 
 #ifdef BB10
@@ -171,6 +172,15 @@ static double timestamp(void){
 #endif
 }
 
+int location_service_status(){
+#ifdef IOS
+#elif ANDROID
+  return android_location_service();
+#elif BB10
+#else
+  return -1;
+#endif
+}
 
 end-of-c-declare
 )
@@ -182,6 +192,7 @@ end-of-c-declare
 (define gps-accuracy (c-lambda () double "accuracy"))
 (define gps-altitude (c-lambda () double "altitude"))
 (define gps-timestamp (c-lambda () double "timestamp"))
+(define gps-location-service (c-lambda () int "location_service_status"))
 
 (define gps-sat-in-view (c-lambda () int "sat_view"))
 (define gps-sat-in-fix (c-lambda () int "sat_fix"))

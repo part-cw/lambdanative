@@ -23,6 +23,15 @@ void android_location_toggleGPS(int status){
   }
 }
 
+int android_location_service(){
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "isLocationServiceEnabled", "()I");
+    return (int)(*env)->CallIntMethod(env,globalObj,method);
+  } else { return -1; }
+}
+
 double android_location_getlatitude(){ return gps_lat; }
 double android_location_getlongitude(){ return gps_lon; }
 double android_location_getaltitude(){ return gps_altitude; }
