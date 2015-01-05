@@ -52,9 +52,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (sanestring-mm s)
   (pregexp-match "^(?x: [0-5][0-9] )$" s))
 
-;; time of day HH:MM
+;; time of day HH:MM or H:MM
 (define (sanestring-hh:mm s)
-  (let* ((hh "(?x: [0-1][0-9] | 2[0-3] )")
+  (let* ((hh "(?x: [0-9] | [0-1][0-9] | 2[0-3] )")
          (mm "(?x: [0-5][0-9] )")
          (hh:mm (string-append "^" hh "\\:" mm "$")))
     (pregexp-match hh:mm s)))
