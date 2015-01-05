@@ -41,6 +41,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (sanestring-hours s)
   (pregexp-match "^(?x: [0-9] | 1[0-9] | 2[0-3] )$" s))
 
+(define (sanestring-small-hours-decimal s)
+  (pregexp-match "^(?x: [0-9] | 1[0-9] | [0-9].[0-9]+ | 1[0-9].[0-9]+ )$" s))
+
 ;; hours HH
 (define (sanestring-hh s)
   (pregexp-match "^(?x: [0-1][0-9] | 2[0-3] )$" s))
