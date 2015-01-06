@@ -103,6 +103,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((u (gtable-ref w 'update-handle #f)))
     (if u (u g w id val))) #t)
 
+(define (glgui-widget-clear! g w id)
+  (gtable-set! w id))
+
 ;; set the same parameter in all widgets
 ;; for example: (glgui-widget-setglobal! mygui 'focus #f)
 (define (glgui-widget-setglobal! g id val)
