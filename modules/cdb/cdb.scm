@@ -100,8 +100,12 @@ struct cdb *_init_cdb(char *fname)
   int fd = open(fname,O_RDONLY);
   if (fd<0) return 0;
   struct cdb *cdb = (struct cdb *)malloc(sizeof(struct cdb));
-  if (cdb) cdb_init(cdb,fd);
-  return cdb; 
+  if (cdb) {
+    int res = cdb_init(cdb,fd);
+    if (res<0) { free(cdb); return 0; } else return cdb; 
+  } else {
+    return 0;
+  }
 }
 
 void _cdb_finish(struct cdb *cdb)
@@ -125,7 +129,9 @@ c-declare-end
   (lambda (obj) (rabbit-encode keyctx (object->u8vector obj))))
 
 (define (cdb:decoder keyctx)
-  (lambda (u8v) (u8vector->object (rabbit-decode keyctx u8v))))
+  (lambda (u8v) (with-exception-handler (lambda (e) 
+    (log-error "cdb:decoder: failed to deserialize: " (exception->string e)) #f)
+      (lambda () (u8vector->object (rabbit-decode keyctx u8v))))))
 
 ;; create interface
 
@@ -253,13 +259,14 @@ c-declare-end
    ))
 
 (define (cdb->table cdbfile . key)
-  (cdb:log 2 "cdb->table " cdbfile)
+  (cdb:log 2 "cdb->table " cdbfile " " key)
   (if (not (file-exists? cdbfile)) #f
     (let* ((cdb (apply init-cdb (append (list cdbfile) key)))
            (cdb:ptr (car cdb))
            (cdb:decode (caddr cdb))
            (tmp (u32vector 0))
            (t (make-table)))
+      (if cdb:ptr (begin
       (cdb:seqinit tmp cdb:ptr)
       (let ((fnl (let loop ()
         (let* ((res (cdb:seqnext tmp cdb:ptr))
@@ -275,10 +282,11 @@ c-declare-end
               (table-set! t (cdb:decode u8key) (cdb:decode u8val))
               (loop)))))))
        (cdb-finish cdb) fnl
-      ))))
+      )) #f)
+   )))
             
 (define (table->cdb t cdbfile . key)
-  (cdb:log 2 "table->cdb " t " " cdbfile)
+  (cdb:log 2 "table->cdb " t " " cdbfile " " key)
   (let ((cdbm (apply make-cdb (append (list cdbfile) key))))
     (table-for-each (lambda (k v) (cdb-make-add cdbm k v)) t)
     (cdb-make-finish cdbm) #t))
