@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2014, University of British Columbia
+Copyright (c) 2009-2015, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -110,17 +110,22 @@ void _cdb_finish(struct cdb *cdb)
   if (fd) close(fd);
 }
 
+static struct cdb_find cdbf;
+
 c-declare-end
 )
 
 ;; encode/decode
 
-(define cdb:encode object->u8vector)
-(define cdb:decode u8vector->object)
+(define cdb:makectx rabbit-make)
 
-(define (cdb-io enc dec)
-  (set! cdb:encode enc)
-  (set! cdb:decode dec))
+(define cdb:destroyctx rabbit-destroy)
+
+(define (cdb:encoder keyctx)
+  (lambda (obj) (rabbit-encode keyctx (object->u8vector obj))))
+
+(define (cdb:decoder keyctx)
+  (lambda (u8v) (u8vector->object (rabbit-decode keyctx u8v))))
 
 ;; create interface
 
@@ -128,47 +133,71 @@ c-declare-end
 (define CDB_PUT_REPLACE ((c-lambda () int "___result=CDB_PUT_REPLACE;")))
 (define CDB_PUT_INSERT ((c-lambda () int "___result=CDB_PUT_INSERT;")))
 
-(define make-cdb (c-lambda (char-string) (pointer void) "_make_cdb"))
+(define (make-cdb fname . key)
+  (let ((ctx (if (null? key) #f (cdb:makectx (car key)))))
+    (list ((c-lambda (char-string) (pointer void) "_make_cdb") fname)
+      (if (not ctx) object->u8vector (cdb:encoder ctx)) ctx
+     )))
 
 (define (cdb-make-add cdb key val)
   (cdb:log 2 "cdb-make-add " cdb  " " key " " val)
-  (let ((u8key (cdb:encode key))
-        (u8val (cdb:encode val)))
+  (let* ((cdb:ptr (car cdb))
+         (cdb:encode (cadr cdb))
+         (u8key (cdb:encode key))
+         (u8val (cdb:encode val)))
     (fx= 0 ((c-lambda ((pointer void) scheme-object int scheme-object int) int
        "___result=cdb_make_add(___arg1, 
            ___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)), ___arg3,
            ___CAST(void*,___BODY_AS(___arg4,___tSUBTYPED)), ___arg5);")
-       cdb u8key (u8vector-length u8key) u8val (u8vector-length u8val)))))
+       cdb:ptr u8key (u8vector-length u8key) u8val (u8vector-length u8val)))))
 
 (define (cdb-make-put cdb key val flag)
   (cdb:log 2 "cdb-make-put " cdb  " " key " " val " " flag)
-  (let ((u8key (cdb:encode key))
-        (u8val (cdb:encode val)))
+  (let* ((cdb:ptr (car cdb))
+         (cdb:encode (cadr cdb))
+         (u8key (cdb:encode key))
+         (u8val (cdb:encode val)))
     (fx= 0 ((c-lambda ((pointer void) scheme-object int scheme-object int int) int
        "___result=cdb_make_put(___arg1, 
            ___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)), ___arg3,
            ___CAST(void*,___BODY_AS(___arg4,___tSUBTYPED)), ___arg5, ___arg6);")
-       cdb u8key (u8vector-length u8key) u8val (u8vector-length u8val) flag))))
+       cdb:ptr u8key (u8vector-length u8key) u8val (u8vector-length u8val) flag))))
 
 (define (cdb-make-exists cdb key)
     (cdb:log 2 "cdb-make-exists " cdb  " " key)
-    (let ((u8key (cdb:encode key)))
+    (let* ((cdb:ptr (car cdb))
+           (cdb:encode (cadr cdb))
+           (u8key (cdb:encode key)))
       (not (fx= ((c-lambda ((pointer void) scheme-object int) int
          "___result=cdb_make_exists(___arg1, ___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)), ___arg3);")
-         cdb u8key (u8vector-length u8key)) 0))))
+         cdb:ptr u8key (u8vector-length u8key)) 0))))
 
 (define (cdb-make-merge cdb file)
   (cdb:log 2 "cdb-make-merge " cdb  " " file)
-  (fx= 1 ((c-lambda ((pointer void) char-string) int "_cdb_make_merge") cdb file)))
+  (fx= 1 ((c-lambda ((pointer void) char-string) int "_cdb_make_merge") (car cdb) file)))
 
-(define cdb-make-finish (c-lambda ((pointer void)) int "_cdb_make_finish"))
+(define (cdb-make-finish cdb) 
+  (let ((ctx (caddr cdb)))
+    ((c-lambda ((pointer void)) int "_cdb_make_finish") (car cdb))
+    (if ctx (cdb:destroyctx ctx))))
 
 ;; query interface
 
-(define init-cdb (c-lambda (char-string) (pointer void) "_init_cdb"))
+(define (init-cdb fname . key)
+  (let ((ctx (if (null? key) #f (cdb:makectx (car key)))))
+    (list ((c-lambda (char-string) (pointer void) "_init_cdb") fname)
+      (if (not ctx) object->u8vector (cdb:encoder ctx)) 
+      (if (not ctx) u8vector->object (cdb:decoder ctx)) 
+      ctx
+   )))
 
 (define cdb:find (c-lambda ((pointer void) scheme-object int) int  
   "___result=cdb_find(___arg1, ___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)), ___arg3);"))
+
+(define cdb:findinit (c-lambda ((pointer void) scheme-object int) int
+  "___result=cdb_findinit(&cdbf,___arg1, ___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)), ___arg3);"))
+
+(define cdb:findnext (c-lambda () int "___result=cdb_findnext(&cdbf);"))
 
 (define cdb:datapos (c-lambda ((pointer void)) unsigned-int "___result=cdb_datapos((struct cdb*)___arg1);"))
 (define cdb:datalen (c-lambda ((pointer void)) unsigned-int "___result=cdb_datalen((struct cdb*)___arg1);"))
@@ -181,12 +210,25 @@ c-declare-end
 
 (define (cdb-find cdb key)
   (cdb:log 2 "cdb-find" cdb " " key)
-  (let* ((u8key (cdb:encode key))
-         (res (cdb:find cdb u8key (u8vector-length u8key)))
-         (vpos (if (> res 0) (cdb:datapos cdb) #f))
-         (vlen (if (> res 0) (cdb:datalen cdb) #f))
+  (let* ((cdb:ptr (car cdb))
+         (cdb:encode (cadr cdb))
+         (cdb:decode (caddr cdb))
+         (u8key (cdb:encode key))
+         (res (begin (cdb:findinit cdb:ptr u8key (u8vector-length u8key)) (cdb:findnext)))
+         (vpos (if (> res 0) (cdb:datapos cdb:ptr) #f))
+         (vlen (if (> res 0) (cdb:datalen cdb:ptr) #f))
          (u8val (if vlen (make-u8vector vlen) #f)))
-    (if u8val (begin (cdb:read cdb u8val vlen vpos) (cdb:decode u8val)) #f)))
+    (if u8val (begin (cdb:read cdb:ptr u8val vlen vpos) (cdb:decode u8val)) #f)))
+
+(define (cdb-findnext cdb)
+  (cdb:log 2 "cdb-findnext" cdb)
+  (let* ((cdb:ptr (car cdb))
+         (cdb:decode (caddr cdb))
+         (res (cdb:findnext))
+         (vpos (if (> res 0) (cdb:datapos cdb:ptr) #f))
+         (vlen (if (> res 0) (cdb:datalen cdb:ptr) #f))
+         (u8val (if vlen (make-u8vector vlen) #f)))
+    (if u8val (begin (cdb:read cdb:ptr u8val vlen vpos) (cdb:decode u8val)) #f)))
 
 (define cdb:seqinit (c-lambda (scheme-object (pointer void)) int
   "___result=cdb_seqinit(___CAST(int*,___BODY_AS(___arg1,___tSUBTYPED)), ___arg2);"))
@@ -196,47 +238,55 @@ c-declare-end
 
 (define (cdb-index cdb)
   (cdb:log 2 "cdb-index " cdb)
-  (let ((tmp (u32vector 0)))
-    (cdb:seqinit tmp cdb)
+  (let* ((cdb:ptr (car cdb))
+         (cdb:decode (caddr cdb))
+         (tmp (u32vector 0)))
+    (cdb:seqinit tmp cdb:ptr)
     (let loop ((idx '()))
-      (let* ((res (cdb:seqnext tmp cdb))
-             (kpos (if (> res 0) (cdb:keypos cdb) #f))
-             (klen (if (> res 0) (cdb:keylen cdb) #f))
+      (let* ((res (cdb:seqnext tmp cdb:ptr))
+             (kpos (if (> res 0) (cdb:keypos cdb:ptr) #f))
+             (klen (if (> res 0) (cdb:keylen cdb:ptr) #f))
              (u8key (if klen (make-u8vector klen) #f)))
          (if (= res 0) idx
            (loop (append idx (list 
-             (begin (cdb:read cdb u8key klen kpos) (cdb:decode u8key))))))))
+             (begin (cdb:read cdb:ptr u8key klen kpos) (cdb:decode u8key))))))))
    ))
 
-(define (cdb->table cdbfile)
+(define (cdb->table cdbfile . key)
   (cdb:log 2 "cdb->table " cdbfile)
   (if (not (file-exists? cdbfile)) #f
-    (let ((cdb (init-cdb cdbfile))
-          (tmp (u32vector 0))
-          (t (make-table)))
-      (cdb:seqinit tmp cdb)
-      (let loop ()
-        (let* ((res (cdb:seqnext tmp cdb))
-              (kpos (if (> res 0) (cdb:keypos cdb) #f))
-              (klen (if (> res 0) (cdb:keylen cdb) #f))
-              (vpos (if (> res 0) (cdb:datapos cdb) #f))
-              (vlen (if (> res 0) (cdb:datalen cdb) #f))
+    (let* ((cdb (apply init-cdb (append (list cdbfile) key)))
+           (cdb:ptr (car cdb))
+           (cdb:decode (caddr cdb))
+           (tmp (u32vector 0))
+           (t (make-table)))
+      (cdb:seqinit tmp cdb:ptr)
+      (let ((fnl (let loop ()
+        (let* ((res (cdb:seqnext tmp cdb:ptr))
+              (kpos (if (> res 0) (cdb:keypos cdb:ptr) #f))
+              (klen (if (> res 0) (cdb:keylen cdb:ptr) #f))
+              (vpos (if (> res 0) (cdb:datapos cdb:ptr) #f))
+              (vlen (if (> res 0) (cdb:datalen cdb:ptr) #f))
               (u8val (if vlen (make-u8vector vlen) #f))
               (u8key (if klen (make-u8vector klen) #f)))
            (if (= res 0) t (begin
-              (cdb:read cdb u8key klen kpos) 
-              (cdb:read cdb u8val vlen vpos) 
+              (cdb:read cdb:ptr u8key klen kpos) 
+              (cdb:read cdb:ptr u8val vlen vpos) 
               (table-set! t (cdb:decode u8key) (cdb:decode u8val))
-              (loop)))))
-      )))
+              (loop)))))))
+       (cdb-finish cdb) fnl
+      ))))
             
-(define (table->cdb t cdbfile)
+(define (table->cdb t cdbfile . key)
   (cdb:log 2 "table->cdb " t " " cdbfile)
-  (let ((cdbm (make-cdb cdbfile)))
+  (let ((cdbm (apply make-cdb (append (list cdbfile) key))))
     (table-for-each (lambda (k v) (cdb-make-add cdbm k v)) t)
     (cdb-make-finish cdbm) #t))
 
-(define cdb-finish (c-lambda ((pointer void)) void "_cdb_finish"))
+(define (cdb-finish cdb) 
+  (let ((ctx (cadddr cdb)))
+    ((c-lambda ((pointer void)) void "_cdb_finish") (car cdb))
+    (if ctx (cdb:destroyctx ctx))))
 
 ;; unit test
 
@@ -246,13 +296,14 @@ c-declare-end
       (if (file-exists? fname) (delete-file fname))
       (let* ((keys (list "a" 'a '(test) (lambda (x) x) 1 0.5 1/2))
              (values (list '1 2 "three" 'four 5. '(six) (lambda (seven) 1)))
-             (cdbm (make-cdb fname)))
+             (cryptokey (random-u8vector 24))
+             (cdbm (make-cdb fname cryptokey)))
         (let loop ((ks keys)(vs values))
           (if (> (length ks) 0) (begin
             (cdb-make-add cdbm (car ks) (car vs))
             (loop (cdr ks) (cdr vs)))))
         (cdb-make-finish cdbm)
-        (let* ((cdb (init-cdb fname))
+        (let* ((cdb (init-cdb fname cryptokey))
                (res (let loop ((ks keys)(vs values))
                   (if (fx= (length ks) 0) #t
                     (if (not (equal? (car vs) (cdb-find cdb (car ks))))  #f
