@@ -1,5 +1,5 @@
-PKGURL=https://bitbucket.org/libgd/gd-libgd/downloads/libgd-2.1.0.tar.gz
-PKGHASH=a0f3053724403aef9e126f4aa5c662573e5836cd
+PKGURL=https://bitbucket.org/libgd/gd-libgd/downloads/libgd-2.1.1.tar.gz
+PKGHASH=7abafc6f04a1de784a3e619a82239933a5155866
 
 package_download $PKGURL $PKGHASH
 

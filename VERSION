@@ -4,5 +4,5 @@
 # 1.0.2: Bug fixes, build flow, more platforms, new modules
 # 1.0.3: Increased performance, new modules, new libraries
 # 1.0.4: Reduced dependencies, added standalone installer
-# 1.0.5: Bump gambit to 4.7.3, cdb encryption, sanestring fixes
+# 1.0.5: Bump gambit to 4.7.3, update libraries, cdb encryption
 1.0.5
