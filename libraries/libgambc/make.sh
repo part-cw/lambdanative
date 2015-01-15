@@ -1,6 +1,6 @@
 
-PKGURL=https://www.iro.umontreal.ca/~gambit/download/gambit/v4.7/source/gambc-v4_7_0.tgz
-PKGHASH=2091784f1e332e8b5918718417abe75c2c9ada45
+PKGURL=https://www.iro.umontreal.ca/~gambit/download/gambit/v4.7/source/gambc-v4_7_3.tgz
+PKGHASH=a92db1a54b13a4a0304376c4de52f7467d6340a4
 
 package_download $PKGURL $PKGHASH
 
