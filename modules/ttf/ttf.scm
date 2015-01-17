@@ -958,12 +958,19 @@ static int ln_atlas_make(char *fname, int *pointlist, int *glyphlist, char *comp
     for (i=0;i<nglyphs;i++) glyph_set[i]=(wchar_t)glyphlist[i];
     glyph_set[nglyphs]=0;
   }
-  size_t sizes[]={64,128,256,512,1024};
+  size_t sizes[]={64,128,256,512,1024,2048,4096};
   for (j=0;j<5;j++) {
     for (i=0;i<5;i++) {
      if (ln_atlas_try(sizes[i],sizes[j],fname,pointlist,"")==0) goto success;
     }
   }
+  fprintf(stderr, "Warning: texture size > 1024x1024, may not work on all platforms!\n");
+  for (j=4;j<7;j++) {
+    for (i=4;i<7;i++) {
+      if (ln_atlas_try(sizes[i],sizes[j],fname,pointlist,"")==0) goto success;
+    }
+  }
+  fprintf(stderr, "texture capacity exceeded: %dx%d is too small\n",sizes[j-1],sizes[i-1]);
   return 1; // texture capacity exceeded
 success:
   if (strlen(compiletag)) ln_atlas_try(sizes[i],sizes[j],fname,pointlist, compiletag);

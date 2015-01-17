@@ -86,7 +86,8 @@ end-of-c-declare
 
 (define (usage)
   (for-each display (list
-    "Usage: ttftool [stringfile <ttffont> <fontsize> <string> <pngfile> | fontname <ttffont> | fnt2scm <ttfont> ]\n"
+    "Usage: ttftool [stringfile <ttffont> <fontsize> <string> <pngfile> | fontname <ttffont> |
+                fnt2scm <ttffont> <bits> <sizes> <fontname>]\n"
     "stringfile: generate pngfile with string rendered with specified font & size\n"
     "fontname: output name of font\n"
     "fnt2scm: output scheme font atlas representation\n"))
