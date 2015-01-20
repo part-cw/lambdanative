@@ -153,6 +153,10 @@ static void rtaudio_stop(void) {
 #define FLO(x) ((double)x/32767.)
 #define FIX(x) ((short)(32767.*x))
 
+extern int portaudio_needsinit;
+extern int portaudio_idev;
+extern int portaudio_odev;
+
 static PaStream *stream;
 
 static int rt_portaudio_cb( const void *inputBuffer, void *outputBuffer,
@@ -172,7 +176,7 @@ static int rt_portaudio_cb( const void *inputBuffer, void *outputBuffer,
   return 0;
 }
 
-void rtaudio_start(int samplerate, double volume)  
+void rtaudio_start(int samplerate, double volume)
 {
   PaError err;
   static int needsinit=1;
@@ -181,21 +185,25 @@ void rtaudio_start(int samplerate, double volume)
     rtaudio_srate=samplerate;
     if (rtaudio_initcb) rtaudio_initcb(samplerate);
     PaStreamParameters inputParameters, outputParameters;
-    err = Pa_Initialize();
-    if( err != paNoError ) goto error;
-    inputParameters.device = INPUT_DEVICE;              /* default input device */
+    if (portaudio_needsinit) {
+      err = Pa_Initialize();
+      if( err != paNoError ) goto error;
+      portaudio_needsinit=0;
+    }
+    inputParameters.device = (portaudio_idev<0?INPUT_DEVICE:portaudio_idev);
     if (inputParameters.device == paNoDevice) { goto error; }
     inputParameters.channelCount = 2;
     inputParameters.sampleFormat = SAMPLE_FORMAT;
     inputParameters.suggestedLatency = Pa_GetDeviceInfo( inputParameters.device )->defaultLowInputLatency;
     inputParameters.hostApiSpecificStreamInfo = NULL;
-    outputParameters.device = OUTPUT_DEVICE; 
+    outputParameters.device = (portaudio_odev<0?OUTPUT_DEVICE:portaudio_odev);
     if (outputParameters.device == paNoDevice) { goto error; }
     outputParameters.channelCount = 2;
     outputParameters.sampleFormat = SAMPLE_FORMAT;
     outputParameters.suggestedLatency = Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
     outputParameters.hostApiSpecificStreamInfo = NULL;
-    err = Pa_OpenStream( &stream, &inputParameters, &outputParameters, rtaudio_srate, RT_FRAMES_PER_CALLBACK, paClipOff, rt_portaudio_cb, 0);
+    err = Pa_OpenStream( &stream, &inputParameters, &outputParameters, 
+        rtaudio_srate, RT_FRAMES_PER_CALLBACK, paClipOff, rt_portaudio_cb, 0);
     if( err != paNoError ) goto error;
     needsinit=0;
   }
