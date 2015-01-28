@@ -313,10 +313,10 @@ GAMBIT_DEFS="-D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
 compile()
 {
   if [ $SYS_MODE = "debug" ]; then
-    opts="(declare (block)(not safe)(debug)(debug-location))"
+    opts="(declare (block)(not safe)(standard-bindings)(extended-bindings)(debug)(debug-location))"
     optc="-g -Wall -Wno-unused-variable -Wno-unused-label -Wno-unused-parameter"
   else 
-    opts="(declare (block)(not safe))"
+    opts="(declare (block)(not safe)(standard-bindings)(extended-bindings))"
     optc="-O2 -Wall -Wno-unused-variable -Wno-unused-label -Wno-unused-parameter"
   fi
   src="$1"
