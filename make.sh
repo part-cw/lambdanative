@@ -160,7 +160,10 @@ newersourceindir()
   result="no"
   tgt="$2"
   dir=`dirname $1`
-  srcfiles=`ls -1 $dir/*.scm` 
+  srcfiles=
+  for l in $language_extensions; do
+    srcfiles="$srcfiles "`ls -1 $dir/*.$l 2> /dev/null` 
+  done
   for src in $srcfiles; do
     if `test "$src" -nt "$tgt"`; then
       result="yes"
@@ -308,44 +311,9 @@ filter_entries()
 ###########################
 # general compiler functions
 
-GAMBIT_DEFS="-D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
+. ./scripts/compile.sh
 
-compile()
-{
-  if [ $SYS_MODE = "debug" ]; then
-    opts="(declare (block)(not safe)(standard-bindings)(extended-bindings)(debug)(debug-location))"
-    optc="-g -Wall -Wno-unused-variable -Wno-unused-label -Wno-unused-parameter"
-  else 
-    opts="(declare (block)(not safe)(standard-bindings)(extended-bindings))"
-    optc="-O2 -Wall -Wno-unused-variable -Wno-unused-label -Wno-unused-parameter"
-  fi
-  src="$1"
-  ctgt="$2"
-  otgt="$3"
-  defs="$4"
-  path=`dirname $src`
-  here=`pwd`
-  cd $path
-  rmifexists "$ctgt"
-  if [ `string_contains "$modules" "syntax-case"` = yes ]; then
-    if [ ! -f ${SYS_HOSTPREFIX}/lib/gambcext.tmp ]; then
-      echo " => compiling syntax-case dynamic library.." 
-      veval "$SYS_GSC -dynamic -o  ${SYS_HOSTPREFIX}/lib/gambcext.o1 ${SYS_HOSTPREFIX}/lib/syntax-case.scm"
-      mv ${SYS_HOSTPREFIX}/lib/gambcext.o1 ${SYS_HOSTPREFIX}/lib/gambcext.tmp
-    fi
-    assertfile ${SYS_HOSTPREFIX}/lib/gambcext.tmp
-    cp ${SYS_HOSTPREFIX}/lib/gambcext.tmp ${SYS_HOSTPREFIX}/lib/gambcext.o1
-  else
-    rmifexists ${SYS_HOSTPREFIX}/lib/gambcext.o1
-  fi
-  echo " => $src.." 
-  veval "$SYS_GSC -prelude \"$opts\" -c -o $ctgt $src"
-  assertfile "$ctgt"
-  rmifexists "$otgt"
-  veval "$SYS_ENV $SYS_CC $defs -c -o $otgt $ctgt -I$SYS_PREFIX/include -I$SYS_PREFIX/include/freetype2 -I$path"
-  assertfile "$otgt"
-  cd $here
-}
+GAMBIT_DEFS="-D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
 
 compile_payload()
 {
@@ -363,9 +331,15 @@ compile_payload()
   mkdir -p "$SYS_PREFIX/build"
   dirty=no
   for src in $srcs; do
+    sext=`compile_supported_language $src`
+    if [ "X$sext" = "X" ]; then
+       assert "$src is not in a supported language"
+    fi
     chsh=`stringhash "$src"`
     ctgt="$SYS_PREFIX/build/$chsh.c"
-    csrcs="$csrcs $ctgt"
+    if [ "X$sext" = "Xscm" ]; then
+      csrcs="$csrcs $ctgt"
+    fi
     otgt=`echo "$ctgt" | sed 's/c$/o/'`
     objs="$objs $otgt"
     flag=no
@@ -386,7 +360,7 @@ compile_payload()
     fi
     if [ $flag = yes ]; then
       dirty=yes
-      compile "$src" "$ctgt" "$otgt" "$defs"
+      compile_$sext "$src" "$ctgt" "$otgt" "$defs"
     fi
   done
   lctgt=`echo "$ctgt" | sed 's/\.c$/\_\.c/'`
@@ -1083,7 +1057,10 @@ make_payload()
     if [ $m = "syntax-case" ]; then
       modsrc="$SYS_HOSTPREFIX/lib/syntax-case.scm"
     else
-      modsrc=`locatefile modules/$m/$m.scm`
+      modsrc=
+      for l in $language_extensions; do
+        modsrc="$modsrc `locatefile modules/$m/$m.$l silent`"
+      done
     fi
     if [ `string_contains "$coremodules" " $m "` = yes ]; then
       coresrcs="$coresrcs $modsrc"
@@ -1092,7 +1069,10 @@ make_payload()
     fi
   done
   for p in $plugins; do
-    plugsrc=`locatefile plugins/$p/$p.scm`
+    plugsrc=
+    for l in $language_extensions; do
+      plugsrc=`locatefile plugins/$p/$p.$l silent`
+    done
     auxsrcs="$auxsrcs $plugsrc"
   done
   # note: textures, fonts and strings can't go before glcore!
