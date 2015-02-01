@@ -1,7 +1,10 @@
 import java.nio.ByteBuffer;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import android.hardware.usb.UsbManager; 
+import android.hardware.usb.UsbManager;
+import android.hardware.usb.UsbDeviceConnection;
 import com.hoho.android.usbserial.driver.UsbSerialDriver;
+import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialProber;

@@ -1,12 +1,15 @@
-
 PKGURL=https://github.com/mik3y/usb-serial-for-android.git
-PKGHASH=5c8a655
+PKGHASH=228c793
 
 package_download $PKGURL $PKGHASH
+package_patch
 
 USBSER_LIBNAME=usb-serial-for-android
 
-cd UsbSerialLibrary
+cd usbSerialForAndroid/src/main/java
+# fix the place where the codes needs to go 
+mkdir src
+mv com src
 
 if [ -f $SYS_PREFIX/lib/$USBSER_LIBNAME.a ]; then
   echo " => removing old library..."
