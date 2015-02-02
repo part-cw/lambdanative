@@ -337,7 +337,7 @@ compile_payload()
     fi
     chsh=`stringhash "$src"`
     ctgt="$SYS_PREFIX/build/$chsh.c"
-    if [ "X$sext" = "Xscm" ]; then
+    if [ `gambit_link_stage $sext` = yes ]; then
       csrcs="$csrcs $ctgt"
     fi
     otgt=`echo "$ctgt" | sed 's/c$/o/'`
@@ -1075,7 +1075,12 @@ make_payload()
     done
     auxsrcs="$auxsrcs $plugsrc"
   done
+#  mainsrc=
+#  for l in $language_extensions; do
+#    mainsrc="$mainsrc `locatefile $appsrcdir/main.$l silent`"
+#  done
   # note: textures, fonts and strings can't go before glcore!
+#  srcs="$coresrcs $texture_srcs $font_srcs $string_srcs $auxsrcs $mainsrc"
   srcs="$coresrcs $texture_srcs $font_srcs $string_srcs $auxsrcs $appsrcdir/main.scm"
   compile_payload $name "$srcs" "$libraries"
   setstate
@@ -1306,7 +1311,7 @@ make_lntoolcheck()
 {
   echo "==> checking for lambdanative tools.."
   rmifexists $SYS_TMPDIR/tmp.config.cache
-  lntools="pngtool packtool ttftool"
+  lntools="pngtool packtool ttftool lngtool"
   for tool in $lntools; do
     if [ ! -x $SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX ] || [ `newerindir apps/$tool $SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX` = "yes" ]; then
       echo " => building lambdanative tool $tool.."
