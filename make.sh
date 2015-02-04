@@ -1071,7 +1071,7 @@ make_payload()
   for p in $plugins; do
     plugsrc=
     for l in $language_extensions; do
-      plugsrc=`locatefile plugins/$p/$p.$l silent`
+      plugsrc="$plugsrc `locatefile plugins/$p/$p.$l silent`"
     done
     auxsrcs="$auxsrcs $plugsrc"
   done
