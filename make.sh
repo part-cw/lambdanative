@@ -343,6 +343,10 @@ compile_payload()
     otgt=`echo "$ctgt" | sed 's/c$/o/'`
     objs="$objs $otgt"
     flag=no
+    if [ ! "X"`echo "$src" | grep "modules/config/config.scm"` = "X" ]; then
+       # force rebuilding of the config module, needed to include build info
+       flag=yes
+    fi
     if [ ! -f "$otgt" ]; then
       flag=yes
     else 
@@ -939,8 +943,6 @@ make_setup()
     # qcc does not support the dumpmachine option
     SYS_ARCH=arm-unknown-nto-qnx6.5.0eabi
   fi
-  # Adding BUILD info requires rebuilding of config module
-  touch modules/config/config.scm
   # build the subtool
   if ! `test -x  $SYS_HOSTPREFIX/bin/subtool` || 
        `test tools/subtool/subtool.c -nt $SYS_HOSTPREFIX/bin/subtool`; then
