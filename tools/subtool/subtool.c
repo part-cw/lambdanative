@@ -71,7 +71,7 @@ void load_pattern(char *fname)
       fgets(buf,1024,fd);
       if (feof(fd)||ferror(fd)||buf[0]==0) break;
       l=strlen(buf);
-      for (i=0;i<l;i++) { if (buf[i]<32) buf[i]=0; }
+      for (i=0;i<l;i++) { if (buf[i]>0 && buf[i]<32) buf[i]=0; }
       for (i=1;i<l;i++) { if (buf[i]==buf[0]) break; }
       buf[i]=0;
       struct pattern *tmp = (struct pattern*)malloc(sizeof(struct pattern));
