@@ -312,14 +312,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (begin 
               (httpsclient-close)  
               (let ((msg (redcap:split-headerbody (redcap:data->string))))
-                (if (and (string? (car msg)) (fx> (string-length (car msg)) 12) 
-                         (or (string=? (substring (car msg) 9 12) "201")
-                             (string=? (substring (car msg) 9 12) "200"))) 
-                  #t
-                  (let ((message (cadr msg))) 
-                    (log-error "REDCap:" (if (list? message) (car msg) (cadr msg)))
-                    #f)
-                )
+                (redcap:error-check msg)
               )
             ) (begin
              (if (and n (> n 0)) 
