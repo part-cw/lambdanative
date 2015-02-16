@@ -367,7 +367,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            "User-Agent: " redcap:user-agent  "\n"
            "Content-Type: " redcap:content-type  "\n"
            "Content-Length: " (number->string (+ (string-length request) (string-length recordstr) (string-length eventstr) (string-length formstr) (string-length fieldstr))) "\n"
-           "\r\n" request recordstr eventstr formstr fieldstr "\n")))
+           "\r\n" request eventstr formstr fieldstr recordstr "\n")))
 
     ;; Check if we have a valid connection before proceeding
     (if (fx= (httpsclient-open host) 1)
