@@ -1106,30 +1106,38 @@ end-of-c-declare
     (ttf:atlas-free) 
     atlas))
 
+
+(define ttf:dyncache (make-table))
+
 ;; returns a scheme font for runtime use
 (define (ttf->fnt fname pointsize . glyphlist)
   (ttf:log 1 "ttf->fnt" fname " " pointsize " " glyphlist)
-  (let* ((glyphs (cond
-           ((null? glyphlist) ttf:ascii)
-           ((string? (car glyphlist)) (utf8string->unicode (car glyphlist)))
-           (else (car glyphlist))))
-         (glyphvector (s32vector-append (list->s32vector glyphs) (s32vector 0)))
-         (atlas (fx= (ttf:atlas-make fname (s32vector pointsize 0) glyphvector "") 0))
-         (atlas-width (if atlas (ttf:atlas-info 1) #f))
-         (atlas-height (if atlas (ttf:atlas-info 2) #f))
-         (atlas-datalen (if atlas (ttf:atlas-info 3) #f))
-         (atlas-data (if atlas (let ((v (make-u8vector atlas-datalen))) (ttf:atlas-data v) v) #f))
-         (atlas-texture (if atlas ((eval 'glCoreTextureCreate) atlas-width atlas-height atlas-data) #f)))
-     (if atlas-texture
-       (let loop ((n 1)(gs glyphs)(fnt '()))
-         (if (fx= (length gs) 0) (let ((fnl (append 
-             (list (list 0 (list 0 (ttf:font-height) atlas-texture 0. 0. 0. 0.) 0 0 0)) fnt)))
-             (ttf:atlas-free) fnl)
-           (loop (fx+ n 1) (cdr gs) (append fnt (list 
-             (list (ttf:glyph-fxinfo n 1) 
-               (list (ttf:glyph-fxinfo n 2) (ttf:glyph-fxinfo n 3) atlas-texture
-                     (ttf:glyph-flinfo n 1) (ttf:glyph-flinfo n 2) (ttf:glyph-flinfo n 3) (ttf:glyph-flinfo n 4))
-               (ttf:glyph-fxinfo n 4) (ttf:glyph-flinfo n 5) (ttf:glyph-fxinfo n 5)))))))
-       #f)))
+  (let* ((fntid  (equal?-hash (list fname pointsize glyphlist)))
+         (cachedfnt (table-ref ttf:dyncache fntid #f)))
+    (if cachedfnt cachedfnt 
+      (let* ((glyphs (cond
+               ((null? glyphlist) ttf:ascii)
+               ((string? (car glyphlist)) (utf8string->unicode (car glyphlist)))
+               (else (car glyphlist))))
+             (glyphvector (s32vector-append (list->s32vector glyphs) (s32vector 0)))
+             (atlas (fx= (ttf:atlas-make fname (s32vector pointsize 0) glyphvector "") 0))
+             (atlas-width (if atlas (ttf:atlas-info 1) #f))
+             (atlas-height (if atlas (ttf:atlas-info 2) #f))
+             (atlas-datalen (if atlas (ttf:atlas-info 3) #f))
+             (atlas-data (if atlas (let ((v (make-u8vector atlas-datalen))) (ttf:atlas-data v) v) #f))
+             (atlas-texture (if atlas ((eval 'glCoreTextureCreate) atlas-width atlas-height atlas-data) #f)) 
+             (fnt (if atlas-texture
+               (let loop ((n 1)(gs glyphs)(fnt '()))
+                 (if (fx= (length gs) 0) (let ((fnl (append 
+                     (list (list 0 (list 0 (ttf:font-height) atlas-texture 0. 0. 0. 0.) 0 0 0)) fnt)))
+                     (ttf:atlas-free) fnl)
+                   (loop (fx+ n 1) (cdr gs) (append fnt (list 
+                     (list (ttf:glyph-fxinfo n 1) 
+                         (list (ttf:glyph-fxinfo n 2) (ttf:glyph-fxinfo n 3) atlas-texture
+                             (ttf:glyph-flinfo n 1) (ttf:glyph-flinfo n 2) (ttf:glyph-flinfo n 3) (ttf:glyph-flinfo n 4))
+                       (ttf:glyph-fxinfo n 4) (ttf:glyph-flinfo n 5) (ttf:glyph-fxinfo n 5)))))))
+               #f)))
+         (if fnt (table-set! ttf:dyncache fntid fnt))
+         fnt))))
 
 ;; eof
