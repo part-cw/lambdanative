@@ -1109,7 +1109,10 @@ end-of-c-declare
 ;; returns a scheme font for runtime use
 (define (ttf->fnt fname pointsize . glyphlist)
   (ttf:log 1 "ttf->fnt" fname " " pointsize " " glyphlist)
-  (let* ((glyphs (if (fx= (length glyphlist) 1) (car glyphlist) ttf:ascii))
+  (let* ((glyphs (cond
+           ((null? glyphlist) ttf:ascii)
+           ((string? (car glyphlist)) (utf8string->unicode (car glyphlist)))
+           (else (car glyphlist))))
          (glyphvector (s32vector-append (list->s32vector glyphs) (s32vector 0)))
          (atlas (fx= (ttf:atlas-make fname (s32vector pointsize 0) glyphvector "") 0))
          (atlas-width (if atlas (ttf:atlas-info 1) #f))
