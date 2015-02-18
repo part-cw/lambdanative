@@ -48,11 +48,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                            (map (lambda (line) (map (lambda (cell) (string-remove-quotes cell)) line)) (csv-read fullname))))
       (log-error "localization file " fullname " not found"))))
 
-(define (local-get-text str)
-  (if (not (string? str)) str
-    (if (fx= local:index 0) str
-      (let ((lookup (table-ref local:table str #f)))
-        (if lookup (if (>= (length lookup) local:index)
-          (list-ref lookup (fx- local:index 1)) str) str)))))
+(define (local-get-text key . altstr)
+  (let ((str (if (null? altstr) key (car altstr)))) ;set str with altstr if provided, for backwards compatibility
+	  (if (not (string? key)) str
+	    (if (fx= local:index 0) str
+	      (let ((lookup (table-ref local:table key #f)))
+	        (if lookup (if (>= (length lookup) local:index)
+	          (list-ref lookup (fx- local:index 1)) str) str))))))
 
 ;; eof
