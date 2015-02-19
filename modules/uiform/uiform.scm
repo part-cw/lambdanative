@@ -338,6 +338,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui:uiform-textentry-input type mx my . args)
   (let* ((id  (glgui:uiform-arg args 'id #f))
          (loc (glgui:uiform-arg args 'location 'db))
+         (keycb (glgui:uiform-arg args 'keycb #f))
          (keypad-config (glgui:uiform-arg args 'keypad 'default))
          (focusid (uiget 'focusid))
          (keypad-on (uiget 'keypad-on))
@@ -347,10 +348,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (and id (fx= type EVENT_BUTTON1UP)) (begin
       (uiset 'focusid id)
       (uiset 'focuslocation loc)
+      (uiset 'focuskeycb keycb)
       (uiset 'keypad (case keypad-config
           ((default) keypad:simplified)
           ((numfloat) keypad:numfloat)
-          ((numint) keypad:numint)
+          ((numint) keypad:numeric)
           ((numcolon)  keypad:numcolon)
           ((numdash)  keypad:numdash)
           (else      keypad:simplified)))
@@ -359,6 +361,90 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (glgui:uiform-keypad-up)
       (if (and keypad-on id (eq? id focusid)) (glgui:uiform-keypad-down))
    ))))
+
+;; -------------
+;; time entry
+
+(define (glgui:uiform-timeentry-draw x y w . args)
+  (let* ((h 48)
+         (fnt (uiget 'fnt))
+         (label (glgui:uiform-arg args 'text ""))
+         (id (glgui:uiform-arg args 'id #f))
+         (ampm (glgui:uiform-arg args 'ampm #f))
+         (loc (glgui:uiform-arg args 'location 'db))
+         (password  (glgui:uiform-arg args 'password #f))
+         (default "HH:MM")
+         (idvalue (if id (xxget loc id #f)))
+         (idvaluestr (if (string? idvalue) idvalue default))
+         (ampmvalue (if id (xxget loc ampm #f)))
+         (defaultampm (glgui:uiform-arg args 'defaultampm "AM"))
+         (ampmvaluestr (if (string? ampmvalue) ampmvalue defaultampm))
+         (defcolor (uiget 'color-default))
+         (selcolor (uiget 'color-select))
+         (buttoncolor White)
+         (fgcolor (if idvalue White (uiget 'color-default)))
+         (focusid  (uiget 'focusid))
+         (hasfocus (eq? focusid id))
+         (indent (glgui:uiform-arg args 'indent
+            (if (string=? label "") 0.1 0.3)))
+         (txtw  (if (and focusid idvalue idvaluestr) (glgui:stringwidth idvaluestr fnt) 0))
+         (txth  (if focusid (glgui:fontheight fnt) 0))
+         (ampmw (* w 0.2)))
+    
+     (if (uiget 'sanemap) (begin
+       (glgui:draw-text-right x y (- (* w indent) 10) h label fnt White)
+       (glgui:draw-box (+ x (* w indent)) y (- (* w (- 1. indent)) ampmw 4) h (if hasfocus selcolor defcolor))
+       (glgui:draw-box (+ x (- w ampmw 2)) y ampmw h defcolor)
+       (glgui:draw-text-center (+ x (- w ampmw 2)) y ampmw h ampmvaluestr fnt White)
+       (if idvaluestr (glgui:draw-text-left (+ x (* w indent) 10) y (- (* w (- 1. indent)) ampmw 10) h idvaluestr fnt fgcolor))
+       (if hasfocus
+          (let* ((cx (+ x (* w indent) 10 txtw 2))
+                 (cy (+ y (/ (- h txth) 2.)))
+                 (cw 3) (ch txth)
+                 (cc (if (odd? (fix (* 2 ##now))) White selcolor)))
+             (glgui:draw-box cx cy cw ch cc)))
+       ))
+     h
+  ))
+
+(define (glgui:uiform-timeentry-input type mx my x y w h . args)
+  (let* ((id  (glgui:uiform-arg args 'id #f))
+         (loc (glgui:uiform-arg args 'location 'db))
+         (focusid (uiget 'focusid))
+         (keypad-on (uiget 'keypad-on))
+         (keypad-height (uiget 'keypad-height)))
+    
+    (if (and id (fx= type EVENT_BUTTON1UP))
+      (let ((ampmw (* w 0.2)))
+        (if (> mx (+ x (- w ampmw 4)))
+          (let* ((ampm (glgui:uiform-arg args 'ampm #f))
+                 (ampmvalue (if id (xxget loc ampm #f)))
+                 (defaultampm (glgui:uiform-arg args 'defaultampm "AM"))
+                 (ampmvaluestr (if (string? ampmvalue) ampmvalue defaultampm)))
+            (xxset loc ampm (if (string=? ampmvaluestr "PM") "AM" "PM")))
+          (begin
+            (uiset 'focusid id)
+            (uiset 'focuslocation loc)
+            (uiset 'focuskeycb (lambda (floc fid str)
+                                  (let ((len (string-length str))
+                                        (cindex (string-index str #\:)))
+                                    (cond
+                                      ((and (fx= len 2) (not cindex))
+                                         (xxset floc fid (string-append (substring str 0 1) ":" (substring str 1 2))))
+                                      ((and (fx= len 4) (fx= cindex 2))
+                                          ;; Move colon left
+                                          (xxset floc fid (string-append (substring str 0 1) ":" (substring str 1 2) (substring str 3 4))))
+                                      ((and (fx= len 5) (fx= cindex 1))
+                                          ;; Move colon right
+                                          (xxset floc fid (string-append (substring str 0 1) (substring str 2 3) ":" (substring str 3 5))))
+                                      ((fx> len 5)
+                                         (xxset floc fid (substring str 0 5)))))))
+            
+            (uiset 'keypad keypad:numeric)
+            (uiset 'toggle #f)
+            (uiset 'shift #f)
+            (glgui:uiform-keypad-up)
+            (if (and keypad-on id (eq? id focusid)) (glgui:uiform-keypad-down))))))))
 
 ;; -------------
 ;; button
@@ -516,19 +602,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui:uiform-radio-draw x y w . args)
   (let* ((h 48) 
          (fnt (uiget 'fnt))
-
          (id (glgui:uiform-arg args 'id #f))
          (loc (glgui:uiform-arg args 'location 'db))
          (curvalue (xxget loc id #f))
-         (defcolor (uiget 'color-default))
-         (hicolor (uiget 'color-high))
-         (locolor (uiget 'color-default))
+         (boxcolor (uiget 'color-default))
          (text (glgui:uiform-arg args 'text #f))
          (color (glgui:uiform-arg args 'color White))
          (left (glgui:uiform-arg args 'left #f))
          (leftstr (car left))
          (leftvalue (cadr left))
-         (leftcolor (if curvalue (if (equal? leftvalue curvalue) hicolor locolor) defcolor))
+         (leftsel (equal? leftvalue curvalue))
          (lefth (* 0.8 h))
          (leftw (* 0.8 h))
          (leftx (* 0.3 w))
@@ -540,12 +623,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (righty (+ y (* 0.1 h)))
          (rightstr (car right))
          (rightvalue (cadr right))
-         (rightcolor (if curvalue (if (equal? rightvalue curvalue) hicolor locolor) defcolor)))
+         (rightsel (equal? rightvalue curvalue)))
      (if (uiget 'sanemap) (begin
        (if text (glgui:draw-text-right x y (- (* 0.3 w) 10) h text fnt color)) 
-       (glgui:draw-box leftx lefty leftw lefth leftcolor)
+       (glgui:draw-box leftx lefty leftw lefth boxcolor)
+       (if leftsel (glgui:draw-pixmap-center leftx lefty leftw lefth check.img White))
        (glgui:draw-text-left (+ leftx leftw 10) y (* 0.3 w) h leftstr fnt color)
-       (glgui:draw-box rightx righty rightw righth rightcolor)
+       (glgui:draw-box rightx righty rightw righth boxcolor)
+       (if rightsel (glgui:draw-pixmap-center rightx righty rightw righth check.img White))
        (glgui:draw-text-left (+ rightx rightw 10) y (* 0.3 w) h rightstr fnt color)
      ))
      h
@@ -584,9 +669,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (id (glgui:uiform-arg args 'id #f))
          (loc (glgui:uiform-arg args 'location 'db))
          (curvalue (xxget loc id #f))
-         (defcolor (uiget 'color-default))
-         (hicolor (uiget 'color-high))
-         (locolor (uiget 'color-default))
+         (boxcolor (uiget 'color-default))
          (color (glgui:uiform-arg args 'color White))
          (text (glgui:uiform-arg args 'text #f))
          (indent (glgui:uiform-arg args 'indent 0.2))
@@ -595,7 +678,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (bh (* 0.8 h))
          (bw (* 0.8 h)))
     (if (uiget 'sanemap) (begin
-      (glgui:draw-box bx by bw bh (if curvalue hicolor locolor))
+      (glgui:draw-box bx by bw bh boxcolor)
+      (if curvalue (glgui:draw-pixmap-center bx by bw bh check.img White))
       (glgui:draw-text-left (+ bx bw 10) (+  y (/ (- h fnth) 2.)) (- w bx bw 10 10) fnth text fnt color) 
     ))
   h
@@ -726,17 +810,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (mergedselections (let loop ((es mergedentries)(res '()))
            (if (= (length es) 0) res (loop (cdr es) (append res (if (member (car es) actualentries) '(#t) '(#f)))))))
          (noentries (length mergedentries))
-         (defcolor (uiget 'color-default))
-         (hicolor (uiget 'color-high))
-         (locolor (uiget 'color-default)))
+         (boxcolor (uiget 'color-default)))
      (uiset idmerged mergedentries)
      (let loop ((es (reverse mergedentries))(ss (reverse mergedselections))(dy 0))
        (if (= (length es) 0) dy (begin
-         (if (uiget 'sanemap) (begin
-           (glgui:draw-box (+ x (* w 0.1)) (+ y dy 1) (* w 0.8) (- h 2) defcolor)
-           (glgui:draw-box (+ x (* w 0.1) (* h 0.1)) (+ y dy (* h 0.1)) (* h 0.8) (* h 0.8) (if (car ss) hicolor locolor))
-           (glgui:draw-text-center x (+ y dy) w h (car es) fnt White)
-         ))
+         (if (uiget 'sanemap)
+           (let ((bx (+ x (* w 0.1) (* h 0.1)))
+                 (by (+ y dy (* h 0.1)))
+                 (bw (* h 0.8))
+                 (bh (* h 0.8)))
+             (glgui:draw-box (+ x (* w 0.1)) (+ y dy 1) (* w 0.8) (- h 2) boxcolor)
+             (glgui:draw-box bx by bw bh boxcolor)
+             (if (car ss) (glgui:draw-pixmap-center bx by bw bh check.img White))
+             (glgui:draw-text-center x (+ y dy) w h (car es) fnt White)))
          (loop (cdr es)(cdr ss)(+ dy h)))))
   ))
 
@@ -805,37 +891,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      ))
      h  
   ))
-
-;; -------------
-;; uiform keypad
-
-(define keypad:numfloat `( (
-  ( #\7 #\8 #\9 )
-  ( #\4 #\5 #\6 )
-  ( #\1 #\2 #\3 )
-  ((,delchar ,glgui_keypad_delete.img) #\. #\0)
-)))
-
-(define keypad:numint `( (
-  ( #\7 #\8 #\9 )
-  ( #\4 #\5 #\6 )
-  ( #\1 #\2 #\3 )
-  ((,delchar ,glgui_keypad_delete.img) (#\0 "0" 2.))
-)))
-
-(define keypad:numcolon `( (
-  ( #\7 #\8 #\9 )
-  ( #\4 #\5 #\6 )
-  ( #\1 #\2 #\3 )
-  ((,delchar ,glgui_keypad_delete.img) #\: #\0)
-)))
-
-(define keypad:numdash `( (
-  ( #\7 #\8 #\9 )
-  ( #\4 #\5 #\6 )
-  ( #\1 #\2 #\3 )
-  ((,delchar ,glgui_keypad_delete.img) #\- #\0)
-)))
 
 ;; -------------
 ;; uiform modal
@@ -973,6 +1028,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 ((label)  (apply glgui:uiform-label-draw (append (list bx by bw) (cdr node))))
                 ((button) (apply glgui:uiform-button-draw (append (list bx by bw) (cdr node))))
                 ((textentry) (apply glgui:uiform-textentry-draw (append (list bx by bw) (cdr node))))
+                ((timeentry) (apply glgui:uiform-timeentry-draw (append (list bx by bw) (cdr node))))
                 ((image) (apply glgui:uiform-image-draw (append (list bx by bw) (cdr node))))
                 ((radiobox) (apply glgui:uiform-radio-draw (append (list bx by bw) (cdr node))))
                 ((dropdown) (apply glgui:uiform-dropdown-draw (append (list bx by bw) (cdr node))))
@@ -1082,6 +1138,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                          (uiset 'node-height node-height)
                          (case (car node)
                            ((textentry) (apply glgui:uiform-textentry-input (append (list type mx my) (cdr node))))
+                           ((timeentry) (apply glgui:uiform-timeentry-input (append (list type mx my x y w h) (cdr node))))
                            ((button) (apply glgui:uiform-button-input (append (list type mx my) (cdr node))))
                            ((radiobox) (apply glgui:uiform-radio-input (append (list type mx my) (cdr node))))
                            ((dropdown) (apply glgui:uiform-dropdown-input (append (list type mx my) (cdr node))))
@@ -1106,12 +1163,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 (glgui:uiform-keypad-down))
               ((fx= mx EVENT_KEYBACKSPACE) 
                 (if (> oldstrlen 0) 
-                  (xxset focuslocation focusid (substring oldstr 0 (- oldstrlen 1)))
-                 )) 
+                  (let ((cb (uiget 'focuskeycb #f))
+                        (newstr (substring oldstr 0 (- oldstrlen 1))))
+                    (xxset focuslocation focusid (substring oldstr 0 (- oldstrlen 1)))
+                    (if cb (cb focuslocation focusid newstr)))))
               (else
-                (if (and (> mx 31) (< mx 127))
-                  (xxset focuslocation focusid (string-append oldstr (string (integer->char mx))))
-                ))
+                (let ((cb (uiget 'focuskeycb #f))
+                        (newstr (string-append oldstr (string (integer->char mx)))))
+                    (xxset focuslocation focusid newstr)
+                    (if cb (cb focuslocation focusid newstr))))
             )
         ))
        (else (if (not inside) (uiset 'old #f)))
