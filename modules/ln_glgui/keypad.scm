@@ -47,6 +47,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ( (,delchar ,glgui_keypad_delete.img) #\0 (,retchar ,glgui_keypad_return.img))
 )))
 
+(define keypad:numfloat `( (
+  ( #\1 #\2 #\3 )
+  ( #\4 #\5 #\6 )
+  ( #\7 #\8 #\9 )
+  ( (,delchar ,glgui_keypad_delete.img 0.5) (#\. "." 0.5) #\0 (,retchar ,glgui_keypad_return.img))
+)))
+
+(define keypad:numcolon `( (
+  ( #\7 #\8 #\9 )
+  ( #\4 #\5 #\6 )
+  ( #\1 #\2 #\3 )
+  ((,delchar ,glgui_keypad_delete.img 0.5) (#\: ":" 0.5) #\0 (,retchar ,glgui_keypad_return.img))
+)))
+
+(define keypad:numdash `( (
+  ( #\7 #\8 #\9 )
+  ( #\4 #\5 #\6 )
+  ( #\1 #\2 #\3 )
+  ((,delchar ,glgui_keypad_delete.img 0.5) (#\- "-" 0.5) #\0 (,retchar ,glgui_keypad_return.img))
+)))
+
 (define keypad:calculator `((
   ( #\C  (#\X "MC")  (#\Y "MR") (#\Z "M+") )
   ( (,delchar ,glgui_keypad_delete.img) (#\S "+/-") #\% #\/ )
