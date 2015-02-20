@@ -100,9 +100,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (sanestring-height-cm s)
   (pregexp-match "^(?x: [3-9][0-9] | 1[0-9][0-9] | 2[0-2][0-9] )$" s))
 
-;; human weight in kg
+;; human weight in kg possibly with a decimal point
 (define (sanestring-weight-kg s)
-  (pregexp-match "^(?x: [2-9] | [1-9][0-9] | [1-2][0-9][0-9] )$" s))
+  (pregexp-match "^(?x: ([2-9] | [1-9][0-9] | [1-2][0-9][0-9] )( () | \\.[0-9]+ )?  )$" s))
 
 (define (sanestring-alpha s)
   (pregexp-match "^([a-zA-Z\\s]+)$" s))
