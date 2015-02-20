@@ -378,7 +378,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (idvaluestr (if (string? idvalue) idvalue default))
          (ampmvalue (if id (xxget loc ampm #f)))
          (defaultampm (glgui:uiform-arg args 'defaultampm "AM"))
-         (ampmvaluestr (if (string? ampmvalue) ampmvalue defaultampm))
+         (ampmvaluestr (if (string? ampmvalue)
+                             ampmvalue
+                             (begin
+                               ;; If no ampmvalue, set it - always has a value displayed
+                               (xxset loc ampm defaultampm)
+                               defaultampm)))
          (defcolor (uiget 'color-default))
          (selcolor (uiget 'color-select))
          (buttoncolor White)
