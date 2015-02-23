@@ -1,7 +1,6 @@
-
-VERSION=1.3.5
+VERSION=1.4
 PKGURL="http://mosquitto.org/files/source/mosquitto-${VERSION}.tar.gz"
-PKGHASH=2d30ffbf1c1b310581735e7ea10465e7c310e580
+PKGHASH=9e34f51bbbb0224920432af182e71e911e9a5ca3
 
 package_download $PKGURL $PKGHASH
 
@@ -33,10 +32,10 @@ fi
 # clients
 cd ../client
 $SYS_CC -DVERSION="\"${VERSION}\"" -DTIMESTAMP="\"${TIMESTAMP}\"" \
-  $options -o $SYS_PREFIX/bin/mosquitto_pub pub_client.c -I. -I.. -I../lib \
+  $options -o $SYS_PREFIX/bin/mosquitto_pub client_shared.c pub_client.c -I. -I.. -I../lib \
   -I$SYS_PREFIX/include  -L$SYS_PREFIX/lib  -lmosquitto $libs
 $SYS_CC -DVERSION="\"${VERSION}\"" -DTIMESTAMP="\"${TIMESTAMP}\"" \
-  $options -o $SYS_PREFIX/bin/mosquitto_sub sub_client.c -I. -I.. -I../lib \
+  $options -o $SYS_PREFIX/bin/mosquitto_sub client_shared.c sub_client.c -I. -I.. -I../lib \
   -I$SYS_PREFIX/include  -L$SYS_PREFIX/lib  -lmosquitto $libs
 
 # broker

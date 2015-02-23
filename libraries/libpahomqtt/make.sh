@@ -1,5 +1,5 @@
-PKGURL=https://github.com/eclipse/paho.mqtt.c/archive/v1.0.2.tar.gz
-PKGHASH=fe165bba21591c2022a1e5fb5cbdc56f07f6dfcb
+PKGURL=https://github.com/eclipse/paho.mqtt.c/archive/v1.0.3.tar.gz
+PKGHASH=afe88aaf0500030f880ee3cb0a81efd44245ac00
 
 package_download $PKGURL $PKGHASH
 
