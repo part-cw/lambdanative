@@ -49,11 +49,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #ifdef ANDROID
+  void android_location_toggleGPS(int);
   double android_location_getlatitude(void);
   double android_location_getlongitude(void);
   double android_location_getaltitude(void);
   double android_location_getaccuracy(void);
   double android_location_gettimestamp(void);
+  int android_location_getsatviewed(void);
+  int android_location_getsatfixed(void);
+  int android_location_service(void);
 #endif
 
 #ifdef BB10
@@ -63,6 +67,50 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   double qnx_location_getaccuracy(void);
   double qnx_location_gettimestamp(void);
 #endif
+
+void enable_gps(void){
+#ifdef IOS
+
+#elif ANDROID
+  android_location_toggleGPS(1);
+#elif BB10
+
+#else
+   return;
+#endif
+}
+
+void disable_gps(void){
+#ifdef IOS
+
+#elif ANDROID
+  android_location_toggleGPS(0);
+#elif BB10
+
+#else
+   return;
+#endif
+}
+
+static int sat_view(void){
+#ifdef IOS
+#elif ANDROID
+  return android_location_getsatviewed();
+#elif BB10
+#else
+  return 0;
+#endif
+}
+
+static int sat_fix(void){
+#ifdef IOS
+#elif ANDROID
+  return android_location_getsatfixed();
+#elif BB10
+#else
+  return 0;
+#endif
+}
 
 static double longitude(void){
 #ifdef IOS
@@ -124,13 +172,28 @@ static double timestamp(void){
 #endif
 }
 
+int location_service_status(){
+#ifdef IOS
+#elif ANDROID
+  return android_location_service();
+#elif BB10
+#else
+  return -1;
+#endif
+}
 
 end-of-c-declare
 )
 
+(define gps-enable (c-lambda () void "enable_gps"))
+(define gps-disable (c-lambda () void "disable_gps"))
 (define gps-latitude (c-lambda () double "latitude"))
 (define gps-longitude (c-lambda () double "longitude"))
 (define gps-accuracy (c-lambda () double "accuracy"))
 (define gps-altitude (c-lambda () double "altitude"))
 (define gps-timestamp (c-lambda () double "timestamp"))
+(define gps-location-service (c-lambda () int "location_service_status"))
+
+(define gps-sat-in-view (c-lambda () int "sat_view"))
+(define gps-sat-in-fix (c-lambda () int "sat_fix"))
 ;; eof

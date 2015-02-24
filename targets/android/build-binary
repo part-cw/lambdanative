@@ -46,8 +46,10 @@ android_subst()
   ac_subst ANDROID_JAVA_ONCREATE "@$d/ANDROID_java_oncreate"
   ac_subst ANDROID_JAVA_ONPAUSE "@$d/ANDROID_java_onpause"
   ac_subst ANDROID_JAVA_ONRESUME "@$d/ANDROID_java_onresume"
+  ac_subst ANDROID_JAVA_ONDESTROY "@$d/ANDROID_java_ondestroy"
   ac_subst ANDROID_JAVA_ONSENSORCHANGED "@$d/ANDROID_java_onsensorchanged"
   ac_subst ANDROID_JAVA_ACTIVITYADDITIONS "@$d/ANDROID_java_activityadditions"
+  ac_subst ANDROID_JAVA_ADDITIONS "@$d/ANDROID_java_additions"
   ac_subst ANDROID_XML_PERMISSIONS "@$d/ANDROID_xml_permissions"
   ac_subst ANDROID_INTENT_FILTERS "@$d/ANDROID_intent_filters"
   ac_subst ANDROID_XML_RECEIVERS "@$d/ANDROID_xml_receivers"
@@ -60,9 +62,7 @@ done
 android_subst `locatedir apps/$SYS_APPNAME`
 
 echo " => creating android project.."
-tmpdir=`mktemp -d tmp.XXXXXX`
-tmpdir=`pwd`"/$tmpdir"
-cd $here
+tmpdir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 ANDROIDSDKTARGET=`$ANDROIDSDK/tools/android list targets | grep "^id:" | grep "android-$ANDROIDAPI" | cut -f 2 -d " "`
 if [ "X$ANDROIDSDKTARGET" = "X" ]; then
   echo "ERROR: API $ANDROIDAPI not a target."
@@ -120,15 +120,13 @@ echo " => transferring java hook.."
 ac_output loaders/android/bootstrap.java.in $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
 
 echo " => preparing manifest.."
-ac_output loaders/android/AndroidManifest.xml.in tmp.xml
-cat tmp.xml | sed '/^#/d' > "$tmpdir/AndroidManifest.xml"
-rm tmp.xml
+ac_output loaders/android/AndroidManifest.xml.in $SYS_TMPDIR/tmp.xml
+cat $SYS_TMPDIR/tmp.xml | sed '/^#/d' > "$tmpdir/AndroidManifest.xml"
+rmifexists $SYS_TMPDIR/tmp.xml
 
 
 echo " => creating payload module.."
-cd $here
-tmpmoddir=`mktemp -d tmp.XXXXXX`
-tmpmoddir=`pwd`"/$tmpmoddir"
+tmpmoddir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 mkdir $tmpmoddir/libpayload
 cp loaders/android/Android.mk.module $tmpmoddir/libpayload/Android.mk
 cp $SYS_PREFIX/lib/libpayload.a $tmpmoddir/libpayload
@@ -172,7 +170,7 @@ for lib in $libs; do
 done
 
 echo " => compiling application.."
-veval "ant -quiet release"
+veval "ant release"
 asserterror $?
 cd $here
 pkgfile="$tmpdir/bin/$(echo $SYS_APPNAME)-release-unsigned.apk"
@@ -185,6 +183,9 @@ assertfile $fnlfile
 
 # Signing the binary
 keystore=`locatefile PROFILE | sed 's/PROFILE$/android\.keystore/'`
+if [ ! -f "$keystore" ]; then
+  keystore=$SYS_TMPDIR/android.keystore
+fi
 if [ ! -e $keystore ]; then
   echo " => generating keystore [$keystore].."
   keytool -genkey -v -keystore $keystore -dname "CN=$SYS_ORGTLD.$SYS_ORGSLD" -alias "$SYS_ORGTLD.$SYS_ORGSLD" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$SYS_ANDROIDPW" -keypass "$SYS_ANDROIDPW"
@@ -196,10 +197,14 @@ asserterror $?
 
 echo " => zipaligning.."
 assertfile $fnlfile
-mv $fnlfile tmp.apk
-$ANDROIDSDK/tools/zipalign -f 4 tmp.apk $fnlfile
+mv $fnlfile $SYS_TMPDIR/tmp.apk
+if [ -x $ANDROIDSDK/tools/zipalign ]; then
+  $ANDROIDSDK/tools/zipalign -f 4 $SYS_TMPDIR/tmp.apk $fnlfile
+else
+  `ls -1 $ANDROIDSDK/build-tools/*/zipalign | tail -n 1` -f 4 $SYS_TMPDIR/tmp.apk $fnlfile
+fi
 asserterror $?
-rmifexists tmp.apk
+rmifexists $SYS_TMPDIR/tmp.apk
 
 echo " => cleaning up.."
 rm -rf $tmpmoddir

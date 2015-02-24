@@ -1,2 +1,7 @@
 private LocationManager locationManager;
 private String provider;
+private LocationListener locationlistener;
+private GpsStatus.Listener gpslistener;
+private int gpsStatus;
+private GpsStatus mStatus;
+private int locationServiceEnabled;

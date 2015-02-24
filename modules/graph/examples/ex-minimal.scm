@@ -12,5 +12,6 @@
 (graph-closepathstroke g)
 
 (graph-output g GRAPH_PDF "ex-minimal.pdf")
+(graph-output g GRAPH_SVG "ex-minimal.svg")
 
 ;;eof

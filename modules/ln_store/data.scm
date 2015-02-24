@@ -159,6 +159,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         ))
       #f)))
 
+(define (store-ref-clear store id . fback)
+  (let ((fallback (if (= (length fback) 1) (car fback) #f))
+        (t (store:datatable store)))
+    (if (table? t)
+      (begin
+        (store:grab!)
+        (let ((res (table-ref t id #f)))
+          (table-set! t id)
+          (store:release!)
+          (if (pair? res) (car res) fallback)
+        ))
+      #f)))
+
 ;; lookup volatile store
 (define (store-timedref store id . fback)
   (if (= (length fback) 1)

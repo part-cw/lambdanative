@@ -58,10 +58,10 @@ if [ `is_gui_app` = "yes" ]; then
   fi
   if [ $dirty = "yes" ]; then
     echo " => generating icns icon.."
-    tiffutil -catnosizecheck $tiffs -out tmp.tif 2> /dev/null
-    assertfile tmp.tif
-    tiff2icns tmp.tif "$iconimg"
-    rm tmp.tif
+    tiffutil -catnosizecheck $tiffs -out $SYS_TMPDIR/tmp.tif 2> /dev/null
+    assertfile $SYS_TMPDIR/tmp.tif
+    tiff2icns $SYS_TMPDIR/tmp.tif "$iconimg"
+    rmifexists $SYS_TMPDIR/tmp.tif
   fi
   assertfile "$iconimg"
   echo " => transferring icon.."
@@ -77,7 +77,7 @@ make_soundfile_macosx()
 }
 make_sounds make_soundfile_macosx
 
-tmpdir=`mktemp -d tmp.XXXXXX`
+tmpdir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 echo " => compiling application.."
 if [ `is_standalone_app` = "yes" ]; then
   cd "$tmpdir"

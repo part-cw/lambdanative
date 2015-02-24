@@ -157,6 +157,9 @@ static int soundfile_play(int id)
 
 #include <portaudio.h>
 
+extern int portaudio_needsinit;
+extern int portaudio_odev;
+
 #define AF_FRAMES_PER_CALLBACK         1024
 #define OUTPUT_DEVICE  (Pa_GetDefaultOutputDevice())
 #define SAMPLE_FORMAT  paInt16
@@ -184,10 +187,14 @@ static int af_portaudio_cb( const void *inputBuffer, void *outputBuffer,
 
 static int portaudio_init(void)
 {
+  PaError err;
   PaStreamParameters inputParameters, outputParameters;
-  PaError err = Pa_Initialize();
-  if( err != paNoError ) goto error;
-  outputParameters.device = OUTPUT_DEVICE; 
+  if (portaudio_needsinit) {
+    err = Pa_Initialize();
+    if( err != paNoError ) goto error;
+    portaudio_needsinit=0;
+  }
+  outputParameters.device = (portaudio_odev<0?OUTPUT_DEVICE:portaudio_odev);
   if (outputParameters.device == paNoDevice) { goto error; }
   outputParameters.channelCount = 2;
   outputParameters.sampleFormat = SAMPLE_FORMAT;

@@ -63,10 +63,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (devyorigo (table-ref g 'devyorigo))
         (xstring   (table-ref g 'xstring))
         (fontnum   (table-ref g 'fontnum))
-        (coord     (table-ref g 'coord)))
+        (coord     (table-ref g 'coord))
+        (o   (table-ref g 'output)))
     (graphout:setcoord g GRAPH_AXIS)
     (graphout:vtextcenter g
-      (graphout:devx->axisx g (+ (- leastx (* 0.4 fontnum)) devxorigo))
+      (graphout:devx->axisx g (+ (- leastx (* (if (fx= o GRAPH_SVG) 3. 0.4) fontnum)) devxorigo))
       (graphout:devy->axisy g (+ (/ (* physysize phys2dev) 2.0) devyorigo))
       text (string-append xstring "X")
     )  ;; xstring is a phantom spacer

@@ -1,6 +1,6 @@
 /*
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2014, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -42,6 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #import "launcherAppDelegate.h"
 #import "EAGLView.h"
+#import "GLViewController.h"
 
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
@@ -52,17 +53,26 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #import <MediaPlayer/MediaPlayer.h>
 #endif
 
+@class GLViewController;
+@class EAGLView;
+
 @implementation launcherAppDelegate
 
 @synthesize window;
 @synthesize glView;
+@synthesize controller;
 
 - (void)applicationDidFinishLaunching:(UIApplication *)application {
-
+  DMSG("applicationDidFinishLaunching");
   CGRect screenSize = [[UIScreen mainScreen] bounds];
   window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] applicationFrame]];
-  glView = [[EAGLView alloc] initWithFrame:window.frame];
-  [window addSubview:glView];
+
+  GLViewController *theController = [[GLViewController alloc] init];
+  self.controller = theController;
+  [theController release];
+
+  [self.window setRootViewController:self.controller];
+  
   [window makeKeyAndVisible];
 
 #ifdef USE_PUSHNOTIFICATION
@@ -106,30 +116,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   ffi_event(EVENT_INIT,screenSize.size.width,screenSize.size.height);
 
-  [glView startAnimation];
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application {
+  DMSG("applicationWillResignActive");
   ffi_event(EVENT_SUSPEND,0,0);
   [glView stopRender];
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
+  DMSG("applicationDidBecomeActive");
   [glView startRender];
   ffi_event(EVENT_RESUME,0,0);
 }
 
 - (void)applicationDidEnterBackground:(UIApplication *)application {
+  DMSG("applicationDidEnterBackground");
 //  ffi_event(EVENT_SUSPEND,0,0);
 //  [glView stopRender];
 }
 
 - (void)applicationWillEnterForeground:(UIApplication *)application {
+  DMSG("applicationWillEnterForeground");
 //  [glView startRender];
 //  ffi_event(EVENT_RESUME,0,0);
 }
 
 - (void)applicationWillTerminate:(UIApplication *)application {
+  DMSG("applicationWillTerminate");
   ffi_event(EVENT_CLOSE,0,0);
   ffi_event(EVENT_TERMINATE,0,0);
 }
@@ -137,6 +151,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef USE_ORIENTATION
 - (void) didRotate:(NSNotification *)notification
 {
+  DMSG("didRotate");
   int res = -1;
   UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
   switch (orientation) {
@@ -179,8 +194,10 @@ extern int pushnotification_gottoken;
 #endif
 
 - (void)dealloc {
+  DMSG("dealloc");
   [window release];
   [glView release];
+  [controller release];
   [super dealloc];
 }
 

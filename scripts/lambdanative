@@ -1,0 +1,120 @@
+#!/bin/sh
+# LambdaNative initialization script to be placed in system path
+
+# Override this with actual lambdanative location
+LAMBDANATIVE=
+
+if [ "X$LAMBDANATIVE" = "X" ]; then
+  echo "ERROR: this script has not been configured."
+  exit
+fi
+
+if [ ! -d $LAMBDANATIVE ] || [ ! -d $LAMBDANATIVE/apps ]; then
+  echo "ERROR: script misconfiguration: $LAMBDANATIVE not found"
+  exit
+fi
+
+cmd=$1
+appname=$2
+apptype=$3
+
+usage()
+{
+  echo "usage: lambdanative [ init | reinit | version | create <appname> <apptype> ]"
+  echo "init: Initialize the lambdanative build structure"
+  echo "reinit: Reinitialize build structure in case of moved directories etc" 
+  echo "create: Create a new application named <appname> of type <apptype>"
+  echo "        apptype is one of:"
+  echo "          console = standard command line application"
+  echo "          gui = graphical application"
+  echo "          eventloop = console application with event loop"
+  exit
+}
+
+if [ "X$cmd" = "X" ]; then
+  usage
+fi
+
+case $cmd in 
+  version)
+    echo "LambdaNative Ver. "`cat $LAMBDANATIVE/VERSION | sed '/^#/d'`
+    echo "Install path: $LAMBDANATIVE"
+    if [ ! "X"`which git` = "X" ]; then 
+      here=`pwd`
+      cd $LAMBDANATIVE
+      git log | head -n 1 | sed 's/commit/Git hash:/'
+      cd $here
+    fi
+    echo "Visit http://lambdanative.org for more information"
+    exit
+  ;;
+  init)
+   dircontent=`ls -1`
+   if [ ! "X$dircontent" = "X" ]; then
+     echo "ERROR: init can only be done in an empty directory"
+     exit 1
+   fi
+    mkdir -p apps 
+    mkdir -p modules
+  ;;
+  reinit)
+  ;;
+  create)
+    if [ "X$appname" = "X" ] || [ "X$apptype" = "X" ]; then
+      echo "ERROR: invalid syntax"
+      usage
+    fi
+    if [ -d apps/$appname ] || [ -d $LAMBDANATIVE/apps/$appname ]; then
+      echo "ERROR: app $appname already exists"
+      usage
+    fi
+    if [ ! -d $LAMBDANATIVE/templates/$apptype ]; then
+      echo "ERROR: application template $apptype not found"
+      usage
+    fi
+    cp -R $LAMBDANATIVE/templates/$apptype apps/$appname
+  ;;
+  *)
+    usage
+  ;;
+esac
+
+if [ ! -f $LAMBDANATIVE/SETUP ] && [ ! -f SETUP ]; then
+  cp $LAMBDANATIVE/SETUP.template SETUP
+  echo "SETUP is stock, please customize with compiler locations etc"
+fi
+
+if [ ! -f $LAMBDANATIVE/PROFILE ] && [ ! -f PROFILE ]; then
+  cp $LAMBDANATIVE/PROFILE.template PROFILE
+  echo "PROFILE is stock, please customize with organization, developer ID etc"
+fi
+
+cat > ./configure << _EOF
+# Automatically generated. Do not edit
+here=`pwd`
+cd $LAMBDANATIVE
+SYS_PATH=\$here ./configure \$@
+cd \$here
+_EOF
+chmod +x ./configure
+
+here=`pwd`
+cat > ./Makefile << _EOF
+# Automatically generated. Do not edit
+
+all:
+	@cd $LAMBDANATIVE; SYS_PATH=$here make; cd $here
+
+clean:
+	@cd $LAMBDANATIVE; SYS_PATH=$here make clean; cd $here
+
+scrub:
+	@cd $LAMBDANATIVE; SYS_PATH=$here make scrub; cd $here
+
+install:
+	@cd $LAMBDANATIVE; SYS_PATH=$here make install; cd $here
+
+#eof
+_EOF
+
+#eof

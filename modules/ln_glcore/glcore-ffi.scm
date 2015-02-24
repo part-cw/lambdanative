@@ -122,6 +122,8 @@ ___result = GL_CLAMP_TO_EDGE;
 (define GL_BACK ((c-lambda () int "___result = GL_BACK;")))
 (define GL_TRUE ((c-lambda () int "___result = GL_TRUE;")))
 
+(define GL_LINE_SMOOTH ((c-lambda () int "___result = GL_LINE_SMOOTH;")))
+
 ;;(define GL_ ((c-lambda () int "___result = GL_;")))
 
 ;; functions

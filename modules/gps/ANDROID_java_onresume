@@ -1,1 +1,4 @@
-locationManager.requestLocationUpdates(provider, 1000, 1, this);
+// Only resume gps if it was requested to do so previously before app was paused
+if (gpsStatus == 1){
+  toggleGPS(1);
+  }

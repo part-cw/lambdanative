@@ -1,6 +1,6 @@
 #!/bin/sh
 # LambdaNative - a cross-platform Scheme framework
-# Copyright (c) 2009-2013, University of British Columbia
+# Copyright (c) 2009-2014, University of British Columbia
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or
@@ -35,25 +35,16 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-if [ $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
+wants_gl=`echo "$modules" | grep ln_glcore`
+if [ $SYS_PLATFORM = $SYS_HOSTPLATFORM ] && [ ! "X$wants_gl" = "X" ]; then
   vecho " => checking for sane localhost OpenGL setup.."
-  echo "#include <GL/gl.h>" > gltest.c
-  echo "int main() { glOrtho(0,0,0,0,0,0); }" >> gltest.c
-  gcc -Werror -o gltest gltest.c -I/usr/X11/include -I/usr/X11R6/include -L/usr/X11/lib -L/usr/X11R6/lib -lGL  > /dev/null 2> /dev/null
-  asserterror $? "OpenGL headers are missing?"
-fi
-rmifexists gltest
-rmifexists gltest.c
-
-wants_pa=`echo "$libraries" | grep libportaudio`
-if [ ! "X$wants_pa" = "X" ]; then
-  vecho " => checking for portaudio.."
-  echo "#include <portaudio.h>" > patest.c
-  echo "int main() { Pa_GetDefaultInputDevice(); }" >> patest.c
-  gcc -Werror -o patest patest.c -I/usr/local/include -L/usr/local/lib -lportaudio 
-  asserterror $? "portaudio is not installed? Please install patched version from ports."
-  rmifexists patest
-  rmifexists patest.c
+  echo "#include <GL/gl.h>" > $SYS_TMPDIR/gltest.c
+  echo "int main() { glOrtho(0,0,0,0,0,0); }" >> $SYS_TMPDIR/gltest.c
+  gcc -Werror -o $SYS_TMPDIR/gltest $SYS_TMPDIR/gltest.c -I/usr/X11/include -I/usr/X11R6/include -L/usr/X11/lib -L/usr/X11R6/lib -lGL  > /dev/null 2> /dev/null
+  gl_res=$?
+  rmifexists $SYS_TMPDIR/gltest
+  rmifexists $SYS_TMPDIR/gltest.c
+  asserterror $gl_res "OpenGL headers are missing?"
 fi
 
 #eof

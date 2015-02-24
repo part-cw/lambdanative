@@ -1,0 +1,12 @@
+--- usbSerialForAndroid/src/main/java/com/hoho/android/usbserial/driver/CdcAcmSerialDriver.java.old   2015-01-31 14:00:07.000000000 -0800
++++ usbSerialForAndroid/src/main/java/com/hoho/android/usbserial/driver/CdcAcmSerialDriver.java       2015-01-31 14:32:55.000000000 -0800
+@@ -90,7 +90,7 @@
+ 
+         public CdcAcmSerialPort(UsbDevice device, int portNumber) {
+             super(device, portNumber);
+-            mEnableAsyncReads = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1);
++            mEnableAsyncReads = (Build.VERSION.SDK_INT >= 17);
+         }
+ 
+         @Override
+

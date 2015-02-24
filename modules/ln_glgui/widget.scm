@@ -87,6 +87,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; (glgui-widget-get mygui mybutton 'label)
 (define (glgui-widget-get g w id) (gtable-ref w id #f))
 
+(define (glgui-widget-get-def g w id . def) (gtable-ref w id (if (fx= (length def) 1) (car def) #f)))
+
 ;; return a dynamic value
 ;; 20100419: added g w to calling arguments
 ;;           this allows us to make spiffy changes on the fly!
@@ -101,9 +103,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((u (gtable-ref w 'update-handle #f)))
     (if u (u g w id val))) #t)
 
+(define (glgui-widget-clear! g w id)
+  (gtable-set! w id))
+
 ;; set the same parameter in all widgets
 ;; for example: (glgui-widget-setglobal! mygui 'focus #f)
 (define (glgui-widget-setglobal! g id val)
   (for-each (lambda (w) (glgui-widget-set! g w id val)) (glgui-get g 'widget-list))
 )
+
 ;; eof

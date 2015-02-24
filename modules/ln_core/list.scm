@@ -97,6 +97,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
 )
 
+(define (list-insert-item lst item)
+  (if (member item lst) lst
+    (append lst (list item))))
+
 (define (list-set! lst pos item)
   (cond ((or (< pos 0) (null? lst)) #f)
         ((= pos 0) (set-car! lst item))

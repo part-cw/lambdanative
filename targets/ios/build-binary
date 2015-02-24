@@ -37,6 +37,8 @@
 
 ios_subst()
 {
+  ac_subst IOS_OBJC_ADDITIONS "@$1/IOS_objc_additions"
+  ac_subst IOS_OBJCPP_ADDITIONS "@$1/IOS_objcpp_additions"
   ac_subst IOS_OBJC_DEFINES "@$1/IOS_objc_defines"
   ac_subst IOS_XML_PERMISSIONS "@$1/IOS_xml_permissions"
   ac_subst IOS_XML_REQUIREDDEVICECAP "@$1/IOS_xml_requireddevicecap"
@@ -50,10 +52,10 @@ ios_subst `locatedir apps/$SYS_APPNAME`
 
 tgtdir="$SYS_PREFIX/$SYS_APPNAME$SYS_APPFIX"
 srcdir=`pwd`"/loaders/ios"
-cmakedir=`mktemp -d tmp.XXXXXX`
-cmakedir=`pwd`"/$cmakedir"
-cd $here
+cmakedir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 ac_output $srcdir/CMakeLists.txt $cmakedir/CMakeLists.txt
+ac_output $srcdir/objc_additions.m $cmakedir/objc_additions.m
+ac_output $srcdir/objcpp_additions.mm $cmakedir/objcpp_additions.mm
 cp $srcdir/*.m $cmakedir
 cp $srcdir/*.mm $cmakedir
 cp $srcdir/*.h $cmakedir
@@ -78,9 +80,10 @@ make_sounds make_soundfile_ios
 
 echo " => preparing plist.."
 configsrc=loaders/ios/Info.plist.in
-ac_output $configsrc tmp.xml
-assertfile tmp.xml
-cat tmp.xml | sed '/^#/d' > "$SYS_PREFIXROOT/build/$SYS_APPNAME/Info.plist"
+ac_output $configsrc $SYS_TMPDIR/tmp.xml
+assertfile $SYS_TMPDIR/tmp.xml
+cat $SYS_TMPDIR/tmp.xml | sed '/^#/d' > "$SYS_PREFIXROOT/build/$SYS_APPNAME/Info.plist"
+cp "$IOSSDK/ResourceRules.plist" "$SYS_PREFIXROOT/build/$SYS_APPNAME/ResourceRules.plist"
 
 echo " => preparing custom config.."
 headersrc=loaders/ios/config_custom.h.in
@@ -88,9 +91,7 @@ ac_output loaders/ios/config_custom.h.in "$cmakedir/config_custom.h"
 assertfile "$cmakedir/config_custom.h"
 
 echo " => building loader.."
-xcodedir=`mktemp -d tmp.XXXXXX`
-xcodedir=`pwd`"/$xcodedir"
-cd $here
+xcodedir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 cd $xcodedir
 veval "cmake -GXcode $cmakedir"
 asserterror $?
@@ -105,9 +106,14 @@ fi
 assertfile $tmpappdir
 
 echo " => verifying application.."
-checkfail=`codesign --verify $tmpappdir 2>&1`
+osxver=`sw_vers -productVersion`
+if [ `echo "10.9.5\n$osxver" | sed 's/^10\.//' | sort -g | head -1` == "9.5" ]; then
+  checkfail=`codesign --verify --no-strict $tmpappdir 2>&1`
+else
+  checkfail=`codesign --verify $tmpappdir 2>&1`
+fi
 if [ "$checkfail" ]; then
-  echo "ERROR: $SYS_APPNAME build was not successful"
+  echo "ERROR: $SYS_APPNAME build was not successful [$checkfail]"
   exit 1
 fi
 

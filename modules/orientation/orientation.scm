@@ -43,8 +43,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (orientation-portrait?) (not orientation-landscape?))
 
-(define (orientation-event t x y)
-  (if (= t EVENT_ORIENTATION) (begin
+(define (orientation-event t x y . opt)
+  (if (and (= t EVENT_ORIENTATION) 
+        (if (fx> (length opt) 0) (member x opt) #t)) (begin
     (set! orientation:state x)
     (glgui-orientation-set! x)
   )))

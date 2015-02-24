@@ -1,0 +1,163 @@
+class RS232Manager implements Runnable{
+  //Loosely based on Example code from http://code.google.com/p/usb-serial-for-android/
+  private static UsbManager mUsbManager;
+  private UsbSerialPort mSerialPort;
+  private static final int READ_WAIT_MILLIS = 200; //was set to 10
+  private static final int BUFFERSIZE = 4096; //rs232 uses something like 131072
+  private final ByteBuffer mInBuffer = ByteBuffer.allocate(BUFFERSIZE);
+  private final ByteBuffer mOutBuffer = ByteBuffer.allocate(BUFFERSIZE);
+  private final ByteBuffer tmpInBuffer = ByteBuffer.allocate(BUFFERSIZE);
+  private boolean isreading = false;
+  private boolean error_flag = false;
+  private boolean DEBUG = false;
+
+  public RS232Manager(UsbManager mUsbManager) {
+    super();
+    this.mUsbManager = mUsbManager;
+  }
+
+  //Code for Synchronisation
+  private enum State {STOPPED,RUNNING,STOPPING};
+  private State mState = State.STOPPED;
+  private synchronized State getState() {
+    return mState;
+  }
+  public synchronized void stop() {
+    if (getState() == State.RUNNING) {
+      mState = State.STOPPING;
+    }
+  }
+  public void run() {
+    synchronized (this) {
+      if (getState() != State.STOPPED) {
+        throw new IllegalStateException("Already running.");
+      }
+      mState = State.RUNNING;
+      if (DEBUG) Log.d("RS232Manager","Starting");
+    }
+    while (true) {
+      try {
+        if (getState() != State.RUNNING){
+          break;
+        }
+        if ( mSerialPort == null) {
+          continue;
+        }
+        error_flag=false;
+        // Handle incoming data.
+        int len = mSerialPort.read(tmpInBuffer.array(), READ_WAIT_MILLIS);
+        if (len > 0) {
+          if (DEBUG) Log.d("RS232Manager","Recv: "+len);
+          final byte[] inBuff = new byte[len];
+          tmpInBuffer.get(inBuff, 0, len);
+          synchronized(mInBuffer){
+            if (isreading) {
+              mInBuffer.compact();
+              isreading=false;
+            }
+            mInBuffer.put(inBuff);
+          }
+          if (DEBUG) Log.d("RS232Manager","InBuffer: ["+mInBuffer.position()+"/"+mInBuffer.limit()+"]");
+        }
+        tmpInBuffer.clear();
+        // Handle outgoing data.
+        byte[] outBuff = null;
+        synchronized (mOutBuffer) {
+          len = mOutBuffer.position();
+          if (len > 0) {
+            mOutBuffer.flip();
+            outBuff = new byte[len];
+            mOutBuffer.get(outBuff, 0, len);
+            String ss = new String(outBuff);
+            if (DEBUG) Log.d("RS232Manager","OutBuff: "+ss);
+            mOutBuffer.clear();
+          }
+        }
+        if (outBuff != null) {
+          mSerialPort.write(outBuff, READ_WAIT_MILLIS);
+          String s = new String(outBuff);
+          if (DEBUG) Log.d("RS232Manager","Sent: "+s);
+        }
+      } catch (Exception e) { 
+        Log.d("RS232Manager","Exception: "+e);
+        close(0);
+        error_flag=true;
+      }
+    }
+  }
+  // Open the Serial Port
+  public int open(String devname, int baudrate, int databits, int parity, int stopbits){
+    List<UsbSerialDriver> availableDrivers = UsbSerialProber.getDefaultProber().findAllDrivers(mUsbManager);
+    if (availableDrivers.isEmpty()) {
+      return -1;
+    }
+    UsbSerialDriver mSerialDriver = availableDrivers.get(0);
+    UsbDeviceConnection mDeviceConnection = mUsbManager.openDevice(mSerialDriver.getDevice());
+    if (mDeviceConnection == null) {
+      return -1;
+    }
+    List<UsbSerialPort> availablePorts = mSerialDriver.getPorts();
+    if (availablePorts.isEmpty()){
+      return -1;
+    }
+    mSerialPort = availablePorts.get(0);
+    if (mSerialPort != null){
+      try {
+        mSerialPort.open(mDeviceConnection);
+        mSerialPort.setParameters(baudrate, databits, stopbits, parity);
+        Log.i("RS232Manager","Opened "+Integer.toString(mSerialDriver.getDevice().getDeviceId()));
+        return mSerialDriver.getDevice().getDeviceId();
+      } catch (IOException e){
+        Log.d("RS232Manager","Exception: "+e);
+      }
+    }
+    Log.i("RS232Manager","USBSerialProber found no device");
+    return -1;
+  }
+  //Close the Serial Port
+  public int close(int dev){
+    if (mSerialPort != null){
+      try {
+        mInBuffer.clear();
+        mSerialPort.close();
+        mSerialPort=null;
+        return 0;
+      } catch (IOException e){
+        Log.d("RS232Manager","Exception: "+e);
+      }
+    }
+    return 1;
+  }
+  //Write a char to the Serial Port
+  public void writechar(int dev, int val){
+    synchronized (mOutBuffer) {
+      mOutBuffer.put((byte) val);
+    }
+  }
+  //Read a char from the Serial Port
+  public int readchar(int dev){
+    final int ret;
+    if (error_flag){
+      return -2;
+    }
+    synchronized(mInBuffer){
+      if (mInBuffer.position()==0 || mInBuffer.position()==mInBuffer.limit()){
+        return -1;
+      }
+      if (!isreading){
+        mInBuffer.flip();
+        isreading=true;
+      }
+      ret=mInBuffer.get() & 0xFF;
+    }
+    return ret;
+  }
+  // Flush the InputBuffer
+  public void flush(int dev){
+    synchronized(mInBuffer){
+      mInBuffer.clear();
+      isreading=false;
+    }
+    if (DEBUG) Log.d("RS232Manager","Flush mInBuffer");
+  }
+}

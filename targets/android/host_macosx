@@ -45,6 +45,16 @@ if [ "X$TOOLCHAIN" = "X" ]; then
 fi
 assertfile "$TOOLCHAIN"
 SYSROOT=`echo $ANDROIDNDK/platforms/android-${ANDROIDAPI}/arch-${ANDROIDARCH}`
+if [ ! -d "$SYSROOT" ]; then
+  API=${ANDROIDAPI}
+  while [ $API -ge 3 ]; do
+    SYSROOT=`echo $ANDROIDNDK/platforms/android-${API}/arch-${ANDROIDARCH}`
+    if [ -d "$SYSROOT" ] ; then
+      break
+    fi
+    API=`expr $API - 1`
+  done
+fi
 assertfile "$SYSROOT"
 
 CROSS=`ls -1 $TOOLCHAIN/bin/*-gcc | sed 's/gcc$//'`

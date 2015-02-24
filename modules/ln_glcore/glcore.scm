@@ -67,6 +67,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (glMatrixMode GL_MODELVIEW)
       (glLoadIdentity)
       (glEnable GL_TEXTURE_2D)
+      (glEnable GL_LINE_SMOOTH)
       (glEnableClientState GL_COLOR_ARRAY)
       (glEnableClientState GL_VERTEX_ARRAY)
       (glEnableClientState GL_TEXTURE_COORD_ARRAY)

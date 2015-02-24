@@ -11,6 +11,12 @@ Location location = locationManager.getLastKnownLocation(provider);
 
 String provider = Settings.Secure.getString(getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
 if(provider.equals("")){
-  Intent intent = new Intent(Settings.ACTION_SECURITY_SETTINGS);
-  startActivity(intent);
+  //~ Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+  //~ startActivity(intent);
 }
+
+locationlistener = this;
+gpslistener = this;
+gpsStatus = 1;
+
+

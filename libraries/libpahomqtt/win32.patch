@@ -1,0 +1,28 @@
+--- src/MQTTAsync.c	2014-10-03 07:50:10.000000000 -0700
++++ src/MQTTAsync.c	2014-10-29 09:41:09.000000000 -0700
+@@ -114,6 +114,24 @@
+ 	}
+ 	return TRUE;
+ }
++
++void MQTTAsync_init()
++{
++  if (mqttasync_mutex == NULL) {
++    mqttasync_mutex = CreateMutex(NULL, 0, NULL);
++    mqttcommand_mutex = CreateMutex(NULL, 0, NULL);
++    send_sem = CreateEvent(
++      NULL,               /* default security attributes */
++      FALSE,              /* manual-reset event? */
++      FALSE,              /* initial state is nonsignaled */
++      NULL                /* object name */
++    );
++    stack_mutex = CreateMutex(NULL, 0, NULL);
++    heap_mutex = CreateMutex(NULL, 0, NULL);
++    log_mutex = CreateMutex(NULL, 0, NULL);
++  }
++}
++
+ #else
+ static pthread_mutex_t mqttasync_mutex_store = PTHREAD_MUTEX_INITIALIZER;
+ static mutex_type mqttasync_mutex = &mqttasync_mutex_store;
+

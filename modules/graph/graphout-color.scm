@@ -40,7 +40,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (graphout:color g c)
   (let ((red (/ (color-red c) 255.))
         (green (/ (color-green c) 255.))
-        (blue (/ (color-blue c) 255.)))
-  (graphout:rgbcolor g red green blue)))
+        (blue (/ (color-blue c) 255.))
+        (alpha (/ (color-alpha c) 255.)))
+  (graphout:rgbcolor g red green blue alpha)))
 
 ;; eof

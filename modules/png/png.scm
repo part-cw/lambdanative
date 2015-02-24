@@ -200,7 +200,7 @@ end-of-c-declare
 (define (png:info fname idx)
   (png:log 2 "png:info " fname " " idx)
   (let ((res ((c-lambda (char-string int) int "ln_png_info") fname idx)))
-    (if (fx= res -1) #f res)))
+    (if (fx= res -1) (begin (log-error "png:info " idx " failed on " fname) #f) res)))
 
 (define (png-width fname) (png:log 1 "png-width " fname) (png:info fname 1))
 (define (png-height fname) (png:log 1 "png-height " fname) (png:info fname 2))
@@ -224,7 +224,8 @@ end-of-c-declare
     (if data (begin
       (if (fx= ((c-lambda (int int scheme-object int char-string) int 
           "___result=ln_png_to_u8vector(___arg1,___arg2,___CAST(void*,___BODY_AS(___arg3,___tSUBTYPED)),___arg4,___arg5);") 
-     w0 h0 data (u8vector-length data) fname) 0) data #f)) #f)))
+     w0 h0 data (u8vector-length data) fname) 0) data #f)) (begin 
+       (log-error "png->u8vector failed on " fname) #f))))
 
 ;; ------
 ;; opengl related functions 
@@ -237,7 +238,8 @@ end-of-c-declare
          (w0 (if (= (length xargs) 2) (car xargs) w))
          (h0 (if (= (length xargs) 2) (cadr xargs) h))
          (data (png->u8vector fname w0 h0)))
-    (if data ((eval 'glCoreTextureCreate) w0 h0 data) #f)))
+    (if data ((eval 'glCoreTextureCreate) w0 h0 data)
+      (begin (log-error "png:png->texture failed on " fname) #f))))
 
 (define (png->img fname)
   (png:log 1 "png->img " fname)
@@ -247,7 +249,8 @@ end-of-c-declare
          (h0 (fix (expt 2. (ceiling (/ (log h) (log 2.))))))
          (t (png:png->texture fname w0 h0)))
     (if (and w h t)
-       (list w h t 0. 0. (/ w w0 1.) (/ h h0 1.)) #f)))
+       (list w h t 0. (- 1. (/ h h0 1.)) (/ w w0 1.) 1.)
+        (begin (log-error "png->img failed on " fname) #f))))
 
 (define (png:texture->png t fname)
   (png:log 1 "texture->png " t " " fname)

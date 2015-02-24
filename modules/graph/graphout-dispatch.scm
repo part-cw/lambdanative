@@ -89,7 +89,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ))
 
 ;; output pdf graph
-(define (graphout:pdf g . filename)
+(define (graphout:pdf g filename)
   (table-set! g 'output GRAPH_PDF)
   (let* ((w (table-ref g 'devxmax))
          (h (table-ref g 'devymax))
@@ -104,4 +104,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (HPDF_SaveToFile pdf filename)
     (HPDF_Free pdf)
   ))
+
+(define (graphout:svg g filename)
+  (table-set! g 'output GRAPH_SVG)
+  (let* ((w (table-ref g 'devxmax))
+         (h (table-ref g 'devymax))
+         (svg `(svg (@ (width ,w) (height ,h) (xmlns "http://www.w3.org/2000/svg")) "")))
+    (table-set! g 'svg svg)
+    (graphout:dispatch g)
+    (with-output-to-file filename (lambda ()
+      (sxml->xml (table-ref g 'svg))))
+  ))
+
 ;; eof

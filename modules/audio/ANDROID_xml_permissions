@@ -1,2 +1,2 @@
-<uses-permission android:name="android.permission.WAVE_LOCK" />
+<uses-permission android:name="android.permission.WAKE_LOCK" />
 <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />

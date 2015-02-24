@@ -1,6 +1,6 @@
 /*
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2014, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -35,17 +35,24 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
 #import <UIKit/UIKit.h>
 
+#import "EAGLView.h"
+#import "GLViewController.h"
+
 @class EAGLView;
+@class GLViewController;
 
 @interface launcherAppDelegate : NSObject <UIApplicationDelegate> {
-//	IBOutlet UIWindow *window;
-//	IBOutlet EAGLView *glView;
+  UIWindow         *window;
+  GLViewController *controller;
+  EAGLView         *glView;
 }
 
 @property (nonatomic, retain) UIWindow *window;
 @property (nonatomic, retain) EAGLView *glView;
+@property (nonatomic, retain) GLViewController *controller;
 
 @end
 

@@ -1,4 +1,6 @@
 
+#include "debug.h"
+
 // custom defines go here
 @IOS_OBJC_DEFINES@
 

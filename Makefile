@@ -27,3 +27,6 @@ info:
 
 gcc:
 	@ ./make.sh gcc
+
+smoke:
+	@ ./make.sh smoke

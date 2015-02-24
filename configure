@@ -37,33 +37,26 @@
 
 SYS_VERSION=`cat ./VERSION | sed '/^#/d'`
 
-locatefile()
-{
-  file=
-  dirs=$(echo "$SYS_PATH" | tr ":" "\n")
-  for dir in $dirs; do
-    tmp="$dir/$1"
-    if [ ! "X$tmp" = "X" ]; then
-      if [ -e $tmp ]; then
-        file=$tmp
-      fi
-    fi
-  done
-  echo $file
-}
-
-# Allow use of a permanently overlay by declaring $OVERLAY_PATH in SETUP file
-. ./SETUP
-if [ ! "X$OVERLAY_PATH" = "X" ]; then
-  SYS_PATH="$OVERLAY_PATH"
-fi
+. ./scripts/tmpdir.sh
+. ./scripts/assert.sh
+. ./scripts/locate.sh 
 
 if [ "X$SYS_PATH" = "X" ]; then
   SYS_PATH=`pwd`
 else
-#  SYS_PATH="$SYS_PATH:"`pwd`
   SYS_PATH=`pwd`":$SYS_PATH"
 fi
+
+setupfile=`locatefile SETUP`
+assertfile "$setupfile"
+. "$setupfile"
+
+# Allow use of a permanently overlay by declaring $OVERLAY_PATH in SETUP file
+if [ ! "X$OVERLAY_PATH" = "X" ]; then
+  SYS_PATH="$SYS_PATH:$OVERLAY_PATH"
+fi
+
+SYS_PATH=`echo "$SYS_PATH" | tr ':' '\n' | uniq | tr '\n' ':'`
 
 if [ "X$1$2$3$4" = "X" ]; then
   echo "usage: ./configure <application> [platform] [release|debug] [verbose]"
@@ -112,7 +105,7 @@ if [ "X$with_app" = "X" ]; then
 fi 
 
 # search for application
-appdir=`locatefile "apps/$with_app"`
+appdir=`locatedir "apps/$with_app"`
 if [ ! -d "$appdir" ]; then
   echo "ERROR: application $with_app not found"
   exit 1
@@ -159,7 +152,7 @@ SYS_MODE=$with_mode
 echo "==> configured to build $SYS_APPNAME for $SYS_PLATFORM in $SYS_MODE ${SYS_VERBOSE}mode"
 echo " == using source in $appdir"
 
-cat > config.cache << EOF
+cat > $SYS_TMPDIR/config.cache << EOF
 SYS_PATH=$SYS_PATH
 SYS_APPNAME=$SYS_APPNAME
 SYS_HOSTPLATFORM=$SYS_HOSTPLATFORM
@@ -170,6 +163,8 @@ SYS_VERSION=$SYS_VERSION
 EOF
 
 #cleanup state file
-if [ -f make.state ]; then
-  rm make.state
+if [ -f $SYS_TMPDIR/make.state ]; then
+  rm $SYS_TMPDIR/make.state
 fi
+
+#eof

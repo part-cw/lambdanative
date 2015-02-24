@@ -37,36 +37,27 @@
 
 # application building, packaging and installation
 
-. ./config.cache
+. ./scripts/tmpdir.sh
+. ./scripts/assert.sh
+. ./scripts/locate.sh
 
-. ./SETUP
+. $SYS_TMPDIR/config.cache
 
-evallog=`pwd`"/eval.log"
+setupfile=`locatefile SETUP`
+assertfile "$setupfile"
+. "$setupfile"
+
+evallog="$SYS_TMPDIR/eval.log"
 
 if [ -f $evallog ]; then
   rm $evallog
 fi
 
+. ./scripts/package.sh
+. ./scripts/verbose.sh
+
 #########################
 # general functions
-
-veval()
-{
-  if [ $SYS_VERBOSE ]; then 
-    echo "$1"
-    eval $1
-  else 
-    echo "$1" > $evallog
-    eval $1 >> $evallog 2>&1
-  fi
-}
-
-vecho()
-{
-  if [ $SYS_VERBOSE ]; then 
-    echo "$1"
-  fi
-}
 
 getparam()
 {
@@ -100,7 +91,7 @@ string_contains() {
 ###############################
 # keep track of state to reset partial builds
 
-statefile=`pwd`"/make.state"
+statefile="$SYS_TMPDIR/make.state"
 
 setstate()
 {
@@ -144,66 +135,6 @@ resetstate()
 } 
 
 #################################
-# abort on missing files and errors
-
-assertfile()
-{
-  if [ ! -e "$1" ]; then
-    if [ -f "$evallog" ]; then
-      cat "$evallog" | sed '/^$/d'
-    fi
-    echo "ERROR: failed on file $1" 1>&2
-    if [ ! "X$2" = "X" ]; then 
-      echo ">> $2"
-    fi
-    if [ "X$SYS_VERBOSE" = "X" ]; then  
-      echo "BUILD FAILED - configure with verbose option for more information" 
-    else 
-      echo "BUILD FAILED"
-    fi
-    exit 1
-  fi
-}
-
-asserterror()
-{
-  if [ ! $1 = 0 ]; then
-    if [ -f $evallog ]; then
-      cat $evallog | sed '/^$/d'
-    fi
-    echo "ERROR: failed with exit code $1" 1>&2
-    if [ ! "X$2" = "X" ]; then 
-      echo ">> $2"
-    fi
-    if [ "X$SYS_VERBOSE" = "X" ]; then  
-      echo "BUILD FAILED - configure with verbose option for more information" 
-    else 
-      echo "BUILD FAILED"
-    fi
-    exit 1
-  fi
-}
-
-asserttool()
-{
-  for tool in $@; do
-    tool_location=`which $tool 2> /dev/null` 
-    if [ "X$tool_location" = "X" ]; then 
-      echo "ERROR: required tool $tool not found." 
-      echo "Please install a package containing this tool before proceeding."
-    if [ "X$SYS_VERBOSE" = "X" ]; then  
-      echo "BUILD FAILED - configure with verbose option for more information" 
-    else 
-      echo "BUILD FAILED"
-    fi
-      exit 1
-    else 
-      vecho "  => $tool.. ok" 
-    fi
-  done
-}
-
-#################################
 # misc file and directory support
 
 stringhash()
@@ -229,7 +160,10 @@ newersourceindir()
   result="no"
   tgt="$2"
   dir=`dirname $1`
-  srcfiles=`ls -1 $dir/*.scm` 
+  srcfiles=
+  for l in $language_extensions; do
+    srcfiles="$srcfiles "`ls -1 $dir/*.$l 2> /dev/null` 
+  done
   for src in $srcfiles; do
     if `test "$src" -nt "$tgt"`; then
       result="yes"
@@ -260,58 +194,10 @@ newerindir()
   echo $result
 }
 
-locatetest()
-{
-  here=`pwd`
-  file=
-  dirs=$(echo "$SYS_PATH" | tr ":" "\n")
-  for dir in $dirs; do
-    tmp="$dir/$2"
-    if [ ! "X$tmp" = "X" ]; then
-      if [ $1 $tmp ]; then
-        if [ "X$file" = "X" ]; then
-          file=$tmp
-        else
-          if [ ! "X$3" = "Xsilent" ]; then
-             echo "WARNING: $file shadows $tmp" 1>&2
-          fi
-        fi
-      fi
-    fi 
-  done
-  if [ "X$file" = "X" ]; then
-    if [ ! "X$3" = "Xsilent" ]; then
-      echo "WARNING: [$2] not found" 1>&2
-    fi
-  fi
-  if [ ! -e $file ]; then
-    if [ ! "X$3" = "Xsilent" ]; then
-      echo "WARNING: [$2] not found" 1>&2
-    fi
-  fi
-  cd "$here"
-  echo $file
-}
-
-locatedir()
-{
-  locatetest "-d" $@
-}
-
-locatefile()
-{
-  locatetest "-f" $@
-}
-
-wildcard_dir()
-{
-  find $1 -maxdepth 0 -print |sort -r| head -n 1
-}
-
 #################################
 # autoconf-like parameter substitution
 
-ac_cache=`pwd`/tmp.subst
+ac_cache="$SYS_TMPDIR/tmp.subst"
 
 if [ -f $ac_cache ]; then
   rm $ac_cache
@@ -425,44 +311,9 @@ filter_entries()
 ###########################
 # general compiler functions
 
-GAMBIT_DEFS="-D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
+. ./scripts/compile.sh
 
-compile()
-{
-  if [ $SYS_MODE = "debug" ]; then
-    opts="(declare (block)(not safe)(debug)(debug-location))"
-    optc="-g -Wall -Wno-unused-variable -Wno-unused-label -Wno-unused-parameter"
-  else 
-    opts="(declare (block)(not safe))"
-    optc="-O2 -Wall -Wno-unused-variable -Wno-unused-label -Wno-unused-parameter"
-  fi
-  src="$1"
-  ctgt="$2"
-  otgt="$3"
-  defs="$4"
-  path=`dirname $src`
-  here=`pwd`
-  cd $path
-  rmifexists "$ctgt"
-  if [ `string_contains "$modules" "syntax-case"` = yes ]; then
-    if [ ! -f ${SYS_HOSTPREFIX}/lib/gambcext.tmp ]; then
-      echo " => compiling syntax-case dynamic library.." 
-      veval "$SYS_GSC -dynamic -o  ${SYS_HOSTPREFIX}/lib/gambcext.o1 ${SYS_HOSTPREFIX}/lib/syntax-case.scm"
-      mv ${SYS_HOSTPREFIX}/lib/gambcext.o1 ${SYS_HOSTPREFIX}/lib/gambcext.tmp
-    fi
-    assertfile ${SYS_HOSTPREFIX}/lib/gambcext.tmp
-    cp ${SYS_HOSTPREFIX}/lib/gambcext.tmp ${SYS_HOSTPREFIX}/lib/gambcext.o1
-  else
-    rmifexists ${SYS_HOSTPREFIX}/lib/gambcext.o1
-  fi
-  echo " => $src.." 
-  veval "$SYS_GSC -prelude \"$opts\" -c -o $ctgt $src"
-  assertfile "$ctgt"
-  rmifexists "$otgt"
-  veval "$SYS_ENV $SYS_CC $defs -c -o $otgt $ctgt -I$SYS_PREFIX/include -I$SYS_PREFIX/include/freetype2 -I$path"
-  assertfile "$otgt"
-  cd $here
-}
+GAMBIT_DEFS="-D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
 
 compile_payload()
 {
@@ -480,12 +331,22 @@ compile_payload()
   mkdir -p "$SYS_PREFIX/build"
   dirty=no
   for src in $srcs; do
+    sext=`compile_supported_language $src`
+    if [ "X$sext" = "X" ]; then
+       assert "$src is not in a supported language"
+    fi
     chsh=`stringhash "$src"`
     ctgt="$SYS_PREFIX/build/$chsh.c"
-    csrcs="$csrcs $ctgt"
+    if [ `gambit_link_stage $sext` = yes ]; then
+      csrcs="$csrcs $ctgt"
+    fi
     otgt=`echo "$ctgt" | sed 's/c$/o/'`
     objs="$objs $otgt"
     flag=no
+    if [ ! "X"`echo "$src" | grep "modules/config/config.scm"` = "X" ]; then
+       # force rebuilding of the config module, needed to include build info
+       flag=yes
+    fi
     if [ ! -f "$otgt" ]; then
       flag=yes
     else 
@@ -503,7 +364,7 @@ compile_payload()
     fi
     if [ $flag = yes ]; then
       dirty=yes
-      compile "$src" "$ctgt" "$otgt" "$defs"
+      compile_$sext "$src" "$ctgt" "$otgt" "$defs"
     fi
   done
   lctgt=`echo "$ctgt" | sed 's/\.c$/\_\.c/'`
@@ -533,7 +394,7 @@ cat > $hctgt  << _EOF
 // automatically generated. Do not edit.
 #include <stdlib.h>
 #include <LNCONFIG.h>
-#define ___VERSION 407000
+#define ___VERSION 407003
 #include <gambit.h>
 #define LINKER ____20_$linker
 ___BEGIN_C_LINKAGE
@@ -559,11 +420,29 @@ int main(int argc, char *argv[])
 }
 #else 
 #include <stdio.h>
+#if defined(ANDROID) || defined(MACOSX) || defined(IOS) || defined(LINUX) || defined(OPENBSD) || defined(BB10) || defined(PLAYBOOK) || defined(NETBSD)
+  #include <pthread.h>
+  pthread_mutex_t ffi_event_lock;
+  #define FFI_EVENT_INIT  pthread_mutex_init(&ffi_event_lock, 0);
+  #define FFI_EVENT_LOCK  pthread_mutex_lock( &ffi_event_lock); 
+  #define FFI_EVENT_UNLOCK  pthread_mutex_unlock( &ffi_event_lock); 
+#else
+  #ifdef WIN32
+    #include <windows.h>
+    CRITICAL_SECTION ffi_event_cs;
+    #define FFI_EVENT_INIT  InitializeCriticalSection(&ffi_event_cs);
+    #define FFI_EVENT_LOCK  EnterCriticalSection(&ffi_event_cs);
+    #define FFI_EVENT_UNLOCK LeaveCriticalSection( &ffi_event_cs);
+  #else
+    static int ffi_event_lock;
+    #define FFI_EVENT_INIT ffi_event_lock=0;
+    #define FFI_EVENT_LOCK { while (ffi_event_lock) { }; ffi_event_lock=1; }
+    #define FFI_EVENT_UNLOCK  ffi_event_lock=0; 
+  #endif
+#endif
 void ffi_event(int t, int x, int y)
 {
-  static int lock=0;
   static int gambitneedsinit=1;
-  if (lock) { return; } else { lock=1; }
   if (gambitneedsinit) { 
       ___setup_params_reset (&setup_params);
       setup_params.version = ___VERSION;
@@ -572,14 +451,16 @@ void ffi_event(int t, int x, int y)
         (___DEBUG_SETTINGS_REPL_STDIO << ___DEBUG_SETTINGS_REPL_SHIFT);
       setup_params.debug_settings = debug_settings;
       ___setup(&setup_params);
-      #ifdef ANDROID
-        ___disable_heartbeat_interrupts(); //@@
+      #if defined(ANDROID)
+        ___disable_heartbeat_interrupts(); 
       #endif
+      FFI_EVENT_INIT
       gambitneedsinit=0;
   }
+  FFI_EVENT_LOCK
   if (!gambitneedsinit&&t) scm_event(t,x,y);
   if (t==EVENT_TERMINATE) { ___cleanup(); exit(0); }
-  lock=0;
+  FFI_EVENT_UNLOCK
 }
 #endif
 _EOF
@@ -631,55 +512,62 @@ make_artwork()
 {
   setstate ARTWORK
   echo "==> creating artwork needed for $SYS_APPNAME.."
-  objsrc=`locatefile "apps/$SYS_APPNAME/artwork.obj" silent`
-  epssrc=`locatefile "apps/$SYS_APPNAME/artwork.eps" silent`
-  if [ "X$epssrc" = "X" ]; then
-    if [ "X$objsrc" = "X" ]; then
-      echo "ERROR: artwork not found"
-      exit 1
-    fi
-    assertfile $objsrc
-    epssrc=`echo $objsrc | sed 's/obj$/eps/'`
-  fi
-  if [ `isnewer $objsrc $epssrc` = "yes" ]; then
-    if [ ! "X$objsrc" = "X" ]; then
-      assertfile $objsrc
-      echo " => generating eps artwork.."
-      tgif -print -stdout -eps -color $objsrc > $epssrc
-    fi
-  fi
-  assertfile $epssrc
   mkdir -p "$SYS_PREFIX/build"
   mkdir -p "$SYS_PREFIXROOT/build/$SYS_APPNAME"
-  pngsrc="$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork.png"
-  tmpfile="$SYS_PREFIXROOT/build/$SYS_APPNAME/tmp.png"
-  if [ `isnewer $epssrc $pngsrc` = "yes" ]; then
-    echo " => generating master pixmap.."
-    gspostfix=
-    if [ $SYS_HOSTPLATFORM = win32 ]; then
-      gspostfix=win32
+  pngtgt="$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork.png"
+  objsrc=`locatefile "apps/$SYS_APPNAME/artwork.obj" silent`
+  epssrc=`locatefile "apps/$SYS_APPNAME/artwork.eps" silent`
+  pngsrc=`locatefile "apps/$SYS_APPNAME/artwork.png" silent`
+  if [ "X$pngsrc" = "X" ]; then
+    if [ "X$epssrc" = "X" ]; then
+      if [ "X$objsrc" = "X" ]; then
+        echo "ERROR: artwork not found"
+        exit 1
+      fi
+      assertfile $objsrc
+      epssrc=`echo $objsrc | sed 's/obj$/eps/'`
     fi
-    veval "gs${gspostfix} -r600 -dNOPAUSE -sDEVICE=png16m -dEPSCrop -sOutputFile=$tmpfile $epssrc quit.ps"
-    assertfile $tmpfile
-    veval "convert $tmpfile -trim -transparent \"#00ff00\" $pngsrc"
-    rm $tmpfile
+    if [ `isnewer $objsrc $epssrc` = "yes" ]; then
+      if [ ! "X$objsrc" = "X" ]; then
+        assertfile $objsrc
+        echo " => generating eps artwork.."
+        asserttool tgif
+        tgif -print -stdout -eps -color $objsrc > $epssrc
+      fi
+    fi
+    assertfile $epssrc
+    tmpfile="$SYS_PREFIXROOT/build/$SYS_APPNAME/tmp.png"
+    if [ `isnewer $epssrc $pngsrc` = "yes" ]; then
+      echo " => generating master pixmap.."
+      gspostfix=
+      if [ $SYS_HOSTPLATFORM = win32 ]; then
+        gspostfix=win32
+      fi
+      asserttool gs${gspostfix}
+      veval "gs${gspostfix} -r600 -dNOPAUSE -sDEVICE=png16m -dEPSCrop -sOutputFile=$tmpfile $epssrc quit.ps"
+      assertfile $tmpfile
+      asserttool convert
+      veval "convert $tmpfile -trim -transparent \"#00ff00\" $pngtgt"
+      rm $tmpfile
+    fi
+  else
+    assertfile $pngsrc
+    cp $pngsrc $pngtgt
   fi
-  assertfile $pngsrc
+  assertfile $pngtgt
   if [ -s targets/$SYS_PLATFORM/icon-sizes ]; then
     . targets/$SYS_PLATFORM/icon-sizes
     for s in $sizes; do
       tgt="$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-$s.png"
       if [ `isnewer $epssrc $tgt` = "yes" ]; then
         echo " => generating "$s"x"$s" pixmap.."
-        convert $pngsrc -resize $s"x"$s $tgt
+        veval "$SYS_HOSTPREFIX/bin/pngtool scale $pngtgt $s $tgt"
         assertfile $tgt
       fi
     done
   fi
   setstate
 }
-
-texture_srcs=
 
 make_texturedir()
 {
@@ -692,7 +580,7 @@ make_texturedir()
       texture_srcs="$texture_srcs $scmfile"
       if [ `isnewer $imgfile $scmfile` = "yes" ]; then
         echo " => $imgfile.."
-        $SYS_HOSTPREFIX/bin/png2scm "$imgfile" > "$scmfile"
+        $SYS_HOSTPREFIX/bin/pngtool png2scm "$imgfile" > "$scmfile"
       fi
     done
   fi
@@ -716,8 +604,6 @@ make_textures()
   done
   setstate
 }
-
-font_srcs=
 
 make_fontfile()
 {
@@ -746,7 +632,7 @@ make_fontfile()
         font_srcs="$font_srcs $scmfile"
         if [ `isnewer $srcfile $scmfile` = "yes" ]; then
            echo " => $name using glyph set $bits.."
-           $SYS_HOSTPREFIX/bin/ttffnt2scm $font "$bits" $sizes $name > $scmfile
+           veval "$SYS_HOSTPREFIX/bin/ttftool fnt2scm $font \"$bits\" $sizes $name > $scmfile"
            assertfile $scmfile
         fi
       fi
@@ -773,14 +659,36 @@ make_fonts()
   setstate
 }
 
-make_string_aux()
+make_string_gd()
 {
   oldpath=`pwd`
-  newpath=`mktemp -d tmp.XXXXXX`
+  newpath=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
   cd $newpath
   srcfont=$1
   assertfile $srcfont
-  fontname=`$SYS_HOSTPREFIX/bin/ttfname $srcfont`
+  fontname=`$SYS_HOSTPREFIX/bin/ttftool fontname $srcfont`
+  tgtfont="$fontname".ttf
+  cp "$srcfont" "$tgtfont"
+  fontpath=`pwd`"/"
+  size=$2
+  string="$3"
+  name=$4
+  scmfile="$5"
+  veval "$SYS_HOSTPREFIX/bin/ttftool stringfile \"$fontpath$tgtfont\" $size \"$string\" $name.png"
+  assertfile $name.png
+  $SYS_HOSTPREFIX/bin/pngtool png2scm $name.png > $scmfile
+  cd $oldpath
+  rm -rf $newpath
+}
+
+make_string_latex()
+{
+  oldpath=`pwd`
+  newpath=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
+  cd $newpath
+  srcfont=$1
+  assertfile $srcfont
+  fontname=`$SYS_HOSTPREFIX/bin/ttftool fontname $srcfont`
   tgtfont="$fontname".ttf
   cp "$srcfont" "$tgtfont"
   fontpath=`pwd`"/"
@@ -809,29 +717,31 @@ __EOF
   veval "xelatex tmp.tex"
   assertfile tmp.pdf
   if [ "X"`which pdftops 2> /dev/null` = "X" ]; then
-    veval "pdf2ps tmp.pdf"
+    veval "pdf2ps tmp.pdf tmp.ps"
   else
     veval "pdftops tmp.pdf"
   fi
   assertfile tmp.ps
   veval "ps2eps -B -C tmp.ps"
   assertfile tmp.eps
-  veval "gs -r300 -dNOPAUSE -sDEVICE=pnggray -dEPSCrop -sOutputFile=$name.png tmp.eps quit.ps"
+  gspostfix=
+  if [ $SYS_HOSTPLATFORM = win32 ]; then
+    gspostfix=win32
+  fi
+  veval "gs${gspostfix} -r300 -dNOPAUSE -sDEVICE=pnggray -dEPSCrop -sOutputFile=$name.png tmp.eps quit.ps"
   assertfile $name.png
   veval "convert $name.png  -bordercolor White -border 5x5 -negate -scale 25% $name.png"
-  $SYS_HOSTPREFIX/bin/png2scm $name.png > $scmfile
+  $SYS_HOSTPREFIX/bin/pngtool png2scm $name.png > $scmfile
   cd $oldpath
   rm -rf $newpath
 }
-
-string_srcs=
 
 make_stringfile()
 {
   srcfile=$1
   prefix=$2
-  cat $srcfile | sed '/^#/d' > tmp.STRINGS
-  echo >> tmp.STRINGS
+  cat $srcfile | sed '/^#/d' > $SYS_TMPDIR/tmp.STRINGS
+  echo >> $SYS_TMPDIR/tmp.STRINGS
   while read -r fline; do
     if [ "$fline" ]; then 
       fontname=`eval "getparam 1 $fline"`
@@ -845,12 +755,16 @@ make_stringfile()
       string_srcs="$string_srcs $scmfile"
       if [ `isnewer $srcfile $scmfile` = "yes" ]; then
          echo " => $name.."
-         make_string_aux $font $size "$label" $name $scmfile $opt
+         if [ $USE_XETEX = yes ]; then 
+           make_string_latex $font $size "$label" $name $scmfile $opt
+         else
+           make_string_gd $font $size "$label" $name $scmfile
+         fi
          assertfile $scmfile
       fi
     fi
-  done < tmp.STRINGS
-  rm tmp.STRINGS
+  done < $SYS_TMPDIR/tmp.STRINGS
+  rm $SYS_TMPDIR/tmp.STRINGS
 }
 
 make_strings()
@@ -915,22 +829,30 @@ make_sounds()
 # search itemname diretories for ITEMNAME to populate items
 add_items()
 {
-  for newi in `filter_entries $SYS_PLATFORM $@`; do
-    idir=`locatedir $itemname/$newi`
-    assertfile "$idir"
-    isold=no
-    for oldi in $items; do
-      if [ $oldi = $newi ]; then
+  for optnewi in `filter_entries $SYS_PLATFORM $@`; do
+    newi=`echo "$optnewi" | sed 's/^?//'`
+    idir=`locatedir $itemname/$newi silent`
+    if [ ! "X$idir" = "X" ]; then
+      isold=no
+      for oldi in $items; do
+        if [ $oldi = $newi ]; then
         isold=yes
+        fi
+      done
+      if [ $isold = no ]; then
+        items="$items $newi"
+        capitemname=`echo "$itemname" | tr a-z A-Z`
+        xis=`locatefile $itemname/$newi/$capitemname silent`
+        if [ ! "X$xis" = "X" ] && [ -f "$xis" ]; then
+          add_items `cat "$xis"`
+        fi 
       fi
-    done
-    if [ $isold = no ]; then
-      items="$items $newi"
-      capitemname=`echo "$itemname" | tr a-z A-Z`
-      xis=`locatefile $itemname/$newi/$capitemname silent`
-      if [ ! "X$xis" = "X" ] && [ -f "$xis" ]; then
-        add_items `cat "$xis"`
-      fi 
+    else
+      if [ $newi = $optnewi ]; then 
+        assert "$newi in $itemname not found"
+      else
+        echo "INFO: optional $newi in $itemname not found, skipping"
+      fi
     fi
   done
 }
@@ -955,7 +877,22 @@ make_setup()
     SYS_IOSCERT=$SYS_IOSDEVCERT
   fi
   SYS_ROOT=`pwd`
+  mkdir -p $SYS_TMPDIR
   SYS_PREFIXROOT=`pwd`"-cache"
+  if [ ! -d $SYS_PREFIXROOT ]; then
+    case $SYS_HOSTPLATFORM in
+      macosx) 
+        SYS_PREFIXROOT=$HOME/Library/Caches/lambdanative 
+      ;;
+      *)
+        if [ "X$XDG_CACHE_HOME" = "X" ]; then
+          SYS_PREFIXROOT=$HOME/.cache/lambdanative
+        else
+          SYS_PREFIXROOT=$XDG_CACHE_HOME/lambdanative
+        fi
+      ;;
+    esac
+  fi
   SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM"
   SYS_HOSTPREFIX="$SYS_PREFIXROOT/$SYS_HOSTPLATFORM"
   SYS_GSC=$SYS_HOSTPREFIX/bin/gsc
@@ -1006,8 +943,6 @@ make_setup()
     # qcc does not support the dumpmachine option
     SYS_ARCH=arm-unknown-nto-qnx6.5.0eabi
   fi
-  # Adding BUILD info requires rebuilding of config module
-  touch modules/config/config.scm
   # build the subtool
   if ! `test -x  $SYS_HOSTPREFIX/bin/subtool` || 
        `test tools/subtool/subtool.c -nt $SYS_HOSTPREFIX/bin/subtool`; then
@@ -1087,8 +1022,11 @@ make_setup()
   libraries=`filter_entries $SYS_PLATFORM $libraries`
   tool_libraries=
   if [ "$SYS_HOSTPLATFORM" = "$SYS_PLATFORM" ]; then
-    tool_libraries="libz libpng libgambc"
+    tool_libraries="libgd libgambc"
   fi
+  texture_srcs=
+  string_srcs=
+  font_srcs=
   setstate
 }
 
@@ -1121,7 +1059,10 @@ make_payload()
     if [ $m = "syntax-case" ]; then
       modsrc="$SYS_HOSTPREFIX/lib/syntax-case.scm"
     else
-      modsrc=`locatefile modules/$m/$m.scm`
+      modsrc=
+      for l in $language_extensions; do
+        modsrc="$modsrc `locatefile modules/$m/$m.$l silent`"
+      done
     fi
     if [ `string_contains "$coremodules" " $m "` = yes ]; then
       coresrcs="$coresrcs $modsrc"
@@ -1130,10 +1071,18 @@ make_payload()
     fi
   done
   for p in $plugins; do
-    plugsrc=`locatefile plugins/$p/$p.scm`
+    plugsrc=
+    for l in $language_extensions; do
+      plugsrc="$plugsrc `locatefile plugins/$p/$p.$l silent`"
+    done
     auxsrcs="$auxsrcs $plugsrc"
   done
+#  mainsrc=
+#  for l in $language_extensions; do
+#    mainsrc="$mainsrc `locatefile $appsrcdir/main.$l silent`"
+#  done
   # note: textures, fonts and strings can't go before glcore!
+#  srcs="$coresrcs $texture_srcs $font_srcs $string_srcs $auxsrcs $mainsrc"
   srcs="$coresrcs $texture_srcs $font_srcs $string_srcs $auxsrcs $appsrcdir/main.scm"
   compile_payload $name "$srcs" "$libraries"
   setstate
@@ -1239,7 +1188,8 @@ make_library()
   assertfile "$libdir"
   if [ -f "$libdir/LIB_DEPENDS" ]; then
     dlibs=`cat $libdir/LIB_DEPENDS`
-    for dlib in $dlibs; do
+    filtered_dlibs=`filter_entries $SYS_PLATFORM $dlibs` 
+    for dlib in $filtered_dlibs; do
       make_library $dlib "(depedency)"
     done
   fi
@@ -1249,13 +1199,17 @@ make_library()
   if [ `newerindir $libdir $libfile` = "yes" ]; then
     echo " => $libname.."
     cd $libdir
-    ac_output build.sh
-    quiet=
-    if [ "X$SYS_VERBOSE" = "X" ]; then  
-      quiet="> /dev/null 2> /dev/null"
-    fi
-    veval "$SYS_ENV sh build.sh $quiet"
-    rm build.sh
+    if [ -f make.sh ]; then
+      . ./make.sh
+    else
+      ac_output build.sh
+      quiet=
+      if [ "X$SYS_VERBOSE" = "X" ]; then  
+        quiet="> /dev/null 2> /dev/null"
+      fi
+      veval "$SYS_ENV sh build.sh $quiet"
+      rm build.sh
+    fi 
     cd $here
   fi
 }
@@ -1275,29 +1229,6 @@ make_libraries()
   setstate
 }
 
-make_tools()
-{
-  setstate TOOLS
-  echo "==> creating tools needed for $SYS_APPNAME.."
-  tools=`ls -1 tools`
-  here=`pwd`
-  for tool in $tools; do
-    tooldir=tools/$tool
-    assertfile $tooldir
-    cd $tooldir
-    ac_output build.sh
-    quiet=
-    if [ "X$SYS_VERBOSE" = "X" ]; then  
-      quiet="> /dev/null 2> /dev/null"
-    fi
-    veval "$SYS_ENV sh build.sh $quiet"
-    asserterror $?
-    rm build.sh
-    cd $here
-  done
-  setstate
-}
-
 make_info()
 {
   echo " => Application	: $SYS_APPNAME"
@@ -1313,8 +1244,14 @@ make_info()
 make_xelatexcheck()
 {
   vecho " => checking for working xelatex.."
-  chkdir=check.xelatex
+  USE_XETEX=no
+  gspostfix=
+  if [ $SYS_HOSTPLATFORM = win32 ]; then
+    gspostfix=win32
+  fi
+  chkdir=$SYS_TMPDIR/check.xelatex
   mkdir -p $chkdir
+  here_xelatex=`pwd`
   cd $chkdir
 cat > check.tex << END
 \batchmode
@@ -1327,9 +1264,22 @@ check
 END
   veval "xelatex check.tex"
   veval "cat check.log"
-  assertfile check.pdf "xelatex environment is not complete. Please install necessary XeTeX packages." 
-  cd ..
+  if [ ! -e "check.pdf" ]; then
+    echo "** WARNING: xelatex environment is not complete. Consider installing necessary XeTeX packages."
+  else
+    if [ `havetool pdf2ps` = yes ] || [ `havetool pdftops` = yes ]; then
+      if [ `havetool ps2eps convert gs${gspostfix}` = yes ]; then
+        USE_XETEX=yes
+      else
+        echo "** WARNING: xelatex rendering needs ps2eps, convert, gs${gspostfix}, and pdf2ps/pdftops, some of which are missing."
+      fi
+    fi
+  fi
+  cd $here_xelatex
   rm -rf $chkdir
+  if [ $USE_XETEX = no ]; then
+    echo " ** Using GD to render strings"
+  fi
 }
 
 make_libarycheck(){
@@ -1350,14 +1300,6 @@ make_toolcheck()
   # language 
   asserttool autoconf make gcc patch
   if [ `is_gui_app` = "yes" ]; then
-    # graphics 
-    if [ $SYS_HOSTPLATFORM = win32 ]; then
-      asserttool gswin32
-    else 
-      asserttool gs 
-    fi
-    asserttool convert xelatex ps2eps freetype-config
-    # verify that xelatex works
     make_xelatexcheck
   fi
   # platform specific tools
@@ -1370,25 +1312,35 @@ make_toolcheck()
 make_lntoolcheck()
 {
   echo "==> checking for lambdanative tools.."
-  if [ ! -x $SYS_HOSTPREFIX/bin/gsc ]; then
-    if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
-      echo " => not found, commence building lambdanative tools.."
-      cp config.cache tmp.config.cache
-      SYS_PATH=$SYS_PATH ./configure $SYS_APPNAME > /dev/null
-      . ./config.cache
-      rmifexists tmp.subst
+  rmifexists $SYS_TMPDIR/tmp.config.cache
+  lntools="pngtool packtool ttftool lngtool"
+  for tool in $lntools; do
+    if [ ! -x $SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX ] || [ `newerindir apps/$tool $SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX` = "yes" ]; then
+      echo " => building lambdanative tool $tool.."
+      if [ ! -f $SYS_TMPDIR/tmp.config.cache ]; then
+        cp $SYS_TMPDIR/config.cache $SYS_TMPDIR/tmp.config.cache
+      fi
+      lntool_verbose=
+      if [ ! "X$SYS_VERBOSE" = "X" ]; then
+        lntool_verbose=verbose
+      fi
+      SYS_PATH="$SYS_PATH" ./configure $tool $lntool_verbose > /dev/null
+      . $SYS_TMPDIR/config.cache
+      rmifexists $SYS_TMPDIR/tmp.subst
       make_setup silent
-      for libname in $tool_libraries; do
-        make_library $libname
-      done
-      make_tools 
-      mv tmp.config.cache config.cache
-      . ./config.cache
-      rmifexists tmp.subst
-      make_setup
-      echo " => lambdanative tools build complete"
+      make_libraries     
+      make_payload
+      make_executable
+      make_install_tool
     fi
+  done 
+  if [ -f $SYS_TMPDIR/tmp.config.cache ]; then
+    mv $SYS_TMPDIR/tmp.config.cache $SYS_TMPDIR/config.cache
+    . $SYS_TMPDIR/config.cache
+    rmifexists $SYS_TMPDIR/tmp.subst
+    make_setup
   fi
+  vecho " => lambdanative tools complete"
 }
 
 ##############################
@@ -1407,7 +1359,7 @@ make_gcc()
   fi
   assertfile $tgt
   oldpath=`pwd`
-  newpath=`mktemp -d tmp.XXXXXX`
+  newpath=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
   cd $newpath
   tar -zxf $tgt
   cd *
@@ -1424,6 +1376,118 @@ make_gcc()
   echo " => gcc compilation complete"
   cd $oldpath
   rm -rf $newpath
+}
+
+##############################
+# smoke test
+
+smoke_result()
+{
+   echo ">> $1 $2"
+   echo "$1 $2" >> $SYS_TMPDIR/smoke.result
+}
+
+smoke_one() 
+{
+  smoker=$1
+  echo "SMOKING $smoker.."
+  rmifexists $SYS_TMPDIR/tmp.subst
+  rmifexists $SYS_TMPDIR/config.cache
+  ./configure $smoker > /dev/null
+  if [ ! "X$?" = "X0" ]; then
+    smoke_result $smoker "**FAIL"
+    echo "ERROR: configure failed"
+    return
+  fi
+  if [ ! -f $SYS_TMPDIR/config.cache ]; then
+    smoke_result $smoker "**FAIL"
+    echo "ERROR: configure failed"
+    return
+  fi
+  . $SYS_TMPDIR/config.cache
+  echo "=> Configured $SYS_APPNAME for platform $SYS_PLATFORM."
+  echo "=> Building $SYS_APPNAME.."
+  make_setup silent
+  make_libraries     
+  if [ `is_gui_app` = "yes" ]; then
+    make_artwork
+    make_textures
+    make_fonts
+    make_strings
+  fi
+  update_packfile
+  make_payload
+  make_executable
+  result=$?
+  if [ ! "X$result" = "X0" ]; then
+     smoke_result $smoker "**FAIL"
+     echo "ERROR: make failed"
+     return
+  fi  
+  appdir=`ls -1d $SYS_HOSTPREFIX/${SYS_APPNAME}${SYS_APPFIX}`
+  appexe=`ls -1 $SYS_HOSTPREFIX/${SYS_APPNAME}${SYS_APPFIX}/${SYS_APPNAME}*`
+  appexelocal="./"`basename $appexe`
+  if [ "X$appexe" = "X" ] || [ ! -x "$appexe" ]; then
+     smoke_result $smoker "**FAIL"
+     echo "ERROR: make failed"
+     return
+  fi
+  echo "=> Launching $SYS_APPNAME.."
+  (
+    sleep 2
+    stillalive=`ps x | expand | sed 's/^ [ ]*//g' | grep "/${SYS_APPNAME}" | cut -f 1 -d " "`
+    if [ ! "X$stillalive" = "X" ]; then
+      for p in $stillalive; do
+        kill -KILL $p > /dev/null 2> /dev/null
+      done
+    fi
+    ) &
+  here=`pwd`
+  cd "$appdir"
+  $appexelocal
+  res=$?
+  cd $here
+  if [ $res = 0 ] || [ $res = 137 ]; then
+     smoke_result $smoker "PASS"
+  else
+     echo "ERROR: launch failed"
+     smoke_result $smoker "**FAIL"
+  fi
+}
+
+make_smoke()
+{
+  echo "SMOKE TESTING..."
+  echo "------------------"
+  if [ -f $SYS_TMPDIR/config.cache ]; then
+    cp $SYS_TMPDIR/config.cache $SYS_TMPDIR/smoke.config.cache
+  else
+    rmifexists $SYS_TMPDIR/smoke.config.cache
+  fi
+  rmifexists $SYS_TMPDIR/smoke.result
+  touch $SYS_TMPDIR/smoke.result
+  apps=`ls -1d apps/* | sed 's:apps/::'`
+  for smoke_app in $apps; do
+    smoke_one $smoke_app
+  done
+  echo "------------------"
+  cat $SYS_TMPDIR/smoke.result
+  failed=`cat $SYS_TMPDIR/smoke.result | sed '/PASS/d' | wc -l | expand | sed 's/^ [ ]*//g'`
+  passed=`cat $SYS_TMPDIR/smoke.result | sed '/FAIL/d' | wc -l | expand | sed 's/^ [ ]*//g'`
+  count=`expr $failed + $passed`
+  echo "------------------"
+  echo "SMOKE TEST COMPLETE"
+  echo "SMOKED $count apps of which $failed failed"
+  if [ "X$failed" = "X0" ]; then
+  echo "++ Success: No Smokers"
+  fi
+  echo "All done."
+  echo "------------------"
+  rmifexists $SYS_TMPDIR/smoke.result
+  if [ -f $SYS_TMPDIR/smoke.config.cache ]; then
+    mv $SYS_TMPDIR/smoke.config.cache $SYS_TMPDIR/config.cache
+  fi
+  stty sane
 }
 
 ##############################
@@ -1461,7 +1525,7 @@ fi
 if [ ! "X$cfg_version" = "X$cur_version" ]; then
   echo " ** NEW FRAMEWORK VERSION DETECTED - scrubbing cache"
   make_scrub
-  rm config.cache
+  rmifexists $SYS_TMPDIR/config.cache
   echo " ** FRAMEWORK VERSION CHANGE - please rerun configure for the local host"
   exit 1
 fi
@@ -1475,15 +1539,12 @@ fi
 
 case "$make_argument" in
 clean) 
-  rm -rf tmp.?????? 2> /dev/null
+  rm -rf $SYS_TMPDIR/tmp.?????? 2> /dev/null
   make_clean
 ;;
 scrub)
-  rm -rf tmp.?????? 2> /dev/null
+  rm -rf $SYS_TMPDIR/tmp.?????? 2> /dev/null
   make_scrub
-;;
-tools)
-  make_tools
 ;;
 resources)
   make_artwork
@@ -1498,9 +1559,8 @@ explode)
   explode_library $2
 ;;
 payload)
-  rm -rf tmp.?????? 2> /dev/null
+  rm -rf $SYS_TMPDIR/tmp.?????? 2> /dev/null
   make_libraries
-  make_tools
 if [ `is_gui_app` = "yes" ]; then
   make_artwork
   make_textures
@@ -1514,9 +1574,8 @@ executable)
   make_executable
 ;;
 all)
-  rm -rf tmp.?????? 2> /dev/null
+  rm -rf $SYS_TMPDIR/tmp.?????? 2> /dev/null
   make_libraries
-  make_tools
 if [ `is_gui_app` = "yes" ]; then
   make_artwork
   make_textures
@@ -1543,18 +1602,16 @@ info)
 gcc)
   make_gcc
 ;;
+smoke)
+  make_smoke
+;;
 *)
   usage
 ;;
 esac
 
-if [ -f $evallog ]; then
-  rm $evallog
-fi
-
-if [ -f $ac_cache ]; then
-  rm $ac_cache
-fi
+rmifexists $evallog
+rmifexists $ac_cache
 
 # all is well if we got here, so clear the state cache
 resetstate

@@ -32,5 +32,6 @@
 (graph-vtextcenter g -0.8 0. "vtextcenter")
 
 (graph-output g GRAPH_PDF "ex-text.pdf")
+(graph-output g GRAPH_SVG "ex-text.svg")
 
 ;;eof

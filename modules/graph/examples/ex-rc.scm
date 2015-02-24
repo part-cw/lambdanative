@@ -65,5 +65,6 @@
 (graph-htextcenter g 1000 1.05 "Example: ex-rc.scm")
 
 (graph-output g GRAPH_PDF "ex-rc.pdf")
+(graph-output g GRAPH_SVG "ex-rc.svg")
 
 ;;eof

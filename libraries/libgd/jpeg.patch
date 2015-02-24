@@ -1,0 +1,10 @@
+--- configure	2013-06-25 06:53:41.000000000 -0700
++++ configure.new	2014-11-13 12:41:31.000000000 -0800
+@@ -13040,6 +13040,7 @@
+ fi
+ 
+ 
++ac_cv_lib_jpeg_jpeg_set_defaults=yes
+ if test "$withval" != no; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jpeg_set_defaults in -ljpeg" >&5
+ $as_echo_n "checking for jpeg_set_defaults in -ljpeg... " >&6; }

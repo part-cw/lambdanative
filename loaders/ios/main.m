@@ -1,6 +1,6 @@
 /*
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2014, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -72,7 +72,8 @@ int main(int argc, char *argv[]) {
   NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
   find_iphone_documents_directory();
 //  int retVal = UIApplicationMain(argc, argv, nil, nil);
-  int retVal = UIApplicationMain(argc, argv, nil, @"launcherAppDelegate");
+//  int retVal = UIApplicationMain(argc, argv, nil, @"launcherAppDelegate");
+  int retVal = UIApplicationMain(argc, argv, nil, NSStringFromClass([launcherAppDelegate class]));
   // is this ever reached?
   ffi_event(EVENT_TERMINATE,0,0);
   [pool release];

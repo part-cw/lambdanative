@@ -165,6 +165,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     "</records>")
 )
 
+;; Checks for an error message in header, logs the message and returns false. If there is no error (ie. code is 200 or 201), just return true
+(define (redcap:error-check msg)
+   (if (and (string? (car msg)) (fx> (string-length (car msg)) 12) (or (string=? (substring (car msg) 9 12) "201")
+                                                                       (string=? (substring (car msg) 9 12) "200")))
+     #t
+     (begin (log-error "REDCap:" (cadr msg)) #f))
+)
+
 (define (redcap-export-metadata host token . xargs)
          ;; See if format was specified in xargs, use json by default
   (let* ((format (redcap:arg 'format xargs "json"))
@@ -245,10 +253,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (begin 
               (httpsclient-close)  
               (let ((msg (redcap:split-headerbody (redcap:data->string))))
-                (if (and (string? (car msg)) (fx> (string-length (car msg)) 12) (or (string=? (substring (car msg) 9 12) "201")
-                                                                                    (string=? (substring (car msg) 9 12) "200"))) #t
-                  (begin (log-error "REDCap:" (cadr msg)) #f)
-                )
+                (redcap:error-check msg)
               )
             ) (begin
              (if (and n (> n 0)) 
@@ -307,14 +312,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (begin 
               (httpsclient-close)  
               (let ((msg (redcap:split-headerbody (redcap:data->string))))
-                (if (and (string? (car msg)) (fx> (string-length (car msg)) 12) 
-                         (or (string=? (substring (car msg) 9 12) "201")
-                             (string=? (substring (car msg) 9 12) "200"))) 
-                  #t
-                  (let ((message (cadr msg))) 
-                    (log-error "REDCap:" (if (list? message) (car msg) (cadr msg)))
-                    #f)
-                )
+                (redcap:error-check msg)
               )
             ) (begin
              (if (and n (> n 0)) 
@@ -369,7 +367,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            "User-Agent: " redcap:user-agent  "\n"
            "Content-Type: " redcap:content-type  "\n"
            "Content-Length: " (number->string (+ (string-length request) (string-length recordstr) (string-length eventstr) (string-length formstr) (string-length fieldstr))) "\n"
-           "\r\n" request recordstr eventstr formstr fieldstr "\n")))
+           "\r\n" request eventstr formstr fieldstr recordstr "\n")))
 
     ;; Check if we have a valid connection before proceeding
     (if (fx= (httpsclient-open host) 1)
@@ -380,11 +378,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (if (and n (fx<= n 0)) 
             (begin 
               (httpsclient-close)
-              (let ((output (cadr (redcap:split-headerbody (redcap:data->string)))))
-                 (if (string=? format "json")
-                   ;; If format is json, turn into a list, otherwise just return output
-                   (if (string? output) (redcap:jsonstr->list output) #f)
-                   output))
+              (let ((msg (redcap:split-headerbody (redcap:data->string))))
+                (if (redcap:error-check msg)
+                  (let ((output (cadr msg)))
+                    (if (string=? format "json")
+                      ;; If format is json, turn into a list, otherwise just return output
+                      (if (string? output) (redcap:jsonstr->list output) #f)
+                      output))
+                  #f))
             ) (begin
             (if (and n (> n 0)) 
               (redcap:data-append! (subu8vector redcap:buf 0 n)))
@@ -421,16 +422,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (httpsclient-close)
               
               ;; Get data as a list, make sure first entry isn't an error
-              (let ((datalist (redcap:jsonstr->list (cadr (redcap:split-headerbody (redcap:data->string))))))
-                
-                (if (and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
-                  ;; If the first entry is an error, then log it and return false
-                  (begin
-                    (log-error "REDCap error: " (cdaar datalist))
-                    #f)
-                   (maps (lambda (l)
-                          (cdr (car l))) 
-                         datalist))))
+              (let ((msg (redcap:split-headerbody (redcap:data->string))))
+                (if (redcap:error-check msg)
+                  (let ((datalist (redcap:jsonstr->list (cadr msg))))
+                    (if (and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
+                      ;; If the first entry is an error, then log it and return false
+                      (begin
+                        (log-error "REDCap error: " (cdaar datalist))
+                        #f)
+                      (maps (lambda (l)
+                              (cdr (car l))) 
+                            datalist)))
+                  #f)))
             (begin
               (if (and n (> n 0)) 
                 (redcap:data-append! (subu8vector redcap:buf 0 n)))

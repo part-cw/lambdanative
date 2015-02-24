@@ -1,1 +1,1 @@
-libmosquitto libcrypto libssl
+libcrypto libssl libpahomqtt libmosquitto

@@ -36,274 +36,467 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-;; bindings for the mosquitto MQTT library
-;; MQTT is a publish/subscribe protocol for the Internet of Things (IoT)
-
-(define mqtt:debuglevel 5)
+(define mqtt:debuglevel 0)
 (define (mqtt:log level . x)
    (if (>= mqtt:debuglevel level) (apply log-system (append (list "mqtt: ") x))))
 
 (c-declare  #<<end-of-c-declare
+
+// Note: callbacks to gambit are NOT recommended here because of the threading 
+
+// #define DEBUG_PAHO 1
+
+#ifdef DEBUG_PAHO
+#define DMSG(fmt...) (fprintf(stderr,"DEBUG: mqtt: " fmt),fprintf(stderr,"\n"))
+#else
+#define DMSG(fmt...)
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include <mosquitto.h>
+#include <MQTTAsync.h>
 
-void _scm_msg_callback(void *, char *, int);
-void log_c(char *);
+void MQTTAsync_init();
 
-static const struct mosquitto_message *msg=0;
+#define PAHO_PENDING 0
+#define PAHO_SUCCESS 1
+#define PAHO_FAILURE -1
+#define PAHO_UNKNOWN -2
 
-void _mosq_copy_payload(unsigned char *data)
+#define PAHO_STATUS_SUBSCRIBE 1
+#define PAHO_STATUS_UNSUBSCRIBE 2
+#define PAHO_STATUS_CONNECT 3 
+#define PAHO_STATUS_PUBLISH 4
+#define PAHO_STATUS_MAX 5
+
+#define PAHO_MSG_MAX 100
+
+// ----------------------------------------------------------
+// message and status buffering
+
+struct paho_meta {
+  MQTTAsync m;
+  int status[PAHO_STATUS_MAX];
+  MQTTAsync_message *msg_ring[PAHO_MSG_MAX];
+  char *topic_ring[PAHO_MSG_MAX];
+  int msg_head, msg_tail;
+  struct paho_meta *nxt;  
+};
+
+static struct paho_meta *fst=0;
+static struct paho_meta *lst=0;
+
+static void paho_meta_add(MQTTAsync m)
 {
-  if (msg) { memcpy(data,msg->payload,msg->payloadlen); msg=0; }
+  struct paho_meta *tmp = (struct paho_meta *)malloc(sizeof(struct paho_meta));
+  if (!tmp) { DMSG("paho_meta_add: malloc() failed"); return; }
+  tmp->m = m;
+  tmp->nxt=0;
+  int i;
+  for (i=0;i<PAHO_STATUS_MAX;i++) tmp->status[i]=PAHO_UNKNOWN;
+  for (i=0;i<PAHO_MSG_MAX;i++) { tmp->msg_ring[i]=0; tmp->topic_ring[i]=0; }
+  tmp->msg_head=tmp->msg_tail=0;
+  if (!fst) fst=tmp;
+  if (lst) lst->nxt=tmp; 
+  lst=tmp;
 }
 
-void _mosq_msg_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
+static void paho_meta_del(MQTTAsync m)
 {
-  while (msg) { }  // lock
-  msg=message; 
-  _scm_msg_callback(mosq, message->topic, message->payloadlen);
-}
-
-void _mosq_log_callback(struct mosquitto *mosq, void *obj, int level, const char *str)
-{
-  char buf[1024]="mosquitto: ";
-  strncat(buf,str,1023);
-  // MOSQ_LOG_INFO MOSQ_LOG_NOTICE MOSQ_LOG_WARNING MOSQ_LOG_ERR MOSQ_LOG_DEBUG
-  log_c(buf);
-}
-
-struct mosquitto *_mqtt_new(char *idstr, int clean_session)
-{
-  struct mosquitto *mosq = mosquitto_new(idstr,clean_session,0);
-  if (mosq) {
-//    mosquitto_log_callback_set(mosq,_mosq_log_callback);
-    mosquitto_message_callback_set(mosq,_mosq_msg_callback);
-  } else {
-   log_c("mosquitto: FATAL: mosquitto_new() failed");
+  struct paho_meta *tmp = fst, *prv=0;
+  while (tmp) {
+    if (tmp->m == m) {
+      if (prv) prv->nxt=tmp->nxt;
+      if (tmp==fst) fst=tmp->nxt;
+      if (tmp==lst) lst=prv;
+      free(tmp);
+      break; 
+    }
+    prv=tmp;
+    tmp=tmp->nxt;
   }
-  return mosq;
+  if (tmp) free(tmp); else { DMSG("paho_meta_del: non-existing pointer %p", m); }
 }
 
-unsigned int _mqtt_pid() { return (unsigned int)getpid(); } 
+static int paho_meta_status_get(MQTTAsync m, int type)
+{
+  int res = PAHO_UNKNOWN;
+  struct paho_meta *tmp = fst;
+  while (tmp) {
+    if (tmp->m == m) break;
+    tmp=tmp->nxt;
+  }
+  if (tmp) { res = tmp->status[type]; } else { DMSG("paho_meta_status_get: handle %p not found", m); }
+  return res;
+}
+
+static void paho_meta_status_set(MQTTAsync m, int type, int value)
+{
+  struct paho_meta *tmp = fst;
+  while (tmp) {
+    if (tmp->m == m) break;
+    tmp=tmp->nxt;
+  }
+  if (tmp) { tmp->status[type]=value; } else { DMSG("paho_meta_status_set: handle %p not found", m); }
+}
+
+static void paho_meta_msg_push(void *context, char *topic, MQTTAsync_message *msg)
+{
+  DMSG("paho_meta_msg_push");
+  struct paho_meta *tmp = fst;
+  while (tmp) { if (tmp->m==context) break; tmp=tmp->nxt; } 
+  if (!tmp) { DMSG("paho_meta_msg_push: context %p not found", context); return; }
+  if (tmp->msg_ring[tmp->msg_head]) {
+    DMSG("message queue overrun");
+    MQTTAsync_freeMessage(&tmp->msg_ring[tmp->msg_head]);
+    MQTTAsync_free(tmp->topic_ring[tmp->msg_head]);
+    tmp->msg_ring[tmp->msg_head]=0; tmp->topic_ring[tmp->msg_head]=0;
+  }
+  tmp->msg_ring[tmp->msg_head]=msg;
+  tmp->topic_ring[tmp->msg_head]=topic;
+  tmp->msg_head++; if (tmp->msg_head==PAHO_MSG_MAX) tmp->msg_head=0;
+}
+
+static void paho_meta_msg_pop(void *context)
+{
+  DMSG("paho_meta_msg_pop");
+  struct paho_meta *tmp = fst;
+  while (tmp) { if (tmp->m==context) break; tmp=tmp->nxt; } 
+  if (!tmp) { DMSG("paho_meta_msg_pop: context %p not found", context); return; }
+  if (tmp->msg_tail!=tmp->msg_head) {
+    if (tmp->msg_ring[tmp->msg_tail]) {
+      MQTTAsync_freeMessage(&tmp->msg_ring[tmp->msg_tail]);
+      MQTTAsync_free(tmp->topic_ring[tmp->msg_tail]);
+    }
+    tmp->msg_ring[tmp->msg_tail]=0;
+    tmp->topic_ring[tmp->msg_tail]=0;
+    tmp->msg_tail++; if (tmp->msg_tail==PAHO_MSG_MAX) tmp->msg_tail=0;
+  }
+}
+
+static int paho_meta_msg_ready(void *context)
+{
+  struct paho_meta *tmp = fst;
+  while (tmp) { if (tmp->m==context) break; tmp=tmp->nxt; } 
+  if (!tmp) { DMSG("paho_meta_msg_ready: context %p not found", context); return -1; }
+  int res=-1;
+  if (tmp->msg_tail!=tmp->msg_head) {
+    DMSG("paho_meta_msg_ready on context %p", context);
+    res=tmp->msg_ring[tmp->msg_tail]->payloadlen;
+  }
+  return res;
+}
+
+static void paho_meta_msg_payload(void *context, unsigned char *data)
+{
+  DMSG("paho_meta_msg_payload");
+  struct paho_meta *tmp = fst;
+  while (tmp) { if (tmp->m==context) break; tmp=tmp->nxt; } 
+  if (!tmp) { DMSG("paho_meta_msg_payload: context %p not found", context); return; }
+  MQTTAsync_message *msg = tmp->msg_ring[tmp->msg_tail];
+  if (msg) { memcpy(data,msg->payload,msg->payloadlen); }
+  paho_meta_msg_pop(context);
+}
+
+static char *paho_meta_msg_topic(void *context)
+{
+  DMSG("paho_meta_msg_topic");
+  struct paho_meta *tmp = fst;
+  while (tmp) { if (tmp->m==context) break; tmp=tmp->nxt; } 
+  if (!tmp) { DMSG("paho_meta_msg_topic: context %p not found", context); return 0; }
+  return tmp->topic_ring[tmp->msg_tail];
+}
+
+// ----------------------------------------------------------
+
+unsigned int _paho_pid() {  return (unsigned int)getpid; }
+
+void _paho_destroy(void *context)
+{
+  DMSG("_paho_destroy");
+  MQTTAsync client = (MQTTAsync)context;
+  paho_meta_status_set(context, PAHO_STATUS_CONNECT,PAHO_FAILURE);
+  MQTTAsync_destroy(&client);
+  paho_meta_del(client);
+}
+
+void _paho_onDisconnect(void *context, MQTTAsync_successData* response)
+{
+  DMSG("_paho_onDisconnect"); 
+  paho_meta_status_set(context, PAHO_STATUS_CONNECT,PAHO_FAILURE);
+}
+
+void _paho_disconnect(void *context)
+{
+  int rc;
+  DMSG("_paho_disconnect"); 
+  MQTTAsync client = (MQTTAsync)context;
+  MQTTAsync_disconnectOptions opts = MQTTAsync_disconnectOptions_initializer;
+  opts.onSuccess = _paho_onDisconnect;
+  opts.context = client;
+  paho_meta_status_set(context, PAHO_STATUS_CONNECT,PAHO_PENDING);
+  if ((rc = MQTTAsync_disconnect(client, &opts)) != MQTTASYNC_SUCCESS) {
+    paho_meta_status_set(context, PAHO_STATUS_CONNECT,PAHO_SUCCESS);
+    DMSG("Failed to disconnect, return code %d\n", rc);
+  }
+}
+
+static void _paho_onSubscribe(void* context, MQTTAsync_successData* response)
+{
+  DMSG("_paho_onSubscribe");
+  paho_meta_status_set(context, PAHO_STATUS_SUBSCRIBE,PAHO_SUCCESS);
+}
+
+static void _paho_onSubscribeFailure(void* context, MQTTAsync_failureData* response)
+{
+  DMSG("_paho_onSubscribeFailure");
+  DMSG("Subscribe failed, rc %d\n", response ? response->code : 0);
+  paho_meta_status_set(context, PAHO_STATUS_SUBSCRIBE,PAHO_FAILURE);
+}
+
+static void _paho_connectionLost(void *context, char *cause)
+{
+  DMSG("_paho_connectionLost context=%p", context);
+  paho_meta_status_set(context, PAHO_STATUS_CONNECT,PAHO_FAILURE);
+}
+
+static int _paho_onMsgArrived(void *context, char *topicName, int topicLen, MQTTAsync_message *message)
+{
+  DMSG("_paho_onMsgArrived from context %p msgid=%i", context, message->msgid);
+  if (!message->dup) {
+    paho_meta_msg_push(context,topicName,message);
+  } else {  // drop duplicates
+    MQTTAsync_freeMessage(&message);
+    MQTTAsync_free(topicName);
+  }
+  return 1;
+}
+
+static void _paho_onConnectFailure(void* context, MQTTAsync_failureData* response)
+{
+  DMSG("_paho_onConnectFailure");
+  paho_meta_status_set(context, PAHO_STATUS_CONNECT,PAHO_FAILURE);
+}
+
+void _paho_subscribe(void *context, char *topic, int qos)
+{
+  DMSG("_paho_subscribe");
+  int rc;
+  MQTTAsync client = (MQTTAsync)context;
+  MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
+  opts.onSuccess = _paho_onSubscribe;
+  opts.onFailure = _paho_onSubscribeFailure;
+  opts.context = client;
+  paho_meta_status_set(context, PAHO_STATUS_SUBSCRIBE,PAHO_PENDING);
+  if ((rc = MQTTAsync_subscribe(client, topic, qos, &opts)) != MQTTASYNC_SUCCESS) {
+    DMSG("Failed to start subscribe, return code %d\n", rc);
+    paho_meta_status_set(context, PAHO_STATUS_SUBSCRIBE,PAHO_FAILURE);
+  }
+}
+
+static void _paho_onUnsubscribe(void* context, MQTTAsync_successData* response)
+{
+  DMSG("_paho_onUnsubscribe");
+  paho_meta_status_set(context, PAHO_STATUS_UNSUBSCRIBE,PAHO_SUCCESS);
+}
+ 
+static void _paho_unsubscribe(void *context, char *topic)
+{
+  DMSG("_paho_unsubscribe");
+  int rc;
+  MQTTAsync client = (MQTTAsync)context;
+  MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
+  opts.onSuccess = _paho_onUnsubscribe;
+  opts.context = client;
+  paho_meta_status_set(context, PAHO_STATUS_UNSUBSCRIBE,PAHO_PENDING);
+  if ((rc = MQTTAsync_unsubscribe(client, topic, &opts)) != MQTTASYNC_SUCCESS) {
+    paho_meta_status_set(context, PAHO_STATUS_UNSUBSCRIBE,PAHO_FAILURE);
+  }
+}
+ 
+static void _paho_onConnect(void* context, MQTTAsync_successData* response)
+{ 
+  DMSG("_paho_onConnect");
+  paho_meta_status_set(context, PAHO_STATUS_CONNECT,PAHO_SUCCESS);
+}
+
+static void *_paho_connect(
+   char *address, char* clientid, char* certfile,
+   int timeout, int keepalive, int cleansession, 
+   char *username, char *passwd,
+   char *will_topic, char *will_msg,
+   int will_qos, int will_retain
+ )
+{
+  DMSG("_paho_connect");
+  int rc;
+  MQTTAsync client;
+  rc = MQTTAsync_create(&client, address, clientid, MQTTCLIENT_PERSISTENCE_NONE, NULL);
+  if (rc != MQTTASYNC_SUCCESS) { MQTTAsync_destroy(&client); client=0; goto _paho_connect_fail; }
+  MQTTAsync_setCallbacks(client, client, _paho_connectionLost, _paho_onMsgArrived, NULL);
+  paho_meta_add(client);
+
+  MQTTAsync_willOptions wopts = MQTTAsync_willOptions_initializer;
+  MQTTAsync_SSLOptions sslopts = MQTTAsync_SSLOptions_initializer;
+  MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
+  conn_opts.keepAliveInterval = keepalive; // 20
+  conn_opts.cleansession = cleansession; // 1 
+  conn_opts.onSuccess = _paho_onConnect;
+  conn_opts.onFailure = _paho_onConnectFailure;
+  conn_opts.context = client;
+  if (username) conn_opts.username=username;
+  if (passwd)   conn_opts.password=passwd;
+  if (certfile) {
+    sslopts.trustStore=certfile;
+    conn_opts.ssl=&sslopts;
+  }
+  if (will_topic) {
+    conn_opts.will = &wopts;
+    conn_opts.will->message = will_msg;
+    conn_opts.will->qos = will_qos;
+    conn_opts.will->retained = will_retain;
+    conn_opts.will->topicName = will_topic;
+  }
+  paho_meta_status_set(client, PAHO_STATUS_CONNECT,PAHO_PENDING);
+  if ((rc = MQTTAsync_connect(client, &conn_opts)) != MQTTASYNC_SUCCESS) {
+     DMSG("Failed to start connect, return code %d\n", rc);
+     paho_meta_status_set(client, PAHO_STATUS_CONNECT,PAHO_FAILURE);
+     MQTTAsync_destroy(&client);
+     client=0;
+  }
+_paho_connect_fail:
+  return client;
+}
+
+static void _paho_onSend(void* context, MQTTAsync_successData* response)
+{
+  DMSG("_paho_onSend");
+  if (response) { DMSG("Message with token value %d delivery confirmed\n", response->token); }
+  paho_meta_status_set(context,PAHO_STATUS_PUBLISH,PAHO_SUCCESS);
+}
+
+void _paho_publish(void *context, char *topic, int qos, int retain, char *payload, int payloadlen)
+{
+  DMSG("_paho_publish");
+  MQTTAsync client = (MQTTAsync)context;
+  MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
+  MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
+  opts.onSuccess = _paho_onSend;
+  opts.context = client;
+  pubmsg.payload = payload;
+  pubmsg.payloadlen = payloadlen;
+  pubmsg.qos = qos;
+  pubmsg.retained = retain;
+  int rc;
+  paho_meta_status_set(client,PAHO_STATUS_PUBLISH,PAHO_PENDING);
+  if ((rc = MQTTAsync_sendMessage(client, topic, &pubmsg, &opts)) != MQTTASYNC_SUCCESS) {
+    paho_meta_status_set(client,PAHO_STATUS_PUBLISH,PAHO_FAILURE);
+    DMSG("Failed to start sendMessage, return code %d\n", rc);
+  }
+}
+
+// -------------------------
 
 end-of-c-declare
 )
 
-(define MOSQ_ERR_CONN_PENDING ((c-lambda () int "___result = MOSQ_ERR_CONN_PENDING;")))
-(define MOSQ_ERR_SUCCESS ((c-lambda () int "___result = MOSQ_ERR_SUCCESS;")))
-(define MOSQ_ERR_NOMEM ((c-lambda () int "___result = MOSQ_ERR_NOMEM;")))
-(define MOSQ_ERR_PROTOCOL ((c-lambda () int "___result = MOSQ_ERR_PROTOCOL;")))
-(define MOSQ_ERR_INVAL ((c-lambda () int "___result = MOSQ_ERR_INVAL;")))
-(define MOSQ_ERR_NO_CONN ((c-lambda () int "___result = MOSQ_ERR_NO_CONN;")))
-(define MOSQ_ERR_CONN_REFUSED ((c-lambda () int "___result = MOSQ_ERR_CONN_REFUSED;")))
-(define MOSQ_ERR_NOT_FOUND ((c-lambda () int "___result = MOSQ_ERR_NOT_FOUND;")))
-(define MOSQ_ERR_CONN_LOST ((c-lambda () int "___result = MOSQ_ERR_CONN_LOST;")))
-(define MOSQ_ERR_TLS ((c-lambda () int "___result = MOSQ_ERR_TLS;")))
-(define MOSQ_ERR_PAYLOAD_SIZE ((c-lambda () int "___result = MOSQ_ERR_PAYLOAD_SIZE;")))
-(define MOSQ_ERR_NOT_SUPPORTED ((c-lambda () int "___result = MOSQ_ERR_NOT_SUPPORTED;")))
-(define MOSQ_ERR_AUTH ((c-lambda () int "___result = MOSQ_ERR_AUTH;")))
-(define MOSQ_ERR_ACL_DENIED ((c-lambda () int "___result = MOSQ_ERR_ACL_DENIED;")))
-(define MOSQ_ERR_UNKNOWN ((c-lambda () int "___result = MOSQ_ERR_UNKNOWN;")))
-(define MOSQ_ERR_ERRNO ((c-lambda () int "___result = MOSQ_ERR_ERRNO;")))
-(define MOSQ_ERR_EAI ((c-lambda () int "___result = MOSQ_ERR_EAI;")))
+(c-initialize "MQTTAsync_init();")
 
-(define mosq:errlut (let loop ((syms
-  '(MOSQ_ERR_CONN_PENDING MOSQ_ERR_SUCCESS MOSQ_ERR_NOMEM MOSQ_ERR_PROTOCOL MOSQ_ERR_INVAL
-    MOSQ_ERR_NO_CONN MOSQ_ERR_CONN_REFUSED MOSQ_ERR_NOT_FOUND MOSQ_ERR_CONN_LOST 
-    MOSQ_ERR_TLS MOSQ_ERR_PAYLOAD_SIZE MOSQ_ERR_NOT_SUPPORTED 
-    MOSQ_ERR_AUTH MOSQ_ERR_ACL_DENIED MOSQ_ERR_UNKNOWN MOSQ_ERR_ERRNO MOSQ_ERR_EAI))(res '()))
-      (if (= (length syms) 0) res (loop (cdr syms) 
-         (append res (list (list (eval (car syms)) (symbol->string (car syms)))))))))
+(define PAHO_PENDING ((c-lambda () int "___result=PAHO_PENDING;")))
+(define PAHO_SUCCESS ((c-lambda () int "___result=PAHO_SUCCESS;")))
+(define PAHO_FAILURE ((c-lambda () int "___result=PAHO_FAILURE;")))
 
-(define (mosq:error->string e)
-  (let ((lu (assoc e mosq:errlut)))
-    (if lu (cadr lu) (string-append "Unknown Error: " (number->string e)))))
+(define PAHO_STATUS_SUBSCRIBE ((c-lambda () int "___result=PAHO_STATUS_SUBSCRIBE;")))
+(define PAHO_STATUS_UNSUBSCRIBE ((c-lambda () int "___result=PAHO_STATUS_UNSUBSCRIBE;")))
+(define PAHO_STATUS_CONNECT ((c-lambda () int "___result=PAHO_STATUS_CONNECT;")))
+(define PAHO_STATUS_PUBLISH ((c-lambda () int "___result=PAHO_STATUS_PUBLISH;")))
 
-(define mosq:lut (make-table))
+(define (mqtt:pub-status h) ((c-lambda ((pointer void) int) int "paho_meta_status_get") h PAHO_STATUS_PUBLISH))
+(define (mqtt:sub-status h) ((c-lambda ((pointer void) int) int "paho_meta_status_get") h PAHO_STATUS_SUBSCRIBE))
+(define (mqtt:unsub-status h) ((c-lambda ((pointer void) int) int "paho_meta_status_get") h PAHO_STATUS_UNSUBSCRIBE))
+(define (mqtt:con-status h) ((c-lambda ((pointer void) int) int "paho_meta_status_get") h PAHO_STATUS_CONNECT))
+
+(define mqtt:connect (c-lambda (char-string char-string char-string int int int 
+    char-string char-string char-string char-string int int) (pointer void) "_paho_connect"))
+(define (mqtt:isconnected h) (fx= 1 ((c-lambda ((pointer void)) int  "___result=MQTTAsync_isConnected((MQTTAsync)___arg1);") h)))
+(define mqtt:disconnect (c-lambda ((pointer void)) void "_paho_disconnect"))
+
+(define mqtt:destroy (c-lambda ((pointer void)) void "_paho_destroy"))
+
+(define (mqtt:publish handle topic qos retain u8data) 
+   ((c-lambda ((pointer void) char-string int int scheme-object int) void 
+       "_paho_publish(___arg1,___arg2,___arg3, ___arg4, ___CAST(void*,___BODY_AS(___arg5,___tSUBTYPED)),___arg6);")
+      handle topic qos retain u8data (u8vector-length u8data)))
+
+(define mqtt:subscribe  (c-lambda ((pointer void) char-string int) void "_paho_subscribe"))
+(define mqtt:unsubscribe  (c-lambda ((pointer void) char-string) void "_paho_unsubscribe"))
+
+(define mqtt:msg-payload (c-lambda ((pointer void) scheme-object) void
+  "paho_meta_msg_payload(___arg1,___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)));"))
+
+(define mqtt:msg-ready (c-lambda ((pointer void)) int "paho_meta_msg_ready"))
+(define mqtt:msg-topic (c-lambda ((pointer void)) char-string "paho_meta_msg_topic"))
+
+(define (mqtt:pid)
+  (mqtt:log 2 "mqtt:pid")
+  ((c-lambda () unsigned-int "_paho_pid")))
+
+(define mqtt:lut (make-table))
 
 ;; prefix serialized data with magic "LN<1>"
-(define mosq:magic (u8vector 76 78 1))
+(define mqtt:magic (u8vector 76 78 1))
 
-(define (mosq:encode msg)
-  (mqtt:log 4 "mosq:encode " msg)
+(define (mqtt:encode msg)
+  (mqtt:log 4 "mqtt:encode " msg)
   (cond ((string? msg) (string->u8vector msg))
         ((number? msg) (string->u8vector (number->string msg)))
-        (else (u8vector-append mosq:magic (object->u8vector msg)))))
+        ((port? msg) (u8vector-append mqtt:magic (object->u8vector #f))) ;; we can't serialize ports
+        (else (u8vector-append mqtt:magic (object->u8vector msg)))))
 
-(define (mosq:decode msg)
-  (mqtt:log 4 "mosq:decode " msg)
+(define (mqtt:decode msg)
+  (mqtt:log 4 "mqtt:decode " msg)
   (let* ((msglen (u8vector-length msg))
-         (maglen (u8vector-length mosq:magic)))
-    (if (and (> msglen maglen) (equal? (subu8vector msg 0 maglen) mosq:magic))
+         (maglen (u8vector-length mqtt:magic)))
+    (if (and (> msglen maglen) (equal? (subu8vector msg 0 maglen) mqtt:magic))
       (u8vector->object (subu8vector msg maglen msglen))
         (let ((num (string->number (u8vector->string msg))))
           (if num num (u8vector->string msg))))))
 
-(define mosq:copypayload (c-lambda (scheme-object) void 
-  "_mosq_copy_payload(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)));"))
+(define (mqtt:msgloop handle)
+  (let loop ((n 0))
+    (let ((msglen (mqtt:msg-ready handle)))
+      (if (fx= msglen -1) #t
+        (let* ((m (table-ref mqtt:lut handle #f))
+               (h (if m (table-ref m 'handler #f) #f))
+               (topic (mqtt:msg-topic handle))
+               (u8data (make-u8vector msglen)))
+          (mqtt:msg-payload handle u8data)
+          (mqtt:log 1 "[" n "] dispatch topic: " topic " length=" msglen " handle=" handle)
+          (if (procedure? h) (h topic (mqtt:decode u8data)))
+          (loop (fx+ n 1)))))))
 
-(c-define (c-event mosq topic len) ((pointer void) char-string int) void "_scm_msg_callback" ""
-  (mqtt:log 3 "enter _scm_mqtt_message: " topic " " len)
-  (let* ((m (table-ref mosq:lut mosq #f))
-         (h (if m (table-ref m 'handler #f) #f)))
-    (if (procedure? h)
-      (let ((u8data (make-u8vector len)))
-        (mosq:copypayload u8data)
-        (mqtt:log 3 "dispatch topic: " topic " length=" len)
-        (h topic (mosq:decode u8data))))))
-
-(c-initialize "mosquitto_lib_init();")
-
-(define (mosq:new idstr clean_session)
-  (mqtt:log 2 "mqtt-new " idstr " " clean_session)
-  ((c-lambda (char-string int) (pointer void) "_mqtt_new") idstr clean_session))
-
-(define (mosq:destroy mosq)
-  (mqtt:log 2 "mosq:destroy")
-  ((c-lambda ((pointer void)) void "mosquitto_destroy") mosq))
-
-(define (mosq:connect mosq host port keepalive)
-  (mqtt:log 2 "mosq:connect " mosq " " host " " port " " keepalive)
-  (let ((result ((c-lambda ((pointer void) char-string int int) int 
-        ;;  "mosquitto_connect"
-          "___result=mosquitto_connect_bind(___arg1,___arg2,___arg3,___arg4,NULL);"
-          ) mosq host port keepalive)))
-    (if (not (fx= result MOSQ_ERR_SUCCESS))
-       (mqtt:log 0 "ERROR: mosquitto_connect() failed with error " (mosq:error->string result)))
-    result))
-
-(define (mosq:publish mosq topic msg qos retain)
-  (mqtt:log 3 "mosq:publish " mosq " " topic " " msg " " qos " " retain)
-  (let* ((u8msg (mosq:encode msg))
-         (result ((c-lambda ((pointer void) char-string int scheme-object int int) int
-    "___result=mosquitto_publish(___arg1, 0, ___arg2, ___arg3,
-      ___CAST(void*,___BODY_AS(___arg4,___tSUBTYPED)), ___arg5, ___arg6);")
-     mosq topic (u8vector-length u8msg) u8msg qos retain)))
-    (if (not (fx= result MOSQ_ERR_SUCCESS))
-       (mqtt:log 0 "ERROR: mosquitto_publish() failed with error " (mosq:error->string result)))
-    result))
-
-
-(define (mosq:will_set mosq topic msg qos retain)
-  (mqtt:log 3 "mosq:will_set " mosq " " topic " " msg " " qos " " retain)
-  (let* ((u8msg (mosq:encode msg))
-         (result ((c-lambda ((pointer void) char-string int scheme-object int int) int
-    "___result=mosquitto_will_set(___arg1, ___arg2, ___arg3,
-      ___CAST(void*,___BODY_AS(___arg4,___tSUBTYPED)), ___arg5, ___arg6);")
-     mosq topic (u8vector-length u8msg) u8msg qos retain)))
-    (if (not (fx= result MOSQ_ERR_SUCCESS))
-       (mqtt:log 0 "ERROR: mosquitto_publish() failed with error " (mosq:error->string result)))
-    result))
-
-(define (mosq:will_clear mosq)
-  (mqtt:log 2 "mosq:will_clear")
-  ((c-lambda ((pointer void)) int "mosquitto_will_clear") mosq))
-
-(define (mosq:subscribe mosq topic qos)
-  (mqtt:log 2 "mosq:subscribe " mosq " " topic " " qos)
-  (let ((result ((c-lambda ((pointer void) char-string int) int
-     "___result=mosquitto_subscribe(___arg1, 0, ___arg2, ___arg3);" )
-      mosq topic qos)))
-    (if (not (fx= result MOSQ_ERR_SUCCESS))
-       (mqtt:log 0 "ERROR: mosquitto_subscribe() failed with error " (mosq:error->string result)))
-    result))
-
-(define (mosq:unsubscribe mosq topic)
-  (mqtt:log 2 "mosq:unsubscribe " mosq " " topic)
-  (let ((result ((c-lambda ((pointer void) char-string) int
-     "___result=mosquitto_unsubscribe(___arg1, 0, ___arg2);" )
-      mosq topic)))
-    (if (not (fx= result MOSQ_ERR_SUCCESS))
-       (mqtt:log 0 "ERROR: mosquitto_unsubscribe() failed with error " (mosq:error->string result)))
-    result))
-
-(define (mosq:loop mosq timeout max_packets)
-  (mqtt:log 6 "mosq:loop " mosq " " timeout " " max_packets)
-  (let ((result ((c-lambda ((pointer void) int int) int "mosquitto_loop") 
-    mosq timeout max_packets)))
-    (if (not (fx= result MOSQ_ERR_SUCCESS))
-       (mqtt:log 0 "ERROR: mosquitto_loop() failed with error " (mosq:error->string result)))
-    result))
-
-(define (mosq:username_pw_set mosq uname pw)
-  (mqtt:log 2 "mosq:username_pw_set " mosq " " uname " " pw)
-    (let ((result ((c-lambda ((pointer void) char-string char-string) int "mosquitto_username_pw_set") mosq uname pw)))
-      (if (not (fx= result MOSQ_ERR_SUCCESS))
-       (mqtt:log 0 "ERROR: mosquitto_username_pw_set() failed with error " (mosq:error->string result)))
-    result))
-
-(define (mosq:disconnect mosq)
-  (mqtt:log 2 "mosq:disconnect" mosq)
-  (let ((result ((c-lambda ((pointer void)) int "___result=mosquitto_disconnect(___arg1);" ) mosq)))
-    (if (not (fx= result MOSQ_ERR_SUCCESS))
-       (mqtt:log 0 "ERROR: mosquitto_disconnect() failed with error " (mosq:error->string result)))
-    result))
-
-(define (mosq:tls_psk_set mosq psk identity)
-  (mqtt:log 2 "mosq:tls_psk_set" mosq " " psk " "  identity)
-  (let ((result ((c-lambda ((pointer void) char-string char-string) int 
-          "___result=mosquitto_tls_psk_set(___arg1,___arg2,___arg3,NULL);") mosq psk identity)))
-    (if (not (fx= result MOSQ_ERR_SUCCESS))
-       (mqtt:log 0 "ERROR: mosquitto_tls_psk_set() failed with error " (mosq:error->string result)))
-    result))
-
-(define (mosq:tls_opts_set mosq cert_reqs tls_version)
-  (mqtt:log 2 "mosq:tls_opts_set " mosq " " cert_reqs " " tls_version)
-  (let ((result ((c-lambda ((pointer void) int char-string) int 
-          "___result=mosquitto_tls_opts_set(___arg1,___arg2,___arg3,NULL);") mosq cert_reqs tls_version)))
-    (if (not (fx= result MOSQ_ERR_SUCCESS))
-       (mqtt:log 0 "ERROR: mosquitto_tls_opts_set() failed with error " (mosq:error->string result)))
-    result))
-
-(define (mosq:tls_insecure_set mosq value)
-  (mqtt:log 2 "mosq:tls_insecure_set " mosq " " value)
-  (let ((result ((c-lambda ((pointer void) int) int 
-          "___result=mosquitto_tls_insecure_set(___arg1,___arg2);") mosq value)))
-    (if (not (fx= result MOSQ_ERR_SUCCESS))
-       (mqtt:log 0 "ERROR: mosquitto_tls_insecure_set() failed with error " (mosq:error->string result)))
-    result))
-
-(define (mosq:tls_set mosq cafile capath certfile keyfile)
-  (mqtt:log 2 "mosq:tls_set" mosq " " cafile " " capath " " certfile " " keyfile)
-  (let ((result ((c-lambda ((pointer void) char-string char-string char-string char-string) int
-          "___result=mosquitto_tls_set(___arg1,___arg2,___arg3,___arg4,___arg5,NULL);") 
-          mosq cafile capath certfile keyfile)))
-    (if (not (fx= result MOSQ_ERR_SUCCESS))
-       (mqtt:log 0 "ERROR: mosquitto_tls_set() failed with error " (mosq:error->string result)))
-    result))
-
-(define (mqtt:pid)
-  (mqtt:log 2 "mqtt:pid")
-  ((c-lambda () unsigned-int "_mqtt_pid")))
-
-;; ------------------------------
-;; simple mqtt interface with automatic reconnect, re-subscription and optional TLS PSK encryption
+;; mqtt -----------------
 
 (define (mqtt-reset t . args)
   (mqtt:log 2 "mqtt-reset " t  " " args)
   (let loop ((defs '(
-     (clean-session 0)
-     (host "127.0.0.1") 
-     (port 1883) 
-     (keepalive 10) 
-     (timeout 10) 
-     (max-packets 100) 
+     (clean-session 1)
+     (host "127.0.0.1")
+     (port 1883)
+     (keepalive 20)
+     (timeout 10)
+     (max-packets 100)
      (handler #f)
      (subscriptions ())
      (will #f) ;;  ("topic" "msg" qos retain)
      (username #f)
      (password #f)
-     (tls-version "tlsv1.2")
-     (tls-insecure #f)
-     (psk #f) (psk_identity #f)
-     (connected #f)
+     (cafile #f)
      (id #f)
-     (mosq #f) 
+     (handle #f)
      (subscribe ())
      (publish ())
      (publish-all-topicprefix #f)
@@ -313,47 +506,64 @@ end-of-c-declare
     (if (> (length defs) 0) (begin
       (apply table-set! (append (list t) (car defs)))
       (loop (cdr defs)))))
+
     (let loop ((as args))
       (if (> (length as) 1) (begin
        (table-set! t (car as) (cadr as))
        (loop (cddr as)))))
+
     (let ((id (table-ref t 'id #f)))
-      (if (not id) 
+      (if (not id)
          (let* ((tmpid (string-append "LN/" (ipaddr->string (host-ipaddr)) "-" (number->string (mqtt:pid))))
                 (tmplen (string-length tmpid)))
            (table-set! t 'id (substring tmpid 0 (min tmplen 23))))))
-    (let* ((old_mosq (table-ref t 'mosq #f))
-           (mosq (if old_mosq old_mosq (mosq:new (table-ref t 'id #f) (table-ref t 'clean-session 0)))))
-      (table-set! t 'mosq  mosq)
-      (table-set! mosq:lut mosq t)
-      (table-set! t 'thread (make-safe-thread (lambda () (let loop ()
-        (let ((mosq (table-ref t 'mosq #f))
-              (connected (table-ref t 'connected #f)))
-          (if mosq (table-set! t 'connected (fx= (if connected 
-            (mosq:loop mosq (table-ref t 'timeout #f) (table-ref t 'max-packets #f))
-            (begin 
-              (let ((will (table-ref t 'will #f)))
-                (if will (apply mosq:will_set (append (list mosq) will)) (mosq:will_clear mosq)))
-              (let ((psk (table-ref t 'psk #f))
-                    (psk-identity (table-ref t 'psk-identity #f))
-                    (tls-version (table-ref t 'tls-version #f))
-                    (tls-insecure (table-ref t 'tls-insecure #f)))
-                (if (and psk psk-identity) (begin
-                   (mosq:tls_insecure_set mosq (if tls-insecure 1 0))
-                   (mosq:tls_psk_set mosq psk psk-identity)
-                   (if tls-version (mosq:tls_opts_set mosq 1 tls-version))
-                 )))
-              (let ((res (mosq:connect mosq (table-ref t 'host #f)  (table-ref t 'port #f) (table-ref t 'keepalive #f))))
-                (if (fx= res MOSQ_ERR_SUCCESS) 
-                  (let loop2 ((subs (table-ref t 'subscriptions '())))
-                     (if (> (length subs) 0) (begin
-                       (apply mosq:subscribe (append (list mosq) (car subs))) (loop2 (cdr subs)))))) 
-                res))) MOSQ_ERR_SUCCESS)))
-          (if (thread-receive (if connected 0.01 1.0) #t) (loop)))))))
-      (thread-start! (table-ref t 'thread #f))
-      (if old_mosq (mosq:disconnect mosq)) ;; drop old subscriptions
-    ) t)
 
+    (table-set! t 'thread (make-safe-thread (lambda () (let main-loop ()
+      (let* ((handle (table-ref t 'handle #f))
+             (constatus (if handle (mqtt:con-status handle) PAHO_FAILURE)))
+        (if (fx= constatus PAHO_SUCCESS) (mqtt:msgloop handle)
+          (if (fx= constatus PAHO_FAILURE)
+            (let* ((id (table-ref t 'id #f))
+                   (cafile (table-ref t 'cafile #f))
+                   (address (string-append (if cafile "ssl://" "tcp://")
+                     (table-ref t 'host #f) ":" (number->string (table-ref t 'port #f))))
+                   (timeout (table-ref t 'timeout #f))
+                   (keepalive (table-ref t 'keepalive #f))
+                   (cleansession (table-ref t 'clean-session #f))
+                   (username (table-ref t 'username #f))
+                   (passwd (table-ref t 'password #f))
+                   (will (table-ref t 'will #f))
+                   (will-topic (if will (car will) #f))
+                   (will-msg (if will (cadr will) #f))
+                   (will-qos (if will (caddr will) 0))
+                   (will-retain (if will (cadddr will) 0))
+                   (newhandle (mqtt:connect address id cafile
+                      timeout keepalive cleansession username passwd 
+                      will-topic will-msg will-qos will-retain))
+                   (res (let loop () (if (not (fx= (mqtt:con-status newhandle) PAHO_PENDING))
+                      (fx= (mqtt:con-status newhandle) PAHO_SUCCESS)
+                        (begin (thread-sleep! 0.1) (loop))))))
+                (if res (begin
+                  (let loop2 ((subs (table-ref t 'subscriptions '())))
+                    (if (> (length subs) 0) (begin
+                      (apply mqtt:subscribe (append (list newhandle) (car subs))) 
+                      (loop2 (cdr subs))
+                    ))
+                  )
+                  (table-set! t 'handle newhandle)
+                  (table-set! mqtt:lut newhandle t)
+                )))))
+          (if (thread-receive (if (fx= constatus PAHO_SUCCESS) 0.01 1.0) #t) 
+            (main-loop) (mqtt:log 2 "thread exited normally"))
+        )))))
+
+      (thread-start! (table-ref t 'thread #f))
+   t)
+
+(define (mqtt-connected? t)
+  (mqtt:log 2 "mqtt-connected?")
+   (fx= (mqtt:con-status (table-ref t 'handle #f)) PAHO_SUCCESS))
+ 
 (define (make-mqtt . args)
   (mqtt:log 2 "make-mqtt " args)
   (let ((t (make-table)))
@@ -361,35 +571,37 @@ end-of-c-declare
 
 (define (mqtt-subscribe t topic qos)
   (mqtt:log 2 "mqtt-subscribe " t " " topic " " qos)
-  (let ((connected (table-ref t 'connected #f)))
-    (let ((subs (table-ref t 'subscriptions '()))) 
+  (let ((connected (mqtt-connected? t)))
+    (let ((subs (table-ref t 'subscriptions '())))
       (if (not (assoc topic subs)) (table-set! t 'subscriptions (append subs (list (list topic qos))))))
-    (if connected (fx= (mosq:subscribe (table-ref t 'mosq #f) topic qos) MOSQ_ERR_SUCCESS) #f)))
+    (if connected (mqtt:subscribe (table-ref t 'handle #f) topic qos))
+    #t))
 
 (define (mqtt-unsubscribe t topic)
   (mqtt:log 2 "mqtt-unsubscribe " t " " topic)
-  (let ((connected (table-ref t 'connected #f)))
+  (let ((connected (mqtt-connected? t)))
     (let loop ((subs (table-ref t 'subscriptions '()))(nsubs '()))
       (if (= (length subs) 0) (table-set! t 'subscriptions nsubs)
         (loop (cdr subs) (append nsubs (if (string=? (car (car subs)) topic) '() (list (car subs)))))))
-    (if connected (fx= (mosq:unsubscribe (table-ref t 'mosq #f) topic) MOSQ_ERR_SUCCESS) #f)))
+    (if connected  (mqtt:unsubscribe (table-ref t 'handle #f) topic))
+    #t))
 
 (define (mqtt-publish t topic msg qos retain)
   (mqtt:log 2 "mqtt-publish " t " " topic " " msg " " qos " " retain)
-  (let ((connected (table-ref t 'connected #f)))
-    (if connected (fx= (mosq:publish (table-ref t 'mosq #f) topic msg qos retain) MOSQ_ERR_SUCCESS) #f)))
+  (let ((connected (mqtt-connected? t)))
+    (if connected (begin (mqtt:publish (table-ref t 'handle #f) topic qos retain (mqtt:encode msg)) #t) #f)))
 
 (define (mqtt-destroy t)
   (mqtt:log 2 "mqtt-destroy")
-  (let ((mosq (table-ref t 'mosq #f))
+  (let ((handle (table-ref t 'handle #f))
         (thread (table-ref t 'thread #f)))
     (if (thread? thread) (thread-send thread #f))
-    (table-set! t 'mosq #f)
-    (if mosq (mosq:destroy mosq)
-    (table-set! t 'connected #f))))
-
-(define (mqtt-connected? t) 
-  (mqtt:log 2 "mqtt-connected?")
-  (table-ref t 'connected #f))
+    (if (not (fx= (mqtt:con-status handle) PAHO_FAILURE)) (begin
+      (mqtt:disconnect handle)
+      (let loop () (if (fx= (mqtt:con-status handle) PAHO_FAILURE) #t
+        (begin (thread-sleep! 0.1) (loop))))))
+    (table-set! t 'handle #f)
+    (if handle (mqtt:destroy handle))
+    #t))
 
 ;; eof

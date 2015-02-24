@@ -7,8 +7,36 @@ void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_gpsEvent(J
   gps_accuracy=(double)accuracy;
   gps_timestamp=(double)timestamp/1000; // getTime is in msec, we want epoch
 }
-android_location_getlatitude(){ return gps_lat; }
-android_location_getlongitude(){ return gps_lon; }
-android_location_getaltitude(){ return gps_altitude; }
-android_location_getaccuracy(){ return gps_accuracy; }
-android_location_gettimestamp(){ return gps_timestamp; }
+
+static int sat_in_view, sat_in_fix;
+void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_satelliteEvent(JNIEnv* e, jobject o, jint inView, jint inFix) {
+  sat_in_view = inView;
+  sat_in_fix = inFix;
+}
+
+void android_location_toggleGPS(int status){
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "toggleGPS", "(I)V");
+    (*env)->CallVoidMethod(env, globalObj, method, status);
+  }
+}
+
+int android_location_service(){
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "isLocationServiceEnabled", "()I");
+    return (int)(*env)->CallIntMethod(env,globalObj,method);
+  } else { return -1; }
+}
+
+double android_location_getlatitude(){ return gps_lat; }
+double android_location_getlongitude(){ return gps_lon; }
+double android_location_getaltitude(){ return gps_altitude; }
+double android_location_getaccuracy(){ return gps_accuracy; }
+double android_location_gettimestamp(){ return gps_timestamp; }
+
+int android_location_getsatviewed(){ return sat_in_view; }
+int android_location_getsatfixed(){ return sat_in_fix; }

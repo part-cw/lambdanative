@@ -1,0 +1,14 @@
+--- lib/tls_mosq.c	2014-08-05 16:29:09.000000000 -0700
++++ lib/tls_mosq.c.new	2014-09-23 12:41:21.000000000 -0700
+@@ -36,6 +36,11 @@
+ #  include <arpa/inet.h>
+ #endif
+ 
++#ifdef QNX
++#include <sys/socket.h>
++#include <netinet/in.h>
++#endif
++
+ #include <string.h>
+ #include <openssl/conf.h>
+ #include <openssl/x509v3.h>

@@ -52,7 +52,7 @@ configsrc=`pwd`"/loaders/qnx/bb10-bar-descriptor.xml.in"
 assertfile $configsrc "BB10 configuration desriptor is required"
 mkdir -p $SYS_PREFIXROOT/build/$SYS_APPNAME
 configtgt=$SYS_PREFIXROOT/build/$SYS_APPNAME/bar-descriptor.xml
-tmpdir=`mktemp -d tmp.XXXXXX`
+tmpdir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 if [ `is_gui_app` = yes ]; then
   ac_output loaders/qnx/bootstrap.c.in $tmpdir/bootstrap.c
 else
@@ -73,7 +73,7 @@ else
   if [ `is_gui_app` = yes ]; then
     veval "$SYS_CC -I$SYS_PREFIX/include \
       bootstrap.c -o $tgt \
-      -L$SYS_PREFIX/lib -lpayload -lEGL -lGLESv1_CL -lbps -lscreen -lsocket -lasound -lm"
+      -L$SYS_PREFIX/lib -lpayload -lEGL -lGLESv1_CL -lbps -lscreen -lsocket -lasound -lcamapi -lm"
   else
     veval "$SYS_CC -I$SYS_PREFIX/include \
       -DUSECONSOLE main.c -o $tgt \

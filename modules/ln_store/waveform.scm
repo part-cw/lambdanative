@@ -107,7 +107,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((c (if (fx= (length category) 1) (car category) "waveform"))
         (tdata (store:wdatatable store))
         (tscaling (store:wscalingtable store)))
-    (store-clear! store (map car (store-listcat store c)))
     (store-set! store "waveform-timestamp" ##now c)
     (let ((ids (table-ref tdata 'IdList '())))
       (for-each (lambda (id) 
@@ -116,6 +115,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (if (list? data) (store-set! store id (waveform:scale data scaling) c))
           (if (f32vector? data) (store-set! store id (waveform:f32scale data scaling) c)))) ids))
     (store-waveform-clear! store)
+    (store-clearexpired! store 0.1 (map car (store-listcat store c)))
   ))
 
 ;; eof

@@ -1,0 +1,11 @@
+--- dmtxregion.c	2015-01-21 07:56:53.000000000 -0800
++++ dmtxregion.c.new	2015-01-21 07:58:09.000000000 -0800
+@@ -1287,7 +1287,7 @@
+    char houghTest[DMTX_HOUGH_RES];
+    int i;
+    int step;
+-   int sign;
++   int sign=0;
+    int tripSteps;
+    int angleBest;
+    int hOffset, hOffsetBest;

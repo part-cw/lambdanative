@@ -1,0 +1,15 @@
+--- src/luaconf.h	2014-12-29 05:27:55.000000000 -0800
++++ src/luaconf.h.new	2015-01-29 12:32:31.000000000 -0800
+@@ -727,9 +727,9 @@
+ ** without modifying the main part of the file.
+ */
+ 
+-
+-
+-
++#ifdef ANDROID
++#define l_getlocaledecpoint() '.' 
++#endif
+ 
+ #endif
+ 
