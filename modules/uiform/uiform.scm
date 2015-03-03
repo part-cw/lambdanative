@@ -653,15 +653,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (loc (glgui:uiform-arg args 'location 'db))
          (left (glgui:uiform-arg args 'left #f))
          (leftvalue (cadr left))
+         (leftaction (caddr left))
          (right (glgui:uiform-arg args 'right #f))
-         (rightvalue (cadr right)))
+         (rightvalue (cadr right))
+         (rightaction (caddr right)))
     (if (and id (> x (* 0.3 w)) (< x (* 0.6 w))) (begin
       (xxset loc id leftvalue)
       (uiset 'nodemap '())
+      (glgui:uiform-action leftaction)
     ))
     (if (and id (> x (* 0.6 w))) (begin
       (xxset loc id rightvalue)
       (uiset 'nodemap '())
+      (glgui:uiform-action rightaction)
     ))
  ))
 
