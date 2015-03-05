@@ -258,8 +258,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                   (tmpimg (if (file-exists? imgfile) (png->img imgfile) #f)))
                (if tmpimg (table-set! glgui:uiform-images imgsrc tmpimg) (log-error "image file " imgfile " not found"))
                tmpimg) lut)) imgsrc))
-         (h (if img (cadr img) 10)))
-    (if (and img (uiget 'sanemap)) (glgui:draw-pixmap-center x y w h img White))
+         (h (if img (cadr img) 10))
+         (align (glgui:uiform-arg args 'align 'center))
+         (drawproc (case align
+                       ((center) glgui:draw-pixmap-center)
+                       ((left) glgui:draw-pixmap-left)
+                       ((right) glgui:draw-pixmap-right))))
+    (if (and img (uiget 'sanemap)) (drawproc x y w h img White))
     h))
 
 ;; -------------
