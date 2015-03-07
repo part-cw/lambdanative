@@ -111,6 +111,7 @@ struct cdb *_init_cdb(char *fname)
 void _cdb_finish(struct cdb *cdb)
 {
   int fd = cdb->cdb_fd;
+  cdb_free(cdb);
   if (fd) close(fd);
 }
 
@@ -183,9 +184,11 @@ c-declare-end
   (fx= 1 ((c-lambda ((pointer void) char-string) int "_cdb_make_merge") (car cdb) file)))
 
 (define (cdb-make-finish cdb) 
-  (let ((ctx (caddr cdb)))
-    ((c-lambda ((pointer void)) int "_cdb_make_finish") (car cdb))
-    (if ctx (cdb:destroyctx ctx))))
+  (let ((ctx (caddr cdb))
+        (res ((c-lambda ((pointer void)) int "_cdb_make_finish") (car cdb))))
+    (if ctx (cdb:destroyctx ctx))
+    res
+  ))
 
 ;; query interface
 
