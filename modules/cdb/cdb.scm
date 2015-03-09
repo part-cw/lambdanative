@@ -135,7 +135,7 @@ c-declare-end
   (lambda (obj) (rabbit-encode keyctx (object->u8vector obj))))
 
 (define (cdb:decoder keyctx)
-  (lambda (u8v) (with-exception-handler (lambda (e) 
+  (lambda (u8v) (with-exception-catcher (lambda (e) 
     (log-error "cdb:decoder: failed to deserialize: " (exception->string e)) #f)
       (lambda () (u8vector->object (rabbit-decode keyctx u8v))))))
 
