@@ -1106,14 +1106,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      (if (fx= idx nonodes) (begin
           (uiset 'contenth totalh)
           (if nodemap (uiset 'nodemap nodemap))
-          ;; @@
           (if (< totalh visible-height) 
             (uiset 'offset 0))
         )
        (let* ((node-noeval (list-ref nodes (+ 3 (- nonodes idx 1))))
               (node (if (procedure? node-noeval) (uiform:evalelement node-noeval) node-noeval))
               (bx x) (bw w) (by y0)
-              (bh (let ((in (table-ref uiform:elements (car node))))
+              (bh (let ((in (table-ref uiform:elements (car node) #f)))
                 (if in (apply (car in) (append (list bx by bw) (cdr node))) 0.)
               ))
               (newnodemap (if nodemap (append 
