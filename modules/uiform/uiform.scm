@@ -238,11 +238,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if entry (cadr entry) defval)))
 
 ;; -------------
+;; widget element registration
+(define uiform:elements (make-table))
+
+(define (uiform-register name draw input)
+  (table-set! uiform:elements name (list draw input))
+)
+
+;; -------------
 ;; spacer 
 
 (define (glgui:uiform-spacer-draw x y w . args)
   (let ((h (glgui:uiform-arg args 'height 30)))
     h))
+
+(uiform-register 'spacer glgui:uiform-spacer-draw #f)
 
 ;; -------------
 ;; image
@@ -266,6 +276,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                        ((right) glgui:draw-pixmap-right))))
     (if (and img (uiget 'sanemap)) (drawproc x y w h img White))
     h))
+
+(uiform-register 'image glgui:uiform-image-draw #f)
 
 ;; -------------
 ;; label
@@ -298,6 +310,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (loop (cdr ss)))))
      toth
   ))
+
+(uiform-register 'label glgui:uiform-label-draw #f)
 
 ;; -------------
 ;; text entry
@@ -369,6 +383,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (if (and keypad-on id (eq? id focusid)) (glgui:uiform-keypad-down))
    ))))
 
+(uiform-register 'textentry glgui:uiform-textentry-draw glgui:uiform-textentry-input)
+
 ;; -------------
 ;; time entry
 
@@ -423,12 +439,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      h
   ))
 
-(define (glgui:uiform-timeentry-input type mx my x y w h . args)
+(define (glgui:uiform-timeentry-input type mx my . args)
   (let* ((id  (glgui:uiform-arg args 'id #f))
          (loc (glgui:uiform-arg args 'location 'db))
          (focusid (uiget 'focusid))
          (keypad-on (uiget 'keypad-on))
-         (keypad-height (uiget 'keypad-height)))
+         (keypad-height (uiget 'keypad-height))
+         (x (uiget 'x))
+         (w (uiget 'w)))
     
     (if (and id (fx= type EVENT_BUTTON1UP))
       (let ((ampmw (* w 0.2)))
@@ -462,6 +480,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (glgui:uiform-keypad-up)
             (if (and keypad-on id (eq? id focusid)) (glgui:uiform-keypad-down))))))))
 
+(uiform-register 'timeentry glgui:uiform-timeentry-draw glgui:uiform-timeentry-input)
+
 ;; -------------
 ;; button
 
@@ -492,6 +512,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (glgui:uiform-action action))
  )))
 
+(uiform-register 'button glgui:uiform-button-draw glgui:uiform-button-input)
+
 ;; --------------
 ;; progress bar
 
@@ -505,6 +527,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (glgui:draw-box (+ x (* w 0.1) 2) (+ y 2) (* value (- (* w 0.8) 4.)) (- h 4) selcolor)
      ))
   h))
+
+(uiform-register 'progress glgui:uiform-progress-draw #f)
 
 ;; --------------
 ;; encode DM
@@ -523,6 +547,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (glgui:draw-pixmap-center x y w h img White)
     ))
     h))
+
+(uiform-register 'dmencode glgui:uiform-dmencode-draw #f)
 
 ;; --------------
 ;; decode DM
@@ -565,6 +591,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (file-exists? tmpfile) (delete-file tmpfile))
     (camera-start tmpfile)
  ))
+
+(uiform-register 'dmdecode glgui:uiform-dmdecode-draw glgui:uiform-dmdecode-input)
 
 ;; --------------
 ;; camera support
@@ -611,6 +639,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (uiset 'nodemap '())
     ))
  ))
+
+(uiform-register 'camera glgui:uiform-camera-draw glgui:uiform-camera-input)
 
 ;; --------------
 ;; radio box
@@ -674,6 +704,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     ))
  ))
 
+(uiform-register 'radiobox glgui:uiform-radio-draw glgui:uiform-radio-input)
+
 ;; --------------
 ;; check box
 
@@ -715,6 +747,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (xxset loc id (not curvalue))
       (uiset 'nodemap '())
     ))))
+
+(uiform-register 'checkbox glgui:uiform-check-draw glgui:uiform-check-input)
 
 ;; --------------
 ;; drop down
@@ -804,6 +838,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (uiset expandid #f)
    ))))
 
+(uiform-register 'dropdown glgui:uiform-dropdown-draw glgui:uiform-dropdown-input)
+
 ;; -------------
 ;; list
 
@@ -841,6 +877,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (xxset loc id (list-ref entries idx))
      ))
  ))))
+
+(uiform-register 'list glgui:uiform-list-draw glgui:uiform-list-input)
 
 ;; -------------
 ;; checklist
@@ -894,6 +932,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (begin (uiset 'nodemap '()) (xxset loc id (list-insert-item actual element))) ;; (uiform-db-listinsert! id element)
          )
      ))))))
+
+(uiform-register 'checklist glgui:uiform-checklist-draw glgui:uiform-checklist-input)
   
 ;; -------------
 ;; uiform graph
@@ -939,6 +979,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      ))
      h  
   ))
+
+(uiform-register 'graph glgui:uiform-graph-draw #f)
 
 ;; -------------
 ;; uiform modal
@@ -1071,31 +1113,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (let* ((node-noeval (list-ref nodes (+ 3 (- nonodes idx 1))))
               (node (if (procedure? node-noeval) (uiform:evalelement node-noeval) node-noeval))
               (bx x) (bw w) (by y0)
-              (bh (case (car node)
-                ((spacer) (apply glgui:uiform-spacer-draw (append (list bx by bw) (cdr node))))
-                ((label)  (apply glgui:uiform-label-draw (append (list bx by bw) (cdr node))))
-                ((button) (apply glgui:uiform-button-draw (append (list bx by bw) (cdr node))))
-                ((textentry) (apply glgui:uiform-textentry-draw (append (list bx by bw) (cdr node))))
-                ((timeentry) (apply glgui:uiform-timeentry-draw (append (list bx by bw) (cdr node))))
-                ((image) (apply glgui:uiform-image-draw (append (list bx by bw) (cdr node))))
-                ((radiobox) (apply glgui:uiform-radio-draw (append (list bx by bw) (cdr node))))
-                ((dropdown) (apply glgui:uiform-dropdown-draw (append (list bx by bw) (cdr node))))
-                ((checklist) (apply glgui:uiform-checklist-draw (append (list bx by bw) (cdr node))))
-                ((list) (apply glgui:uiform-list-draw (append (list bx by bw) (cdr node))))
-                ((graph) (apply glgui:uiform-graph-draw (append (list bx by bw) (cdr node))))
-                ((dmencode) (apply glgui:uiform-dmencode-draw (append (list bx by bw) (cdr node))))
-                ((dmdecode) (apply glgui:uiform-dmdecode-draw (append (list bx by bw) (cdr node))))
-                ((camera) (apply glgui:uiform-camera-draw (append (list bx by bw) (cdr node))))
-                ((progress) (apply glgui:uiform-progress-draw (append (list bx by bw) (cdr node))))
-                ((checkbox) (apply glgui:uiform-check-draw (append (list bx by bw) (cdr node))))
-                (else 0.)
-               ))
+              (bh (let ((in (table-ref uiform:elements (car node))))
+                (if in (apply (car in) (append (list bx by bw) (cdr node))) 0.)
+              ))
               (newnodemap (if nodemap (append 
                 (list 
                   ;;(list bh (car node) (glgui:uiform-arg (cdr node) 'action #f))
                   (append (list bh) node) 
                 ) nodemap) #f))
-              )
+             )
          (loop (fx+ idx 1) (+ y0 bh) (+ totalh bh) newnodemap))))
 
    ;; scroll bar
@@ -1181,22 +1207,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         (newy (+ tmpy node-height)))
                     (if (and (> nodey 0) (< (+ nodey ofs) newy))
                        (begin 
-                         ;;(uiset 'node-y (- (+ y visible-height) tmpy))
-                         (uiset 'node-y (- (+ y visible-height ofs) tmpy)) ;; XX
+                         (uiset 'node-y (- (+ y visible-height ofs) tmpy))
                          (uiset 'node-height node-height)
-                         (case (car node)
-                           ((textentry) (apply glgui:uiform-textentry-input (append (list type mx my) (cdr node))))
-                           ((timeentry) (apply glgui:uiform-timeentry-input (append (list type mx my x y w h) (cdr node))))
-                           ((button) (apply glgui:uiform-button-input (append (list type mx my) (cdr node))))
-                           ((radiobox) (apply glgui:uiform-radio-input (append (list type mx my) (cdr node))))
-                           ((dropdown) (apply glgui:uiform-dropdown-input (append (list type mx my) (cdr node))))
-                           ((checklist) (apply glgui:uiform-checklist-input (append (list type mx my) (cdr node))))
-                           ((list) (apply glgui:uiform-list-input (append (list type mx my) (cdr node))))
-                           ((dmdecode) (apply glgui:uiform-dmdecode-input (append (list type mx my) (cdr node))))
-                           ((camera) (apply glgui:uiform-camera-input (append (list type mx my) (cdr node))))
-                           ((checkbox) (apply glgui:uiform-check-input (append (list type mx my) (cdr node))))
+                         (let ((ih (table-ref uiform:elements (car node) #f)))
+                           (if ih (apply (cadr ih) (append (list type mx my) (cdr node))))
                          )
-                     ;; XXXX    (uiset 'nodemap '()) ;; XXX
                        )
                       (loop (cdr nodes) newy))))))))
                
