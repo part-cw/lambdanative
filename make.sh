@@ -1500,6 +1500,7 @@ usage()
 
 ##############################
 # main dispatcher
+make_argument=$1
 
 make_setup
 case "$1" in
@@ -1531,7 +1532,6 @@ if [ ! "X$cfg_version" = "X$cur_version" ]; then
 fi
 
 # override the make argument
-make_argument=$1
 if [ "X$make_argument" = "Xall" ] && [ -f "targets/$SYS_PLATFORM/make_argument" ]; then
   make_argument=`cat "targets/$SYS_PLATFORM/make_argument"`
   echo "WARNING: target is forcing make argument: $make_argument"
