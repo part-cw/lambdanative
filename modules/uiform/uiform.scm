@@ -242,8 +242,40 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define uiform:elements (make-table))
 
 (define (uiform-register name draw input)
+  (uiform:log 3 "uiform-register " name " " draw " " input)
   (table-set! uiform:elements name (list draw input))
 )
+
+(define (uiform-register-legacy name draw input)
+  (uiform:log 3 "uiform-register-legacy " name " " draw " " input)
+  (let ((newdraw (lambda (x y w . args)
+     (let ((ox (uiget 'x)) (oy (uiget 'y)) (ow (uiget 'w)) (oh (uiget 'h)))
+       (glgui-widget-set! uiform:g uiform:wgt 'x x)
+       (glgui-widget-set! uiform:g uiform:wgt 'y y)
+       (glgui-widget-set! uiform:g uiform:wgt 'w w)
+       (let loop ((as args))
+         (if (fx> (length as) 0) (begin
+           (glgui-widget-set! uiform:g uiform:wgt (car as) (cadr as))
+           (loop (cddr as)))
+         )
+       )
+       (draw uiform:g uiform:wgt)
+       (let ((ret (uiget 'h)))
+         (uiset 'x ox) (uiset 'y oy) (uiset 'w ow) (uiset 'h oh)
+         (if (= ret oh) 30 ret)
+       )
+     )))
+     (newinput (lambda (type mx my . args)
+       (let loop ((as args))
+         (if (fx> (length as) 0) (begin
+           (glgui-widget-set! uiform:g uiform:wgt (car as) (cadr as))
+           (loop (cddr as)))
+         )
+       )
+       (input uiform:g uiform:wgt type mx my)
+     )))
+    (table-set! uiform:elements name (list newdraw newinput))
+  ))
 
 ;; -------------
 ;; spacer 
@@ -1112,8 +1144,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (let* ((node-noeval (list-ref nodes (+ 3 (- nonodes idx 1))))
               (node (if (procedure? node-noeval) (uiform:evalelement node-noeval) node-noeval))
               (bx x) (bw w) (by y0)
-              (bh (let ((in (table-ref uiform:elements (car node) #f)))
-                (if in (apply (car in) (append (list bx by bw) (cdr node))) 0.)
+              (bh (let ((in (car (table-ref uiform:elements (car node) (list #f)))))
+                (if in (apply in (append (list bx by bw) (cdr node))) 0.)
               ))
               (newnodemap (if nodemap (append 
                 (list 
@@ -1208,8 +1240,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                        (begin 
                          (uiset 'node-y (- (+ y visible-height ofs) tmpy))
                          (uiset 'node-height node-height)
-                         (let ((ih (table-ref uiform:elements (car node) #f)))
-                           (if ih (apply (cadr ih) (append (list type mx my) (cdr node))))
+                         (let ((ih (cadr (table-ref uiform:elements (car node) (list #f #f)))))
+                           (if ih (apply ih (append (list type mx my) (cdr node))))
                          )
                        )
                       (loop (cdr nodes) newy))))))))
