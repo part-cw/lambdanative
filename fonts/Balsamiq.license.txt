@@ -1,0 +1,10 @@
+/*
+
+Balsamiq Sans Font
+(c) 2011-2013 Michael Angeles for Balsamiq, SRL
+
+This font is licensed under the SIL OFL license: http://scripts.sil.org/OFL
+
+Reserved Font Name: Balsamiq
+
+*/
