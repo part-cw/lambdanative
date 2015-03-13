@@ -528,11 +528,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; button
 
 (define (glgui:uiform-button-draw x y w . args)
-  (let* ((fntsize (glgui:uiform-arg args 'size 'normal))
-         (fnt (uiget (case fntsize
-                       ((normal) 'fnt)
-                       ((small) 'smlfnt)
-                       ((big) 'bigfnt))))
+  (let* ((bfnt (uiget 'btfnt))
+         (fnt (if bfnt bfnt
+                (uiget (case (glgui:uiform-arg args 'size 'normal)
+                          ((normal) 'fnt)
+                          ((small) 'smlfnt)
+                          ((big) 'bigfnt)))))
          (fnth (glgui:fontheight fnt))
          (color (glgui:uiform-arg args 'color White))
          (strings (string-split-width (glgui:uiform-arg args 'text "") (fix (* 0.7 w)) fnt))
@@ -1102,6 +1103,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (header-height (uiget 'headerh))
          (visible-height (- h header-height))
          (fnt (uiget 'fnt))
+         (hfnt (uiget 'hdfnt fnt))
+         (bfnt (uiget 'btfnt fnt))
          (uiform (uiget 'uiform))
          (nodes (table-ref uiform (uiget 'page) '()))
          (oldmap (uiget 'nodemap))
@@ -1118,14 +1121,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
    (glgui:draw-box x (+ y h (- header-height)) w header-height (uiget 'color-header))
 
-   (if (and title fnt) (glgui:draw-text-center x (+ y h (- header-height)) w header-height title fnt White))
+   (if (and title fnt) (glgui:draw-text-center x (+ y h (- header-height)) w header-height title hfnt White))
 
    (if (and (list? prv) (> (length prv) 1))
      (let* ((prv-title (car prv))
            (prv-action (cadr prv)))
          (glgui:draw-box x (+ y h (- header-height) (* 0.25 header-height)) (* 0.25 w) (* 0.5 header-height) 
             (uiget 'color-default))
-         (glgui:draw-text-center x (+ y h (- header-height)) (/ w 4) header-height prv-title fnt White)
+         (glgui:draw-text-center x (+ y h (- header-height)) (/ w 4) header-height prv-title bfnt White)
        (uiset 'prv-action prv-action)
      ))
 
@@ -1134,7 +1137,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (nxt-action (cadr nxt)))
            (glgui:draw-box (+ x (* 0.75 w)) (+ y h (- header-height) (* 0.25 header-height)) (* 0.25 w) (* 0.5 header-height)  
               (uiget 'color-default))
-           (glgui:draw-text-center (+ x (/ (* 3 w) 4)) (+ y h (- header-height)) (/ w 4) header-height nxt-title fnt White)
+           (glgui:draw-text-center (+ x (/ (* 3 w) 4)) (+ y h (- header-height)) (/ w 4) header-height nxt-title bfnt White)
          (uiset 'nxt-action nxt-action)
      ))
 
