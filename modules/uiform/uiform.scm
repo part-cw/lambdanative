@@ -319,7 +319,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (fnt (uiget (case fntsize 
                        ((normal) 'fnt) 
                        ((small) 'smlfnt) 
-                       ((big) 'bigfnt))))
+                       ((big) 'bigfnt)
+                       ((header) 'hdfnt))))
          (h (glgui:fontheight fnt))
          (label (glgui:uiform-arg args 'text ""))
          (wrappedlabel (if (glgui:uiform-arg args 'wrap #t)
@@ -418,6 +419,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           ((numint) keypad:numeric)
           ((numcolon)  keypad:numcolon)
           ((numdash)  keypad:numdash)
+          ((full) keypad:default)
           (else      keypad:simplified)))
       (uiset 'toggle #f)
       (uiset 'shift #f)
@@ -529,11 +531,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (glgui:uiform-button-draw x y w . args)
   (let* ((bfnt (uiget 'btfnt))
-         (fnt (if bfnt bfnt
-                (uiget (case (glgui:uiform-arg args 'size 'normal)
-                          ((normal) 'fnt)
-                          ((small) 'smlfnt)
-                          ((big) 'bigfnt)))))
+         (fntsize (glgui:uiform-arg args 'size 'normal))
+         (fnt (cond
+                 ((and (eq? fntsize 'normal) bfnt) bfnt)
+                 ((eq? fntsize 'normal) (uiget 'fnt))
+                 ((eq? fntsize 'small) (uiget 'smlfnt))
+                 ((eq? fntsize 'big) (uiget 'bigfnt))
+                 ((eq? fntsize 'header) (uiget 'hdfnt))))
          (fnth (glgui:fontheight fnt))
          (color (glgui:uiform-arg args 'color White))
          (strings (string-split-width (glgui:uiform-arg args 'text "") (fix (* 0.7 w)) fnt))
@@ -1042,7 +1046,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (button1str (car (cadr content)))
          (button2str (if (= (length content) 3) (car (caddr content)) #f)))
     (glgui:draw-box x y w h color-background)
-    (glgui:draw-box (+ x (* 0.1 w)) (+ y (* 0.5 (- h modal-height))) (* 0.8 w) modal-height color-background)
+    (glgui:draw-box (+ x (* 0.1 w)) (+ y (* 0.5 (- h modal-height))) (* 0.8 w) modal-height Black)
     (let loop ((ss (reverse (string-split-width (car content) (fix (* 0.7 w)) fnt)))
                (ypos (+ y (* 0.5 h))))
       (if (fx> (length ss) 0) (begin
@@ -1121,7 +1125,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
    (glgui:draw-box x (+ y h (- header-height)) w header-height (uiget 'color-header))
 
-   (if (and title fnt) (glgui:draw-text-center x (+ y h (- header-height)) w header-height title hfnt White))
+   (if (and title fnt)
+     (let* ((titlex (fix (+ x (* 0.25 w))))
+            (titlew (fix (* 0.5 w)))
+            (wrappedtitle (string-split-width title titlew hfnt))
+            (titleh (glgui:fontheight hfnt))
+            (titley (+ y h (- header-height) (/ (- header-height (* titleh (length wrappedtitle))) 2))))
+        (let loop ((titles (reverse wrappedtitle)))
+          (if (> (length titles) 0)
+            (begin
+              (glgui:draw-text-center titlex titley titlew titleh (car titles) hfnt White)
+              (set! titley (+ titley titleh))
+              (loop (cdr titles)))))))
+
+   ;; Date and time
+   (let* ((dateh (glgui:fontheight fnt))
+          (datey (+ y h (- (+ dateh 3)))))
+     (glgui:draw-text-left (+ x 3) datey (* 0.95 w) dateh (seconds->string ##now "%h %d, %Y") fnt White)
+     (glgui:draw-text-center (+ x (* 0.25 w)) datey (* 0.5 w) dateh (seconds->string ##now "%H:%M") fnt White))
 
    (if (and (list? prv) (> (length prv) 1))
      (let* ((prv-title (car prv))
