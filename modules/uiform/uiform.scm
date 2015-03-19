@@ -1141,7 +1141,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    ;; Date and time
    (let* ((dateh (glgui:fontheight fnt))
           (datey (+ y h (- (+ dateh 3)))))
-     (glgui:draw-text-left (+ x 3) datey (* 0.95 w) dateh (seconds->string ##now "%h %d, %Y") fnt White)
+     (glgui:draw-text-left (+ x 3) datey (* 0.95 w) dateh (seconds->string ##now "%Y-%m-%d") fnt White)
      (glgui:draw-text-center (+ x (* 0.25 w)) datey (* 0.5 w) dateh (seconds->string ##now "%H:%M") fnt White))
 
    (if (and (list? prv) (> (length prv) 1))
