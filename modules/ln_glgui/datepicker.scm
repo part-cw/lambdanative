@@ -173,7 +173,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (ypicker (glgui-widget-get g wgt 'yearpicker)))
     (cond 
       ;; Directly update all pickers for some parameters
-      ((or (eqv? id 'y) (eqv? id 'h) (eqv? id 'hidden) (eqv? id 'topdown) (eqv? id 'colorarrows) (eqv? id 'colorhighlight) (eqv? id 'colorvalue) (eqv? id 'colorbg))
+      ((or (eqv? id 'y) (eqv? id 'h) (eqv? id 'hidden) (eqv? id 'topdown) (eqv? id 'colorarrows) (eqv? id 'colorhighlight) (eqv? id 'colorvalue) (eqv? id 'colorbg) (eqv? id 'modal))
         (glgui-widget-set! g mpicker id val)
         (glgui-widget-set! g dpicker id val)
         (glgui-widget-set! g ypicker id val))

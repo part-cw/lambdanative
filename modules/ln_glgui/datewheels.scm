@@ -173,7 +173,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (ywheel (glgui-widget-get g wgt 'yearwheel)))
     (cond 
       ;; Directly update all subwheels for some parameters
-      ((or (eqv? id 'y) (eqv? id 'hidden) (eqv? id 'topdown)  (eqv? id 'colorvalue) (eqv? id 'colorshade))
+      ((or (eqv? id 'y) (eqv? id 'hidden) (eqv? id 'topdown)  (eqv? id 'colorvalue) (eqv? id 'colorshade) (eqv? id 'modal))
         (glgui-widget-set! g mwheel id val)
         (glgui-widget-set! g dwheel id val)
         (glgui-widget-set! g ywheel id val))

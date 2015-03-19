@@ -77,7 +77,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (mwheel (glgui-widget-get g wgt 'minutewheel)))
     (cond 
      ;; Directly update all subwheels for some parameters
-      ((or (eqv? id 'y) (eqv? id 'hidden) (eqv? id 'topdown)  (eqv? id 'colorvalue) (eqv? id 'colorshade))
+      ((or (eqv? id 'y) (eqv? id 'hidden) (eqv? id 'topdown)  (eqv? id 'colorvalue) (eqv? id 'colorshade) (eqv? id 'modal))
         (glgui-widget-set! g hwheel id val)
         (glgui-widget-set! g mwheel id val))
       ;; Change in value - update wheels

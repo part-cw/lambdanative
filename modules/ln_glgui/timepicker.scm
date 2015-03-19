@@ -81,7 +81,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (clabel (glgui-widget-get g wgt 'clabel)))
     (cond 
       ;; Directly update all widgets for some parameters
-      ((or (eqv? id 'y) (eqv? id 'h) (eqv? id 'hidden) (eqv? id 'font))
+      ((or (eqv? id 'y) (eqv? id 'h) (eqv? id 'hidden) (eqv? id 'font) (eqv? id 'modal))
         (glgui-widget-set! g hpicker id val)
         (glgui-widget-set! g mpicker id val)
         (glgui-widget-set! g clabel id val))
