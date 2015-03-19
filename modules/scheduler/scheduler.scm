@@ -162,8 +162,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (if (fl>= (fl- ##now (store-ref s "DispatchStart" 0.)) (store-ref s "DispatchCount" 0.))  ;; run every 1 second
           (begin
             (store-set! s "DispatchCount" (fl+ (store-ref s "DispatchCount" 0.) 1.))
-            (store-waveform-dispatch s)
-            (store-raw-dispatch s)
+            (store:waveform-dispatch s)
+            (store:raw-dispatch s)
             ;; provide waveform access to gui here
             (if (= (length guiwaveproc) 1) ((car guiwaveproc)))
 

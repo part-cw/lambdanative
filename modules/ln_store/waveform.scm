@@ -103,7 +103,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (f32vector->list data)))
 
 ;; dispatch waveforms with scaling
-(define (store-waveform-dispatch store . category)
+(define (store:waveform-dispatch store . category)
   (let ((c (if (fx= (length category) 1) (car category) "waveform"))
         (tdata (store:wdatatable store))
         (tscaling (store:wscalingtable store)))

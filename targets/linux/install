@@ -37,6 +37,7 @@
 
 echo "==> attempting to install $SYS_PLATFORM application $SYS_APPNAME to local desktop.."
 pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).zip"
+assertfile $pkgfile
 desktop=$HOME/Desktop
 if [ ! -d "$desktop" ]; then 
   mkdir -p "$desktop"

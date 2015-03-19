@@ -238,11 +238,53 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if entry (cadr entry) defval)))
 
 ;; -------------
+;; widget element registration
+(define uiform:elements (make-table))
+
+(define (uiform-register name draw input)
+  (uiform:log 3 "uiform-register " name " " draw " " input)
+  (table-set! uiform:elements name (list draw input))
+)
+
+(define (uiform-register-legacy name draw input)
+  (uiform:log 3 "uiform-register-legacy " name " " draw " " input)
+  (let ((newdraw (lambda (x y w . args)
+     (let ((ox (uiget 'x)) (oy (uiget 'y)) (ow (uiget 'w)) (oh (uiget 'h)))
+       (glgui-widget-set! uiform:g uiform:wgt 'x x)
+       (glgui-widget-set! uiform:g uiform:wgt 'y y)
+       (glgui-widget-set! uiform:g uiform:wgt 'w w)
+       (let loop ((as args))
+         (if (fx> (length as) 0) (begin
+           (glgui-widget-set! uiform:g uiform:wgt (car as) (cadr as))
+           (loop (cddr as)))
+         )
+       )
+       (draw uiform:g uiform:wgt)
+       (let ((ret (uiget 'h)))
+         (uiset 'x ox) (uiset 'y oy) (uiset 'w ow) (uiset 'h oh)
+         (if (= ret oh) 30 ret)
+       )
+     )))
+     (newinput (lambda (type mx my . args)
+       (let loop ((as args))
+         (if (fx> (length as) 0) (begin
+           (glgui-widget-set! uiform:g uiform:wgt (car as) (cadr as))
+           (loop (cddr as)))
+         )
+       )
+       (input uiform:g uiform:wgt type mx my)
+     )))
+    (table-set! uiform:elements name (list newdraw newinput))
+  ))
+
+;; -------------
 ;; spacer 
 
 (define (glgui:uiform-spacer-draw x y w . args)
   (let ((h (glgui:uiform-arg args 'height 30)))
     h))
+
+(uiform-register 'spacer glgui:uiform-spacer-draw #f)
 
 ;; -------------
 ;; image
@@ -258,9 +300,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                   (tmpimg (if (file-exists? imgfile) (png->img imgfile) #f)))
                (if tmpimg (table-set! glgui:uiform-images imgsrc tmpimg) (log-error "image file " imgfile " not found"))
                tmpimg) lut)) imgsrc))
-         (h (if img (cadr img) 10)))
-    (if (and img (uiget 'sanemap)) (glgui:draw-pixmap-center x y w h img White))
+         (h (if img (cadr img) 10))
+         (align (glgui:uiform-arg args 'align 'center))
+         (drawproc (case align
+                       ((center) glgui:draw-pixmap-center)
+                       ((left) glgui:draw-pixmap-left)
+                       ((right) glgui:draw-pixmap-right))))
+    (if (and img (uiget 'sanemap)) (drawproc x y w h img White))
     h))
+
+(uiform-register 'image glgui:uiform-image-draw #f)
 
 ;; -------------
 ;; label
@@ -270,7 +319,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (fnt (uiget (case fntsize 
                        ((normal) 'fnt) 
                        ((small) 'smlfnt) 
-                       ((big) 'bigfnt))))
+                       ((big) 'bigfnt)
+                       ((header) 'hdfnt))))
          (h (glgui:fontheight fnt))
          (label (glgui:uiform-arg args 'text ""))
          (wrappedlabel (if (glgui:uiform-arg args 'wrap #t)
@@ -294,6 +344,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      toth
   ))
 
+(uiform-register 'label glgui:uiform-label-draw #f)
+
 ;; -------------
 ;; text entry
 
@@ -307,7 +359,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (default (glgui:uiform-arg args 'default #f))
          (focusid  (uiget 'focusid))
          (hasfocus (eq? focusid id))
-         (idvalue (if id (xxget loc id #f)))
+         (idvalue (if id (xxget loc id #f) #f))
          (defcolor (uiget 'color-default))
          (selcolor (uiget 'color-select))
          (fgcolor White)
@@ -321,16 +373,26 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              default)))
          (indent (glgui:uiform-arg args 'indent
             (if (string=? label "") 0.1 0.3)))
+         (indentright (glgui:uiform-arg args 'indentright 0.1))
+         (align (glgui:uiform-arg args 'align 'left))
+         (drawproc (case align
+                      ((left) glgui:draw-text-left)
+                      ((center) glgui:draw-text-center)
+                      ((right) glgui:draw-text-right)))
          (txtw  (if (and focusid idvalue idvaluestr) (glgui:stringwidth idvaluestr fnt) 0))
          (txth  (if focusid (glgui:fontheight fnt) 0)))
      (if (uiget 'sanemap) (begin
        (glgui:draw-text-right x y (- (* w indent) 10) h label fnt White)
-       (glgui:draw-box (+ x (* w indent)) y (* w (- 1. indent)) h (if hasfocus selcolor defcolor))
-       (if idvaluestr (glgui:draw-text-left (+ x (* w indent) 10) y (- (* w (- 1. indent)) 10) h idvaluestr fnt fgcolor))
+       (glgui:draw-box (+ x (* w indent)) y (* w (- 1. indent indentright)) h (if hasfocus selcolor defcolor))
+       (if idvaluestr (drawproc (+ x (* w indent) (if (eq? align 'left) 10 0)) y (- (* w (- 1. indent indentright)) 10) h idvaluestr fnt fgcolor))
        (if hasfocus
-          (let* ((cx (+ x (* w indent) 10 txtw 2)) 
+          (let* ((cx (case align
+                       ((left) (+ x (* w indent) 10 txtw 2))
+                       ((center) (+ x (* w indent) (/ (+ (- (* w (- 1. indent indentright)) 10) txtw) 2.) 2))
+                       ((right) (- (+ x (* w (- 1. indentright))) 7))))
                  (cy (+ y (/ (- h txth) 2.)))
-                 (cw 3) (ch txth)
+                 (cw 3)
+                 (ch txth)
                  (cc (if (odd? (fix (* 2 ##now))) White selcolor)))
              (glgui:draw-box cx cy cw ch cc)))
        ))
@@ -357,12 +419,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           ((numint) keypad:numeric)
           ((numcolon)  keypad:numcolon)
           ((numdash)  keypad:numdash)
+          ((full) keypad:default)
           (else      keypad:simplified)))
       (uiset 'toggle #f)
       (uiset 'shift #f)
       (glgui:uiform-keypad-up)
       (if (and keypad-on id (eq? id focusid)) (glgui:uiform-keypad-down))
    ))))
+
+(uiform-register 'textentry glgui:uiform-textentry-draw glgui:uiform-textentry-input)
 
 ;; -------------
 ;; time entry
@@ -418,12 +483,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      h
   ))
 
-(define (glgui:uiform-timeentry-input type mx my x y w h . args)
+(define (glgui:uiform-timeentry-input type mx my . args)
   (let* ((id  (glgui:uiform-arg args 'id #f))
          (loc (glgui:uiform-arg args 'location 'db))
          (focusid (uiget 'focusid))
          (keypad-on (uiget 'keypad-on))
-         (keypad-height (uiget 'keypad-height)))
+         (keypad-height (uiget 'keypad-height))
+         (x (uiget 'x))
+         (w (uiget 'w)))
     
     (if (and id (fx= type EVENT_BUTTON1UP))
       (let ((ampmw (* w 0.2)))
@@ -457,15 +524,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (glgui:uiform-keypad-up)
             (if (and keypad-on id (eq? id focusid)) (glgui:uiform-keypad-down))))))))
 
+(uiform-register 'timeentry glgui:uiform-timeentry-draw glgui:uiform-timeentry-input)
+
 ;; -------------
 ;; button
 
 (define (glgui:uiform-button-draw x y w . args)
-  (let* ((fntsize (glgui:uiform-arg args 'size 'normal))
-         (fnt (uiget (case fntsize
-                       ((normal) 'fnt)
-                       ((small) 'smlfnt)
-                       ((big) 'bigfnt))))
+  (let* ((bfnt (uiget 'btfnt))
+         (fntsize (glgui:uiform-arg args 'size 'normal))
+         (fnt (cond
+                 ((and (eq? fntsize 'normal) bfnt) bfnt)
+                 ((eq? fntsize 'normal) (uiget 'fnt))
+                 ((eq? fntsize 'small) (uiget 'smlfnt))
+                 ((eq? fntsize 'big) (uiget 'bigfnt))
+                 ((eq? fntsize 'header) (uiget 'hdfnt))))
          (fnth (glgui:fontheight fnt))
          (color (glgui:uiform-arg args 'color White))
          (strings (string-split-width (glgui:uiform-arg args 'text "") (fix (* 0.7 w)) fnt))
@@ -487,6 +559,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (glgui:uiform-action action))
  )))
 
+(uiform-register 'button glgui:uiform-button-draw glgui:uiform-button-input)
+
 ;; --------------
 ;; progress bar
 
@@ -500,6 +574,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (glgui:draw-box (+ x (* w 0.1) 2) (+ y 2) (* value (- (* w 0.8) 4.)) (- h 4) selcolor)
      ))
   h))
+
+(uiform-register 'progress glgui:uiform-progress-draw #f)
 
 ;; --------------
 ;; encode DM
@@ -518,6 +594,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (glgui:draw-pixmap-center x y w h img White)
     ))
     h))
+
+(uiform-register 'dmencode glgui:uiform-dmencode-draw #f)
 
 ;; --------------
 ;; decode DM
@@ -560,6 +638,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (file-exists? tmpfile) (delete-file tmpfile))
     (camera-start tmpfile)
  ))
+
+(uiform-register 'dmdecode glgui:uiform-dmdecode-draw glgui:uiform-dmdecode-input)
 
 ;; --------------
 ;; camera support
@@ -607,6 +687,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     ))
  ))
 
+(uiform-register 'camera glgui:uiform-camera-draw glgui:uiform-camera-input)
+
 ;; --------------
 ;; radio box
 
@@ -653,17 +735,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (loc (glgui:uiform-arg args 'location 'db))
          (left (glgui:uiform-arg args 'left #f))
          (leftvalue (cadr left))
+         (leftaction (caddr left))
          (right (glgui:uiform-arg args 'right #f))
-         (rightvalue (cadr right)))
+         (rightvalue (cadr right))
+         (rightaction (caddr right)))
     (if (and id (> x (* 0.3 w)) (< x (* 0.6 w))) (begin
       (xxset loc id leftvalue)
       (uiset 'nodemap '())
+      (glgui:uiform-action leftaction)
     ))
     (if (and id (> x (* 0.6 w))) (begin
       (xxset loc id rightvalue)
       (uiset 'nodemap '())
+      (glgui:uiform-action rightaction)
     ))
  ))
+
+(uiform-register 'radiobox glgui:uiform-radio-draw glgui:uiform-radio-input)
 
 ;; --------------
 ;; check box
@@ -707,16 +795,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (uiset 'nodemap '())
     ))))
 
+(uiform-register 'checkbox glgui:uiform-check-draw glgui:uiform-check-input)
+
 ;; --------------
 ;; drop down
 
 (define (glgui:uiform-dropdown-draw x y w . args)
   (let* ((h 48)
+         (hh (/ h 2))
+         (limitw (* w 0.6))
          (id (glgui:uiform-arg args 'id #f))
          (loc (glgui:uiform-arg args 'location 'db))
          (expandid (if id (string-append (if (string? id) id (symbol->string id)) ":expanded") #f))
          (defaultstr (glgui:uiform-arg args 'text "Choose one"))
-         (fnt (uiget 'fnt))
+         (fntsize (glgui:uiform-arg args 'size 'normal))
+         (fnt (uiget (case fntsize
+                       ((normal) 'fnt)
+                       ((small) 'smlfnt)
+                       ((big) 'bigfnt))))
          (entries (glgui:uiform-arg args 'entries #f))
          (curentry (xxget loc id #f)) 
          (expanded (if expandid (uiget expandid) #f))
@@ -726,21 +822,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      (let loop ((es (reverse entries))(dy 0))
        (if (= (length es) 0) (begin
            (if (uiget 'sanemap) (begin
-             (glgui:draw-box (+ x (* w 0.1)) (+ y dy 1) (* w 0.8) (- h 1) defcolor)
-             (glgui:draw-text-center x (+ y dy) w h defaultstr fnt defcolor)
+               (glgui:draw-box (+ x (* w 0.1)) (+ y dy 1) (* w 0.8) (- h 1) defcolor)
+               (if (> (glgui:stringwidth defaultstr fnt) limitw)
+                 (let ((lines (string-split-width defaultstr limitw fnt)))
+                   (glgui:draw-text-center x (+ y dy hh) w hh (car lines) fnt defcolor)
+                   (glgui:draw-text-center x (+ y dy) w hh (cadr lines) fnt defcolor))
+                 (glgui:draw-text-center x (+ y dy) w h defaultstr fnt defcolor))
            ))
            (+ dy h) 
          ) (begin
-         (if (uiget 'sanemap) (begin
-           (glgui:draw-box (+ x (* w 0.1)) (+ y dy 1) (* w 0.8) (- h 2) defcolor)
-           (glgui:draw-text-center x (+ y dy) w h (car es) fnt White)
-         ))
+         (if (uiget 'sanemap)
+           (let ((text (car es)))
+             (glgui:draw-box (+ x (* w 0.1)) (+ y dy 1) (* w 0.8) (- h 2) defcolor)
+             (if (> (glgui:stringwidth text fnt) limitw)
+               (let ((lines (string-split-width text limitw fnt)))
+                 (glgui:draw-text-center x (+ y dy hh) w hh (car lines) fnt White)
+                 (glgui:draw-text-center x (+ y dy) w hh (cadr lines) fnt White))
+               (glgui:draw-text-center x (+ y dy) w h text fnt White))))
          (loop (cdr es)(+ dy h)))))
      (begin
-       (if (uiget 'sanemap) (begin
-         (glgui:draw-box (+ x (* w 0.1)) y (* w 0.8) h defcolor)
-         (glgui:draw-box (+ x (* w 0.8)) y (* w 0.1) h selcolor)
-         (glgui:draw-text-center x y w h (if curentry curentry defaultstr) fnt (if curentry White defcolor))
+       (if (uiget 'sanemap)
+         (let ((text (if curentry curentry defaultstr))
+               (col (if curentry White defcolor)))
+           (glgui:draw-box (+ x (* w 0.1)) y (* w 0.8) h defcolor)
+           (glgui:draw-box (+ x (* w 0.8)) y (* w 0.1) h selcolor)
+           (if (> (glgui:stringwidth text fnt) limitw)
+             (let ((lines (string-split-width text limitw fnt)))
+               (glgui:draw-text-center x (+ y hh) w hh (car lines) fnt col)
+               (glgui:draw-text-center x y w hh (cadr lines) fnt col))
+             (glgui:draw-text-center x y w h text fnt col))
        ))
      h))
   ))
@@ -751,9 +861,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (expandid (if id (string-append (if (string? id) id (symbol->string id)) ":expanded") #f))
           (entries (glgui:uiform-arg args 'entries #f))
           (expanded (if expandid (uiget expandid) #f)))
-     (if (not expanded) (begin
-       (uiset 'nodemap '())
-       (uiset expandid #t)
+     (if (not expanded)
+       (let* ((ofs (flo (uiget 'offset)))
+              (node-y (uiget 'node-y))
+              (node-height (uiget 'node-height))
+              (n (+ (length entries) 1))
+              (bottomy (- node-y (* n node-height))))
+          ;; If the bottom of the dropdown cannot be seen with some space, autoscroll down
+          (if (< bottomy 5.)
+            (uiset 'offset (+ ofs (- bottomy) 5)))
+         (uiset 'nodemap '())
+         (uiset expandid #t)
      ) (let* ((node-y (uiget 'node-y))
             (node-height (uiget 'node-height))
             (n (+ (length entries) 1))
@@ -766,6 +884,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (xxclear loc id)))
        (uiset expandid #f)
    ))))
+
+(uiform-register 'dropdown glgui:uiform-dropdown-draw glgui:uiform-dropdown-input)
 
 ;; -------------
 ;; list
@@ -804,6 +924,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (xxset loc id (list-ref entries idx))
      ))
  ))))
+
+(uiform-register 'list glgui:uiform-list-draw glgui:uiform-list-input)
 
 ;; -------------
 ;; checklist
@@ -857,6 +979,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (begin (uiset 'nodemap '()) (xxset loc id (list-insert-item actual element))) ;; (uiform-db-listinsert! id element)
          )
      ))))))
+
+(uiform-register 'checklist glgui:uiform-checklist-draw glgui:uiform-checklist-input)
   
 ;; -------------
 ;; uiform graph
@@ -903,6 +1027,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      h  
   ))
 
+(uiform-register 'graph glgui:uiform-graph-draw #f)
+
 ;; -------------
 ;; uiform modal
 
@@ -920,7 +1046,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (button1str (car (cadr content)))
          (button2str (if (= (length content) 3) (car (caddr content)) #f)))
     (glgui:draw-box x y w h color-background)
-    (glgui:draw-box (+ x (* 0.1 w)) (+ y (* 0.5 (- h modal-height))) (* 0.8 w) modal-height color-background)
+    (glgui:draw-box (+ x (* 0.1 w)) (+ y (* 0.5 (- h modal-height))) (* 0.8 w) modal-height Black)
     (let loop ((ss (reverse (string-split-width (car content) (fix (* 0.7 w)) fnt)))
                (ypos (+ y (* 0.5 h))))
       (if (fx> (length ss) 0) (begin
@@ -981,6 +1107,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (header-height (uiget 'headerh))
          (visible-height (- h header-height))
          (fnt (uiget 'fnt))
+         (hfnt (uiget 'hdfnt fnt))
+         (bfnt (uiget 'btfnt fnt))
          (uiform (uiget 'uiform))
          (nodes (table-ref uiform (uiget 'page) '()))
          (oldmap (uiget 'nodemap))
@@ -997,14 +1125,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
    (glgui:draw-box x (+ y h (- header-height)) w header-height (uiget 'color-header))
 
-   (if (and title fnt) (glgui:draw-text-center x (+ y h (- header-height)) w header-height title fnt White))
+   (if (and title fnt)
+     (let* ((titlex (fix (+ x (* 0.25 w))))
+            (titlew (fix (* 0.5 w)))
+            (wrappedtitle (string-split-width title titlew hfnt))
+            (titleh (glgui:fontheight hfnt))
+            (titley (+ y h (- header-height) (/ (- header-height (* titleh (length wrappedtitle))) 2))))
+        (let loop ((titles (reverse wrappedtitle)))
+          (if (> (length titles) 0)
+            (begin
+              (glgui:draw-text-center titlex titley titlew titleh (car titles) hfnt White)
+              (set! titley (+ titley titleh))
+              (loop (cdr titles)))))))
+
+   ;; Date and time
+   (let* ((dateh (glgui:fontheight fnt))
+          (datey (+ y h (- (+ dateh 3)))))
+     (glgui:draw-text-left (+ x 3) datey (* 0.95 w) dateh (seconds->string ##now "%Y-%m-%d") fnt White)
+     (glgui:draw-text-center (+ x (* 0.25 w)) datey (* 0.5 w) dateh (seconds->string ##now "%H:%M") fnt White))
 
    (if (and (list? prv) (> (length prv) 1))
      (let* ((prv-title (car prv))
            (prv-action (cadr prv)))
          (glgui:draw-box x (+ y h (- header-height) (* 0.25 header-height)) (* 0.25 w) (* 0.5 header-height) 
             (uiget 'color-default))
-         (glgui:draw-text-center x (+ y h (- header-height)) (/ w 4) header-height prv-title fnt White)
+         (glgui:draw-text-center x (+ y h (- header-height)) (/ w 4) header-height prv-title bfnt White)
        (uiset 'prv-action prv-action)
      ))
 
@@ -1013,7 +1158,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (nxt-action (cadr nxt)))
            (glgui:draw-box (+ x (* 0.75 w)) (+ y h (- header-height) (* 0.25 header-height)) (* 0.25 w) (* 0.5 header-height)  
               (uiget 'color-default))
-           (glgui:draw-text-center (+ x (/ (* 3 w) 4)) (+ y h (- header-height)) (/ w 4) header-height nxt-title fnt White)
+           (glgui:draw-text-center (+ x (/ (* 3 w) 4)) (+ y h (- header-height)) (/ w 4) header-height nxt-title bfnt White)
          (uiset 'nxt-action nxt-action)
      ))
 
@@ -1027,38 +1172,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      (if (fx= idx nonodes) (begin
           (uiset 'contenth totalh)
           (if nodemap (uiset 'nodemap nodemap))
-          ;; @@
           (if (< totalh visible-height) 
             (uiset 'offset 0))
         )
        (let* ((node-noeval (list-ref nodes (+ 3 (- nonodes idx 1))))
               (node (if (procedure? node-noeval) (uiform:evalelement node-noeval) node-noeval))
               (bx x) (bw w) (by y0)
-              (bh (case (car node)
-                ((spacer) (apply glgui:uiform-spacer-draw (append (list bx by bw) (cdr node))))
-                ((label)  (apply glgui:uiform-label-draw (append (list bx by bw) (cdr node))))
-                ((button) (apply glgui:uiform-button-draw (append (list bx by bw) (cdr node))))
-                ((textentry) (apply glgui:uiform-textentry-draw (append (list bx by bw) (cdr node))))
-                ((timeentry) (apply glgui:uiform-timeentry-draw (append (list bx by bw) (cdr node))))
-                ((image) (apply glgui:uiform-image-draw (append (list bx by bw) (cdr node))))
-                ((radiobox) (apply glgui:uiform-radio-draw (append (list bx by bw) (cdr node))))
-                ((dropdown) (apply glgui:uiform-dropdown-draw (append (list bx by bw) (cdr node))))
-                ((checklist) (apply glgui:uiform-checklist-draw (append (list bx by bw) (cdr node))))
-                ((list) (apply glgui:uiform-list-draw (append (list bx by bw) (cdr node))))
-                ((graph) (apply glgui:uiform-graph-draw (append (list bx by bw) (cdr node))))
-                ((dmencode) (apply glgui:uiform-dmencode-draw (append (list bx by bw) (cdr node))))
-                ((dmdecode) (apply glgui:uiform-dmdecode-draw (append (list bx by bw) (cdr node))))
-                ((camera) (apply glgui:uiform-camera-draw (append (list bx by bw) (cdr node))))
-                ((progress) (apply glgui:uiform-progress-draw (append (list bx by bw) (cdr node))))
-                ((checkbox) (apply glgui:uiform-check-draw (append (list bx by bw) (cdr node))))
-                (else 0.)
-               ))
+              (bh (let ((in (car (table-ref uiform:elements (car node) (list #f)))))
+                (if in (apply in (append (list bx by bw) (cdr node))) 0.)
+              ))
               (newnodemap (if nodemap (append 
                 (list 
                   ;;(list bh (car node) (glgui:uiform-arg (cdr node) 'action #f))
                   (append (list bh) node) 
                 ) nodemap) #f))
-              )
+             )
          (loop (fx+ idx 1) (+ y0 bh) (+ totalh bh) newnodemap))))
 
    ;; scroll bar
@@ -1144,22 +1272,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         (newy (+ tmpy node-height)))
                     (if (and (> nodey 0) (< (+ nodey ofs) newy))
                        (begin 
-                         ;;(uiset 'node-y (- (+ y visible-height) tmpy))
-                         (uiset 'node-y (- (+ y visible-height ofs) tmpy)) ;; XX
+                         (uiset 'node-y (- (+ y visible-height ofs) tmpy))
                          (uiset 'node-height node-height)
-                         (case (car node)
-                           ((textentry) (apply glgui:uiform-textentry-input (append (list type mx my) (cdr node))))
-                           ((timeentry) (apply glgui:uiform-timeentry-input (append (list type mx my x y w h) (cdr node))))
-                           ((button) (apply glgui:uiform-button-input (append (list type mx my) (cdr node))))
-                           ((radiobox) (apply glgui:uiform-radio-input (append (list type mx my) (cdr node))))
-                           ((dropdown) (apply glgui:uiform-dropdown-input (append (list type mx my) (cdr node))))
-                           ((checklist) (apply glgui:uiform-checklist-input (append (list type mx my) (cdr node))))
-                           ((list) (apply glgui:uiform-list-input (append (list type mx my) (cdr node))))
-                           ((dmdecode) (apply glgui:uiform-dmdecode-input (append (list type mx my) (cdr node))))
-                           ((camera) (apply glgui:uiform-camera-input (append (list type mx my) (cdr node))))
-                           ((checkbox) (apply glgui:uiform-check-input (append (list type mx my) (cdr node))))
+                         (let ((ih (cadr (table-ref uiform:elements (car node) (list #f #f)))))
+                           (if ih (apply ih (append (list type mx my) (cdr node))))
                          )
-                     ;; XXXX    (uiset 'nodemap '()) ;; XXX
                        )
                       (loop (cdr nodes) newy))))))))
                

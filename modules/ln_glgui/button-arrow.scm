@@ -37,17 +37,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
 (define (glgui:button-arrow-draw g wgt)
-  (let ((_x (glgui-widget-get-dyn g wgt 'x))
-        (_y (glgui-widget-get-dyn g wgt 'y))
-        (_w (glgui-widget-get-dyn g wgt 'w))
-        (_h (glgui-widget-get-dyn g wgt 'h))
-        (left (glgui-widget-get-dyn g wgt 'left))
-        (a (glgui-widget-get-dyn g wgt 'armed))
-        (i (glgui-widget-get g wgt 'image))
-        (c (glgui-widget-get g wgt 'color))
-        (bsc (glgui-widget-get g wgt 'button-selected-color))
-        (bnc (glgui-widget-get g wgt 'button-normal-color))
-        (f (glgui-widget-get g wgt 'font)))
+  (let* ((_x (glgui-widget-get-dyn g wgt 'x))
+         (_y (glgui-widget-get-dyn g wgt 'y))
+         (_w (glgui-widget-get-dyn g wgt 'w))
+         (_h (glgui-widget-get-dyn g wgt 'h))
+         (left (glgui-widget-get-dyn g wgt 'left))
+         (a (glgui-widget-get-dyn g wgt 'armed))
+         (i (glgui-widget-get g wgt 'image))
+         (sc (glgui-widget-get g wgt (if a 'solid-color-selected 'solid-color-normal)))
+         (c (glgui-widget-get g wgt 'color))
+         (bsc (glgui-widget-get g wgt 'button-selected-color))
+         (bnc (glgui-widget-get g wgt 'button-normal-color))
+         (f (glgui-widget-get g wgt 'font)))
     (glCoreColor (if a bsc bnc))
 
     ;; Compute coordinates, for texture coordinates, assume glgui_button_arrow.img has texture from 0. 0. to 1. 1.
@@ -71,7 +72,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (list x cy 0. 0.5)            ;; Point on the left
             (list x2 y 1. 0.)             ;; Bottom right
             (list (fl+ x 10.) y 0. 0.))   ;; Bottom left
-          (caddr glgui_button_arrow.img) 0.)
+          (if sc glgui:box (caddr glgui_button_arrow.img)) 0.)
         ;; OR send coordinates for 5 points of arrow pointing right
         (glCoreTexturePolygonDraw cx cy (list
             (list (fl- x2 10.) y2 1. 1.)   ;; Top right
@@ -79,7 +80,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (list x2 cy 1. 0.5)            ;; Point on the right
             (list x y 0. 0.)               ;; Bottom left
             (list (fl- x2 10.) y 1. 0.))   ;; Bottom right
-          (caddr glgui_button_arrow.img) 0.))
+          (if sc glgui:box (caddr glgui_button_arrow.img)) 0.))
       (if f ;;String based regular buttons
         (glgui:draw-text-center (if left (+ x 10) x) y (- w 10) h (car i) f c)
         (let* ((sw (car i)) (sh (cadr i))
@@ -125,6 +126,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      ;; Placed the selected and unselected background colors here so apps could change them if needed.
      'button-selected-color DarkGrey
      'button-normal-color LightGrey
+     'solid-color-selected #f
+     'solid-color-normal #f
      'armed #f
      'hidden #f
      'font #f
@@ -145,6 +148,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      ;; Placed the selected and unselected background colors here so apps could change them if needed.
      'button-selected-color DarkGrey
      'button-normal-color LightGrey
+     'solid-color-selected #f
+     'solid-color-normal #f
      'armed #f
      'hidden #f
      'font fnt

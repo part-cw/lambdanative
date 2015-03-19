@@ -39,6 +39,7 @@ if [ $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
   user=`whoami`
   echo "==> attempting to install $SYS_PLATFORM application $SYS_APPNAME to local desktop.."
   pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).zip"
+  assertfile $pkgfile
   desktop=/c/Users/${user}/Desktop
   assertfile "$desktop"
   exefile="$desktop/${SYS_APPNAME}${SYS_APPFIX}/$SYS_APPNAME"

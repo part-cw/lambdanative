@@ -56,7 +56,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 struct cdb_make *_make_cdb(char *fname)
 {
+#ifdef WIN32
+  FILE *f = fopen(fname, "w+b");
+  int fd = fileno(f);
+#else
   int fd = open(fname,O_RDWR|O_CREAT,0666);
+#endif
   if (fd<0) return 0;
   struct cdb_make *cdbm = (struct cdb_make *)malloc(sizeof(struct cdb_make));
   if (cdbm) cdb_make_start(cdbm, fd);
@@ -72,10 +77,10 @@ int _cdb_make_merge(struct cdb_make *cdbm, char *fname)
   unsigned int cpos;
   cdb_seqinit(&cpos,&tmpcdb);
   while (cdb_seqnext(&cpos,&tmpcdb)>0) {
-    int klen = cdb_keylen(&tmpcdb);
+    unsigned int klen = cdb_keylen(&tmpcdb);
     char *key = (char*)malloc(klen);
     cdb_read(&tmpcdb, key, klen, cdb_keypos(&tmpcdb));
-    int vlen = cdb_datalen(&tmpcdb);
+    unsigned int vlen = cdb_datalen(&tmpcdb);
     char *val = (char*)malloc(vlen);
     cdb_read(&tmpcdb, val, vlen, cdb_datapos(&tmpcdb));
     cdb_make_add(cdbm,key,klen,val,vlen);
@@ -111,6 +116,7 @@ struct cdb *_init_cdb(char *fname)
 void _cdb_finish(struct cdb *cdb)
 {
   int fd = cdb->cdb_fd;
+  cdb_free(cdb);
   if (fd) close(fd);
 }
 
@@ -129,7 +135,7 @@ c-declare-end
   (lambda (obj) (rabbit-encode keyctx (object->u8vector obj))))
 
 (define (cdb:decoder keyctx)
-  (lambda (u8v) (with-exception-handler (lambda (e) 
+  (lambda (u8v) (with-exception-catcher (lambda (e) 
     (log-error "cdb:decoder: failed to deserialize: " (exception->string e)) #f)
       (lambda () (u8vector->object (rabbit-decode keyctx u8v))))))
 
@@ -183,9 +189,11 @@ c-declare-end
   (fx= 1 ((c-lambda ((pointer void) char-string) int "_cdb_make_merge") (car cdb) file)))
 
 (define (cdb-make-finish cdb) 
-  (let ((ctx (caddr cdb)))
-    ((c-lambda ((pointer void)) int "_cdb_make_finish") (car cdb))
-    (if ctx (cdb:destroyctx ctx))))
+  (let ((ctx (caddr cdb))
+        (res ((c-lambda ((pointer void)) int "_cdb_make_finish") (car cdb))))
+    (if ctx (cdb:destroyctx ctx))
+    res
+  ))
 
 ;; query interface
 
@@ -198,7 +206,7 @@ c-declare-end
    )))
 
 (define cdb:find (c-lambda ((pointer void) scheme-object int) int  
-  "___result=cdb_find(___arg1, ___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)), ___arg3);"))
+  "___result=cdb_find(___arg1, ___CAST(char*,___BODY_AS(___arg2,___tSUBTYPED)), ___arg3);"))
 
 (define cdb:findinit (c-lambda ((pointer void) scheme-object int) int
   "___result=cdb_findinit(&cdbf,___arg1, ___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)), ___arg3);"))
@@ -212,7 +220,7 @@ c-declare-end
 (define cdb:keylen (c-lambda ((pointer void)) unsigned-int "___result=cdb_keylen((struct cdb*)___arg1);"))
 
 (define cdb:read (c-lambda ((pointer void) scheme-object int unsigned-int) int
-   "___result=cdb_read(___arg1, ___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)), ___arg3, ___arg4);"))
+   "___result=cdb_read(___arg1, ___CAST(char*,___BODY_AS(___arg2,___tSUBTYPED)), ___arg3, ___arg4);"))
 
 (define (cdb-find cdb key)
   (cdb:log 2 "cdb-find" cdb " " key)
@@ -237,10 +245,10 @@ c-declare-end
     (if u8val (begin (cdb:read cdb:ptr u8val vlen vpos) (cdb:decode u8val)) #f)))
 
 (define cdb:seqinit (c-lambda (scheme-object (pointer void)) int
-  "___result=cdb_seqinit(___CAST(int*,___BODY_AS(___arg1,___tSUBTYPED)), ___arg2);"))
+  "___result=cdb_seqinit(___CAST(unsigned*,___BODY_AS(___arg1,___tSUBTYPED)), ___arg2);"))
 
 (define cdb:seqnext (c-lambda (scheme-object (pointer void)) int
-  "___result=cdb_seqnext(___CAST(int*,___BODY_AS(___arg1,___tSUBTYPED)), ___arg2);"))
+  "___result=cdb_seqnext(___CAST(unsigned*,___BODY_AS(___arg1,___tSUBTYPED)), ___arg2);"))
 
 (define (cdb-index cdb)
   (cdb:log 2 "cdb-index " cdb)

@@ -62,7 +62,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        ))
   ))
 
-(define (store-raw-dispatch store . category)
+(define (store:raw-dispatch store . category)
   (let* ((c (if (fx= (length category) 1) (car category) "raw"))
          (tdata (store:rawtable store))
          (ids (table-ref tdata 'IdList '())))

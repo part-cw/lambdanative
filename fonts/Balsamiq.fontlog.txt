@@ -1,0 +1,36 @@
+FONTLOG for the Balsamiq Sans fonts
+===========================================
+This file provides detailed information on the Balsamiq Sans Font Software.
+This information should be distributed along with the Balsamiq Sans fonts
+and any derivative works.
+
+Basic Font Information
+===========================================
+Balsamiq Sans is a Unicode typeface family that supports all languages that
+use the Latin script and its variants, and could be expanded to support other
+scripts.
+
+Documentation can be found at http://balsamiq.com/products/mockups/font/
+
+Licensing Information
+===========================================
+Balsamiq Sans Font
+(c) 2012 Michael Angeles for Balsamiq, SRL
+
+This font is licensed under the SIL Open Font License: http://scripts.sil.org/OFL
+
+Reserved Font Name: Balsamiq
+
+ChangeLog
+===========================================
+05 April 2013 (Giacomo Guilizzoni, Balsamiq) 
+- Switched font licensing to OFL
+
+12 January 2013 (Michael Angeles, Balsamiq)
+- Tightened kerning pairs
+
+15 December 2012 (Michael Angeles, Balsamiq) Balsamiq Sans Version 1.0
+- Initial release
+
+-------------------------------------------
+Balsamiq is a small business dedicated to helping rid the World of bad software. Find out more at http://balsamiq.com

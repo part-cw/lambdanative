@@ -53,10 +53,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 (define (list-keep lst cnd)
-  (let loop ((l lst)(r '()))
-    (if (= (length l) 0) r
-      (loop (cdr l) (append r
-        (if (cnd (car l)) (list (car l)) '()))))))
+  (let loop ((l lst))
+    (if (not (pair? l)) l
+      (let ((head (car l))(tail (cdr l)))
+        (if (cnd head)
+          (let ((new-tail (loop tail)))
+            (if (eq? tail new-tail) l (cons head new-tail))
+          )
+          (loop tail)
+        )
+      )
+    )
+  ))
 
 ;; mapS behaves like map, except for stripping empty lists from the returned list
 ;; Usage: (maps FunctionToBeCalledForEachElement ListToWorkOn)

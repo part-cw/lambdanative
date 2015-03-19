@@ -1,0 +1,10 @@
+#!/bin/sh
+# This is just a dummy - no compilation will happen
+if [ "X$make_argument" == "Xinstall" ]; then
+  . targets/$SYS_PLATFORM/install
+else
+  . targets/$SYS_PLATFORM/package
+fi
+exit 0
+
+#eof
