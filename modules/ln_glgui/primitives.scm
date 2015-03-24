@@ -100,16 +100,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (glCoreColor (caddr c))
         (glCoreTextureDraw rx ry 6 7 glgui_rounded_corner.raw .1 .1 .9 .9 0.)
         ;; Only use left side top and bottom colours
-        (glCoreTextureGradientDraw rx (+ ry 6) 6 (- rh 12) glgui:box .1 .1 .9 .9 0. (list (car c) (car c) (caddr c) (caddr c)))
+        (glCoreTextureGradientDraw rx (+ ry 6.5) 6 (- rh 13.5) glgui:box .1 .1 .9 .9 0. (list (car c) (car c) (caddr c) (caddr c)))
         (glCoreColor (car c))
         (glCoreTextureDraw rx (+ ry (- rh 7)) 6 7 glgui_rounded_corner.raw .1 .9 .9 .1 0.)
         ;; Middle
-        (glCoreTextureGradientDraw (+ rx 5.5) (+ ry 0.3) (- rw 11) (- rh 0.6) glgui:box .1 .1 .9 .9 0. c)
+        (glCoreTextureGradientDraw (+ rx 6) (+ ry 0.3) (- rw 11.5) (- rh 0.6) glgui:box .1 .1 .9 .9 0. c)
         ;; Right side
         (glCoreColor (cadddr c))
         (glCoreTextureDraw (+ rx (- rw 6)) ry 6 7 glgui_rounded_corner.raw .9 .1 .1 .9 0.)
         ;; Only use right side top and bottom colours
-        (glCoreTextureGradientDraw (+ rx (- rw 6)) (+ ry 6) 6 (- rh 12) glgui:box .1 .1 .9 .9 0. (list (cadr c) (cadr c) (cadddr c) (caddr c)))
+        (glCoreTextureGradientDraw (+ rx (- rw 6)) (+ ry 6.5) 6 (- rh 13.5) glgui:box .1 .1 .9 .9 0. (list (cadr c) (cadr c) (cadddr c) (caddr c)))
         (glCoreColor (cadr c))
         (glCoreTextureDraw (+ rx (- rw 6)) (+ ry (- rh 7)) 6 7 glgui_rounded_corner.raw .9 .9 .1 .1 0.))
       (let ((rx (fix x))
@@ -118,13 +118,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (rh (fix h)))
         ;; Left side
         (glCoreTextureDraw rx ry 6 7 glgui_rounded_corner.raw .1 .1 .9 .9 0.)
-        (glCoreTextureDraw rx (+ ry 6) 6 (- rh 12) glgui:box .1 .1 .9 .9 0.)
+        (glCoreTextureDraw rx (+ ry 6.5) 6 (- rh 13.5) glgui:box .1 .1 .9 .9 0.)
         (glCoreTextureDraw rx (+ ry (- rh 7)) 6 7 glgui_rounded_corner.raw .1 .9 .9 .1 0.)
         ;; Middle
-        (glCoreTextureDraw (+ rx 5.5) (+ ry 0.3) (- rw 11) (- rh 0.6) glgui:box .1 .1 .9 .9 0.)
+        (glCoreTextureDraw (+ rx 6) (+ ry 0.3) (- rw 11.5) (- rh 0.6) glgui:box .1 .1 .9 .9 0.)
         ;; Right side
         (glCoreTextureDraw (+ rx (- rw 6)) ry 6 7 glgui_rounded_corner.raw .9 .1 .1 .9 0.)
-        (glCoreTextureDraw (+ rx (- rw 6)) (+ ry 6) 6 (- rh 12) glgui:box .1 .1 .9 .9 0.)
+        (glCoreTextureDraw (+ rx (- rw 6)) (+ ry 6.5) 6 (- rh 13.5) glgui:box .1 .1 .9 .9 0.)
         (glCoreTextureDraw (+ rx (- rw 6)) (+ ry (- rh 7)) 6 7 glgui_rounded_corner.raw .9 .9 .1 .1 0.)))
    
     ;; Otherwise if box is small then use single texture, with or without colour being a gradient
