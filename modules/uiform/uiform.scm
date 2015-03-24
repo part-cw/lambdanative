@@ -540,10 +540,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                  ((eq? fntsize 'header) (uiget 'hdfnt))))
          (fnth (glgui:fontheight fnt))
          (color (glgui:uiform-arg args 'color White))
+         (r (glgui:uiform-arg args 'rounded #f))
          (strings (string-split-width (glgui:uiform-arg args 'text "") (fix (* 0.7 w)) fnt))
          (h (+ 32 (* (length strings) fnth))))
      (if (uiget 'sanemap) (begin
-       (glgui:draw-box (+ x (* w 0.1)) y (* w 0.8) h (uiget 'color-default))
+       ((if r glgui:draw-rounded-box glgui:draw-box) (+ x (* w 0.1)) y (* w 0.8) h (uiget 'color-default))
        (let loop ((ss (reverse strings))(ypos (+ y 16)))
          (if (fx> (length ss) 0) (begin
            (glgui:draw-text-center x ypos w fnth (car ss) fnt color) 
@@ -1138,11 +1139,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (set! titley (+ titley titleh))
               (loop (cdr titles)))))))
 
-   ;; Date and time
-   (let* ((dateh (glgui:fontheight fnt))
-          (datey (+ y h (- (+ dateh 3)))))
-     (glgui:draw-text-left (+ x 3) datey (* 0.95 w) dateh (seconds->string ##now "%Y-%m-%d") fnt White)
-     (glgui:draw-text-center (+ x (* 0.25 w)) datey (* 0.5 w) dateh (seconds->string ##now "%H:%M") fnt White))
+   ;; Date and time on all but the first page
+   (if (not (eq? (uiget 'page) 'main))
+     (let* ((dateh (glgui:fontheight fnt))
+            (datey (+ y h (- (+ dateh 3)))))
+       (glgui:draw-text-left (+ x 3) datey (* 0.95 w) dateh (seconds->string ##now "%Y-%m-%d") fnt White)
+       (glgui:draw-text-center (+ x (* 0.25 w)) datey (* 0.5 w) dateh (seconds->string ##now "%H:%M") fnt White)))
 
    (if (and (list? prv) (> (length prv) 1))
      (let* ((prv-title (car prv))
