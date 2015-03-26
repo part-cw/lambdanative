@@ -540,12 +540,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                  ((eq? fntsize 'header) (uiget 'hdfnt))))
          (fnth (glgui:fontheight fnt))
          (color (glgui:uiform-arg args 'color White))
+         (bgcolor (uiget 'button-color (uiget 'color-default)))
          (r (glgui:uiform-arg args 'rounded #f))
          (strings (string-split-width (glgui:uiform-arg args 'text "") (fix (* 0.7 w)) fnt))
-         (h (+ 32 (* (length strings) fnth))))
+         (h (glgui:uiform-arg args 'h (+ 32 (* (length strings) fnth))))
+         (indent (glgui:uiform-arg args 'indent 0.1)))
      (if (uiget 'sanemap) (begin
-       ((if r glgui:draw-rounded-box glgui:draw-box) (+ x (* w 0.1)) y (* w 0.8) h (uiget 'color-default))
-       (let loop ((ss (reverse strings))(ypos (+ y 16)))
+       ((if r glgui:draw-rounded-box glgui:draw-box) (+ x (* w indent)) y (* w (- 1.0 (* indent 2.0))) h bgcolor)
+       (let loop ((ss (reverse strings))(ypos (+ y (/ (- h (* (length strings) fnth)) 2))))
          (if (fx> (length ss) 0) (begin
            (glgui:draw-text-center x ypos w fnth (car ss) fnt color) 
            (loop (cdr ss) (+ ypos fnth)))))
