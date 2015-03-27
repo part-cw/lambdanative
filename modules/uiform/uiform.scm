@@ -78,7 +78,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (stclear id)
   (uiform:log 2 "stclear " id)
   (let ((db (uiget 'store))) 
-    (if db (store-set! db id))))
+    (if db (store-clear! db id))))
 
 (define (dbget id . optdef)
   (uiform:log 2 "dbget " id " " optdef)
