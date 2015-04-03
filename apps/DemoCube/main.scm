@@ -103,8 +103,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (set! gui (make-glgui))
     (let* ((w (glgui-width-get))
            (h (glgui-height-get)))
-      (set! box (glgui-box-dragable gui 80 110 160 230 Red box-callback))
-      (glgui-widget-set! gui box 'draw-handle #f) ;; hides the box
+      (set! mybox (glgui-box-dragable gui 80 110 160 230 Red box-callback))
+      (glgui-widget-set! gui mybox 'draw-handle #f) ;; hides the box
       (glgui-button-string gui 10 10 (- w 20) 32 "Reverse" ascii_16.fnt button-callback)
     )
     (glCore-registerhook render-custom)

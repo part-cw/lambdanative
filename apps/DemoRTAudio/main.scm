@@ -71,7 +71,7 @@ end-of-c-declare
 (define rtdemo-buffer (c-lambda () double "___result=buffer;"))
 
 (define gui #f)
-(define box #f)
+(define mybox #f)
 
 (main
 ;; initialization
@@ -81,7 +81,7 @@ end-of-c-declare
     (set! gui (make-glgui))
     (let ((w (glgui-width-get))
           (h (glgui-height-get)))
-      (set! box (glgui-box gui 0 44 w (- h 44 44) Black))
+      (set! mybox (glgui-box gui 0 44 w (- h 44 44) Black))
       (glgui-menubar gui 0 (- h 44) w 44)
       (glgui-menubar gui 0 0 w 44)
       (let ((wgt (glgui-image gui 0 (- h 44) w 44 title.img White)))
@@ -99,7 +99,7 @@ end-of-c-declare
   (lambda (t x y) 
     (if (= t EVENT_KEYPRESS) (begin 
       (if (= x EVENT_KEYESCAPE) (terminate))))
-    (glgui-widget-set! gui box 'color (color-shade Red (abs (rtdemo-buffer))))
+    (glgui-widget-set! gui mybox 'color (color-shade Red (abs (rtdemo-buffer))))
     (glgui-event gui t x y))
 ;; termination
   (lambda () #t)

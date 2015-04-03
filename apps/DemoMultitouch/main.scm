@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; simple example of multitouch handling (ios and android only)
 
 (define gui #f)
-(define box #f)
+(define mybox #f)
 
 (main
 ;; initialization
@@ -46,7 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (make-window 320 480)
     (glgui-orientation-set! GUI_PORTRAIT)
     (set! gui (make-glgui))
-    (set! box (glgui-box gui 0 0 0 0 Orange))
+    (set! mybox (glgui-box gui 0 0 0 0 Orange))
   )
 ;; events
   (lambda (t x y) 
@@ -61,17 +61,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              (y0 (min y1 y2))
              (w0 (abs (- x1 x2)))
              (h0 (abs (- y1 y2))))
-        (glgui-widget-set! gui box 'x x0)
-        (glgui-widget-set! gui box 'y y0)
-        (glgui-widget-set! gui box 'w w0)
-        (glgui-widget-set! gui box 'h h0)
+        (glgui-widget-set! gui mybox 'x x0)
+        (glgui-widget-set! gui mybox 'y y0)
+        (glgui-widget-set! gui mybox 'w w0)
+        (glgui-widget-set! gui mybox 'h h0)
       )
       (let* ((w (glgui-width-get))
              (h (glgui-height-get)))
-        (glgui-widget-set! gui box 'x (/ w 4))
-        (glgui-widget-set! gui box 'y (/ h 4))
-        (glgui-widget-set! gui box 'w (/ w 2))
-        (glgui-widget-set! gui box 'h (/ h 2)))
+        (glgui-widget-set! gui mybox 'x (/ w 4))
+        (glgui-widget-set! gui mybox 'y (/ h 4))
+        (glgui-widget-set! gui mybox 'w (/ w 2))
+        (glgui-widget-set! gui mybox 'h (/ h 2)))
     )
     (glgui-event gui t x y))
 ;; termination
