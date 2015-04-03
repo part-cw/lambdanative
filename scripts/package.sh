@@ -58,7 +58,7 @@ package_patch()
   for p in $pkg_patches; do
     if [ ! "X$p" = "X" ] && [ -f $p ]; then
       echo " => applying patches from $p"
-      veval "patch -p0 < $p"
+      veval "patch -p0 --ignore-whitespace < $p"
       asserterror $? "patching failed"
     fi
   done
