@@ -1,0 +1,6 @@
+<key>UIRequiresPersistentWiFi</key> 
+<true/>
+<key>UIBackgroundModes</key>
+<array>
+<string>voip</string>
+</array>
