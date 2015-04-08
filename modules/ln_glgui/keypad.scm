@@ -85,17 +85,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
   ( (#\Q #\W #\E #\R #\T #\Y #\U #\I #\O #\P)
     (#\A #\S #\D #\F #\G #\H #\J #\K #\L)
- ((shift ,glgui_keypad_shift.img 1.5) #\Z #\X #\C #\V #\B #\N #\M (,delchar ,glgui_keypad_delete.img 1.5))
+ ((shift ,glgui_keypad_shift_on.img 1.5) #\Z #\X #\C #\V #\B #\N #\M (,delchar ,glgui_keypad_delete.img 1.5))
    ((toggle ,glgui_keypad_toggle.img 1.5)  #\, (#\space " " 4.) #\. (,retchar ,glgui_keypad_return.img 1.5))
   )
   ( (#\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\0)
     (#\@ #\# #\$ #\% #\& #\( #\) #\- #\\)
- ((shift ,glgui_keypad_shift.img 1.5) #\! #\; #\: #\' #\" #\? #\/ (,delchar ,glgui_keypad_delete.img 1.5))
+ ((shift "*-+" 1.5) #\! #\; #\: #\' #\" #\? #\/ (,delchar ,glgui_keypad_delete.img 1.5))
    ((toggle ,glgui_keypad_toggle.img 1.5)  #\, (#\space " " 4.) #\. (,retchar ,glgui_keypad_return.img 1.5))
   )
   ( (#\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\0)
     (#\^ #\[ #\] #\{ #\} #\< #\>)
- ((shift ,glgui_keypad_shift.img 1.5)  #\* #\- #\+ #\= #\_ #\~ #\| (,delchar ,glgui_keypad_delete.img 1.5))
+ ((shift "@#$" 1.5)  #\* #\- #\+ #\= #\_ #\~ #\| (,delchar ,glgui_keypad_delete.img 1.5))
    ((toggle ,glgui_keypad_toggle.img 1.5)  #\, (#\space " " 4.) #\. (,retchar ,glgui_keypad_return.img 1.5))
   )
 ))
@@ -110,7 +110,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
   ( (#\Q #\W #\E #\R #\T #\Y #\U #\I #\O #\P)
     (#\A #\S #\D #\F #\G #\H #\J #\K #\L)
- ((shift ,glgui_keypad_shift.img 1.5) #\Z #\X #\C #\V #\B #\N #\M (,delchar ,glgui_keypad_delete.img 1.5))
+ ((shift ,glgui_keypad_shift_on.img 1.5) #\Z #\X #\C #\V #\B #\N #\M (,delchar ,glgui_keypad_delete.img 1.5))
    ((toggle ,glgui_keypad_toggle.img 1.5)  #\, (#\space " " 4.) #\. (,retchar ,glgui_keypad_return.img 1.5))
   )
   ( (#\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\0)
@@ -138,10 +138,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (loop (cdr p)
         (+ l (keypad:keywidth (car p)))))))
 
-(define (keypad:renderkey x y wchar h key fnt highlight floatinghighlight rounded btcolor fgcolor)
+(define (keypad:renderkey x y wchar h key fnt highlight floatinghighlight rounded btcolor fgcolor persistcap)
   (let* ((w (* wchar (keypad:keywidth key)))
-        (keyimg (keypad:keyimage key))
         (keycmd (keypad:keycmd key))
+        (keyimg (if (and (eq? keycmd 'shift) persistcap) glgui_keypad_shift_lock.img (keypad:keyimage key)))
         (highlighted (and highlight (char? keycmd) (char=? keycmd highlight))))
     ((if rounded glgui:draw-rounded-box glgui:draw-box) (+ x 2) (+ y 3) (- w 4) (- h 6) 
         (if highlighted White (keypad:keycolor key btcolor)))
@@ -158,7 +158,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     ))
  w))
  
-(define (keypad:render x y w h pad fnt highlight floatinghighlight rounded btcolor fgcolor)
+(define (keypad:render x y w h pad fnt highlight floatinghighlight rounded btcolor fgcolor persistcap)
   (let* ((ncols (flo (length (car pad))))
          (nrows (flo (length pad)))
          (wchar (flo (/ w ncols)))
@@ -171,7 +171,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (let colloop ((xx (+ x padx)) (coldata (car rowdata)))
              (if (> (length coldata) 0) 
                (colloop (+ xx (keypad:renderkey xx yy wchar hchar (car coldata) 
-                 fnt highlight floatinghighlight rounded btcolor fgcolor))
+                 fnt highlight floatinghighlight rounded btcolor fgcolor persistcap))
                  (cdr coldata))))
            (rowloop (cdr rowdata)))))
   ))
@@ -202,6 +202,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (toggle (glgui-widget-get g wgt 'toggle))
          (hideonreturn (glgui-widget-get g wgt 'hideonreturn))
          (armed (glgui-widget-get g wgt 'armed))
+         (persistcap (glgui-widget-get g wgt 'persistcap))
+         (shiftstarttime (glgui-widget-get g wgt 'shiftstarttime))
          (npad (+ (if toggle 2 0) (if shift 1 0)))
          (key (keypad:lookup mx my x y w h (list-ref keypad npad)))
          (inside (and (> mx x) (< mx (+ x w)) (> my y) (< my (+ y h)))))
@@ -209,7 +211,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       ((fx= type EVENT_BUTTON1DOWN) 
         (let* ((keycmd (if key (keypad:keycmd key) #f))
                (keyevent (if (and (char? keycmd) (not (char=? keycmd #\nul))) (char->integer keycmd) #f)))
-          (if (equal? keycmd 'shift) (glgui-widget-set! g wgt 'shift (not shift)))
+          (if (equal? keycmd 'shift)
+            ;; Shift button pressed
+            (begin
+              (if (and (not persistcap) shiftstarttime (< (- ##now shiftstarttime) 0.3) (< npad 2))
+                ;; Turning on cap-locks
+                (begin
+                  (glgui-widget-set! g wgt 'shift #t)
+                  (glgui-widget-set! g wgt 'persistcap #t))
+                ;; Otherwise toggling shift
+                (glgui-widget-set! g wgt 'shift (not shift)))
+              ;; Turning off cap-locks
+              (if persistcap (glgui-widget-set! g wgt 'persistcap #f))
+              ;; First tap (for double tap to turn on cap-locks)
+              (glgui-widget-set! g wgt 'shiftstarttime ##now)))
           (if (equal? keycmd 'toggle) (begin
             (glgui-widget-set! g wgt 'toggle (not toggle))
             (glgui-widget-set! g wgt 'shift #f)
@@ -226,6 +241,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (glgui-widget-set! g wgt 'armed #f)
         (glgui-widget-set! g wgt 'removehighlight #t)
         (let ((keycmd (if key (keypad:keycmd key) #f)))
+          ;; Check if Caps is locked. If not and the key pressed isn't the shift key, then set shift back
+          ;; (for letter keypad only)
+          (if (and (not persistcap) (< npad 2) (not (equal? keycmd 'shift))) (glgui-widget-set! g wgt 'shift #f))
           (if (and hideonreturn (char=? keycmd retchar))  (begin
             (glgui-widget-set! g wgt 'hidden #t)                                           
             (if (procedure? hideonreturn) (hideonreturn))
@@ -257,9 +275,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (btcolor (glgui-widget-get g wgt 'btcolor))
          (fgcolor (glgui-widget-get g wgt 'fgcolor))
          (removehighlight (glgui-widget-get g wgt 'removehighlight))
+         (persistcap (glgui-widget-get g wgt 'persistcap))
          (npad (+ (if toggle 2 0) (if shift 1 0))))
+  ;; Can't have caplocks without shift
+  (if (and persistcap (not shift)) (glgui-widget-set! g wgt 'persistcap #f))
   (if bgcolor (glgui:draw-box x y w h bgcolor))
-  (keypad:render x y w h (list-ref keypad npad) fnt highlight floatinghighlight rounded btcolor fgcolor)
+  (keypad:render x y w h (list-ref keypad npad) fnt highlight floatinghighlight rounded btcolor fgcolor persistcap)
   ;; After drawing remove highlights if this is set
   (if removehighlight
      (begin
@@ -281,6 +302,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'removehighlight #f
      'hideonreturn #f
      'armed #f
+     'shiftstarttime ##now
+     'persistcap #f
      'keypad (if (fx= (length keypad) 1) (car keypad) keypad:default)
      'bgcolor (color-fade Black 0.5)
      'btcolor (color-shade White 0.5)
