@@ -86,3 +86,4 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "datepicker.scm")
 (include "dropdownbox.scm")
 (include "horizontalvaluepicker.scm")
+(include "barchart.scm")
