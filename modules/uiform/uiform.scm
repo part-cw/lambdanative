@@ -217,6 +217,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (uiset 'focusid #f)
     ))))
 
+(define (glgui:uiform-keycb-name floc fid str)
+   (if (string=? str "")
+     (uiset 'shift #t)
+     ;; Otherwise get the last character of the string
+     (let ((last (string-ref str (- (string-length str) 1))))
+       (if (char=? last #\space)
+         (uiset 'shift #t))))
+)
+
 (define (glgui:uiform-action action)
   (let ((evalaction (if (procedure? action) (uiform:evalarg 'action action) action)))
     (glgui:uiform-keypad-down)
@@ -402,6 +411,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui:uiform-textentry-input type mx my . args)
   (let* ((id  (glgui:uiform-arg args 'id #f))
          (loc (glgui:uiform-arg args 'location 'db))
+         (name (glgui:uiform-arg args 'name #f))
          (keycb (glgui:uiform-arg args 'keycb #f))
          (keypad-config (glgui:uiform-arg args 'keypad 'default))
          (focusid (uiget 'focusid))
@@ -413,6 +423,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (uiset 'focusid id)
       (uiset 'focuslocation loc)
       (uiset 'focuskeycb keycb)
+      (uiset 'focuskeycb (if name glgui:uiform-keycb-name keycb))
       (uiset 'keypad (case keypad-config
           ((default) keypad:simplified)
           ((numfloat) keypad:numfloat)
@@ -422,7 +433,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           ((full) keypad:default)
           (else      keypad:simplified)))
       (uiset 'toggle #f)
-      (uiset 'shift #f)
+      (uiset 'shift (if (and name id)
+                      (let ((str (xxget loc id #f)))
+                        (or (not str) (and (string? str) (fx= (string-length str) 0))))
+                      #f))
       (glgui:uiform-keypad-up)
       (if (and keypad-on id (eq? id focusid)) (glgui:uiform-keypad-down))
    ))))
@@ -1287,7 +1301,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (uiset 'old #f)
          (uiset 'drag #f)
        )
-       ((and focus focusid focuslocation (fx= type EVENT_KEYPRESS)) 
+       ((and focus focusid focuslocation (fx= type EVENT_KEYRELEASE))
           (let* ((oldstr (xxget focuslocation focusid "")) 
                  (oldstrlen (string-length oldstr)))
             (cond
