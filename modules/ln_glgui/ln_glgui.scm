@@ -89,3 +89,4 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "dropdownbox.scm")
 (include "horizontalvaluepicker.scm")
 (include "barchart.scm")
+(include "recurrence.scm")
