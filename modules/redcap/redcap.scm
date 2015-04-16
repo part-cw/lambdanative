@@ -537,8 +537,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (begin
         (if (not filesize) 
           (let ((str (string-append "File " filename " not found."))) (log-error str))
-          (log-warning "Cannot import to REDCap, no valid connection"))
-        (httpsclient-close)
+          (begin
+            (log-warning "Cannot import to REDCap, no valid connection")
+            (httpsclient-close)))
         #f
       )
     )
