@@ -1,0 +1,10 @@
+// FFI for getting pushnotification data to Scheme
+char pushnotification_devicetoken[512];
+int pushnotification_gottoken=0;
+
+JNIEXPORT Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_exportToken(JNIEnv *env, jobject obj, jstring token){
+  const char *str= (*env)->GetStringUTFChars(env,token,0);
+  strcpy(pushnotification_devicetoken, str);
+  pushnotification_gottoken=1;
+  (*env)->ReleaseStringUTFChars(env, token, str);
+}

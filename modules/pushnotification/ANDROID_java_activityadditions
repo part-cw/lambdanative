@@ -25,3 +25,5 @@ private static int getAppVersion(Context context) {
     throw new RuntimeException("Could not get package name: " + e);
   }
 }
+
+native void exportToken(String token);
