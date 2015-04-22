@@ -2,7 +2,11 @@ context = getApplicationContext();
 if (checkPlayServices()) {
   gcm = GoogleCloudMessaging.getInstance(this);
   regid = getRegistrationId(context);
-  exportToken(regid);
+  if (regid.isEmpty()) {
+    registerInBackground();
+  } else {
+    exportToken(regid);
+  }
 } else {
   Log.i("@SYS_APPNAME@", "No valid Google Play Services APK found.");
 }

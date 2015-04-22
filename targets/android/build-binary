@@ -55,9 +55,16 @@ android_subst()
   ac_subst ANDROID_XML_RECEIVERS "@$d/ANDROID_xml_receivers"
 }
 android_subst loaders/android
+
+NEED_GCM=no
 for m in $modules; do
   modpath=`locatedir modules/$m silent`
   android_subst $modpath
+  if [ -e $modpath/ANDROID_xml_permissions ]; then
+    if grep com.google.android.c2dm $modpath/ANDROID_xml_permissions; then
+      NEED_GCM=yes;
+    fi
+  fi
 done
 android_subst `locatedir apps/$SYS_APPNAME`
 
@@ -74,9 +81,16 @@ $ANDROIDSDK/tools/android --silent create project \
   --target $ANDROIDSDKTARGET --name $SYS_APPNAME --path $tmpdir \
   --activity $SYS_APPNAME --package $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME
 
-#$ANDROIDSDK/tools/android --silent update project \
-#  --target $ANDROIDSDKTARGET --path $tmpdir \
-#  --library $ANDROIDSDK/extras/google/google_play_services/libproject/google-play-services_lib
+if [ "$NEED_GCM" = "yes" ]; then
+  cp -r $ANDROIDSDK/extras/google/google_play_services/libproject/google-play-services_lib $tmpdir
+  cp -r $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar $tmpdir/libs
+  cp $tmpdir/build.xml $tmpdir/google-play-services_lib
+  cp $tmpdir/local.properties $tmpdir/google-play-services_lib
+
+  $ANDROIDSDK/tools/android --silent update project \
+    --target $ANDROIDSDKTARGET --path $tmpdir \
+    --library ./google-play-services_lib
+fi
 
 echo " => preparing icons.."
 mkdir -p $tmpdir/res/drawable

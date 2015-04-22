@@ -1,4 +1,4 @@
-public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
+class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
   @Override
   public void onReceive(Context context, Intent intent) {
     ComponentName comp = new ComponentName(context.getPackageName(),GcmIntentService.class.getName());
@@ -7,13 +7,13 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
   }
 }
 
-public class GcmIntentService extends IntentService {
+class GcmIntentService extends IntentService {
   public static final int NOTIFICATION_ID = 1;
   private NotificationManager mNotificationManager;
   NotificationCompat.Builder builder;
 
   public GcmIntentService() {
-   super("GcmIntentService");
+    super("GcmIntentService");
   }
 
   @Override
@@ -38,10 +38,10 @@ public class GcmIntentService extends IntentService {
   private void sendNotification(String msg) {
     mNotificationManager = (NotificationManager)this.getSystemService(Context.NOTIFICATION_SERVICE);
     PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-      new Intent(this, @SYS_APPNAME@_class), 0);
+      new Intent(this, @SYS_APPNAME@.class), 0);
 
     NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
-      .setSmallIcon(R.drawable.ic_stat_gcm)
+      //.setSmallIcon(R.drawable.ic_stat_gcm)
       .setContentTitle("GCM Notification")
       .setStyle(new NotificationCompat.BigTextStyle()
       .bigText(msg))
