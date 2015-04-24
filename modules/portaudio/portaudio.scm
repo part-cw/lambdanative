@@ -58,7 +58,7 @@ void portaudio_ochannel_set(int ch1, int ch2)
   int i;
   for (i=0;i<16;i++) rtaudio_pa_chmap_out[i]=-1;
   rtaudio_pa_chmap_out[ch1]=0;
-  rtaudio_pa_chmap_out[ch1]=1;
+  rtaudio_pa_chmap_out[ch2]=1;
   rtaudio_pa_map_output=1;
 }
 
