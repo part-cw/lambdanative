@@ -92,6 +92,12 @@ void rtaudio_register(void (*initcb)(int), void (*inputcb)(float), void (*output
   rtaudio_closecb = closecb;
 }
 
+int rtaudio_pa_map_output=0;
+int rtaudio_pa_chmap_out[16];
+
+int rtaudio_pa_map_input=0;
+int rtaudio_pa_chmap_in[2];
+
 // %%%%%%%%%%%%%%%%%%%%%%%%
 #ifdef USE_IOSAUDIO
 
@@ -141,17 +147,31 @@ static void rtaudio_stop(void) {
 // %%%%%%%%%%%%%%%%%%%%%%%%
 #ifdef USE_PORTAUDIO
 
+//#define USE_PA_INT16 1
+#define USE_PA_INT32 1
+
 #include <portaudio.h>
+
+#ifdef MACOSX
+#include <pa_mac_core.h>
+#endif
 
 //#define FRAMES_PER_CALLBACK         1024
 #define RT_FRAMES_PER_CALLBACK         64
 #define INPUT_DEVICE   (Pa_GetDefaultInputDevice())
 #define OUTPUT_DEVICE  (Pa_GetDefaultOutputDevice())
+#ifdef USE_PA_INT16
 #define SAMPLE_FORMAT  paInt16
-//typedef short SAMPLE;
-
+#define SAMPLE_TYPE    short
 #define FLO(x) ((double)x/32767.)
 #define FIX(x) ((short)(32767.*x))
+#endif
+#ifdef USE_PA_INT32
+#define SAMPLE_FORMAT  paInt32
+#define SAMPLE_TYPE    int
+#define FLO(x) ((double)x/2147483647.)
+#define FIX(x) ((int)(2147483647.*x))
+#endif
 
 extern int portaudio_needsinit;
 extern int portaudio_idev;
@@ -164,8 +184,8 @@ static int rt_portaudio_cb( const void *inputBuffer, void *outputBuffer,
    PaStreamCallbackFlags statusFlags, void *userData )
 {
   int i;
-  short *ibuf = (short*)inputBuffer;
-  short *obuf=(short*)outputBuffer;
+  SAMPLE_TYPE *ibuf = (SAMPLE_TYPE*)inputBuffer;
+  SAMPLE_TYPE *obuf=(SAMPLE_TYPE*)outputBuffer;
   if (!ibuf||!obuf) return 0;
   for (i=0;i<framesPerBuffer;i++) {
      float ival = FLO(ibuf[2*i]), oval1,oval2;
@@ -195,13 +215,29 @@ void rtaudio_start(int samplerate, double volume)
     inputParameters.channelCount = 2;
     inputParameters.sampleFormat = SAMPLE_FORMAT;
     inputParameters.suggestedLatency = Pa_GetDeviceInfo( inputParameters.device )->defaultLowInputLatency;
-    inputParameters.hostApiSpecificStreamInfo = NULL;
     outputParameters.device = (portaudio_odev<0?OUTPUT_DEVICE:portaudio_odev);
     if (outputParameters.device == paNoDevice) { goto error; }
     outputParameters.channelCount = 2;
     outputParameters.sampleFormat = SAMPLE_FORMAT;
     outputParameters.suggestedLatency = Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
+#ifdef MACOSX
+    static PaMacCoreStreamInfo macInfoOut;
+    if (rtaudio_pa_map_output) {
+      PaMacCore_SetupStreamInfo( &macInfoOut, paMacCorePlayNice );
+      int chcount = Pa_GetDeviceInfo( outputParameters.device )->maxOutputChannels;
+      PaMacCore_SetupChannelMap(&macInfoOut, rtaudio_pa_chmap_out, chcount);
+      outputParameters.hostApiSpecificStreamInfo = &macInfoOut;    
+    } else outputParameters.hostApiSpecificStreamInfo = NULL;
+    static PaMacCoreStreamInfo macInfoIn;
+    if (rtaudio_pa_map_input) {
+      PaMacCore_SetupStreamInfo(&macInfoIn, paMacCorePlayNice);
+      PaMacCore_SetupChannelMap(&macInfoIn, rtaudio_pa_chmap_in, 2);
+      inputParameters.hostApiSpecificStreamInfo = &macInfoIn;    
+    } else inputParameters.hostApiSpecificStreamInfo = NULL;
+#else
     outputParameters.hostApiSpecificStreamInfo = NULL;
+    inputParameters.hostApiSpecificStreamInfo = NULL;
+#endif
     err = Pa_OpenStream( &stream, &inputParameters, &outputParameters, 
         rtaudio_srate, RT_FRAMES_PER_CALLBACK, paClipOff, rt_portaudio_cb, 0);
     if( err != paNoError ) goto error;

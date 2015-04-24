@@ -43,6 +43,9 @@ cat tmp | sed "s/-arch i386//g;s/-arch x86_64//;s/Werror/Wall/g" > Makefile
 
 package_make
 package_make install
+if [ $SYS_PLATFORM = macosx ]; then
+  cp "include/pa_mac_core.h" "$SYS_PREFIX/include"
+fi
 
 package_cleanup
 
