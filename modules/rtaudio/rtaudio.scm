@@ -149,6 +149,7 @@ static void rtaudio_stop(void) {
 
 //#define USE_PA_INT16 1
 #define USE_PA_INT32 1
+//#define USE_PA_FLOAT32 1
 
 #include <portaudio.h>
 
@@ -171,6 +172,12 @@ static void rtaudio_stop(void) {
 #define SAMPLE_TYPE    int
 #define FLO(x) ((double)x/2147483647.)
 #define FIX(x) ((int)(2147483647.*x))
+#endif
+#ifdef USE_PA_FLOAT32
+#define SAMPLE_FORMAT  paFloat32
+#define SAMPLE_TYPE    float
+#define FLO(x) (x)
+#define FIX(x) (x)
 #endif
 
 extern int portaudio_needsinit;
