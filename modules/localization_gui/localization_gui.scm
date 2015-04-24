@@ -36,7 +36,7 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(define (local-dynamic-label g lx ly lw lh str fnt color . alignl)
+(define (glgui-label-local g lx ly lw lh str fnt color . alignl)
   ;; Get the text from the language table
   (let ((text (local-get-text str))
         (alignh (if (fx> (length alignl) 0) (car alignl) #f))
@@ -74,7 +74,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         label)))
 )
 
-(define (local-dynamic-button g bx by bw bh str fnt callback)
+(define (glgui-button-local g bx by bw bh str fnt callback)
   ;; Get the text from the language table
   (let ((text (local-get-text str)))
     (if (string=? text "[t]")
