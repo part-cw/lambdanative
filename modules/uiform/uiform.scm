@@ -724,7 +724,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (leftsel (equal? leftvalue curvalue))
          (lefth (* 0.8 h))
          (leftw (* 0.8 h))
-         (leftx (* 0.3 w))
+         (indent (glgui:uiform-arg args 'indent 0.3))
+         (leftx (* indent w))
          (lefty (+ y (* 0.1 h)))
          (right  (glgui:uiform-arg args 'right #f))
          (righth (* 0.8 h))
@@ -735,7 +736,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (rightvalue (cadr right))
          (rightsel (equal? rightvalue curvalue)))
      (if (uiget 'sanemap) (begin
-       (if text (glgui:draw-text-right x y (- (* 0.3 w) 10) h text fnt color)) 
+       (if text (glgui:draw-text-right x y (- leftx 10) h text fnt color))
        (glgui:draw-box leftx lefty leftw lefth boxcolor)
        (if leftsel (glgui:draw-pixmap-center leftx lefty leftw lefth check.img White))
        (glgui:draw-text-left (+ leftx leftw 10) y (* 0.3 w) h leftstr fnt color)
@@ -753,10 +754,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (left (glgui:uiform-arg args 'left #f))
          (leftvalue (cadr left))
          (leftaction (caddr left))
+         (indent (glgui:uiform-arg args 'indent 0.3))
          (right (glgui:uiform-arg args 'right #f))
          (rightvalue (cadr right))
          (rightaction (caddr right)))
-    (if (and id (> x (* 0.3 w)) (< x (* 0.6 w))) (begin
+    (if (and id (> x (* indent w)) (< x (* 0.6 w))) (begin
       (xxset loc id leftvalue)
       (uiset 'nodemap '())
       (glgui:uiform-action leftaction)
