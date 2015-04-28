@@ -1304,7 +1304,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (uiset 'drag #f)
        )
        ((and focus focusid focuslocation (fx= type EVENT_KEYRELEASE))
-          (let* ((oldstr (xxget focuslocation focusid "")) 
+          (let* ((oldstr0 (xxget focuslocation focusid ""))
+                 (oldstr (if oldstr0 oldstr0 ""))
                  (oldstrlen (string-length oldstr)))
             (cond
               ((fx= mx EVENT_KEYENTER) 
