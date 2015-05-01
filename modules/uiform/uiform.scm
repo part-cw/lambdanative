@@ -218,12 +218,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     ))))
 
 (define (glgui:uiform-keycb-name floc fid str)
-   (if (string=? str "")
-     (uiset 'shift #t)
-     ;; Otherwise get the last character of the string
-     (let ((last (string-ref str (- (string-length str) 1))))
-       (if (char=? last #\space)
-         (uiset 'shift #t))))
+   (if (not (uiget 'toggle))
+     (if (string=? str "")
+       (uiset 'shift #t)
+       ;; Otherwise get the last character of the string
+       (let ((last (string-ref str (- (string-length str) 1))))
+         (if (char=? last #\space)
+           (uiset 'shift #t)))))
 )
 
 (define (glgui:uiform-action action)
