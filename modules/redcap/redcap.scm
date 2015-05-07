@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; REDCap module - Allows data export-/import to an Research Electronic Data Capture server
 
-;; intermediate data handling 
+;; intermediate data handling
 
 (define redcap:datachunk 10000)
 (define redcap:data (u8vector))
@@ -72,7 +72,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define redcap:user-agent "lambdanative/1.0")
 (define redcap:content-type "application/x-www-form-urlencoded")
 (define redcap:content-type-file "multipart/form-data")
-(define redcap:boundary (string-append "------------------------------" 
+(define redcap:boundary (string-append "------------------------------"
   (number->string (inexact->exact (floor (current-time-seconds))))))
 (define redcap:buf (##still-copy (make-u8vector 1024)))
 
@@ -100,10 +100,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                 (if (and (char=? (string-ref item 0) #\") (fx> (string-length item) 1))
                                   ;; If string starts with a quotation mark (and isn't just the closing quotation mark), just transfer it to output list
                                    (cloop (cdr in) item (append out (list transfer)))
-                                   ;; Otherwise, combine it with previous item being transferred as this is from the split of a comma within a value 
+                                   ;; Otherwise, combine it with previous item being transferred as this is from the split of a comma within a value
                                    (cloop (cdr in) (string-append transfer "," item) out)))
                              ;; Once through the whole list, split by :'s
-                             (map (lambda (s) 
+                             (map (lambda (s)
                                      (let ((p (string-split s #\:)))
                                         (if (fx= (length p) 2)
                                           ;; If there was only one colon, make field name, value pair
@@ -113,9 +113,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                   (append out (list transfer)))))
                         ;; If list is empty, do nothing to it
                         li))
-         ;; SECOND split by commas after removing the extra starting two characters of each record - [{ or ,{ 
+         ;; SECOND split by commas after removing the extra starting two characters of each record - [{ or ,{
          ;; This split will separate into individual fields, although may split by commas in the middle of values
-         (map (lambda (s) (string-split (substring s 2 (string-length s)) #\,)) 
+         (map (lambda (s) (string-split (substring s 2 (string-length s)) #\,))
               (string-split
                  ;; FIRST remove anything before the opening [{ or after the end }], include remove the ]
                  ;; and split by }, this splits it into records, but after this the first one will
@@ -150,7 +150,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Helper function which makes REDCap EAV XML given a record identifier and list of values
 (define (redcap:list->xmlstr record event data)
-  (string-append "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" "\r\n" 
+  (string-append "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" "\r\n"
     "<records>" "\r\n"
     (let loop ((i 0) (str ""))
       (if (= i (length data)) str
@@ -189,16 +189,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (httpsclient-send (string->u8vector request-str))
         (redcap:data-clear!)
         (let loop ((n #f))
-          (if (and n (fx<= n 0)) 
-            (begin 
-              (httpsclient-close)  
+          (if (and n (fx<= n 0))
+            (begin
+              (httpsclient-close)
               (let ((output (cadr (redcap:split-headerbody (redcap:data->string)))))
                  (if (string=? format "json")
                    ;; If format is json, turn into a list, otherwise just return output
                    (redcap:jsonstr->list output)
                    output))
             ) (begin
-             (if (and n (> n 0)) 
+             (if (and n (> n 0))
                (redcap:data-append! (subu8vector redcap:buf 0 n)))
             (loop (httpsclient-recv redcap:buf))
           ))
@@ -216,16 +216,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (redcap-import-record host token record data . xargs)
  (let*  ((bd redcap:boundary)
         (ct (string-append "--" bd "\r\n"
-             "Content-Disposition: form-data; name=\"content\"" "\r\n" "\r\n" 
+             "Content-Disposition: form-data; name=\"content\"" "\r\n" "\r\n"
              "record" "\r\n"))
         (ft (string-append "--" bd "\r\n"
-             "Content-Disposition: form-data; name=\"format\"" "\r\n" "\r\n" 
+             "Content-Disposition: form-data; name=\"format\"" "\r\n" "\r\n"
              "xml" "\r\n"))
         (tp (string-append "--" bd "\r\n"
-             "Content-Disposition: form-data; name=\"type\"" "\r\n" "\r\n" 
+             "Content-Disposition: form-data; name=\"type\"" "\r\n" "\r\n"
              "eav" "\r\n"))
         (ob (string-append "--" bd "\r\n"
-             "Content-Disposition: form-data; name=\"overwriteBehavior\"" "\r\n" "\r\n" 
+             "Content-Disposition: form-data; name=\"overwriteBehavior\"" "\r\n" "\r\n"
              "overwrite" "\r\n"))
         (tk (string-append "--" bd "\r\n"
              "Content-Disposition: form-data; name=\"token\"" "\r\n" "\r\n"
@@ -233,14 +233,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (event (redcap:arg 'event xargs ""))
         (dt (string-append "--" bd "\r\n"
              "Content-Disposition: form-data; name=\"data\"" "\r\n"
-             "Content-Type: application/xml; charset=utf-8" "\r\n" "\r\n" 
+             "Content-Type: application/xml; charset=utf-8" "\r\n" "\r\n"
              (redcap:list->xmlstr record event data) "\r\n"))
         (cl (string-append "--" bd "--"))
         (request-str (string-append "POST " redcap:url " HTTP/1.0" "\r\n"
           "Host: " host "\r\n"
           "User-Agent: " redcap:user-agent  "\r\n"
-          "Content-Length: " (number->string (+ (string-length ct) (string-length ft) (string-length tp) 
-            (string-length ob) (string-length tk) (string-length dt) (string-length cl))) "\r\n"  
+          "Content-Length: " (number->string (+ (string-length ct) (string-length ft) (string-length tp)
+            (string-length ob) (string-length tk) (string-length dt) (string-length cl))) "\r\n"
           "Content-Type: " redcap:content-type-file "; boundary=" bd "\r\n" "\r\n"
           ct ft tp ob tk dt cl "\r\n")))
     ;; Check if we have a valid connection before proceeding
@@ -249,14 +249,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (httpsclient-send (string->u8vector request-str))
         (redcap:data-clear!)
         (let loop ((n #f))
-          (if (and n (fx<= n 0)) 
-            (begin 
-              (httpsclient-close)  
+          (if (and n (fx<= n 0))
+            (begin
+              (httpsclient-close)
               (let ((msg (redcap:split-headerbody (redcap:data->string))))
                 (redcap:error-check msg)
               )
             ) (begin
-             (if (and n (> n 0)) 
+             (if (and n (> n 0))
                (redcap:data-append! (subu8vector redcap:buf 0 n)))
              (loop (httpsclient-recv redcap:buf))
           ))
@@ -274,32 +274,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (redcap-import-record-csv host token str . xargs)
  (let*  ((bd redcap:boundary)
         (ct (string-append "--" bd "\r\n"
-             "Content-Disposition: form-data; name=\"content\"" "\r\n" "\r\n" 
+             "Content-Disposition: form-data; name=\"content\"" "\r\n" "\r\n"
              "record" "\r\n"))
         (ft (string-append "--" bd "\r\n"
-             "Content-Disposition: form-data; name=\"format\"" "\r\n" "\r\n" 
+             "Content-Disposition: form-data; name=\"format\"" "\r\n" "\r\n"
              "csv" "\r\n"))
         (tp (string-append "--" bd "\r\n"
-             "Content-Disposition: form-data; name=\"type\"" "\r\n" "\r\n" 
+             "Content-Disposition: form-data; name=\"type\"" "\r\n" "\r\n"
              "flat" "\r\n"))
         ;; Default overwriteBehavior is "overwrite", but can be specified in xargs as "normal"
         (over (redcap:arg 'overwrite xargs "overwrite"))
         (ob (string-append "--" bd "\r\n"
-             "Content-Disposition: form-data; name=\"overwriteBehavior\"" "\r\n" "\r\n" 
+             "Content-Disposition: form-data; name=\"overwriteBehavior\"" "\r\n" "\r\n"
              over "\r\n"))
         (tk (string-append "--" bd "\r\n"
              "Content-Disposition: form-data; name=\"token\"" "\r\n" "\r\n"
              token "\r\n"))
         (dt (string-append "--" bd "\r\n"
              "Content-Disposition: form-data; name=\"data\"" "\r\n"
-             "Content-Type: text/csv" "\r\n" "\r\n" 
+             "Content-Type: text/csv" "\r\n" "\r\n"
              str "\r\n"))
         (cl (string-append "--" bd "--"))
         (request-str (string-append "POST " redcap:url " HTTP/1.0" "\r\n"
           "Host: " host "\r\n"
           "User-Agent: " redcap:user-agent  "\r\n"
-          "Content-Length: " (number->string (+ (string-length ct) (string-length ft) (string-length tp) 
-            (string-length ob) (string-length tk) (string-length dt) (string-length cl))) "\r\n"  
+          "Content-Length: " (number->string (+ (string-length ct) (string-length ft) (string-length tp)
+            (string-length ob) (string-length tk) (string-length dt) (string-length cl))) "\r\n"
           "Content-Type: " redcap:content-type-file "; boundary=" bd "\r\n" "\r\n"
           ct ft tp ob tk dt cl "\r\n")))
     ;; Check if we have a valid connection before proceeding
@@ -308,14 +308,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (httpsclient-send (string->u8vector request-str))
         (redcap:data-clear!)
         (let loop ((n #f))
-          (if (and n (fx<= n 0)) 
-            (begin 
-              (httpsclient-close)  
+          (if (and n (fx<= n 0))
+            (begin
+              (httpsclient-close)
               (let ((msg (redcap:split-headerbody (redcap:data->string))))
                 (redcap:error-check msg)
               )
             ) (begin
-             (if (and n (> n 0)) 
+             (if (and n (> n 0))
                (redcap:data-append! (subu8vector redcap:buf 0 n)))
              (loop (httpsclient-recv-reentrant redcap:buf))
           ))
@@ -375,8 +375,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (httpsclient-send (string->u8vector request-str))
         (redcap:data-clear!)
         (let loop ((n #f))
-          (if (and n (fx<= n 0)) 
-            (begin 
+          (if (and n (fx<= n 0))
+            (begin
               (httpsclient-close)
               (let ((msg (redcap:split-headerbody (redcap:data->string))))
                 (if (redcap:error-check msg)
@@ -387,7 +387,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                       output))
                   #f))
             ) (begin
-            (if (and n (> n 0)) 
+            (if (and n (> n 0))
               (redcap:data-append! (subu8vector redcap:buf 0 n)))
             (loop (httpsclient-recv-reentrant redcap:buf))
           ))
@@ -417,10 +417,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (httpsclient-send (string->u8vector request-str))
         (redcap:data-clear!)
         (let loop ((n #f))
-          (if (and n (fx<= n 0)) 
-            (begin 
+          (if (and n (fx<= n 0))
+            (begin
               (httpsclient-close)
-              
+
               ;; Get data as a list, make sure first entry isn't an error
               (let ((msg (redcap:split-headerbody (redcap:data->string))))
                 (if (redcap:error-check msg)
@@ -431,11 +431,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         (log-error "REDCap error: " (cdaar datalist))
                         #f)
                       (maps (lambda (l)
-                              (cdr (car l))) 
+                              (cdr (car l)))
                             datalist)))
                   #f)))
             (begin
-              (if (and n (> n 0)) 
+              (if (and n (> n 0))
                 (redcap:data-append! (subu8vector redcap:buf 0 n)))
               (loop (httpsclient-recv redcap:buf))
           ))
@@ -451,18 +451,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 )
 
 (define (redcap-import-file host token record field filename . xargs)
-  (let* ((filesize (if (file-exists? filename)
-           (file-info-size (file-info filename)) #f))
-         (data
-           ;; Create string that is the same length as the file
-           (let ((content (if filesize (make-u8vector filesize) #f)))
-             (if content 
-               (begin
-                 ;; Read file into the string and return it
-                 (with-input-from-file filename (lambda ()
-                   (read-subu8vector content 0 filesize)))
-                 content)
-               (u8vector))))
+  (let* ((filesize (if (file-exists? filename) (file-info-size (file-info filename)) #f))
          (bd redcap:boundary)
          (ct (string-append "--" bd "\r\n"
               "Content-Disposition: form-data; name=\"content\"" "\r\n" "\r\n"
@@ -477,13 +466,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               "Content-Disposition: form-data; name=\"field\"" "\r\n" "\r\n"
               field "\r\n"))
          (form (redcap:arg 'form xargs #f))
-         (fo (if form 
+         (fo (if form
                (string-append "--" bd "\r\n"
                  "Content-Disposition: form-data; name=\"form_instance_id\"" "\r\n" "\r\n"
                  form "\r\n")
                ""))
          (event (redcap:arg 'event xargs #f))
-         (ev (if event 
+         (ev (if event
                (string-append "--" bd "\r\n"
                  "Content-Disposition: form-data; name=\"event\"" "\r\n" "\r\n"
                  event "\r\n")
@@ -491,51 +480,58 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (tk (string-append "--" bd "\r\n"
               "Content-Disposition: form-data; name=\"token\"" "\r\n" "\r\n"
               token "\r\n"))
-         (dtvector (u8vector-append 
-              (string->u8vector (string-append "--" bd "\r\n"
-                                 "Content-Disposition: form-data; name=\"file\"; filename=\"" filename "\"" "\r\n"
-                                 "Content-Type: application/octet-stream" "\r\n" "\r\n"))
-              data 
-              (string->u8vector "\r\n")))
+         (dt (string-append "--" bd "\r\n"
+           "Content-Disposition: form-data; name=\"file\"; filename=\"" filename "\"" "\r\n"
+           "Content-Type: application/octet-stream" "\r\n" "\r\n"))
          (cl (string-append "--" bd "--"))
-         (request-vector (u8vector-append
-           (string->u8vector (string-append "POST " redcap:url " HTTP/1.0" "\r\n"
-                               "Host: " host "\r\n"
-                               "User-Agent: " redcap:user-agent  "\r\n"
-                               "Content-Length: " (number->string (+ (string-length ct) (string-length at) (string-length rd) 
-                               (string-length fd) (string-length tk) (string-length fo) (string-length ev) (u8vector-length dtvector) (string-length cl))) "\r\n"
-                               "Content-Type: " redcap:content-type-file "; boundary=" bd "\r\n" "\r\n"
-                               ct at rd fo ev fd tk))
-           dtvector 
-           (string->u8vector (string-append cl "\r\n")))))
+         (close-vector (u8vector-append (string->u8vector (string-append "\r\n" cl "\r\n"))))
+         (request-vector (string->u8vector (string-append "POST " redcap:url " HTTP/1.0" "\r\n"
+           "Host: " host "\r\n"
+           "User-Agent: " redcap:user-agent  "\r\n"
+           "Content-Length: " (number->string (+ (string-length ct) (string-length at) (string-length rd)
+             (string-length fd) (string-length tk) (string-length fo) (string-length ev) (string-length dt)
+             (if filesize filesize 0) (u8vector-length close-vector))) "\r\n"
+           "Content-Type: " redcap:content-type-file "; boundary=" bd "\r\n" "\r\n"
+             ct at rd fo ev fd tk dt))))
 
    ;; Check if we have a valid connection before proceeding
     (if (and filesize (fx= (httpsclient-open host) 1))
-      (begin
+      (let* ((fh (open-input-file filename))
+             (buflen 100000)
+             (buf (make-u8vector buflen)))
         (httpsclient-send request-vector)
+        (let loop ((start 0) (end (if (fx< filesize buflen) filesize buflen)))
+          (if (fx>= start filesize)
+            (if (port? fh) (close-input-port fh))
+            (let ((len (fx- end start)))
+              (input-port-byte-position fh start)
+              (read-subu8vector buf 0 len fh)
+              (if (fx< len buflen)
+                (httpsclient-send (subu8vector buf 0 len))
+                (httpsclient-send buf)
+              )
+              (loop (fx+ start buflen) (if (fx> (fx+ start (fx* 2 buflen)) filesize) filesize (fx+ end buflen)))
+            )
+          )
+        )
+        (httpsclient-send close-vector)
         (redcap:data-clear!)
         (let loop ((n #f))
           (if (and n (fx<= n 0))
             (begin
               (httpsclient-close)
               (let ((msg (redcap:split-headerbody (redcap:data->string))))
-                (if (and (string? (car msg)) (fx> (string-length (car msg)) 12) 
-                         (or (string=? (substring (car msg) 9 12) "201")                                                                                   (string=? (substring (car msg) 9 12) "200"))) 
-                  #t
-                  (let ((message (cadr msg)))
-                    (log-error "REDCap:" (if (list? message) (if (fx> (string-length (car msg)) 0) (car msg) " No response, file may be too large for upload") message))
-                    #f)
-                )
+                (redcap:error-check msg)
               )
             ) (begin
-            (if (and n (> n 0)) 
+            (if (and n (> n 0))
               (redcap:data-append! (subu8vector redcap:buf 0 n)))
             (loop (httpsclient-recv redcap:buf))
           ))
         )
       )
       (begin
-        (if (not filesize) 
+        (if (not filesize)
           (let ((str (string-append "File " filename " not found."))) (log-error str))
           (begin
             (log-warning "Cannot import to REDCap, no valid connection")
@@ -572,13 +568,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (httpsclient-send (string->u8vector request-str))
         (redcap:data-clear!)
         (let loop ((n 1))
-          (if (fx<= n 0) 
-            (begin 
+          (if (fx<= n 0)
+            (begin
               (httpsclient-close)
               ;; Get a list consisting of the header as a string followed by the body as a vector
               (let ((fileout (redcap:split-headerbody-vector (redcap:data->u8vector))))
                 ;; If the returned code is 200 or 201, just return the header and file
-                (if (and (string? (car fileout)) (fx> (string-length (car fileout)) 12) 
+                (if (and (string? (car fileout)) (fx> (string-length (car fileout)) 12)
                          (or (string=? (substring (car fileout) 9 12) "201")
                              (string=? (substring (car fileout) 9 12) "200")))
                   fileout
