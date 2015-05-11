@@ -90,3 +90,4 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "horizontalvaluepicker.scm")
 (include "barchart.scm")
 (include "recurrence.scm")
+(include "xyplot.scm")
