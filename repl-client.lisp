@@ -2,8 +2,8 @@
 
 (defun shebang-reader (stream sub-char num-args)
   (declare (ignore sub-char num-args))
-  (unless (equal (read stream) 'void)
-    (error "what the hell is this!?")))
+  (unless (eq (read stream) 'void)
+    (error "what the heck is this!?")))
 
 (setf (readtable-case *readtable*) :invert)
 (set-dispatch-macro-character #\# #\! #'shebang-reader)
@@ -19,7 +19,8 @@
                (if newline
                    (foo (concatenate 'string so-far newline (string #\newline)))
                    so-far))))
-    (string-right-trim '(#\newline)(foo ""))))
+    (string-right-trim '(#\newline)
+                       (foo ""))))
 
 (defun scheme-eval (cmd-string sock)
   (write-line cmd-string
