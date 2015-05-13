@@ -1,6 +1,5 @@
 (ql:quickload :usocket)
 
-
 (defun shebang-reader (stream sub-char num-args)
   (declare (ignore sub-char num-args))
   (unless (equal (read stream) 'void)
@@ -8,6 +7,11 @@
 
 (setf (readtable-case *readtable*) :invert)
 (set-dispatch-macro-character #\# #\! #'shebang-reader)
+
+(defun map-thing (fn thing)
+  (let ((chunk (funcall fn thing)))
+    (if chunk
+        (cons chunk (map-thing fn thing)))))
 
 (defun dump-stream-to-string (stream)
   (labels ((foo (so-far)
@@ -17,11 +21,6 @@
                    so-far))))
     (string-right-trim '(#\newline)(foo ""))))
 
-(defun map-thing (fn thing)
-  (let ((chunk (funcall fn thing)))
-    (if chunk
-        (cons chunk (map-thing fn thing)))))
-
 (defun scheme-eval (cmd-string sock)
   (write-line cmd-string
               (usocket:socket-stream sock))
@@ -30,7 +29,7 @@
 (defun scheme-repl (cmd)
   (let* ((cmd-string (with-output-to-string (bar)
                        (print cmd bar)))
-         (foo   (usocket:socket-connect "localhost" 8000)))
+         (foo (usocket:socket-connect "localhost" 8000)))
     (format t "outputting cmd-string ~a~%" cmd-string)
     (unwind-protect
          (progn (scheme-eval cmd-string foo)
@@ -38,10 +37,13 @@
                                        (usocket:socket-stream foo)))
                        (dummy-stream (make-string-input-stream return-string)))
                   (format t "received reply-string: ~a~%" return-string)
-                  (apply #'values
-                         (map-thing (lambda (stream)
-                                      (read stream nil))
-                                    dummy-stream))))
+                  (handler-case
+                      (apply #'values
+                             (map-thing (lambda (stream)
+                                          (read stream nil))
+                               dummy-stream))
+                    (error ()
+                      (error "Received unreadable reply from scheme: ~%  ~A~%Lisp expression that triggered the error was:~%  ~A" return-string (string-left-trim '(#\newline) cmd-string))))))
       (usocket:socket-close foo))))
 
 (defmacro in-scheme (&rest rest)
