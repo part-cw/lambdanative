@@ -9,11 +9,13 @@
          (eval request))
      list)))
 
+;; Print errors using a special magic syntax
 (define (tcprepl:print-error e port)
   (display "#E(\"" port)
   (display (exception->string e) port)
   (display "\")" port))
 
+;;Wrap read, eval and print in an error handler
 (define (tcprepl:read-eval-print-fn port)
   (with-exception-catcher
    (lambda (e)
@@ -37,6 +39,7 @@
                                 (close-port connection))))
               (loop)))))))
 
+;; Fire up tcp repl and debug repl
 (begin
   (thread-start! (make-thread tcprepl:repl-fn))
   (let loop ()
@@ -45,9 +48,5 @@
                               (newline))
                             ##repl-debug)
     (loop)))
-
-;; (with-exception-catcher (lambda (e)
-;;                           (display e (current-output-port)))
-;;                         (lambda () (eval 'foo)))
 
 ;; eof
