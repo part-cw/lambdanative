@@ -31,21 +31,26 @@
   (let* ((cmd-string (with-output-to-string (bar)
                        (print cmd bar)))
          (foo (usocket:socket-connect "localhost" 8000)))
-    (format t "outputting cmd-string ~a~%" cmd-string)
     (unwind-protect
          (progn (scheme-eval cmd-string foo)
                 (let* ((return-string (dump-stream-to-string
                                        (usocket:socket-stream foo)))
                        (dummy-stream (make-string-input-stream return-string)))
-                  (format t "received reply-string: ~a~%" return-string)
                   (handler-case
                       (apply #'values
                              (map-thing (lambda (stream)
                                           (read stream nil))
                                dummy-stream))
                     (error ()
-                      (error "Received unreadable reply from scheme: ~%  ~A~%Lisp expression that triggered the error was:~%  ~A" return-string (string-left-trim '(#\newline) cmd-string))))))
+                      (error "Received unreadable reply from scheme: ~%  ~A~%Lisp expression that triggered the error was:~%  ~A"
+                             return-string (string-left-trim '(#\newline) cmd-string))))))
       (usocket:socket-close foo))))
+#+nil
+(scheme-repl '(+ 1 2))
 
 (defmacro in-scheme (&rest rest)
   `(scheme-repl (quote ,(cons 'begin rest))))
+#+nil
+(in-scheme (define foo 2)
+           (set! foo 3)
+           foo)

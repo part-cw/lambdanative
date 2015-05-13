@@ -1,9 +1,5 @@
-;; starts thread
-(define (tcprepl-server)
-  (thread-start! (make-thread tcprepl:server)))
-
-;; evals incoming lisp on a port until
-(define (eval-printer request port)
+;; evals request, printing each return value to port
+(define (tcprepl:eval-print-fn request port)
   (map
    (lambda (value)
      (display value port)
@@ -13,34 +9,36 @@
          (eval request))
      list)))
 
-(define (tcprepl:serve port)
+(define (tcprepl:print-error e port)
+  (display "#E(\"" port)
+  (display (exception->string e) port)
+  (display "\")" port))
+
+(define (tcprepl:read-eval-print-fn port)
   (with-exception-catcher
    (lambda (e)
      (log-error e)
-     (display "#E(\"" port)
-     (display (exception->string e) port)
-     (display "\")" port)
-     (close-port port)
-     #f)
+     (tcprepl:print-error e port))
    (lambda ()
      (let ((request (read port)))
-       (eval-printer request port)
-       (close-port port)))))
+       (tcprepl:eval-print-fn request port)))))
 
 ;; opens port and connection
-(define (tcprepl:server)
+(define (tcprepl:repl-fn)
   (let ((accept-port (open-tcp-server (list server-address: "*"
                                             port-number: 8000 reuse-address: #t))))
     (let loop ()
       (let ((connection (read accept-port)))
         (if (not (eof-object? connection))
-            (begin (thread-start! (make-thread
-                                   (lambda ()
-                                     (tcprepl:serve connection))))
-                   (loop)))))))
+            (begin
+              (thread-start! (make-thread
+                              (lambda ()
+                                (tcprepl:read-eval-print-fn connection)
+                                (close-port connection))))
+              (loop)))))))
 
 (begin
-  (tcprepl-server)
+  (thread-start! (make-thread tcprepl:repl-fn))
   (let loop ()
     (with-exception-catcher (lambda (e)
                               (display (exception->string e))
