@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
 ;; Cross platform rs232 (serial) bindings
-;; This implementation assumes that the communication flow control is 
+;; This implementation assumes that the communication flow control is
 ;; completely controlled by the external device
 
 (c-declare  #<<end-of-c-declare
@@ -143,14 +143,14 @@ int serial_open(char *dev, int baudrate, int bitsize, int parity, int stopbits){
   dcb.fBinary = TRUE;
   dcb.fDsrSensitivity=FALSE;
   dcb.fNull=FALSE;
-  dcb.fAbortOnError=FALSE; 
+  dcb.fAbortOnError=FALSE;
   // this powers the lines, but does not actually do flow control
   // this is needed to power communication interface in some devices
   dcb.fDtrControl=DTR_CONTROL_ENABLE;
   dcb.fRtsControl=RTS_CONTROL_ENABLE;
   dcb.fOutxCtsFlow=FALSE;
   dcb.fOutxDsrFlow=FALSE;
-  dcb.fOutX = FALSE; 
+  dcb.fOutX = FALSE;
   dcb.fInX = FALSE;
 
   // set the baudrate, falling back on 9600
@@ -218,7 +218,7 @@ int serial_open(char *dev, int baudrate, int bitsize, int parity, int stopbits){
     timeouts.ReadTotalTimeoutConstant = 0;
     timeouts.WriteTotalTimeoutMultiplier = 0;
     timeouts.WriteTotalTimeoutConstant = 0;
-    if (!SetCommTimeouts(fd,&timeouts)) { 
+    if (!SetCommTimeouts(fd,&timeouts)) {
       fprintf(stderr,"serial: SetCommTimeouts failed\n");
       _serial_error=1; return 0;
      }
@@ -443,7 +443,7 @@ end-of-c-declare
 
 (define (serial-try devname baudrate databits parity stopbits testproc)
   (let ((dev (serial:open devname baudrate databits parity stopbits)))
-    (if (or (serial-error) (serial-timeout)) 
+    (if (or (serial-error) (serial-timeout))
       #f
       (if testproc
         (if (testproc dev)
@@ -477,7 +477,7 @@ end-of-c-declare
             (if dev
               (begin
                 (log-status (string-append "serial: found device at " (car d)
-                                           " using " (number->string (car (car r))) 
+                                           " using " (number->string (car (car r)))
                                            " " (number->string (cadr (car r)))
                                            (if (fx= (caddr (car r)) 0) "N" (if (fx= (caddr (car r)) 1) "O" "E"))
                                            (number->string  (cadddr (car r)))
@@ -493,6 +493,20 @@ end-of-c-declare
     )
   ))
 
+;; Find a usb-serial converter on macos and linux
+(define (detect-usb-serial)
+  (let loop ((files (directory-files "/dev")))
+    (if (fx= (length files) 0)
+      ""
+      (let ((file (car files)))
+        (if (and (string-contains file "tty")
+                 (or (string-contains-ci file "serial") (string-contains-ci file "usb")))
+          (string-append "/dev/" file)
+          (loop (cdr files))
+        )
+      )
+    )
+  ))
 
 ;; rs232 communication protocol often define a start and end character
 ;; this generic cache system can capture such delimited messages
@@ -516,7 +530,7 @@ end-of-c-declare
          (c2  (if entry (cadr entry) #f))
          (buf (if entry (caddr entry) #f))
          (hookproc (if (fx= (length hook) 1) (car hook) #f)))
-    (if entry 
+    (if entry
       (call/cc (lambda (return)
         ;; step 1: seek start char
         (if (not buf)
@@ -537,7 +551,7 @@ end-of-c-declare
             ))
             (if hookproc (hookproc c))
             (if (if (procedure? c2) (c2 c (fx+ (string-length r) 1)) (fx= c c2)) (begin
-              (serial-cache-clear dev) 
+              (serial-cache-clear dev)
               (return (if (fx<= (string-length r) 1)
                 #f
                 (string-append r (string (integer->char c)))
