@@ -89,7 +89,7 @@ end-of-c-declare
            (padlen (if (fx= padlen1 8) 0 padlen1))
            (pad (random-u8vector padlen))
            (tmp (u8vector-append (u8vector padlen) vect pad)))
-      ((c-lambda (int scheme-object int) void 
+      ((c-lambda (int scheme-object int) void
         "_blf_enc(___arg1,___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)), ___arg3);") keyidx tmp (u8vector-length tmp))
       tmp
     )
@@ -99,7 +99,7 @@ end-of-c-declare
 (define (u8vector-decrypt-blowfish keyidx vect)
   (if (u8vector? vect)
     (let ((tmp (u8vector-copy vect)))
-      ((c-lambda (int scheme-object int) void 
+      ((c-lambda (int scheme-object int) void
         "_blf_dec(___arg1,___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)), ___arg3);") keyidx tmp (u8vector-length tmp))
       (let ((padlen (u8vector-ref tmp 0)))
         (if (fx> padlen (fx- (u8vector-length tmp) 1))

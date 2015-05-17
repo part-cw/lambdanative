@@ -64,7 +64,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; Length conversion functions
 (define (rupi:length->data l)
   ;; We only support length < 16,777,215 so the fourth byte is left for future use
-  (if (fx>= l 16777215) 
+  (if (fx>= l 16777215)
     (begin (rupi:log 1 "rupi:cmd: Data too long " l) 0)
     (u8vector (bitwise-and l #xff)
       (bitwise-and (arithmetic-shift l -8) #xff)
@@ -96,7 +96,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (read-subu8vector lv 0 4 port)
            (let* ((l (rupi:data-length lv))
                   (data (make-u8vector l)))
-             (if (fx>= l 2) 
+             (if (fx>= l 2)
                (begin
                  (read-subu8vector data 0 l port)
                  (list ridx (rupi:decompress ((list-ref rupi:decode ridx) keyidx data)))
@@ -114,8 +114,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (rupi:readobj port keyidx)
   (let ((rr (rupi:read keyidx port)))
-    (if (and rr (not (null? rr)) (u8vector? (cadr rr))) 
-      (list (car rr) (u8vector->object (cadr rr))) 
+    (if (and rr (not (null? rr)) (u8vector? (cadr rr)))
+      (list (car rr) (u8vector->object (cadr rr)))
       #f
     )
   )
@@ -141,16 +141,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (rupi:cmd timeout t cmd . args)
   (rupi:grab!)
   (set! rupi:error #f)
-  (let ((res (with-exception-catcher 
-     (lambda (e) 
+  (let ((res (with-exception-catcher
+     (lambda (e)
        (rupi:log 1 "rupi:cmd: exception (1): " (exception->string e))
        (let ((p (table-ref t "CmdPort" #f)))
          (if p (rupi:safecall close-port p)))
        (table-set! t "CmdPort" #f)
        (set! rupi:error #t)
        #f
-     ) 
-     (lambda () 
+     )
+     (lambda ()
       (let* ((clientaddr (table-ref t "ClientAddr"))
              (clientport (table-ref t "ClientPort"))
              (clientidx  (table-ref t "ClientIdx"))
@@ -163,16 +163,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (let loop () (if (rupi:safecall rupi:readobj p clientidx) (loop)))
     (input-port-timeout-set! p timeout (lambda () (set! rupi:error #t) #f))
           (output-port-timeout-set! p timeout (lambda () (set! rupi:error #t) #f))
-          (rupi:writeobj p (append (list cmd) args) clientidx rupi:magicidx) 
+          (rupi:writeobj p (append (list cmd) args) clientidx rupi:magicidx)
           (force-output p)
-          (with-exception-catcher 
+          (with-exception-catcher
             (lambda (e) (rupi:log 1 "rupi:cmd: exception (2): " (exception->string e))
-                        (rupi:safecall close-port p) 
+                        (rupi:safecall close-port p)
                         (table-set! t "CmdPort" #f)
                         (set! rupi:error #t)
                         #f
             )
-            (lambda () (let* ((data2 (rupi:readobj p clientidx)) 
+            (lambda () (let* ((data2 (rupi:readobj p clientidx))
                               (data1 (if data2 (cadr data2) #f))
                               (data (if data1 (cdr data1) #f))
                               (retcmd (if data1 (car data1) #f)))
@@ -182,7 +182,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    (rupi:release!)
    res))
 
-(define (rupi-cmd . x) (apply rupi:cmd (append (list 1.0) x)))
+(define rupi-cmd rupi-cmd-wait)
 (define (rupi-cmd-wait . x) (apply rupi:cmd (append (list 1.) x)))
 (define (rupi-cmd-nowait . x) (apply rupi:cmd (append (list 0.001) x)) #t)
 
@@ -195,7 +195,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (rupi:serve port keyidx store upiproc)
   (with-exception-catcher
-    (lambda (e) 
+    (lambda (e)
        (rupi:log 1 "rupi:server: exception: " (exception->string e))
           (rupi:safecall close-port port) #f)
     (lambda ()
@@ -213,14 +213,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ))
 
 (define (rupi:server store keyidx addr port upiproc)
-  (lambda () 
+  (lambda ()
   (let ((accept-port (open-tcp-server
            (list server-address: addr port-number: port reuse-address: #t
          ))))
     (rupi:log 0 "rupi:server starting at " addr ":" port)
     (let loop ()
       (let ((connection (read accept-port)))
-        (if (not (eof-object? connection)) (begin 
+        (if (not (eof-object? connection)) (begin
           (rupi:log 1 "rupi:server thread number " rupi:thread-num)
           (set! rupi:thread-num (fx+ rupi:thread-num 1))
           (thread-start! (make-safe-thread (lambda () (rupi:serve connection keyidx store upiproc)) 'rupi:connection))
@@ -288,7 +288,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (let loop ((n 1000))
         (if (fx= n 0)
           #t
-          (if (let ((data (list "Booleans" (fx= (random-integer 2) 1) 
+          (if (let ((data (list "Booleans" (fx= (random-integer 2) 1)
                                 (fx= (random-integer 2) 1) (fx= (random-integer 2) 1))))
                 (not (equal? data (rupi-cmd rc data))))
             #f
