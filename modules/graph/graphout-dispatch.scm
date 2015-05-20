@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; this is the main dispatch for all devices
 (define (graphout:dispatch g)
+  (graph:log 3 "graphout:dispatch " g)
   (for-each (lambda (cmd)
     (if cmd
       (let ((cmdname (car cmd))(cmdargs (cdr cmd)))
@@ -112,8 +113,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (svg `(svg (@ (width ,w) (height ,h) (xmlns "http://www.w3.org/2000/svg")) "")))
     (table-set! g 'svg svg)
     (graphout:dispatch g)
-    (with-output-to-file filename (lambda ()
-      (sxml->xml (table-ref g 'svg))))
+    (if filename
+      (with-output-to-file filename (lambda ()
+        (sxml->xml (table-ref g 'svg))))
+      (table-ref g 'svg))
   ))
 
 ;; eof

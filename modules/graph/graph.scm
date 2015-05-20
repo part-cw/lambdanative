@@ -36,6 +36,10 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
+(define graph:debuglevel 0)
+(define (graph:log level . x)
+   (if (>= graph:debuglevel level) (apply log-system (append (list "graph: " x)))))
+
 ;; vector graphing engine
 ;; this is a reimplementation of "Cgraph: PostScript plotting library in C" in scheme for PDF output
 ;; Original Source available at http://neurovision.berkeley.edu/software/A_Cgraph.html
@@ -84,6 +88,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; reset a graph data structure
 (define (graph-reset t)
+  (graph:log 2 "graph-reset " t)
   (table-set! t 'axisenable 1)
   (table-set! t 'axisnumberenable 1)
   (table-set! t 'axisx2dev 72.)
@@ -145,6 +150,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; clear drawing constructs from a graph
 (define (graph-clear t)
+  (graph:log 2 "graph-clear " t)
   (table-set! t 'path '())
   (table-set! t 'pathstack '())
   (table-set! t 'colorstack '())
@@ -154,6 +160,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; create a new graph
 (define (graph-new w h . xtra)
+  (graph:log 2 "graph-new " w " " h " " xtra)
   (let ((t (make-table init: '()))
         (scale (if (= (length xtra) 1) (car xtra) 1.0)))
     (table-set! t 'isgraph "GRAPH")
@@ -170,6 +177,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; general command call
 (define (graph:cmd g c . x)
+  (graph:log 3 "graph:cmd " g " " c " " x)
   (let ((old (table-ref g 'commands))
 	(cnt (table-ref g 'cmdcount)))
     (if (>= cnt (vector-length old)) (begin (table-set! g 'commands (vector-append old (make-vector 1000 #f)))
@@ -225,6 +233,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; ------ code that only does parameter setup (device agnostic)...
 
 (define (graphout:axisenable g axisflag numberflag)
+  (graph:log 3 "graphout:axisenable " g " " axisflag " " numberflag)
   (table-set! g 'axisenable axisflag)
   (table-set! g 'axisnumberenable numberflag))
 
@@ -248,13 +257,33 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (graphout:setcoord g cflag)
   (table-set! g 'coord cflag))
 
+;; %%%%%%%%%%%% Register dynamic backend 
+
+(define graph:hooktable (make-table))
+
+(define (graph-register name proc)
+  (graph:log 3 "graph-register " name " " proc)
+  (table-set! graph:hooktable name proc)
+)
+
+(define (graph:hook g type key . data)
+  (graph:log 3 "graph-hook " type " " key " " data)
+  (apply (table-ref graph:hooktable type #f) (append (list g key) data)))
+
 ;; %%%%%%%%%%%% MAIN OUTPUT PROCESSOR below..    
 
 (define (graph-output g type . xtra)
+  (graph:log 3 "graph-output " g " " type " " xtra)
   (let ((filename (if (= (length xtra) 1) (car xtra) "graph.out")))
-  (cond 
-     ((= type GRAPH_PDF) (graphout:pdf g filename))
-     ((= type GRAPH_SVG) (graphout:svg g filename))
-     (else (log-error "graph-output: unsupported output format.")))))
+  (case type
+     ((GRAPH_PDF) (graphout:pdf g filename))
+     ((GRAPH_SVG) (graphout:svg g filename))
+     (else  ;; invoke dynamic rendering
+       (table-set! g 'output type)
+       (graph:hook g type 'PRELUDE)
+       (graphout:dispatch g)
+       (graph:hook g type 'POSTLUDE)
+     ))
+  ))
 
 ;; eof

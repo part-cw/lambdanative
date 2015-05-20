@@ -40,11 +40,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; set font
 (define (graphout:font g fname fsize)
-  (let ((otype (table-ref g 'output)))
+  (let ((o (table-ref g 'output)))
     (table-set! g 'fontnum fsize)
     (table-set! g 'fsizex fsize)
-    (cond 
-      ((= otype GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let* ((pdf (table-ref g 'hpdf))
                (page (table-ref g 'hpage))
                (font (HPDF_GetFont pdf fname "WinAnsiEncoding")))
@@ -53,7 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (HPDF_Page_SetFontAndSize page font (flo fsize))
         )
       )
-      ((= otype GRAPH_SVG)
+      ((GRAPH_SVG)
         (table-set! g 'svg-font fname)
         (table-set! g 'svg-fontsize fsize)
       )
@@ -63,9 +63,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; -------- HORIZONTAL TEXT
 
 (define (graphout:htextleft g x y text)
-  (let ((otype (table-ref g 'output)))
-    (cond 
-      ((= otype GRAPH_PDF)
+  (let ((o (table-ref g 'output)))
+    (case o
+      ((GRAPH_PDF)
         (let* ((page (table-ref g 'hpage))
                (font (table-ref g 'hfont))
                (fontsize (table-ref g 'hfontsize))
@@ -76,7 +76,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (HPDF_Page_EndText page)
         )
       )
-      ((= otype GRAPH_SVG)
+      ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
                (svg-font (table-ref g 'svg-font "Helvetica"))
                (svg-fontsize (number->string (table-ref g 'svg-fontsize 12)))
@@ -93,13 +93,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
+      (else (graph:hook g o 'HTEXTLEFT x y text))
     )
   ))
 
 (define (graphout:htextright g x y text)
-  (let ((otype (table-ref g 'output)))
-    (cond 
-      ((= otype GRAPH_PDF)
+  (let ((o (table-ref g 'output)))
+    (case o
+      ((GRAPH_PDF)
         (let* ((page (table-ref g 'hpage))
                (font (table-ref g 'hfont))
                (fontsize (table-ref g 'hfontsize))
@@ -111,7 +112,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (HPDF_Page_EndText page)
         )
       )
-      ((= otype GRAPH_SVG)
+      ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
                (svg-font (table-ref g 'svg-font "Helvetica"))
                (svg-fontsize (number->string (table-ref g 'svg-fontsize 12)))
@@ -128,6 +129,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
+      (else (graph:hook g o 'HTEXTRIGHT x y text))
     )
   ))
 
@@ -136,10 +138,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; pos = 0  y bottom
 ;; pos = 2  y top
 (define (graphout:htextcenter g x y text . xtra)
-  (let ((otype (table-ref g 'output))
+  (let ((o (table-ref g 'output))
         (yofs  (if (> (length xtra) 0) (car xtra) 1.)))
-    (cond 
-      ((= otype GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let* ((page (table-ref g 'hpage))
                (font (table-ref g 'hfont))
                (fontsize (table-ref g 'hfontsize))
@@ -151,7 +153,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (HPDF_Page_EndText page)
         )
       )
-      ((= otype GRAPH_SVG)
+      ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
                (svg-font (table-ref g 'svg-font "Helvetica"))
                (svg-fontsize (number->string (table-ref g 'svg-fontsize 12)))
@@ -168,6 +170,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
+      (else (graph:hook g o 'HTEXTCENTER x y text))
     )
   ))
 
@@ -175,9 +178,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; draw a bottom aligned vertical text
 (define (graphout:vtextbottom g x y text)
-  (let ((otype (table-ref g 'output)))
-    (cond
-      ((= otype GRAPH_PDF)
+  (let ((o (table-ref g 'output)))
+    (case o
+      ((GRAPH_PDF)
         (let* ((page (table-ref g 'hpage))
                (font (table-ref g 'hfont))
                (fontsize (table-ref g 'hfontsize))
@@ -192,7 +195,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (HPDF_Page_GRestore page)
         )
       )
-      ((= otype GRAPH_SVG)
+      ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
                (svg-font (table-ref g 'svg-font "Helvetica"))
                (svg-fontsize (number->string (table-ref g 'svg-fontsize 12)))
@@ -210,14 +213,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
+      (else (graph:hook g o 'VTEXTBOTTOM x y text))
     )
   ))
 
 ;; top aligned vertical text
 (define (graphout:vtexttop g x y text)
-  (let ((otype (table-ref g 'output)))
-    (cond 
-      ((= otype GRAPH_PDF)
+  (let ((o (table-ref g 'output)))
+    (case o
+      ((GRAPH_PDF)
         (let* ((page (table-ref g 'hpage))
                (font (table-ref g 'hfont))
                (fontsize (table-ref g 'hfontsize))
@@ -233,7 +237,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (HPDF_Page_GRestore page)
         )
       )
-      ((= otype GRAPH_SVG)
+      ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
                (svg-font (table-ref g 'svg-font "Helvetica"))
                (svg-fontsize (number->string (table-ref g 'svg-fontsize 12)))
@@ -251,15 +255,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
+      (else (graph:hook g o 'VTEXTTOP x y text))
     )
   ))
 
 ;; draw a centered vertical text 
 ;; phantom is for a special case needed for ylabel
 (define (graphout:vtextcenter g x y text . phantom) 
-  (let ((otype (table-ref g 'output)))
-    (cond 
-      ((= otype GRAPH_PDF)
+  (let ((o (table-ref g 'output)))
+    (case o
+      ((GRAPH_PDF)
         (let* ((page (table-ref g 'hpage))
                (font (table-ref g 'hfont))
                (fontsize (table-ref g 'hfontsize))
@@ -276,7 +281,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (HPDF_Page_GRestore page)
         )
       )
-      ((= otype GRAPH_SVG)
+      ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
                (svg-font (table-ref g 'svg-font "Helvetica"))
                (svg-fontsize (number->string (table-ref g 'svg-fontsize 12)))
@@ -294,6 +299,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       ) 
+      (else (graph:hook g o 'VTEXTCENTER x y text))
     )
   ))
 

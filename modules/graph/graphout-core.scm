@@ -41,22 +41,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; set line dash
 (define (graphout:dash g type mul)
+  (graph:log 3 "graphout:dash " g " " type " " mul)
   (let ((o (table-ref g 'output)))
-    #t
+    (case o
+      (else (graph:hook g o 'DASH type mul))
+    )
   ))
 
 ;; set line width
 (define (graphout:linewidth g w)
+  (graph:log 3 "graphout:linewidth " g " " w)
   (let ((o (table-ref g 'output)))
-    (cond
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_SetLineWidth page w)
         )
       )
-      ((= o GRAPH_SVG)
+      ((GRAPH_SVG)
         (table-set! g 'svg-stroke-width w)
       )
+      (else (graph:hook g o 'LINEWIDTH w))
     )))
 
 (define (graphout:svgflo n) (float->zeropaddedstring (flo n) 1))
@@ -68,47 +73,52 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; set pen color
 (define (graphout:rgbcolor g red green blue alpha)
+  (graph:log 3 "graphout:rgbcolor " g " " red " " green " " blue " " alpha)
   (let ((o (table-ref g 'output)))
-    (cond
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_SetRGBStroke page (flo red) (flo green) (flo blue))
           (HPDF_Page_SetRGBFill page (flo red) (flo green) (flo blue))
         )
       )
-     ((= o GRAPH_SVG)
+     ((GRAPH_SVG)
        (table-set! g 'svg-color (string-append
          "#" (graphout:rgb->hex red) (graphout:rgb->hex green) (graphout:rgb->hex blue)))
        (table-set! g 'svg-opacity alpha)
      )
-    )))
+     (else (graph:hook g o 'RGBCOLOR red green blue alpha))
+   )))
 
 ;; close a path
 (define (graphout:closepath g)
+  (graph:log 3 "graphout:closepath " g)
   (let ((o (table-ref g 'output)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_ClosePath page)
         )
       )
-      ((= o GRAPH_SVG) 
+      ((GRAPH_SVG) 
         (let ((svg-path (table-ref g 'svg-path "")))
           (table-set! g 'svg-path (string-append svg-path "Z"))
         )
       )
+     (else (graph:hook g o 'CLOSEPATH))
     )))
 
 ;; draw path outline
 (define (graphout:stroke g)
+  (graph:log 3 "graphout:stroke " g)
   (let ((o (table-ref g 'output)))
-    (cond 
-       ((= o GRAPH_PDF)
+    (case o
+       ((GRAPH_PDF)
          (let ((page (table-ref g 'hpage)))
            (HPDF_Page_Stroke page)
          )
        )
-       ((= o GRAPH_SVG)
+       ((GRAPH_SVG)
           (let ((svg (table-ref g 'svg))
                 (stroke-color (table-ref g 'svg-color "#000000"))
                 (stroke-width (graphout:svgflo (table-ref g 'svg-stroke-width 1)))
@@ -119,50 +129,58 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (table-set! g 'svg-path "")
           )
        )
+       (else (graph:hook g o 'STROKE))
     )))
 
 ;; closepath, then stroke
 (define (graphout:closepathstroke g)
+ (graph:log 3 "graphout:closepathstroke " g)
   (graphout:closepath g)
   (graphout:stroke g))
 
 ;; save current state
 (define (graphout:gsave g)
+  (graph:log 3 "graphout:gsave " g)
   (let ((o (table-ref g 'output)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_GSave page)
         )
       )
+      (else (graph:hook g o 'GSAVE))
     )))
 
 ;; restore current state
 (define (graphout:grestore  g)
+  (graph:log 3 "graphout:grestore " g)
   (let ((o (table-ref g 'output)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_GRestore page)
         )
       )
+      (else (graph:hook g o 'GRESTORE))
     )))
 
 ;; move pen in device coords
 (define (graphout:devmove g x y)
+  (graph:log 3 "graphout:devmove " g " " x " " y)
   (let ((o (table-ref g 'output)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_MoveTo page (flo x) (flo y))
         )
       )
-      ((= o GRAPH_SVG)
+      ((GRAPH_SVG)
         (let ((svg-path (table-ref g 'svg-path ""))
               (h (table-ref g 'devymax)))
           (table-set! g 'svg-path (string-append svg-path "M " (graphout:svgflo x) " " (graphout:svgflo (- h y)) " "))
         )
       )
+      (else (graph:hook g o 'DEVMOVE x y))
     )
     (table-set! g 'devxpen x)
     (table-set! g 'devypen y)
@@ -174,19 +192,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; draw in device coords
 (define (graphout:devline g x y)
+  (graph:log 3 "graphout:devline " g " " x " " y)
   (let ((o (table-ref g 'output)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_LineTo page (flo x) (flo y))
         )
       )
-      ((= o GRAPH_SVG)
+      ((GRAPH_SVG)
         (let ((svg-path (table-ref g 'svg-path ""))
               (h (table-ref g 'devymax)))
           (table-set! g 'svg-path (string-append svg-path "L " (graphout:svgflo x) " " (graphout:svgflo (- h y)) " "))
          )
       )
+      (else (graph:hook g o 'DEVLINE x y))
     )
     (table-set! g 'devxpen x)
     (table-set! g 'devypen y)
@@ -197,20 +217,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (graphout:devline g (graphout:curx->devx g x) (graphout:cury->devy g y)))
 
 (define (graphout:line g x1 y1 x2 y2)
+  (graph:log 3 "graphout:line " g " " x1 " " y1 " " x2 " " y2)
   (let ((o (table-ref g 'output))
         (dx1 (graphout:curx->devx g x1))
         (dy1 (graphout:cury->devy g y1))
         (dx2 (graphout:curx->devx g x2))
         (dy2 (graphout:cury->devy g y2)))
-    (cond
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_MoveTo page (flo dx1) (flo dy1))
           (HPDF_Page_LineTo page (flo dx2) (flo dy2))
           (HPDF_Page_Stroke page)
         )
       )
-      ((= o GRAPH_SVG)
+      ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
               (h (table-ref g 'devymax))
               (sx1 (graphout:svgflo dx1))
@@ -227,17 +248,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                          "stroke-width: " stroke-width ";"))) ""))))
         )
       )
+      (else (graph:hook g o 'LINE x1 y1 x2 y2))
     )
   ))
 
 (define (graphout:box g x1 y1 x2 y2)
+  (graph:log 3 "graphout:box " g " " x1 " " y1 " " x2 " " y2)
   (let ((o (table-ref g 'output))
         (dx1 (graphout:curx->devx g x1))
         (dy1 (graphout:cury->devy g y1))
         (dx2 (graphout:curx->devx g x2))
         (dy2 (graphout:cury->devy g y2)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_MoveTo page (flo dx1) (flo dy1))
           (HPDF_Page_LineTo page (flo dx2) (flo dy1))
@@ -246,7 +269,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (HPDF_Page_ClosePathStroke page)
         )
       )
-      ((= o GRAPH_SVG)
+      ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
                (h (table-ref g 'devymax))
                (sx (graphout:svgflo (min dx1 dx2)))
@@ -265,6 +288,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
+      (else (graph:hook g o 'BOX x1 y1 x2 y2))
     )
   ))
 
@@ -274,8 +298,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (dy1 (graphout:cury->devy g y1))
         (dx2 (graphout:curx->devx g x2))
         (dy2 (graphout:cury->devy g y2)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_MoveTo page (flo dx1) (flo dy1))
           (HPDF_Page_LineTo page (flo dx2) (flo dy1))
@@ -285,7 +309,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (HPDF_Page_Fill page)
         )
       )
-      ((= o GRAPH_SVG)
+      ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
                (h (table-ref g 'devymax))
                (sx (graphout:svgflo (min dx1 dx2)))
@@ -302,7 +326,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
-
+      (else (graph:hook g o 'SOLIDBOX x1 y1 x2 y2))
     )
   ))
 
@@ -314,8 +338,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (dy2 (graphout:cury->devy g y2))
         (dx3 (graphout:curx->devx g x3))
         (dy3 (graphout:cury->devy g y3)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_MoveTo page (flo dx1) (flo dy1))
           (HPDF_Page_LineTo page (flo dx2) (flo dy2))
@@ -323,7 +347,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (HPDF_Page_ClosePathStroke page)
         )
       )
-      ((= o GRAPH_SVG)
+      ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
                (h (table-ref g 'devymax))
                (sx1 (graphout:svgflo dx1))
@@ -345,6 +369,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
+      (else (graph:hook g o 'TRIANGLE x1 y1 x2 y2 x3 y3))
     )
   ))
 
@@ -356,8 +381,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (dy2 (graphout:cury->devy g y2))
         (dx3 (graphout:curx->devx g x3))
         (dy3 (graphout:cury->devy g y3)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_MoveTo page (flo dx1) (flo dy1))
           (HPDF_Page_LineTo page (flo dx2) (flo dy2))
@@ -366,7 +391,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (HPDF_Page_Fill page)
         )
       )
-      ((= o GRAPH_SVG)
+      ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
                (h (table-ref g 'devymax))
                (sx1 (graphout:svgflo dx1))
@@ -386,6 +411,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
+      (else (graph:hook g o 'SOLIDTRIANGLE x1 y1 x2 y2 x3 y3))
     )
   ))
 
@@ -393,14 +419,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((o (table-ref g 'output))
         (dx (graphout:curx->devx g x))
         (dy (graphout:cury->devy g y)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_Circle page (flo dx) (flo dy) (flo devradius))
           (HPDF_Page_ClosePathStroke page)
         )
       )
-      ((= o GRAPH_SVG)
+      ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
                (h (table-ref g 'devymax))
                (sx (graphout:svgflo dx))
@@ -414,6 +440,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
+      (else (graph:hook g o 'CIRCLE x y devradius))
     )
   ))
 
@@ -421,15 +448,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((o (table-ref g 'output))
         (dx (graphout:curx->devx g x))
         (dy (graphout:cury->devy g y)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_Circle page (flo dx) (flo dy) (flo devradius))
           (HPDF_Page_ClosePath page)
           (HPDF_Page_Fill page)
         )
       )
-      ((= o GRAPH_SVG)
+      ((GRAPH_SVG)
          (let* ((svg (table-ref g 'svg))
                 (h (table-ref g 'devymax))
                 (sx (graphout:svgflo dx))
@@ -442,6 +469,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
+      (else (graph:hook g o 'SOLIDCIRCLE x y devradius))
     )
   ))
 
@@ -452,14 +480,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((o (table-ref g 'output))
         (dx (graphout:curx->devx g x))
         (dy (graphout:cury->devy g y)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_Circle page (flo dx) (flo dy) (/ dw 2.0))
           (HPDF_Page_ClosePathStroke page)
         )
       )
-      ((= o GRAPH_SVG)
+      ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
                (h (table-ref g 'devymax))
                (sx (graphout:svgflo dx))
@@ -473,6 +501,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
+      (else (graph:hook g o 'MARKERCIRCLE x y dw))
     )
   ))
 
@@ -480,15 +509,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((o (table-ref g 'output))
         (dx (graphout:curx->devx g x))
         (dy (graphout:cury->devy g y)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_Circle page (flo dx) (flo dy) (/ dw 2.0))
           (HPDF_Page_ClosePath page)
           (HPDF_Page_Fill page)
         )
       )
-      ((= o GRAPH_SVG)
+      ((GRAPH_SVG)
          (let* ((svg (table-ref g 'svg))
                 (h (table-ref g 'devymax))
                 (sx (graphout:svgflo dx))
@@ -501,6 +530,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
+      (else (graph:hook g o 'MARKERCIRCLE x y dw))
     )
   ))
 
@@ -508,8 +538,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((o (table-ref g 'output))
         (dx (graphout:curx->devx g x))
         (dy (graphout:cury->devy g y)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_MoveTo page (+ dx (/ dw 2.)) (+ dy (/ dw 2.)))
           (HPDF_Page_LineTo page (+ dx (/ dw 2.)) (- dy (/ dw 2.)))
@@ -518,7 +548,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (HPDF_Page_ClosePathStroke page)
         )
       )
-      ((= o GRAPH_SVG)
+      ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
                (h (table-ref g 'devymax))
                (sx (graphout:svgflo dx))
@@ -536,6 +566,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
+      (else (graph:hook g o 'MARKERBOX x y dw))
     )
   ))
 
@@ -543,8 +574,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((o (table-ref g 'output))
         (dx (graphout:curx->devx g x))
         (dy (graphout:cury->devy g y)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_MoveTo page (+ dx (/ dw 2.)) (+ dy (/ dw 2.)))
           (HPDF_Page_LineTo page (+ dx (/ dw 2.)) (- dy (/ dw 2.)))
@@ -554,7 +585,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (HPDF_Page_Fill page)
         )
       )
-     ((= o GRAPH_SVG)
+     ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
                (h (table-ref g 'devymax))
                (sx (graphout:svgflo dx))
@@ -571,6 +602,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
+      (else (graph:hook g o 'MARKERSOLIDBOX x y dw))
     )
   ))
 
@@ -578,8 +610,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((o (table-ref g 'output))
         (dx (graphout:curx->devx g x))
         (dy (graphout:cury->devy g y)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_MoveTo page (flo dx)  (+ dy (* dw 0.667)))
           (HPDF_Page_LineTo page (+ dx (/ dw 1.7321)) (- dy (* dw 0.333)))
@@ -587,7 +619,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (HPDF_Page_ClosePathStroke page)
         )
       )
-     ((= o GRAPH_SVG)
+     ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
                (h (table-ref g 'devymax))
                (sx1 (graphout:svgflo dx))
@@ -609,6 +641,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
+      (else (graph:hook g o 'MARKERTRIANGLE x y dw))
     )
   ))
 
@@ -616,8 +649,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((o (table-ref g 'output))
         (dx (graphout:curx->devx g x))
         (dy (graphout:cury->devy g y)))
-    (cond 
-      ((= o GRAPH_PDF)
+    (case o
+      ((GRAPH_PDF)
         (let ((page (table-ref g 'hpage)))
           (HPDF_Page_MoveTo page (flo dx)  (+ dy (* dw 0.667)))
           (HPDF_Page_LineTo page (+ dx (/ dw 1.7321)) (- dy (* dw 0.333)))
@@ -626,7 +659,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (HPDF_Page_Fill page)
         )
       )
-      ((= o GRAPH_SVG)
+      ((GRAPH_SVG)
         (let* ((svg (table-ref g 'svg))
                (h (table-ref g 'devymax))
                (sx1 (graphout:svgflo dx))
@@ -646,7 +679,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list element)))
         )
       )
+      (else (graph:hook g o 'MARKERSOLIDTRIANGLE x y dw))
     )
-))
+  ))
 
 ;; eof
