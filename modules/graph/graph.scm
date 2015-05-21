@@ -63,10 +63,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "./graphout-ylinear.scm")
 (include "./graphout-ylog.scm")
 
-;; output types
-(define GRAPH_PDF 1)
-(define GRAPH_SVG 2)
-
 ;; user coordinates
 (define GRAPH_PHYS 0)
 (define GRAPH_AXIS 1)
@@ -275,15 +271,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (graph-output g type . xtra)
   (graph:log 3 "graph-output " g " " type " " xtra)
   (let ((filename (if (= (length xtra) 1) (car xtra) "graph.out")))
-  (case type
-     ((GRAPH_PDF) (graphout:pdf g filename))
-     ((GRAPH_SVG) (graphout:svg g filename))
-     (else  ;; invoke dynamic rendering
-       (table-set! g 'output type)
-       (graph:hook g type 'PRELUDE)
-       (graphout:dispatch g)
-       (graph:hook g type 'POSTLUDE)
-     ))
-  ))
+    (case type
+       ((GRAPH_PDF) (graphout:pdf g filename))
+       ((GRAPH_SVG) (graphout:svg g filename))
+       (else  ;; invoke dynamic rendering
+         (table-set! g 'output type)
+         (graph:hook g type 'PRELUDE)
+         (graphout:dispatch g)
+         (graph:hook g type 'POSTLUDE)
+       ))
+    ))
 
 ;; eof

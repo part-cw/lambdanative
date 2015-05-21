@@ -55,7 +55,7 @@
 (graph-setcoord g GRAPH_PHYS)
 (graph-htextcenter g 3. 3.2 "Example: ex-sinc.scm")
 
-(graph-output g GRAPH_PDF "ex-sinc.pdf")
-(graph-output g GRAPH_SVG "ex-sinc.svg")
+(graph-output g 'GRAPH_PDF "ex-sinc.pdf")
+(graph-output g 'GRAPH_SVG "ex-sinc.svg")
 
 ;;eof

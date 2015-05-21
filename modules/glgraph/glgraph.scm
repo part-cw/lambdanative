@@ -129,12 +129,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (loop (+ a astep)))))
   (glCoreEnd))
 
+(define (glgraph:line x1 y1 x2 y2 color width)
+  (let* ((ht (fl* 0.5 (flo width)))
+         (dx (flo (- x1 x2)))
+         (dy (flo (- y1 y2)))
+         (dr (flsqrt (fl+ (fl* dx dx) (fl* dy dy))))
+         (d1x (if (fl> dr 0.) (fl/ (fl* ht dy) dr) 0.))
+         (d1y (if (fl> dr 0.) (fl/ (fl* ht (fl- dx)) dr) 0.))
+         (d2x (fl- d1x))
+         (d2y (fl- d1y)))
+    (glCoreColor color)
+    (_glCoreTextureBind glgui:box)
+    (glCoreBegin GL_TRIANGLES)
+    (glCoreVertex2f (flo (+ x1 d1x)) (flo (+ y1 d1y)))
+    (glCoreVertex2f (flo (+ x1 d2x)) (flo (+ y1 d2y)))
+    (glCoreVertex2f (flo (+ x2 d2x)) (flo (+ y2 d2y)))
+    (glCoreVertex2f (flo (+ x2 d2x)) (flo (+ y2 d2y)))
+    (glCoreVertex2f (flo (+ x2 d1x)) (flo (+ y2 d1y)))
+    (glCoreVertex2f (flo (+ x1 d1x)) (flo (+ y1 d1y)))
+    (glCoreEnd)))
+
 ;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 (define (glgraph:hook g key . values)
   (case key
-    ((PRELUDE) #f)
-    ((POSTLUDE) #f)
+    ((PRELUDE) 
+       (glPushMatrix)
+       (glTranslatef (flo (table-ref g 'glxofs 0.)) (flo (table-ref g 'glyofs 0.)) 0.))
+    ((POSTLUDE) 
+       (glPopMatrix))
     ((DASH) #f)
     ((LINEWIDTH) 
        (table-set! g 'line-width (car values)))
@@ -163,7 +186,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                  (y2 (list-ref segm 3))
                  (color (table-ref g 'pen-color #f))
                  (line-width (table-ref g 'line-width 1.)))
-             (glgui:draw-line (flo x1) (flo y1) (flo x2) (flo y2) color line-width)
+             (glgraph:line (flo x1) (flo y1) (flo x2) (flo y2) color line-width)
              (loop (cdr segments)))))
        (table-set! g 'path '()))
     ((DEVMOVE) #f)
@@ -314,6 +337,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (glgui-graph g x y w h graph)
   (graph-register 'GRAPH_OGL glgraph:hook)
+  (table-set! graph 'glxofs x)
+  (table-set! graph 'glyofs y)
   (glgui-widget-add g
      'x x
      'y y

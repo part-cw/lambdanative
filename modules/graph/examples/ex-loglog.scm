@@ -75,7 +75,7 @@
 (graph-xlabel g "The X axis label")
 (graph-ylabel g "The Y axis label")
 
-(graph-output g GRAPH_PDF "ex-loglog.pdf")
-(graph-output g GRAPH_SVG "ex-loglog.svg")
+(graph-output g 'GRAPH_PDF "ex-loglog.pdf")
+(graph-output g 'GRAPH_SVG "ex-loglog.svg")
 
 

@@ -46,7 +46,7 @@
 (graph-lineto g -0.5 0.5)
 (graph-closepathstroke g)
 
-(graph-output g GRAPH_PDF "ex-primitives.pdf")
-(graph-output g GRAPH_SVG "ex-primitives.svg")
+(graph-output g 'GRAPH_PDF "ex-primitives.pdf")
+(graph-output g 'GRAPH_SVG "ex-primitives.svg")
 
 ;;eof
