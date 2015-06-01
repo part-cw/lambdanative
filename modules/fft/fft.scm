@@ -51,7 +51,7 @@ int fft_sign(float *data, float *data_out, int n, int sign){
   float *out = malloc(sizeof(float)*n*2);
   memcpy(in, data, sizeof(float)*n*2);
   memcpy(out, data_out, sizeof(float)*n*2);
-  ffts_execute(fft, in, out);  
+  ffts_execute(fft, in, out);
   memcpy(data_out, out, sizeof(float)*n*2);
   ffts_free(fft);
   free(in);
@@ -106,7 +106,7 @@ end-of-c-declare
                 ___arg3,___arg4);")
            infl outfl (length lst) sign)
       (let loop ((lst (f32vector->list outfl)) (ret (list)))
-        (if (null? lst) 
+        (if (null? lst)
           ret
           (loop (cddr lst) (append ret (list (+ (car lst) (* (cadr lst) +i)))))
         ))
@@ -120,7 +120,7 @@ end-of-c-declare
   (let* ((rows (length lstlst))
          (cols (length (car lstlst)))
          (infl (list->f32vector (apply append (map (lambda (c)
-                 (list (flo (real-part c)) (flo (imag-part c)))) (flatten lstlst)))))
+                 (list (flo (real-part c)) (flo (imag-part c)))) (listlist-flatten lstlst)))))
          (outfl (make-f32vector (f32vector-length infl) 0.)))
     (if ((c-lambda (scheme-object scheme-object int int int) bool
       "___result=fft2_sign(___CAST(float*,___BODY_AS(___arg1,___tSUBTYPED)),

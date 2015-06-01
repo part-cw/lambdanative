@@ -37,37 +37,37 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
 ;; list-of-list operations
-(define (listlist? obj)   
+(define (listlist? obj)
   (if (list? obj)
     (let loop ((o obj)(r #t))
       (if (= (length o) 0) r
         (loop (cdr o) (if (list? (car o)) r #f)))) #f))
 
 (define (listlist-map m ll)
- (if (listlist? ll)    
+ (if (listlist? ll)
    (let loop ((a ll)(b '()))
      (if (= (length a) 0) b
-       (loop (cdr a) (append b (list 
+       (loop (cdr a) (append b (list
          (map m (car a)))))))))
 
-(define (listlist-apply f ll) 
-  (if (listlist? ll) (apply f (flatten ll))))
+(define (listlist-apply f ll)
+  (if (listlist? ll) (apply f (listlist-flatten ll))))
 
-(define (transpose lst)
+(define (listlist-transpose lst)
   (let loop ((lst2  lst)
              (tlst '()))
     (if (null? (car lst2)) (reverse tlst)
       (loop (map cdr lst2) (cons (map car lst2) tlst)))))
 
-(define (flatten tree)
-  (cond ((null? tree) 
+(define (listlist-flatten tree)
+  (cond ((null? tree)
          '())
         ((not (pair? tree))
          (list tree))
         ((pair? (car tree))
-         (append (flatten (car tree)) (flatten (cdr tree))))
+         (append (listlist-flatten (car tree)) (listlist-flatten (cdr tree))))
         (else
-         (cons (car tree) (flatten (cdr tree))))))
+         (cons (car tree) (listlist-flatten (cdr tree))))))
 
 
 (define (listlist-add m1 m2)
@@ -92,8 +92,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (cond ((number? m1) (listlist-scale m2 m1))
          ((number? m2) (listlist-scale m1 m2))
          (else
-           (transpose (map (lambda (row) (map (lambda (col) 
-             (list-dot row col)) m1)) (transpose m2)))
+           (listlist-transpose (map (lambda (row) (map (lambda (col)
+             (list-dot row col)) m1)) (listlist-transpose m2)))
          )
   ))
 
@@ -127,13 +127,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let loopr ((row 1) (resr (list)))
     (if (fx> row (length m))
       resr
-      (loopr (fx+ row 1) 
-             (append resr 
+      (loopr (fx+ row 1)
+             (append resr
                 (let loopc ((col 1) (resc (list)))
                   (if (fx> col (length (car m)))
                     (list resc)
                     (loopc (fx+ col 1) (append resc (list
-                      (* (if (odd? row) (if (odd? col) 1 -1) (if (odd? col) -1 1)) 
+                      (* (if (odd? row) (if (odd? col) 1 -1) (if (odd? col) -1 1))
                          (listlist-determinant (listlist:deleterowcol m row col))))
                     ))
                 ))
@@ -146,12 +146,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((det (listlist-determinant m)))
     (if (= det 0) #f
       (if (fx= (length m) 2)
-        (listlist-scale (list (list (cadadr m) (* (cadar m) -1)) (list (* (caadr m) -1) (caar m)))  
+        (listlist-scale (list (list (cadadr m) (* (cadar m) -1)) (list (* (caadr m) -1) (caar m)))
                         (/ 1 det))
-        (listlist-scale (transpose (listlist-cofactor m)) (/ 1 det))
+        (listlist-scale (listlist-transpose (listlist-cofactor m)) (/ 1 det))
       )
     )
   ))
+
+(define (listlist-ref m row col)
+  (list-ref (list-ref m row) col)
+)
+
+(define (listlist-set! m row col val)
+  (let ((r (list-ref m row)))
+    (list-set! r col val)
+    (list-set! m row r)
+    m
+  )
+)
 
 ;;
 ;; unit tests for List of List (matrix) functions
@@ -208,10 +220,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (equal? (listlist-inverse '((4 7) (2 6))) '((3/5 -7/10) (-1/5 2/5)))
     (equal? (listlist-inverse '((1 3 3) (1 4 3) (1 3 4)))
             '((7 -3 -3) (-1 1 0) (-1 0 1)))
-    (equal? (listlist-inverse '((3 0 2) (2 0 -2) (0 1 1))) 
+    (equal? (listlist-inverse '((3 0 2) (2 0 -2) (0 1 1)))
             '((1/5 1/5 0) (-1/5 3/10 1) (1/5 -3/10 0)))
     (equal? (listlist-inverse '((1 2 0 0) (0 0 3 0) (4 0 5 1) (0 5 0 0)))
             '((1 0 0 -2/5) (0 0 0 1/5) (0 1/3 0 0) (-4 -5/3 1 8/5)))
     (equal? (listlist-inverse '((1 1) (1 1))) #f)
+  )))
+(unit-test "listlist-ref" "Matrix value lookup"
+  (lambda () (and
+    (equal? (listlist-ref '((4 7) (2 6)) 0 0) 4)
+    (equal? (listlist-ref '((4 7) (2 6)) 1 1) 6)
+    (equal? (listlist-ref '((1 2 3)) 0 1) 2)
+    (equal? (listlist-ref '((1 2 3) (4 5 6) (7 8 9)) 0 2) 3)
+    (equal? (listlist-ref '((1 2 3) (4 5 6) (7 8 9)) 2 0) 7)
+  )))
+(unit-test "listlist-set!" "Matrix value setting"
+  (lambda () (and
+    (equal? (let ((m '((1 2) (3 4)))) (listlist-set! m 0 0 5)) '((5 2) (3 4)))
+    (equal? (let ((m '((1 2) (3 4)))) (listlist-set! m 1 0 5)) '((1 2) (5 4)))
+    (equal? (let ((m '((1 2 3) (4 5 6) (7 8 9)))) (listlist-set! m 1 1 55))
+            '((1 2 3) (4 55 6) (7 8 9)))
   )))
 ;;eof
