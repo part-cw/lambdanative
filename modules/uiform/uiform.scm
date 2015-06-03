@@ -360,13 +360,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; text entry
 
 (define (glgui:uiform-textentry-draw x y w . args)
-  (let* ((h 48) 
+  (let* ((h (uiget 'rowh))
          (fnt (uiget 'fnt))
          (label (glgui:uiform-arg args 'text ""))
          (id (glgui:uiform-arg args 'id #f))
          (loc (glgui:uiform-arg args 'location 'db))
          (password  (glgui:uiform-arg args 'password #f))
          (default (glgui:uiform-arg args 'default #f))
+         (units (glgui:uiform-arg args 'units #f))
          (focusid  (uiget 'focusid))
          (hasfocus (eq? focusid id))
          (idvalue (if id (xxget loc id #f) #f))
@@ -395,6 +396,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (glgui:draw-text-right x y (- (* w indent) 10) h label fnt White)
        (glgui:draw-box (+ x (* w indent)) y (* w (- 1. indent indentright)) h (if hasfocus selcolor defcolor))
        (if idvaluestr (drawproc (+ x (* w indent) (if (eq? align 'left) 10 0)) y (- (* w (- 1. indent indentright)) 10) h idvaluestr fnt fgcolor))
+       (if (and (string? units) (string? idvalue)) (glgui:draw-text-left (+ x (* w (- 1. indentright))) y (* w indentright) h (string-append " " units) fnt fgcolor))
        (if hasfocus
           (let* ((cx (case align
                        ((left) (+ x (* w indent) 10 txtw 2))
@@ -448,7 +450,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; time entry
 
 (define (glgui:uiform-timeentry-draw x y w . args)
-  (let* ((h 48)
+  (let* ((h (uiget 'rowh))
          (fnt (uiget 'fnt))
          (label (glgui:uiform-arg args 'text ""))
          (id (glgui:uiform-arg args 'id #f))
@@ -711,7 +713,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; radio box
 
 (define (glgui:uiform-radio-draw x y w . args)
-  (let* ((h 48) 
+  (let* ((h (uiget 'rowh))
          (fnt (uiget 'fnt))
          (id (glgui:uiform-arg args 'id #f))
          (loc (glgui:uiform-arg args 'location 'db))
@@ -821,7 +823,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; drop down
 
 (define (glgui:uiform-dropdown-draw x y w . args)
-  (let* ((h 48)
+  (let* ((h (uiget 'rowh))
          (hh (/ h 2))
          (limitw (* w 0.6))
          (id (glgui:uiform-arg args 'id #f))
@@ -911,7 +913,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; list
 
 (define (glgui:uiform-list-draw x y w . args)
-  (let* ((h 48)
+  (let* ((h (uiget 'rowh))
          (id (glgui:uiform-arg args 'id #f))
          (loc (glgui:uiform-arg args 'location 'db))
          (fnt (uiget 'fnt))
@@ -951,7 +953,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; checklist
 
 (define (glgui:uiform-checklist-draw x y w . args)
-  (let* ((h 48)
+  (let* ((h (uiget 'rowh))
          (id (glgui:uiform-arg args 'id #f))
          (idmerged (string-append (if (string? id) id (symbol->string id)) ":merged"))
          (loc (glgui:uiform-arg args 'location 'db))
@@ -975,7 +977,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              (glgui:draw-box (+ x (* w 0.1)) (+ y dy 1) (* w 0.8) (- h 2) boxcolor)
              (glgui:draw-box bx by bw bh boxcolor)
              (if (car ss) (glgui:draw-pixmap-center bx by bw bh check.img White))
-             (glgui:draw-text-center x (+ y dy) w h (car es) fnt White)))
+             (glgui:draw-text-center (+ bx bw) (+ y dy) (- (* w 0.8) bw) h (car es) fnt White)))
          (loop (cdr es)(cdr ss)(+ dy h)))))
   ))
 
@@ -1073,7 +1075,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (glgui:draw-text-center x ypos w fnth (car ss) fnt White)  ;; XX
         (loop (cdr ss) (+ ypos fnth)))))
     (let ((bw (* 0.2 w))
-          (bh 48)
+          (bh (uiget 'rowh))
           (bx1 (if button2str (+ x (* 0.2 w)) (+ x (* 0.4 w))))
           (bx2 (+ x (* 0.6 w)))
           (by (+ y (* 0.5 (- h modal-height)) (* 0.1 modal-height))))
@@ -1096,7 +1098,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (button2action (if (= (length content) 3) (cadr (caddr content)) #f))
          (modal-height (uiget 'modal-height))
          (bw (* 0.2 w))
-         (bh 48)
+         (bh (uiget 'rowh))
          (bx1 (if (= (length content) 3) (+ x (* 0.2 w)) (+ x (* 0.4 w))))
          (bx2 (+ x (* 0.6 w)))
          (by (+ y (* 0.5 (- h modal-height)) (* 0.1 modal-height))))
@@ -1145,18 +1147,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
    (glgui:draw-box x (+ y h (- header-height)) w header-height (uiget 'color-header))
 
-   (if (and title fnt)
-     (let* ((titlex (fix (+ x (* 0.25 w))))
-            (titlew (fix (* 0.5 w)))
-            (wrappedtitle (string-split-width title titlew hfnt))
-            (titleh (glgui:fontheight hfnt))
-            (titley (+ y h (- header-height) (/ (- header-height (* titleh (length wrappedtitle))) 2))))
-        (let loop ((titles (reverse wrappedtitle)))
-          (if (> (length titles) 0)
-            (begin
-              (glgui:draw-text-center titlex titley titlew titleh (car titles) hfnt White)
-              (set! titley (+ titley titleh))
-              (loop (cdr titles)))))))
+    (if title
+      (cond
+       ;; If title is an image and not a string
+       ((not (string? title))
+         ;; Display image
+         (let* ((sandbox (uiget 'sandbox #f))
+                (imgfile (string-append sandbox (system-pathseparator) (symbol->string title)))
+                (img (png->img imgfile))
+                (titleh (cadr img))
+                (titley (+ y h (- header-height) (/ (- header-height titleh) 2))))
+             (glgui:draw-pixmap-center x titley w titleh img White)))
+       (fnt
+         (let* ((titlex (fix (+ x (* 0.25 w))))
+                (titlew (fix (* 0.5 w)))
+                (wrappedtitle (string-split-width title titlew hfnt))
+                (titleh (glgui:fontheight hfnt))
+                (titley (+ y h (- header-height) (/ (- header-height (* titleh (length wrappedtitle))) 2))))
+            (let loop ((titles (reverse wrappedtitle)))
+              (if (> (length titles) 0)
+                (begin
+                  (glgui:draw-text-center titlex titley titlew titleh (car titles) hfnt White)
+                  (set! titley (+ titley titleh))
+                  (loop (cdr titles)))))))))
 
    ;; Date and time on all but the first page
    (if (not (eq? (uiget 'page) 'main))
@@ -1354,6 +1367,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'bordercolor #f
      'contenth 0.
      'headerh 128.
+     'rowh 48
      'nodemap '()
      'page 'main
      'keypad-height 350
