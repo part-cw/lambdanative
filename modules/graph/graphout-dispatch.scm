@@ -84,10 +84,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           ((eq? cmdname '@ylabel) (apply graphout:ylabel (append (list g) cmdargs)))
           ((eq? cmdname '@ylinear) (apply graphout:ylinear (append (list g) cmdargs)))
           ((eq? cmdname '@ylog) (apply graphout:ylog (append (list g) cmdargs)))
+          ((eq? cmdname '@newpage) (apply graphout:newpage (append (list g) cmdargs)))
           (else  (log-error (car cmd) " is not implemented\n")
         ))
     ))) (vector->list (table-ref g 'commands))
   ))
+
+;; newpage for multi-page pdf output
+
+(define (graphout:newpage g)
+  (graph:log 3 "graphout:newpage " g)
+  (let ((o (table-ref g 'output)))
+    (case o
+      ((GRAPH_PDF)
+         (let* ((pdf (table-ref g 'hpdf))
+                (w (table-ref g 'devxmax))
+                (h (table-ref g 'devymax))
+                (fnt (table-ref g 'hfont #f))
+                (fntsize (table-ref g 'hfontsize #f))
+                (page (HPDF_AddPage pdf)))
+           (HPDF_Page_SetWidth page (flo w))
+           (HPDF_Page_SetHeight page (flo h))
+           (if (and fnt fntsize) 
+             (HPDF_Page_SetFontAndSize page fnt (flo fntsize)))
+           (table-set! g 'hpage page)
+        ))
+    )))
 
 ;; output pdf graph
 (define (graphout:pdf g filename)

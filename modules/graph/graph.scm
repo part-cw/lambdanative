@@ -223,7 +223,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (graph-solidbox g x1 y1 x2 y2)		(graph:cmd g '@solidbox x1 y1 x2 y2))
 (define (graph-triangle g x1 y1 x2 y2 x3 y3)    (graph:cmd g '@triangle x1 y2 x2 y2 x3 y3))
 (define (graph-solidtriangle g x1 y1 x2 y2 x3 y3)    (graph:cmd g '@solidtriangle x1 y2 x2 y2 x3 y3))
-
+(define (graph-newpage g)			(graph:cmd g '@newpage))
 
 ;; %%%%%%%%%%%%%%%%%%%% MISC OUTPUT GENERATION
 ;; ------ code that only does parameter setup (device agnostic)...
