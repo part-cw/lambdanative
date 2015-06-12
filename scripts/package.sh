@@ -3,6 +3,19 @@
 
 tmp_install=$SYS_TMPDIR/tmp_install
 
+package_from_source()
+{
+  pkg_here=`pwd`
+  if [ -d $tmp_install ]; then
+    rm -rf $tmp_install
+  fi
+  mkdir $tmp_install
+  for files in $@; do
+    cp $files $tmp_install
+  done
+  cd $tmp_install
+}
+
 package_valid()
 {
   pkg_valid_file="$1"
