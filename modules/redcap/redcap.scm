@@ -599,6 +599,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
 )
 
+(define (redcap-get-filename header)
+         ;; Get index of name=" which occurs before file name in the header
+  (let* ((nameindex1 (string-contains header "name=\""))
+         ;; Get part of header string after the above string
+         (subheader (substring header (+ nameindex1 6) (string-length header)))
+         ;; Get index of next quotation marks
+         (nameindex2 (if nameindex1 (string-contains subheader "\"") #f)))
+      ;; Return the name of the file
+      (if (and nameindex1 nameindex2)
+        (substring subheader 0 nameindex2)
+        #f))
+)
+
 (define (redcap:arg k args def)
   (let loop ((as args))
     (if (fx= (length as) 0)
