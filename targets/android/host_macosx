@@ -1,6 +1,6 @@
 #!/bin/sh
 # LambdaNative - a cross-platform Scheme framework
-# Copyright (c) 2009-2013, University of British Columbia
+# Copyright (c) 2009-2015, University of British Columbia
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or
@@ -39,30 +39,48 @@ if [ "X$ANDROIDARCH" = "X" ]; then
   ANDROIDARCH=arm
 fi
 
-TOOLCHAIN=`wildcard_dir $ANDROIDNDK/toolchains/${ANDROIDARCH}*-4.8/prebuilt/*-x86 2> /dev/null`
-if [ "X$TOOLCHAIN" = "X" ]; then
-  TOOLCHAIN=`wildcard_dir $ANDROIDNDK/toolchains/${ANDROIDARCH}*-4.8/prebuilt/*-x86_64 2> /dev/null`
+# search for a working API
+android_apichanged=
+while [ ${ANDROIDAPI} -ge 3 ]; do
+  android_APIdir=`echo $ANDROIDNDK/platforms/android-${ANDROIDAPI}/arch-${ANDROIDARCH}`
+  if [ -d "$android_APIdir" ] ; then
+    break
+  fi
+  ANDROIDAPI=`expr ${ANDROIDAPI} - 1`
+  android_apichanged="** WARNING Android API changed to $ANDROIDAPI"
+done
+assertfile "$android_APIdir"
+if [ ! "X$android_apichanged" = "X" ]; then
+  echo "$android_apichanged"
 fi
-assertfile "$TOOLCHAIN"
-SYSROOT=`echo $ANDROIDNDK/platforms/android-${ANDROIDAPI}/arch-${ANDROIDARCH}`
-if [ ! -d "$SYSROOT" ]; then
-  API=${ANDROIDAPI}
-  while [ $API -ge 3 ]; do
-    SYSROOT=`echo $ANDROIDNDK/platforms/android-${API}/arch-${ANDROIDARCH}`
-    if [ -d "$SYSROOT" ] ; then
-      break
-    fi
-    API=`expr $API - 1`
-  done
-fi
-assertfile "$SYSROOT"
 
-CROSS=`ls -1 $TOOLCHAIN/bin/*-gcc | sed 's/gcc$//'`
-# the linker gunk is just to fool gambit's configure into thinking the gcc can make binaries
-SYS_CC=$CROSS"gcc $SYS_DEBUGFLAG -DANDROID -isysroot $SYSROOT -fno-short-enums -nostdlib -I$SYSROOT/usr/include -L$SYSROOT/usr/lib -lstdc++ -lc -ldl -lgcc"
-SYS_AR=$CROSS"ar"
-SYS_RANLIB=$CROSS"ranlib"
-SYS_STRIP=$CROSS"strip"
+android_chainpath=`ls -1d $ANDROIDNDK/toolchains/${ANDROIDARCH}*-4.8 | head -n 1`
+android_chain=`basename "$android_chainpath"`
+android_ndkver=`basename "$ANDROIDNDK"`
+android_customtoolchain=${SYS_PREFIX}/${android_ndkver}-${ANDROIDARCH}-${ANDROIDAPI}-toolchain
+if [ ! -d $android_customtoolchain ]; then
+  $ANDROIDNDK/build/tools/make-standalone-toolchain.sh \
+     --toolchain=${android_chain} \
+     --platform=android-${ANDROIDAPI} \
+     --install-dir=$android_customtoolchain \
+     --ndk-dir=${ANDROIDNDK}
+fi
+assertfile $android_customtoolchain
+android_sysroot="$android_customtoolchain/sysroot"
+android_cross=`ls -1 $android_customtoolchain/bin/*-gcc | sed 's/gcc$//'`
+
+SYS_CC=$android_cross"gcc $SYS_DEBUGFLAG -DANDROID -isysroot $android_sysroot"
+SYS_CPP=$android_cross"cpp"
+SYS_AR=$android_cross"ar"
+SYS_AS=$android_cross"as"
+SYS_NM=$android_cross"nm"
+SYS_LD=$android_cross"ld"
+SYS_RANLIB=$android_cross"ranlib"
+SYS_STRIP=$android_cross"strip"
+SYS_OBJCOPY=$android_cross"objcopy"
+SYS_OBJDUMP=$android_cross"objdump"
+SYS_READELF=$android_cross"readelf"
+SYS_GPROF=$android_cross"gprof"
 SYS_WINDRES=
 SYS_EXEFIX=
 SYS_APPFIX=
