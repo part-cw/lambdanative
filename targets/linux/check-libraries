@@ -45,11 +45,14 @@ fi
 rmifexists $SYS_TMPDIR/gltest
 rmifexists $SYS_TMPDIR/gltest.c
 
+has_audio=`echo "$modules" | tr ' ' '' | grep "audio" | head -n 1`
+if [ ! "X"$has_audio = "X" ]; then
 vecho " => checking for sane ALSA setup.."
 echo "#include <alsa/asoundlib.h>" > $SYS_TMPDIR/alsatest.c
 echo "int main() { snd_pcm_hw_params_t *hwparams; snd_pcm_hw_params_alloca(&hwparams); }" >> $SYS_TMPDIR/alsatest.c
 gcc -Werror -o $SYS_TMPDIR/alsatest $SYS_TMPDIR/alsatest.c -lasound
 asserterror $? "ALSA headers are missing?"
+fi
 rmifexists $SYS_TMPDIR/alsatest
 rmifexists $SYS_TMPDIR/alsatest.c
 
