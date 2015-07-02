@@ -89,7 +89,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; Helper function to parse REDCAP JSON format [much easier than XML parsing]
 (define (redcap:jsonstr->list str)
   (if (or (list? str) (fx< (string-length str) 3) (not (string-contains str "[{")) (not (string-contains str "}]")))
-    (list)
+    ;; Determine whether content just empty or whether it was improperly formatted (possibly incomplete)
+    (if (and (string? str) (fx>= (string-length str) 3)) #f (list))
     (map (lambda (li) (if (fx> (length li) 0)
                         ;; THIRD, go through each field and recombine values that have commas in them
                         ;; while splitting between the field name and value, handling possible colons in the value
@@ -170,7 +171,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    (if (and (string? (car msg)) (fx> (string-length (car msg)) 12) (or (string=? (substring (car msg) 9 12) "201")
                                                                        (string=? (substring (car msg) 9 12) "200")))
      #t
-     (begin (log-error "REDCap:" (cadr msg)) #f))
+     (let ((ret (cadr msg)))
+       (log-error "REDCap:" (if (and (list? ret) (fx= (length ret) 0)) " Nothing returned" (cadr msg))) #f))
 )
 
 (define (redcap-export-metadata host token . xargs)
@@ -195,7 +197,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (let ((output (cadr (redcap:split-headerbody (redcap:data->string)))))
                  (if (string=? format "json")
                    ;; If format is json, turn into a list, otherwise just return output
-                   (redcap:jsonstr->list output)
+                   (let ((datalist (redcap:jsonstr->list output)))
+                     (cond
+                       ((not (list? datalist))
+                         ;; If no list returned, json not properly formatted
+                         (log-error "REDCap error: Incomplete json")
+                         #f)
+                       ((and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
+                         ;; If the first entry is an error, then log it and return false
+                         (log-error "REDCap error: " (cdaar datalist))
+                          #f)
+                       (else datalist)))
                    output))
             ) (begin
              (if (and n (> n 0))
@@ -383,7 +395,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                   (let ((output (cadr msg)))
                     (if (string=? format "json")
                       ;; If format is json, turn into a list, otherwise just return output
-                      (if (string? output) (redcap:jsonstr->list output) #f)
+                      (if (string? output)
+                        ;; If format is json, turn into a list, otherwise just return output
+                        (let ((datalist (redcap:jsonstr->list output)))
+                          (cond
+                            ((not (list? datalist))
+                              ;; If no list returned, json not properly formatted
+                              (log-error "REDCap error: Incomplete json")
+                              #f)
+                            ((and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
+                              ;; If the first entry is an error, then log it and return false
+                              (log-error "REDCap error: " (cdaar datalist))
+                              #f)
+                            (else datalist)))
+                        #f)
                       output))
                   #f))
             ) (begin
@@ -425,14 +450,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (let ((msg (redcap:split-headerbody (redcap:data->string))))
                 (if (redcap:error-check msg)
                   (let ((datalist (redcap:jsonstr->list (cadr msg))))
-                    (if (and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
-                      ;; If the first entry is an error, then log it and return false
-                      (begin
+                    (cond
+                      ((not (list? datalist))
+                         ;; If no list returned, json not properly formatted
+                         (log-error "REDCap error: Incomplete json")
+                         #f)
+                      ((and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
+                        ;; If the first entry is an error, then log it and return false
                         (log-error "REDCap error: " (cdaar datalist))
                         #f)
-                      (maps (lambda (l)
-                              (cdr (car l)))
-                            datalist)))
+                      (else
+                         (maps (lambda (l)
+                                 (cdr (car l)))
+                               datalist))))
                   #f)))
             (begin
               (if (and n (> n 0))
