@@ -51,6 +51,14 @@ if [ $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
   cd "$here"
   echo "==> Starting application.."
   eval "$exefile"
+else
+  has_wine=`which wine`
+  if [ ! "X$has_wine" = "X" ]; then
+    echo "==> Starting application.."
+    wine $SYS_PREFIX/$SYS_APPNAME/$SYS_APPNAME$SYS_EXEFIX
+  fi
 fi
+
+
 
 #eof
