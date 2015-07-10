@@ -35,11 +35,21 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# make_debug=yes
+
+dmsg_make() 
+{
+  if [ ! "X$scm_debug" = X ]; then
+    echo "MAKE_DEBUG: $@"
+  fi
+}
+
 # application building, packaging and installation
 
 . ./scripts/tmpdir.sh
 . ./scripts/assert.sh
 . ./scripts/locate.sh
+. ./scripts/compile.sh
 
 . $SYS_TMPDIR/config.cache
 
@@ -161,7 +171,7 @@ newersourceindir()
   tgt="$2"
   dir=`dirname $1`
   srcfiles=
-  for l in $language_extensions; do
+  for l in $languages; do
     srcfiles="$srcfiles "`ls -1 $dir/*.$l 2> /dev/null` 
   done
   for src in $srcfiles; do
@@ -248,6 +258,9 @@ is_gui_app()
   res=`has_module ln_glcore`
   if [ "$res" = "no" ]; then
     res=`has_module glcore`
+    if [ "$res" = "no" ]; then
+      res=`has_module webview`
+    fi
   fi
   echo "$res"
 }
@@ -311,178 +324,45 @@ filter_entries()
 ###########################
 # general compiler functions
 
-. ./scripts/compile.sh
-
-GAMBIT_DEFS="-D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
-
 compile_payload()
 {
-  name=$1
-  srcs="$2"
-  csrcs=
-  libs="$3"
-  objs=
-#  defs="-D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
-  defs="$GAMBIT_DEFS"
-  if [ `is_standalone_app` = "yes" ]; then
-     defs="$defs -DSTANDALONE"
-  fi
-  echo "==> creating payload needed for $SYS_APPNAME.."
-  mkdir -p "$SYS_PREFIX/build"
-  dirty=no
-  for src in $srcs; do
-    sext=`compile_supported_language $src`
-    if [ "X$sext" = "X" ]; then
-       assert "$src is not in a supported language"
-    fi
-    chsh=`stringhash "$src"`
-    ctgt="$SYS_PREFIX/build/$chsh.c"
-    if [ `gambit_link_stage $sext` = yes ]; then
-      csrcs="$csrcs $ctgt"
-    fi
-    otgt=`echo "$ctgt" | sed 's/c$/o/'`
-    objs="$objs $otgt"
-    flag=no
-    if [ ! "X"`echo "$src" | grep "modules/config/config.scm"` = "X" ]; then
-       # force rebuilding of the config module, needed to include build info
-       flag=yes
-    fi
-    if [ ! -f "$otgt" ]; then
-      flag=yes
-    else 
-      topdir=`dirname $src`
-      topdir=`basename $topdir`
-      if [ "X$topdir" = "Xtextures" ] || [ "X$topdir" = "Xstrings" ] || [ "X$topdir" = "Xfonts" ]; then
-        if [ `isnewer "$src" "$otgt"` = "yes" ]; then
-          flag=yes
-        fi
-      else
-        if [ `newersourceindir "$src" "$otgt"` = "yes" ]; then
-          flag=yes
-        fi
-      fi
-    fi
-    if [ $flag = yes ]; then
-      dirty=yes
-      compile_$sext "$src" "$ctgt" "$otgt" "$defs"
-    fi
+  dmsg_make "entering compile_payload [$@]"
+  payload_cdefs=
+  payload_objs=
+  payload_libs="$libraries"
+  #--------
+  # step 1: compile and assemble the payload objs
+  for lng in $languages; do
+    dmsg_make "running compile_payload_${lng}.."
+    compile_payload_$lng
   done
-  lctgt=`echo "$ctgt" | sed 's/\.c$/\_\.c/'`
-  lotgt=`echo "$lctgt" | sed 's/c$/o/'`
-  if [ ! -f "$lotgt" ]; then
-    dirty=yes
-  fi
-  if [ $dirty = yes ]; then
-    echo " => creating gsc link.."
-    vecho "$SYS_GSC -link $csrcs"
-    $SYS_GSC -link $csrcs 
-    assertfile $lctgt
-    veval "$SYS_ENV $SYS_CC $defs -o $lotgt -c $lctgt -I$SYS_PREFIX/include"
-    assertfile $lotgt
-  fi
-  objs="$objs $lotgt"
+  #--------
+  # generate the hook
+  echo " => generating hook.."
   hookhash=`stringhash "apps/$SYS_APPNAME/hook.c"`
   hctgt="$SYS_PREFIX/build/$hookhash.c"
   hotgt=`echo "$hctgt" | sed 's/c$/o/'`
-  if [ ! -f "$hotgt" ]; then
-    dirty=yes
-  fi
-  if [ $dirty = yes ]; then
-    echo " => generating hook.."
-    linker=`echo $chsh"__"`
-cat > $hctgt  << _EOF
-// automatically generated. Do not edit.
-#include <stdlib.h>
-#include <LNCONFIG.h>
-#define ___VERSION 407003
-#include <gambit.h>
-#define LINKER ____20_$linker
-___BEGIN_C_LINKAGE
-extern ___mod_or_lnk LINKER (___global_state_struct*);
-___END_C_LINKAGE
-___setup_params_struct setup_params;
-int debug_settings = ___DEBUG_SETTINGS_INITIAL;
-#ifdef STANDALONE
-char **cmd_argv;
-int cmd_argc=0;
-int main(int argc, char *argv[])
-{
-  cmd_argc=argc; cmd_argv=argv;
-  ___setup_params_reset (&setup_params);
-  setup_params.version = ___VERSION;
-  setup_params.linker = LINKER;
-  debug_settings = (debug_settings & ~___DEBUG_SETTINGS_REPL_MASK) | 
-  (___DEBUG_SETTINGS_REPL_STDIO << ___DEBUG_SETTINGS_REPL_SHIFT);
-  setup_params.debug_settings = debug_settings;
-  ___setup(&setup_params);
-  ___cleanup();
-  return 0;
-}
-#else 
-#include <stdio.h>
-#if defined(ANDROID) || defined(MACOSX) || defined(IOS) || defined(LINUX) || defined(OPENBSD) || defined(BB10) || defined(PLAYBOOK) || defined(NETBSD)
-  #include <pthread.h>
-  pthread_mutex_t ffi_event_lock;
-  #define FFI_EVENT_INIT  pthread_mutex_init(&ffi_event_lock, 0);
-  #define FFI_EVENT_LOCK  pthread_mutex_lock( &ffi_event_lock); 
-  #define FFI_EVENT_UNLOCK  pthread_mutex_unlock( &ffi_event_lock); 
-#else
-  #ifdef WIN32
-    #include <windows.h>
-    CRITICAL_SECTION ffi_event_cs;
-    #define FFI_EVENT_INIT  InitializeCriticalSection(&ffi_event_cs);
-    #define FFI_EVENT_LOCK  EnterCriticalSection(&ffi_event_cs);
-    #define FFI_EVENT_UNLOCK LeaveCriticalSection( &ffi_event_cs);
-  #else
-    static int ffi_event_lock;
-    #define FFI_EVENT_INIT ffi_event_lock=0;
-    #define FFI_EVENT_LOCK { while (ffi_event_lock) { }; ffi_event_lock=1; }
-    #define FFI_EVENT_UNLOCK  ffi_event_lock=0; 
-  #endif
-#endif
-void ffi_event(int t, int x, int y)
-{
-  static int gambitneedsinit=1;
-  if (gambitneedsinit) { 
-      ___setup_params_reset (&setup_params);
-      setup_params.version = ___VERSION;
-      setup_params.linker = LINKER;
-      debug_settings = (debug_settings & ~___DEBUG_SETTINGS_REPL_MASK) | 
-        (___DEBUG_SETTINGS_REPL_STDIO << ___DEBUG_SETTINGS_REPL_SHIFT);
-      setup_params.debug_settings = debug_settings;
-      ___setup(&setup_params);
-      #if defined(ANDROID)
-        ___disable_heartbeat_interrupts(); 
-      #endif
-      FFI_EVENT_INIT
-      gambitneedsinit=0;
-  }
-  FFI_EVENT_LOCK
-  if (!gambitneedsinit&&t) scm_event(t,x,y);
-  if (t==EVENT_TERMINATE) { ___cleanup(); exit(0); }
-  FFI_EVENT_UNLOCK
-}
-#endif
-_EOF
-    veval "$SYS_ENV $SYS_CC $defs -c -o $hotgt $hctgt -I$SYS_PREFIX/include"
-    assertfile $hotgt
-  fi
-  objs="$objs $hotgt"
-  for lib in $libs; do
-   objs=`ls -1 $SYS_PREFIX/build/$lib/*.o`" $objs"
+  cp loaders/hook/hook.c "$hctgt"
+  veval "$SYS_ENV $SYS_CC $payload_cdefs $languages_def -c -o $hotgt $hctgt -I$SYS_PREFIX/include"
+  assertfile $hotgt
+  payload_objs="$payload_objs $hotgt"
+  #--------
+  # add the library objects
+  for payload_lib in $payload_libs; do
+    payload_objs="$SYS_PREFIX/build/$payload_lib/*.o $payload_objs"
   done
+  #--------
+  # generate the final payload
   tgtlib="$SYS_PREFIX/lib/libpayload.a"
   echo " => assembling payload.."
-  sobjs=
-  for obj in $objs; do
-    sobjs="$sobjs $obj"
-  done
   rmifexists "$tgtlib"
-  vecho "$SYS_AR rc $tgtlib $sobjs"
-  $SYS_AR rc $tgtlib $sobjs  2> /dev/null
+  vecho "$SYS_AR rc $tgtlib $payload_objs"
+  $SYS_AR rc $tgtlib $payload_objs  2> /dev/null
   vecho "$SYS_RANLIB $tgtlib"
   $SYS_RANLIB $tgtlib 2> /dev/null
   assertfile "$tgtlib"
+  dmsg_make "payload : $tgtlib"
+  dmsg_make "leaving compile_payload"
 }
 
 ##################################
@@ -490,6 +370,7 @@ _EOF
 
 explode_library()
 {
+  dmsg_make "entering explode_library [$@]"
   libname=$1
   libfile="$SYS_PREFIX/lib/$libname.a"
   libdir="$SYS_PREFIX/build/$libname"
@@ -503,6 +384,7 @@ explode_library()
     $SYS_AR -x $libfile
     cd "$here"
   fi
+  dmsg_make "leaving explode_library"
 }
 
 ###################################
@@ -971,6 +853,7 @@ make_setup()
   ac_subst SYS_RANLIB
   ac_subst SYS_STRIP
   ac_subst SYS_WINDRES
+  ac_subst SYS_NM
   ac_subst SYS_EXEFIX
   ac_subst SYS_APPFIX
   ac_subst SYS_APPVERSION
@@ -1020,6 +903,13 @@ make_setup()
     fi
   done 
   libraries=`filter_entries $SYS_PLATFORM $libraries`
+#  compile_scandir $appsrcdir 
+#  for m in $modules; do
+#    compile_scandir `locatedir modules/$m`
+#  done
+#  for p in $plugins; do
+#    compile_scandir `locatedir modules/$m`
+#  done 
   tool_libraries=
   if [ "$SYS_HOSTPLATFORM" = "$SYS_PLATFORM" ]; then
     tool_libraries="libgd libgambc"
@@ -1052,39 +942,8 @@ make_loader()
 make_payload()
 {
   setstate PAYLOAD
-  coremodules=" syntax-case config eventloop ln_core ln_glcore "
-  coresrcs=
-  auxsrcs=
-  for m in $modules; do
-    if [ $m = "syntax-case" ]; then
-      modsrc="$SYS_HOSTPREFIX/lib/syntax-case.scm"
-    else
-      modsrc=
-      for l in $language_extensions; do
-        modsrc="$modsrc `locatefile modules/$m/$m.$l silent`"
-      done
-    fi
-    if [ `string_contains "$coremodules" " $m "` = yes ]; then
-      coresrcs="$coresrcs $modsrc"
-    else
-      auxsrcs="$auxsrcs $modsrc"
-    fi
-  done
-  for p in $plugins; do
-    plugsrc=
-    for l in $language_extensions; do
-      plugsrc="$plugsrc `locatefile plugins/$p/$p.$l silent`"
-    done
-    auxsrcs="$auxsrcs $plugsrc"
-  done
-#  mainsrc=
-#  for l in $language_extensions; do
-#    mainsrc="$mainsrc `locatefile $appsrcdir/main.$l silent`"
-#  done
-  # note: textures, fonts and strings can't go before glcore!
-#  srcs="$coresrcs $texture_srcs $font_srcs $string_srcs $auxsrcs $mainsrc"
-  srcs="$coresrcs $texture_srcs $font_srcs $string_srcs $auxsrcs $appsrcdir/main.scm"
-  compile_payload $name "$srcs" "$libraries"
+  compile_init
+  compile_payload
   setstate
 }
 
@@ -1190,7 +1049,7 @@ make_library()
     dlibs=`cat $libdir/LIB_DEPENDS`
     filtered_dlibs=`filter_entries $SYS_PLATFORM $dlibs` 
     for dlib in $filtered_dlibs; do
-      make_library $dlib "(depedency)"
+      make_library $dlib "(dependency)"
     done
   fi
   libname=$1

@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2015, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -35,159 +35,15 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
+
 ;; init.scm
 ;; this is the glue between the native launcher and the portable code
 
 (c-declare  #<<end-of-c-declare
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "LNCONFIG.h"
 
-#if defined(MACOSX) || defined(IOS)
-#include <CoreFoundation/CoreFoundation.h>
-#endif
-
-#ifndef USECONSOLE
-
-#if  defined(IOS)
-extern char* iphone_directory;
-#endif
-
-#endif // !USECONSOLE
-
-#ifdef USECONSOLE
-extern 
-#endif
-char **cmd_argv;
-
-#ifdef USECONSOLE
-extern 
-#endif
-int cmd_argc;
-
-static char *sys_appdir=0;
-static char *sys_dir=0;
-
-static void find_directories()
-{
-#if defined(LINUX)
-  char buf[1024];
-  int len=readlink("/proc/self/exe", buf, 1024);
-  if (len>0) {
-    int i;
-    for (i=len-1;i>0;i--){
-      if (buf[i]=='/') {
-        buf[i]='\0';
-        break;
-      }
-    }
-    sys_appdir=strdup(buf);
-    sys_dir=strdup(buf);
-  }
-#endif
-#if defined(WIN32)
-  char buf[1024];
-  int len=GetModuleFileName(NULL,buf,1024);
-  if (len>0) {
-    int i;
-    for (i=len-1;i>0;i--){
-      if (buf[i]=='\\'){
-        buf[i]='\0';
-        break;
-      }
-    }
-    sys_appdir=strdup(buf);
-    sys_dir=strdup(buf);
-  }
-#endif
-#if defined(OPENBSD) || defined(NETBSD)
-  char buf[PATH_MAX];
-  if (realpath(cmd_argv[0],buf)) {
-    int i = strlen(buf)-1;
-    while (i>0&&buf[i]!='/') {i--;}
-    if (i>0) buf[i]=0;
-    // check if directory exists?
-    sys_appdir=strdup(buf);
-    sys_dir=strdup(buf);
-  }
-#endif
-#if defined(IOS) || defined(MACOSX)
-  char path[1024];
-  CFBundleRef mainBundle = CFBundleGetMainBundle();
-  CFURLRef mainBundleURL = CFBundleCopyBundleURL( mainBundle);
-  CFStringRef cfStringRef = CFURLCopyFileSystemPath( mainBundleURL, kCFURLPOSIXPathStyle);
-  CFStringGetCString( cfStringRef, path, 1024, kCFStringEncodingASCII);
-  CFRelease( mainBundleURL);
-  CFRelease( cfStringRef);
-  sys_appdir=strdup(path);
-#ifdef IOS
-  // check for jail break
-  FILE *fd = fopen("/var/mobile/tmp.341231","a");
-  if (fd) {
-    fclose(fd);
-    remove("/var/mobile/tmp.341231");
-    sys_dir= strdup(path);
-  } else {
-    // point to the folder that is shared through iTunes
-    sys_dir= strdup(iphone_directory);
-  }
-#else
-  sys_dir=strdup(path);
-#endif
-#endif
-#if defined(ANDROID)
-// we put files on the sdcard, that's the only sane place (?)
-  char path[1024];
-  sprintf(path,"/sdcard/%s", SYS_APPNAME);
-  sys_appdir=strdup(path);
-  sys_dir=strdup(path);
-#endif
-#if defined(BB10) || defined(PLAYBOOK)
-  char path[1024], cwd[1024];
-  getcwd(cwd,1023);
-  sprintf(path,"%s/app/native", cwd);
-  sys_appdir=strdup(path);
-  sprintf(path,"%s/data", cwd);
-  sys_dir=strdup(path);
-#endif
-}
-
-static unsigned int sys_buildepoch;
-static char *sys_platform, *sys_appname, *sys_appversion, *sys_cmdarg;
-static char *sys_buildhash;
-static char *sys_repository, *sys_repositorydate;
-
-static void system_init(void)
-{
-  find_directories();
-  sys_platform=strdup(SYS_PLATFORM);
-  sys_appname=strdup(SYS_APPNAME);
-  sys_appversion=strdup(SYS_APPVERSION);
-  sys_buildhash=strdup(SYS_BUILDHASH);
-  sys_buildepoch=SYS_BUILDEPOCH;
-}
-
-// report the path separator
-#ifdef WIN32
-#define PATH_SEPARATOR '\\'
-#else
-#define PATH_SEPARATOR '/'
-#endif
-static char system_pathseparator(void) { return PATH_SEPARATOR; }
-
-// report the system info
-char *system_dir(void) { return sys_dir; }
-static char *system_appdir(void) { return sys_appdir; }
-static char *system_platform(void) { return sys_platform; }
-static char *system_appname(void) { return sys_appname; }
-static char *system_appversion(void) { return sys_appversion; }
-static char *system_buildhash(void) { return sys_buildhash; }
-static unsigned int system_buildepoch(void) { return sys_buildepoch; }
-
-static char *system_cmdargv(int n) { char *res=0; if (n<cmd_argc) res=cmd_argv[n]; return res; }
+#include "lambdanative.h"
 
 void force_terminate()
 {
@@ -197,9 +53,6 @@ void force_terminate()
 
 end-of-c-declare
 )
-
-;; prep the system info
-(c-initialize "system_init();")
 
 (define ##now 0.)
 
@@ -217,7 +70,7 @@ end-of-c-declare
 (define (system-builddatetime) (seconds->string (system-buildepoch) "%Y-%m-%d %H:%M:%S"))
 
 (define system-cmdargv (c-lambda (int) char-string "system_cmdargv"))
-(define system-cmdargc (c-lambda () int "___result=cmd_argc;"))
+(define system-cmdargc (c-lambda () int "system_cmdargc"))
 (define (system-cmdarg) (system-cmdargv 1)) ;; backwards compatibility
 
 (define force-terminate (c-lambda () void "force_terminate"))
