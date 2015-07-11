@@ -102,6 +102,7 @@ compile_payload_scm()
       fi
       if [ $scm_dirty = yes ]; then
         scm_link_dirty=yes
+        rmifexists "$scm_ctgt"
         veval "$SYS_GSC -prelude \"$scm_opts\" -c -o $scm_ctgt $scm_src"
         assertfile "$scm_ctgt"
         rmifexists "$scm_otgt"
