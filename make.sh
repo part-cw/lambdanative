@@ -1055,7 +1055,7 @@ make_library()
   libname=$1
   libdir=`locatedir libraries/$libname`
   libfile="$SYS_PREFIX/lib/$libname.a"
-  if [ `newerindir $libdir $libfile` = "yes" ]; then
+  if [ "$libname" = "liblambdanative" ] || [ `newerindir $libdir $libfile` = "yes" ]; then
     echo " => $libname.."
     cd $libdir
     if [ -f make.sh ]; then
