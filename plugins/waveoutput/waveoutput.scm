@@ -40,19 +40,26 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define waveoutput:debuglevel 0)
 (define (waveoutput:log level . x) (if (>= waveoutput:debuglevel level) (apply log-system (append (list "waveoutput: ") x))))
-
 (define (waveoutput:stop store instance)
-  (let ((fh (instance-refvar store instance "Handle")))
-    (if (port? fh) (close-output-port fh))
+  (let ((fh (instance-refvar store instance "Handle"))
+        (casefile (instance-refvar store instance "FilePath")))
+    (if (port? fh) (begin
+      (close-output-port fh)
+      (if (and casefile (function-exists? "timestamp-gettimestamp"))
+        ((eval 'timestamp-gettimestamp) casefile)
+      )
+    ))
     (instance-setvar! store instance "Handle" #f)
     (waveoutput:log 2 "stop")
   ))
 
 (define (waveoutput:start store instance)
   (let* ((casepath (instance-refvar store instance "CasePath" #f))
-         (casefile (string-append (instance-refvar store instance "Source" #f) ".csv"))
-         (fh (open-output-file (string-append casepath (system-pathseparator) casefile))))
+         (casefile (string-append casepath (system-pathseparator)
+           (instance-refvar store instance "Source" #f) ".csv"))
+         (fh (open-output-file casefile)))
    (instance-setvar! store instance "Handle" fh)
+   (instance-setvar! store instance "FilePath" casefile)
    (waveoutput:log 2 "start fh=" fh)
    (if (not fh) (log-error "waveoutput:start failed to open file for writing"))
  ))
@@ -113,7 +120,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (if (instance-refvar store instance "Handle" #f) (waveoutput:stop store instance))
   #t)
 
-(plugin-register "waveoutput" waveoutput:init waveoutput:caseinit waveoutput:caserun 
+(plugin-register "waveoutput" waveoutput:init waveoutput:caseinit waveoutput:caserun
                  waveoutput:caseend waveoutput:end 'output)
 
 ;; eof
