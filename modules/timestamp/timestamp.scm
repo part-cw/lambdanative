@@ -45,7 +45,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Function to get timestamp request signed
 (define (timestamp-gettimestamp filename)
-  (if (and (file-exists? filename) (eq? (file-type filename) 'regular))
+  (if (and (file-exists? filename) (eq? (file-type filename) 'regular)
+           (fx> (file-info-size (file-info filename)) 0))
     (let* ((tsq (timestamp-tsq-generate filename))
            (tsr (timestamp-tsr-request tsq)))
       (if (and tsq tsr (timestamp-tsr-granted? tsr)
