@@ -101,6 +101,7 @@ compile_payload_scm()
         fi
       fi
       if [ $scm_dirty = yes ]; then
+        echo "    $scm_src .."
         scm_link_dirty=yes
         rmifexists "$scm_ctgt"
         veval "$SYS_GSC -prelude \"$scm_opts\" -c -o $scm_ctgt $scm_src"
