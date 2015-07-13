@@ -39,8 +39,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; trend output plugin (writes trends to csv file)
 
 (define (trendoutput:stop store instance)
-  (let ((fh (instance-refvar store instance "Handle")))
-    (if (port? fh) (close-output-port fh))
+  (let ((fh (instance-refvar store instance "Handle"))
+        (casefile (instance-refvar store instance "FilePath")))
+    (if (port? fh) (begin
+      (close-output-port fh)
+      (if (and casefile (function-exists? "timestamp-gettimestamp"))
+        ((eval 'timestamp-gettimestamp) casefile)
+      )
+    ))
     (instance-setvar! store instance "Handle" #f)
   ))
 
@@ -131,7 +137,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   #t)
 
 ;; register the plugin
-(plugin-register "trendoutput" trendoutput:init trendoutput:caseinit trendoutput:caserun 
+(plugin-register "trendoutput" trendoutput:init trendoutput:caseinit trendoutput:caserun
                  trendoutput:caseend trendoutput:end 'output)
 
 ;; eof
