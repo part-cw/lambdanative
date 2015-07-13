@@ -2,7 +2,7 @@
 package_from_source *.c *.h
 
 rm *.o 2> /dev/null
-veval "$SYS_CC -c *.c -I$SYS_PREFIX/include"
+veval "$SYS_CC -fPIC -c *.c -I$SYS_PREFIX/include"
 asserterror $? "compilation failed"
 veval "$SYS_AR ru liblambdanative.a *.o"
 asserterror $? "compilation failed"
