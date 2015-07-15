@@ -16,6 +16,13 @@ package_from_source()
   cd $tmp_install
 }
 
+package_copy_to_cache()
+{
+  rmifexists $1
+  mkdir -p $1
+  cp -R ./* $1
+}
+
 package_valid()
 {
   pkg_valid_file="$1"
