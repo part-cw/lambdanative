@@ -161,11 +161,18 @@ static char *graph_fix_string(char *text,int fix_minus){
 end-of-c-declare
 )
 
-(define graphaux:findsigdec (c-lambda (float float int float int int) int "graph_findsigdec"))
-(define graphaux:formaxnum (c-lambda (float int int) char-string "graph_formaxnum"))
-(define graphaux:fixstring (c-lambda (char-string int) char-string "graph_fix_string"))
-(define graphaux:wctrunc (c-lambda (float int) float "graph_wc_trunc"))
-(define graphaux:wcxbottom (c-lambda (int float float) float "graph_wc_xbottom"))
-(define graphaux:wcybottom (c-lambda (int float float) float "graph_wc_ybottom"))
+(define (graphaux:findsigdec arg1 arg2 arg3 arg4 arg5 arg6)
+   ((c-lambda (float float int float int int) int "graph_findsigdec") 
+     (flo arg1) (flo arg2) (fix arg3) (flo arg4) (fix arg5) (fix arg6)))
+(define (graphaux:formaxnum arg1 arg2 arg3)
+  ((c-lambda (float int int) char-string "graph_formaxnum") (flo arg1) (fix arg2) (fix arg3)))
+(define (graphaux:fixstring arg1 arg2) 
+  ((c-lambda (char-string int) char-string "graph_fix_string") arg1 (fix arg2)))
+(define (graphaux:wctrunc arg1 arg2)
+  ((c-lambda (float int) float "graph_wc_trunc") (flo arg1) (fix arg2)))
+(define (graphaux:wcxbottom arg1 arg2 arg3)  
+  ((c-lambda (int float float) float "graph_wc_xbottom") (fix arg1) (flo arg2) (flo arg3)))
+(define (graphaux:wcybottom arg1 arg2 arg3)
+  ((c-lambda (int float float) float "graph_wc_ybottom") (fix arg1) (flo arg2) (flo arg3)))
 
 ;; eof
