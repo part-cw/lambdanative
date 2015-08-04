@@ -60,7 +60,7 @@ package_unpack()
          asserttool tar
          tar zxf $pkg_unpack_file
          ;;
-    bz)
+    bz|bz2)
          asserttool tar
          tar jxf $pkg_unpack_file
          ;;
@@ -72,6 +72,9 @@ package_unpack()
          asserttool tar
          tar Jxf $pkg_unpack_file
          ;;
+    *)
+	assert "UNKNOWN package format $1"
+        ;;
   esac
 }
 
