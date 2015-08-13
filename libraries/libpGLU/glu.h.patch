@@ -1,0 +1,33 @@
+--- include/glu.h	2008-09-28 14:01:43.000000000 -0700
++++ include/glu.h.new	2015-08-12 11:40:17.000000000 -0700
+@@ -31,7 +31,30 @@
+ #ifndef __glu_h__
+ #define __glu_h__
+ 
++#ifdef MACOSX
++#include <Carbon/Carbon.h>
++#include <OpenGL/OpenGL.h>
++#include <AGL/agl.h>
++#endif
++
++#if defined(IOS)
+ #include <OpenGLES/ES1/gl.h>
++#endif
++
++#if defined(ANDROID)
++#define GL_API
++#define GL_APIENTRY
++#include <GLES/gl.h>
++#endif
++
++#if defined(WIN32) || defined(LINUX) || defined(OPENBSD) || defined(NETBSD)
++#include <GL/gl.h>
++#endif
++
++// blackberry
++#if defined(QNX)
++#include <GLES/gl.h>
++#endif
+ 
+ #ifndef GLAPIENTRY
+ #define GLAPIENTRY

@@ -1,0 +1,10 @@
+--- libutil/project.c	2008-09-28 14:01:43.000000000 -0700
++++ libutil/project.c.new	2015-08-12 11:43:25.000000000 -0700
+@@ -30,7 +30,6 @@
+ 
+ #include "gluos.h"
+ #include <math.h>
+-#include <OpenGLES/ES1/gl.h>
+ #include "glu.h"
+ #include "gluint.h"
+ 
