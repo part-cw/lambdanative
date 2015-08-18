@@ -46,7 +46,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int calc_sha512sum (unsigned char* path, unsigned char* hash){
   FILE *file = fopen(path, "rb");
   if(!file) return 0;
-
   SHA512_CTX sha512;
   SHA512_Init(&sha512);
   const int bufSize = 4096;
@@ -109,28 +108,25 @@ end-of-c-declare
 (define (sha256sum filename)
   (let* ((vl ((c-lambda () int "___result=SHA256_DIGEST_LENGTH;")))
          (v (make-u8vector vl))
-         (f ((c-lambda (scheme-object scheme-object) bool "___result=
-            calc_sha256sum(___CAST(unsigned char*,___BODY_AS(___arg1,___tSUBTYPED)),
-                           ___CAST(unsigned char*,___BODY_AS(___arg2,___tSUBTYPED)));")
-      (string->u8vector filename) v)))
+         (f ((c-lambda (char-string scheme-object) bool "___result=
+           calc_sha256sum(___arg1,___CAST(unsigned char*,___BODY_AS(___arg2,___tSUBTYPED)));")
+           filename v)))
     (if f v #f)
   ))
 (define (sha512sum filename)
   (let* ((vl ((c-lambda () int "___result=SHA512_DIGEST_LENGTH;")))
          (v (make-u8vector vl))
-         (f ((c-lambda (scheme-object scheme-object) bool "___result=
-            calc_sha512sum(___CAST(unsigned char*,___BODY_AS(___arg1,___tSUBTYPED)),
-                           ___CAST(unsigned char*,___BODY_AS(___arg2,___tSUBTYPED)));")
-      (string->u8vector filename) v)))
+         (f ((c-lambda (char-string scheme-object) bool "___result=
+            calc_sha512sum(___arg1,___CAST(unsigned char*,___BODY_AS(___arg2,___tSUBTYPED)));")
+            filename v)))
     (if f v #f)
   ))
 (define (sha1sum filename)
   (let* ((vl ((c-lambda () int "___result=SHA_DIGEST_LENGTH;")))
          (v (make-u8vector vl))
-         (f ((c-lambda (scheme-object scheme-object) bool "___result=
-            calc_sha1sum(___CAST(unsigned char*,___BODY_AS(___arg1,___tSUBTYPED)),
-                           ___CAST(unsigned char*,___BODY_AS(___arg2,___tSUBTYPED)));")
-      (string->u8vector filename) v)))
+         (f ((c-lambda (char-string scheme-object) bool "___result=
+            calc_sha1sum(___arg1,___CAST(unsigned char*,___BODY_AS(___arg2,___tSUBTYPED)));")
+            filename v)))
     (if f v #f)
   ))
 (define shasum sha1sum)

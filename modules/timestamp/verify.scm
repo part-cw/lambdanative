@@ -54,7 +54,7 @@ static int verify_cb(int ok, X509_STORE_CTX *ctx){
 }
 
 int hash_tsr_verify(unsigned char *hash, int hash_len, unsigned char *tsr, int tsr_len,
-                    unsigned char *CAfile, int CAfile_len){
+                    unsigned char *CAfile){
   int ret=0;
   const unsigned char *tr = tsr;
   TS_RESP *ts_resp =  TS_RESP_new();
@@ -98,11 +98,11 @@ end-of-c-declare
 ;; Scheme bindings
 (define (timestamp-verify hash tsr cafile)
   (if (and hash tsr cafile)
-    ((c-lambda (scheme-object int scheme-object int scheme-object int) bool "___result=
+    ((c-lambda (scheme-object int scheme-object int char-string) bool "___result=
       hash_tsr_verify(___CAST(unsigned char*,___BODY_AS(___arg1,___tSUBTYPED)),___arg2,
                       ___CAST(unsigned char*,___BODY_AS(___arg3,___tSUBTYPED)),___arg4,
-                      ___CAST(unsigned char*,___BODY_AS(___arg5,___tSUBTYPED)),___arg6);")
-      hash (u8vector-length hash) tsr (u8vector-length tsr) (string->u8vector cafile) (string-length cafile))
+                      ___arg5);")
+      hash (u8vector-length hash) tsr (u8vector-length tsr) cafile)
     #f
   ))
 
