@@ -1,0 +1,103 @@
+@import url(https://fonts.googleapis.com/css?family=Ubuntu);
+body {
+  position: relative;
+  padding-top: 0px;
+  font-family:'Ubuntu',Tahoma,sans-serif;
+}
+
+body a {
+  color: #000082;
+}
+
+.navbar-fixed-top .brand {
+  margin-left: 10px;
+}
+
+header {
+  position: relative;
+  color: #000;
+}
+
+header h1 {
+  font-size: 58px !important;
+  line-height: 58px !important;
+}
+
+.social-buttons {
+  position: absolute;
+  right: 20px;
+  bottom: 4px;
+}
+
+h2.section {
+  abackground-color: red;
+  padding: 0 30px;
+  margin: 0 -30px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+section {
+  padding: 40px 0 0 0;
+}
+
+.jumbotron {
+  padding: 60px 0 16px 0;
+  background-image: url("../images/background.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: 0% 25%;
+}
+
+.app-icon {
+  width: 57px;
+  height: 57px;
+}
+
+.apps-gallery .app-icon {
+  margin: 12px 0 0 42px;
+  display: block;
+}
+
+.apps-gallery .app {
+  text-align: center;
+  background-color: #eee;
+  -webkit-border-radius: 8px;
+  -moz-border-radius: 8px;
+  border-radius: 8px;
+}
+
+.apps-gallery a {
+  color: #000;
+}
+
+iframe.speakerdeck {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.presentation_title {
+  font-size: 20px;
+  text-align: center;
+  width: 100%
+}
+
+.slides-thumb300x225 {
+  width: 300px;
+  height: 225px;
+  border: 3px solid #888;
+}
+
+footer p {
+  border-top: 1px solid #ddd;
+  margin-top: 60px;
+  padding-top: 8px;
+  text-align: center;
+  color: #aaa;
+}
+
+footer p a {
+  color: #aaa;
+}
