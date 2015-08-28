@@ -55,9 +55,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (loop (cdr dirs) newpath))))))
 
 ;; extract an embedded file
-(define (packtool-unpack file cdata)
+(define (packtool-unpack file cdata overwrite)
   (let ((path (packtool:prep file)))
-    (if (not (file-exists? path))
+    (if (or overwrite (not (file-exists? path)))
       (let ((data (u8vector-decompress cdata)))
         (log-system "packtool: extracting " path)
         (u8vector->file data path)))))
