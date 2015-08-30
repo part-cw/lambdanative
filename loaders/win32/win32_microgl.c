@@ -79,6 +79,7 @@ static int _microgl_key(WPARAM wParam, LPARAM lParam, int action)
      case VK_ESCAPE: return EVENT_KEYESCAPE;
      case VK_TAB:    return EVENT_KEYTAB;
      case VK_BACK:   return EVENT_KEYBACKSPACE;
+     case VK_DELETE: return EVENT_KEYDELETE;
      case VK_LEFT:   return EVENT_KEYLEFT;
      case VK_UP:     return EVENT_KEYUP;
      case VK_RIGHT:  return EVENT_KEYRIGHT;

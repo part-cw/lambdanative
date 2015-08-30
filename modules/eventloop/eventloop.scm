@@ -69,6 +69,7 @@ end-of-c-declare
 (define EVENT_KEYENTER ((c-lambda () int "___result = EVENT_KEYENTER;")))
 (define EVENT_KEYTAB ((c-lambda () int "___result = EVENT_KEYTAB;")))
 (define EVENT_KEYBACKSPACE ((c-lambda () int "___result = EVENT_KEYBACKSPACE;")))
+(define EVENT_KEYDELETE ((c-lambda () int "___result = EVENT_KEYDELETE;")))
 (define EVENT_KEYRIGHT ((c-lambda () int "___result = EVENT_KEYRIGHT;")))
 (define EVENT_KEYLEFT ((c-lambda () int "___result = EVENT_KEYLEFT;")))
 (define EVENT_KEYUP ((c-lambda () int "___result = EVENT_KEYUP;")))
@@ -116,13 +117,13 @@ end-of-c-declare
 (define (eventloop:grab!) (mutex-lock! eventloop:mutex))
 (define (eventloop:release!) (mutex-unlock! eventloop:mutex))
 
-(c-define (c-event t x y) (int int int) void "scm_event" "" 
+(c-define (c-event t x y) (int int int) void "scm_event" ""
   (eventloop:grab!)
   (set! ##now (current-time-seconds))
   (let ((xtra (if (not app:mustinit) (event-pop) #f)))
     (if xtra (apply hook:event xtra))
-    (cond 
-      ((fx= t EVENT_REDRAW) 
+    (cond
+      ((fx= t EVENT_REDRAW)
         (hook:event t 0 0)
         (if app:android? (##thread-heartbeat!))
       )
@@ -140,16 +141,16 @@ end-of-c-declare
          (hook:event t (if app:scale? (fix (* app:xscale x)) x)
                        (if app:scale? (fix (* app:yscale y)) y))
       )
-      ((fx= t EVENT_INIT) 
+      ((fx= t EVENT_INIT)
         ;; prevent multiple inits
         (if app:mustinit (begin
-          (set! app:width x) 
+          (set! app:width x)
           (set! app:height y)
-          (set! app:screenwidth x) 
+          (set! app:screenwidth x)
           (set! app:screenheight y)
           (if (procedure? hook:init) (hook:init x y))
           (set! app:mustinit #f)
-        )) 
+        ))
       )
       ((fx= t EVENT_TERMINATE)
         (log-system "System shutdown")
@@ -163,32 +164,32 @@ end-of-c-declare
         (if (and (not app:mustinit) app:suspended) (begin
           (set! app:suspended #f)
           (if (procedure? hook:resume) (hook:resume))
-          ))) 
-      (else 
+          )))
+      (else
         (if (and (not app:mustinit) (procedure? hook:event)) (hook:event t x y)))
-  )) 
+  ))
   (eventloop:release!))
-  
+
 (c-define (c-width) () int "scm_width" ""
    (if (number? app:width) app:width 0))
 
-(c-define (c-height) () int "scm_height" "" 
+(c-define (c-height) () int "scm_height" ""
   (if (number? app:height) app:height 0))
 
 (c-define (c-screenwidth) () int "scm_screenwidth" ""
    (if (number? app:screenwidth) app:screenwidth 0))
 
-(c-define (c-screenheight) () int "scm_screenheight" "" 
+(c-define (c-screenheight) () int "scm_screenheight" ""
   (if (number? app:screenheight) app:screenheight 0))
 
-(c-define (c-runflag) () int "scm_runflag" "" 
+(c-define (c-runflag) () int "scm_runflag" ""
   (if (number? app:runflag) app:runflag 0))
 
 ;; change default size (don't go full screen!)
 (define (make-window w h)
   (let ((xscale (/ (flo w) (flo app:screenwidth)))
         (yscale (/ (flo h) (flo app:screenheight))))
-  (set! app:width w) 
+  (set! app:width w)
   (set! app:height h)
   (if (or (string=? (system-platform) "ios")
           (string=? (system-platform) "bb10")
@@ -202,7 +203,7 @@ end-of-c-declare
 
 ;; assign scheme entry points
 (define (main p1 p2 p3 . px)
-  (set! hook:init p1) 
+  (set! hook:init p1)
   (set! hook:event p2)
   (set! hook:terminate (lambda () (p3) (force-terminate)))
   (if (> (length px) 0) (set! hook:suspend (car px)))

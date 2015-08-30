@@ -109,6 +109,7 @@ int _microgl_key( XKeyEvent *event )
   KeySym keysym;
   XLookupString( event, NULL, 0, &keysym, NULL );
   switch (keysym) {
+    case XK_Delete:       return EVENT_KEYDELETE;
     case XK_Escape:       return EVENT_KEYESCAPE;
     case XK_Tab:          return EVENT_KEYTAB;
     case XK_BackSpace:    return EVENT_KEYBACKSPACE;
