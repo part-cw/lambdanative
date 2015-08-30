@@ -84,10 +84,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; ----------
 ;; rounded box
 
-;; Minimum size rounded box can be is 13 by 13 since corners are each 6 by 6 
+;; Minimum size rounded box can be is 13 by 13 since corners are each 6 by 6
 (define (glgui:draw-rounded-box x y w h c)
   (if (not (list? c)) (glCoreColor c))
-  
+
   ;; If box is large in either dimensions, then use separate textures for the corners
   (if (or (> w 50) (> h 50))
     (if (list? c)
@@ -126,7 +126,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (glCoreTextureDraw (+ rx (- rw 6)) ry 6 7 glgui_rounded_corner.raw .9 .1 .1 .9 0.)
         (glCoreTextureDraw (+ rx (- rw 6)) (+ ry 6.5) 6 (- rh 13.5) glgui:box .1 .1 .9 .9 0.)
         (glCoreTextureDraw (+ rx (- rw 6)) (+ ry (- rh 7)) 6 7 glgui_rounded_corner.raw .9 .9 .1 .1 0.)))
-   
+
     ;; Otherwise if box is small then use single texture, with or without colour being a gradient
     (if (list? c)
       (glCoreTextureGradientDraw x y w h glgui_rounded_box.raw 0.01 0.01 .99 .99 0. c)
@@ -137,7 +137,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; pixmaps (aka texture lists)
 
 (define (glgui:draw-pixmap-center x y w h img color)
-  (let* ((sw (car img)) 
+  (let* ((sw (car img))
          (sh (cadr img))
          (x0 (+ x (/ (- w sw) 2)))
          (y0 (+ y (/ (- h sh) 2))))
@@ -171,10 +171,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; support both legacy latex and new truetype rendering
 ;; eventually this should be stripped out for better performance
-(define (glgui:glyph-offsetx g) 
+(define (glgui:glyph-offsetx g)
   (if (fx= (length g) 5) (list-ref g 2) 0))
 (define (glgui:glyph-offsety g)
-  (if (fx= (length g) 5) (list-ref g 4) 
+  (if (fx= (length g) 5) (list-ref g 4)
      (glgui:image-h (glgui:glyph-image g))))
 (define (glgui:glyph-advancex g)
   (if (fx= (length g) 5) (list-ref g 3)
@@ -183,11 +183,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define glgui:string->glyphs #f)
 (define glgui:glyphs->string #f)
 
-(define (glgui-utf8-set! flag) 
+(define (glgui-utf8-set! flag)
   (if flag (begin
     (set! glgui:string->glyphs utf8string->unicode)
     (set! glgui:glyphs->string unicode->utf8string)
-  ) (begin 
+  ) (begin
     (set! glgui:string->glyphs (lambda (s) (map char->integer (string->list s))))
     (set! glgui:glyphs->string (lambda (l) (list->string (map integer->char l))))
   )))
@@ -212,7 +212,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui:fontheight fnt)
   (let* ((g (assoc 0 fnt))
          (i (if g (glgui:glyph-image g) #f))
-         (h (if i (glgui:image-h i) 
+         (h (if i (glgui:image-h i)
            (cadr (cadr (car fnt)))))) h))
 
 (define (glgui:stringheight txt fnt)
@@ -231,10 +231,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              (ax (if glyph (flo (glgui:glyph-advancex glyph)) 0.)))
         (loop (fl+ x ax) (cdr cs))))))
 
+(define (glgui:stringwidth-lst txt fnt)
+  (let loop ((cs (glgui:string->glyphs txt)) (ret '()))
+    (if (fx= (length cs) 0) ret
+      (let* ((glyph (assoc (car cs) fnt))
+             (ax (if glyph (flo (glgui:glyph-advancex glyph)) 0.)))
+        (loop (cdr cs) (append ret (list ax)))))))
+
 (define (glgui:stringcliplist w0 txtlst fnt)
   (let ((w (flo w0)))
     (let loop ((x 0.)(cs txtlst)(rs '()))
-      (if (or (fx= (length cs) 0) (fl> x w)) rs 
+      (if (or (fx= (length cs) 0) (fl> x w)) rs
         (let* ((glyph (assoc (car cs) fnt))
                (ax (if glyph (flo (glgui:glyph-advancex glyph)) 0.)))
           (loop (fl+ x ax) (cdr cs) (append rs (if (fl<= (fl+ x ax) w) (list (car cs)) '()))))))))
@@ -248,7 +255,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui:draw-text-left x y w h label fnt color)
   (let* ((strw (flo (glgui:stringwidth label fnt)))
          (strh (map flo (glgui:stringheight (string-append label "|") fnt)))
-         (centery (fl+ (flo y) (fl/ (if (fl> (flo h) 0.) (flo h) (fl- (car strh) (cadr strh))) 2.) 
+         (centery (fl+ (flo y) (fl/ (if (fl> (flo h) 0.) (flo h) (fl- (car strh) (cadr strh))) 2.)
                        (fl- (fl/ (fl+ (car strh) (cadr strh)) 2.)))))
     (glgui:renderstring x centery
        (if (fl> strw (flo w)) (glgui:stringclipright w label fnt) label) fnt color)))
@@ -256,7 +263,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui:draw-text-right x y w h label fnt color)
   (let* ((strw (flo (glgui:stringwidth label fnt)))
          (strh (map flo (glgui:stringheight (string-append label "|") fnt)))
-         (centery (fl+ (flo y) (fl/ (if (fl> (flo h) 0.) (flo h) (fl- (car strh) (cadr strh))) 2.) 
+         (centery (fl+ (flo y) (fl/ (if (fl> (flo h) 0.) (flo h) (fl- (car strh) (cadr strh))) 2.)
            (fl- (fl/ (fl+ (car strh) (cadr strh)) 2.)))))
     (glgui:renderstring (if (fl> strw (flo w)) x (fl+ (flo x) (flo w) (fl- strw))) centery
        (if (fl> strw (flo w)) (glgui:stringclipleft w label fnt) label) fnt color)))
@@ -264,15 +271,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui:draw-text-center x y w h label fnt color . clipright)
   (let* ((strw (flo (glgui:stringwidth label fnt)))
          (strh (map flo (glgui:stringheight (string-append label "|") fnt)))
-         (centery (fl+ (flo y) (fl/ (if (fl> (flo h) 0.) (flo h) (fl- (car strh) (cadr strh))) 2.) 
+         (centery (fl+ (flo y) (fl/ (if (fl> (flo h) 0.) (flo h) (fl- (car strh) (cadr strh))) 2.)
                                (fl- (fl/ (fl+ (car strh) (cadr strh)) 2.))))
-         (clipper (if (and (fx= (length clipright) 1) (car clipright)) 
+         (clipper (if (and (fx= (length clipright) 1) (car clipright))
            glgui:stringclipright glgui:stringclipleft)))
     (glgui:renderstring (if (fl> strw (flo w)) x (fl+ (flo x) (fl/ (fl- (flo w) strw) 2.))) centery
        (if (fl> strw (flo w)) (clipper w label fnt) label) fnt color)))
 
 (define (string-split-width str w fnt)
-  (if (string-contains str "\n")  
+  (if (string-contains str "\n")
     ;; If there is a new line in the text, call this procedure for each line - section separated by new lines
     (let lloop ((lines (string-split str #\newline)) (strlist (list)))
       (if (fx= (length lines) 0) strlist
@@ -315,5 +322,5 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 (string-append buildstr (if wrap? "" newstr))
                 (fx+ buildstr_len (if wrap? 0 newstr_len)))))))
    ))
-  
+
 ;; eof
