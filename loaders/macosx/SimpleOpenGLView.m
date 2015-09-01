@@ -123,6 +123,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     int ecode=0;
     int kcode = [event keyCode];
     switch (kcode) {
+     case 117: ecode = EVENT_KEYDELETE; break;
      case 126: ecode = EVENT_KEYUP; break;
      case 125: ecode = EVENT_KEYDOWN; break;
      case 124: ecode = EVENT_KEYRIGHT; break;
@@ -148,6 +149,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     int ecode=0;
     int kcode = [event keyCode];
     switch (kcode) {
+     case 117: ecode = EVENT_KEYDELETE; break;
      case 126: ecode = EVENT_KEYUP; break;
      case 125: ecode = EVENT_KEYDOWN; break;
      case 124: ecode = EVENT_KEYRIGHT; break;
