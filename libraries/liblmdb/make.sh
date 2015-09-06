@@ -1,8 +1,9 @@
 
-PKGURL=https://gitorious.org/mdb/mdb.git
-PKGHASH=3368d1f5e243225cba4d730fba19ff600798ebe3
+PKGURL=git://git.openldap.org/openldap.git
+PKGBRANCH=mdb.master
+PKGHASH=
 
-package_download $PKGURL $PKGHASH
+package_download $PKGURL $PKGHASH $PKGBRANCH
 
 cd libraries/liblmdb
 rm *.o 2> /dev/null
