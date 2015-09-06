@@ -99,6 +99,10 @@ package_download_git()
     pkg_git_url=$1
   fi
   pkg_git_hash=$2
+  pkg_git_branch=$3
+  if [ ! "X$pkg_git_branch" = "X" ]; then
+    pkg_git_branch="-b $pkg_git_branch"
+  fi
   pkg_git_file="$SYS_PREFIXROOT/packages/"`basename $pkg_git_url`"-$pkg_git_hash.tgz"
   if [ -d $tmp_install ]; then
     rm -rf $tmp_install
@@ -109,7 +113,7 @@ package_download_git()
   cd $tmp_install
   if [ ! -f $pkg_git_file ]; then
     echo " => cloning ${pkg_git_url}.."
-    veval "git clone $pkg_git_url"
+    veval "git clone $pkg_git_branch $pkg_git_url"
     asserterror $? "repository cloning failed [$pkg_git_url]"
     cd *
     if [ ! "X$pkg_git_hash" = "X" ]; then
