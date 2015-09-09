@@ -1,6 +1,6 @@
 
-PKGURL=http://zlib.net/zlib-1.2.8.tar.gz
-PKGHASH=a4d316c404ff54ca545ea71a27af7dbc29817088
+PKGURL=https://github.com/madler/zlib.git
+PKGHASH=50893291621658f355bc5b4d450a8d06a563053d
 
 package_download $PKGURL $PKGHASH
 
