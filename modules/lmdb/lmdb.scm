@@ -66,6 +66,7 @@ struct _mdb *_mdb_init(char *fname)
   rc = mdb_env_open(m->env, fname, 0, 0664);
   rc = mdb_txn_begin(m->env, NULL, 0, &m->txn);
   rc = mdb_open(m->txn, NULL, 0, &m->dbi);
+  m->cursor=NULL;
   return m;
 }
 
@@ -96,6 +97,7 @@ int _mdb_read(struct _mdb *m, unsigned char *k, int klen)
 int _mdb_index_first(struct _mdb *m)
 {
   int rc;
+  if (m->cursor) { mdb_cursor_close(m->cursor); }
   rc = mdb_cursor_open(m->txn, m->dbi, &m->cursor);
   return rc;
 }
@@ -104,7 +106,6 @@ int _mdb_index_next(struct _mdb *m)
 {
   int rc;
   rc = mdb_cursor_get(m->cursor, &m->key, &m->value, MDB_NEXT);
-  if (rc!=1) { mdb_cursor_close(m->cursor); }
   return rc;
 }
 
