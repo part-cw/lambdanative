@@ -36,16 +36,16 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 (define (glgui:label-aligned-draw x y w h label fnt color align . showstart?)
-  (cond 
+  (cond
     ((= align GUI_ALIGNLEFT) (glgui:draw-text-left x y w h label fnt color))
 	((= align GUI_ALIGNRIGHT) (glgui:draw-text-right x y w h label fnt color))
 	(else (glgui:draw-text-center x y w h label fnt color (if (fx= (length showstart?) 1) (car showstart?) #f)))))
 
 (define (glgui:label-draw g wgt)
   (let* ((fnt (glgui-widget-get g wgt 'font))
-         (x0 (glgui-widget-get-dyn g wgt 'x))
+         (x (glgui-widget-get-dyn g wgt 'x))
          (y (glgui-widget-get-dyn g wgt 'y))
-         (w0 (glgui-widget-get-dyn g wgt 'w))
+         (w (glgui-widget-get-dyn g wgt 'w))
          (h0 (glgui-widget-get-dyn g wgt 'h))
          (h (if (= h0 0) (glgui:fontheight fnt) h0))
          (r (glgui-widget-get g wgt 'rounded))
@@ -56,40 +56,38 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (focus (glgui-widget-get g wgt 'focus))
          (blinkfactor (modulo (fix ##now) 2))
          (label0 (glgui-widget-get g wgt 'label))
-         (label1 (if label0 (if password (make-string (string-length label0) #\*) label0) #f))
-         (label (if (and label1 focus (fx= blinkfactor 0)) (string-append label1 "|") label1))
+         (label (if label0 (if password (make-string (string-length label0) #\*) label0) #f))
+         (labelw (if label0 (glgui:stringwidth label fnt) 0))
          (showstart (glgui-widget-get g wgt 'showstart))
          (align0 (glgui-widget-get g wgt 'align))
          ;; If being edited, make sure right end of string is visible if show start is false
-         (align (if (and focus (= align0 GUI_ALIGNLEFT) (not showstart) label (> (glgui:stringwidth (string-append label1 "|") fnt) w0)) GUI_ALIGNRIGHT align0))
-         ;; Shift x if being edited and cursor is not currently visible, and the text would otherwise move back and forth as cursor blinks
-         (x (if (and label focus (fx= blinkfactor 1) (<= (glgui:stringwidth (string-append label1 "|") fnt) w0))
-              (cond
-                ((= align GUI_ALIGNLEFT) x0)
-                ((= align GUI_ALIGNCENTER)
-                    (- x0 (/ (- (glgui:stringwidth (string-append label1 "|") fnt) (glgui:stringwidth label1 fnt)) 2.)))
-                (else
-                    (- x0 (- (glgui:stringwidth (string-append label1 "|") fnt) (glgui:stringwidth label1 fnt)))))
-              x0))
-         ;; Shrink w if being edited and not all of the label can fit, so visible characters would otherwise change when cursor flashing
-         (w (if (and label1 focus (fx= blinkfactor 1) (> (glgui:stringwidth (string-append label1 "|") fnt) w0))
-              (if (= align GUI_ALIGNLEFT)
-                w0
-                ;; If not aligned left, then we can see the end of the string, so shrink width when cursor not visible
-                (- w0 (- (glgui:stringwidth (string-append label1 "|") fnt) (glgui:stringwidth label1 fnt))))
-              w0)))
-    (if bgcolor (if r (glgui:draw-rounded-box x0 y w0 h bgcolor) (glgui:draw-box x0 y w0 h bgcolor)))
+         (align (if (and focus (not (= align0 GUI_ALIGNRIGHT)) (not showstart) label (> labelw w)) GUI_ALIGNRIGHT align0)))
+    (if bgcolor (if r (glgui:draw-rounded-box x y w h bgcolor) (glgui:draw-box x y w h bgcolor)))
     (if (and label clearoninput)
-      (let* ((sw (min w (glgui:stringwidth (string-append label0 "|") fnt)))
+      (let* ((sw (min w labelw))
              (xp (if (= align GUI_ALIGNLEFT) 0
                   (if (= align GUI_ALIGNRIGHT) (- w sw) (/ (- w sw) 2.)))))
-         (glgui:draw-box xp y sw h White)))
-    (if label (glgui:label-aligned-draw (if r (+ x 5) x) y (if r (- w 10) w) h label fnt (if clearoninput Black color) align showstart))
+         (glgui:draw-box xp y sw h White)
+      ))
+    (if label (glgui:label-aligned-draw (if r (+ x 5) x) y (if r (- w 10) w)
+      h label fnt (if clearoninput Black color) align showstart))
+    (if (and label focus (fx= blinkfactor 0))
+      (let* ((label-len (if label0 (glgui:stringwidth-lst label fnt) (list 0)))
+             (curserpos (glgui-widget-get g wgt 'focuspos))
+             (curserw (apply + (sublist label-len 0 curserpos)))
+             (blinkpos (cond
+               ((= align GUI_ALIGNLEFT) (+ x curserw))
+               ((= align GUI_ALIGNCENTER) (- (+ x (/ w 2) curserw) (/ labelw 2)))
+               (else (- (+ x w curserw) labelw))
+               )))
+        (glgui:draw-line blinkpos y blinkpos (+ y h) color)
+      )
+    )
   ))
 
 (define (glgui:label-wrapped-draw g wgt)
   (let* ((fnt (glgui-widget-get g wgt 'font))
-         (x0 (flo (glgui-widget-get-dyn g wgt 'x)))
+         (x (flo (glgui-widget-get-dyn g wgt 'x)))
          (y (flo (glgui-widget-get-dyn g wgt 'y)))
          (w (flo (glgui-widget-get-dyn g wgt 'w)))
          (h0 (flo (glgui-widget-get-dyn g wgt 'h)))
@@ -97,8 +95,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (password (glgui-widget-get g wgt 'password))
          (focus (glgui-widget-get g wgt 'focus))
          (blinkfactor (modulo (fix ##now) 2))
-         (label1 (if label0 (if password (make-string (string-length label0) #\*) label0) #f))
-         (label (if (and label1 focus (fx= blinkfactor 0)) (string-append label1 "|") label1))
+         (label (if label0 (if password (make-string (string-length label0) #\*) label0) #f))
+         (labelw (if label0 (glgui:stringwidth label fnt) 0))
          (lblh (if label (flo (glgui:fontheight fnt)) 0.))
          (h (if (fl= h0 0.) (fl+ y lblh) h0))
          (r (glgui-widget-get g wgt 'rounded))
@@ -107,7 +105,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (showstart (glgui-widget-get g wgt 'showstart))
          (align (glgui-widget-get g wgt 'align))
          (direction (glgui-widget-get g wgt 'direction)))
-    (if bgcolor (if r (glgui:draw-rounded-box x0 y w h bgcolor) (glgui:draw-box x0 y w h bgcolor)))
+    (if bgcolor (if r (glgui:draw-rounded-box x y w h bgcolor) (glgui:draw-box x y w h bgcolor)))
     (if (and label (fx> (string-length label) 0))
       (let* ((labelsplit0 ((if (= direction GUI_RIGHTTOLEFT) string-split-width-rtl string-split-width) label w fnt))
              (hline lblh)
@@ -116,24 +114,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                            (if focus
                              (list-tail labelsplit0 (- (length labelsplit0) linecount))
                              (list-head labelsplit0 linecount))
-                           labelsplit0)))
-        (let loop ((i 0) (yline (fl+ y h (fl- hline))))
-          (if (fx= i (length labelsplit)) 
+                           labelsplit0))
+             (focuspos (glgui-widget-get g wgt 'focuspos)))
+        (let loop ((i 0) (yline (fl+ y h (fl- hline))) (charct 0))
+          (if (fx= i (length labelsplit))
             (if (fl= h0 0.) (glgui-widget-set! g wgt 'h (fl+ y h (fl- yline))) #t)
-              (let* ((linelabel (list-ref labelsplit i))
-                     (x (if (and focus (fx= blinkfactor 1) (fx= i (- (length labelsplit) 1)))
-                       (cond
-                         ((= align GUI_ALIGNLEFT) x0)
-                         ((= align GUI_ALIGNCENTER)
-                           (- x0 (/ (- (glgui:stringwidth (string-append linelabel "|") fnt) 
-                                       (glgui:stringwidth linelabel fnt)) 2.)))
-                         (else
-                           (- x0 (- (glgui:stringwidth (string-append linelabel "|") fnt) 
-                                    (glgui:stringwidth linelabel fnt)))))
-                       x0)))
-              (glgui:label-aligned-draw (if r (fl+ x 5.) x) yline 
+            (let* ((linelabel (list-ref labelsplit i))
+                   (linelabel-len (string-length linelabel)))
+              (if (and focus (fx= blinkfactor 0) (fx> focuspos charct)
+                       (fx<= focuspos (fx+ charct linelabel-len)))
+                (let* ((label-len (glgui:stringwidth-lst linelabel fnt))
+                       (curserpos (fx- focuspos charct))
+                       (curserw (apply + (sublist label-len 0 curserpos)))
+                       (blinkpos (cond
+                         ((= align GUI_ALIGNLEFT) (+ x curserw))
+                         ((= align GUI_ALIGNCENTER) (- (+ x (/ w 2) curserw) (/ label-len 2)))
+                         (else (- (+ x w curserw) labelw))
+                       )))
+                  (glgui:draw-line blinkpos yline blinkpos (+ yline hline) color)
+                )
+              )
+              (glgui:label-aligned-draw (if r (fl+ x 5.) x) yline
                 (if r (fl- w 10.) w) hline (list-ref labelsplit i) fnt color align)
-              (loop (fx+ i 1) (fl- yline hline))
+              (loop (fx+ i 1) (fl- yline hline) (fx+ charct linelabel-len))
             )
         ))
     ))
@@ -146,33 +149,104 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (h (fix (glgui-widget-get-dyn g wgt 'h)))
          (mx (fix mx0))
          (my (fix my0))
+         (wrapped? (glgui-widget-get g wgt 'wrapped?))
          (clickable (glgui-widget-get g wgt 'enableinput))
          (focus (glgui-widget-get g wgt 'focus))
+         (focuspos (glgui-widget-get g wgt 'focuspos))
          (cb (glgui-widget-get g wgt 'callback))
          (clearoninput (glgui-widget-get g wgt 'clearoninput))
          (aftercharcb (glgui-widget-get g wgt 'aftercharcb))
          (password (glgui-widget-get g wgt 'password))
-         (inside (and (fx> mx x) (fx< mx (fx+ x w)) (fx> my y) (fx< my (fx+ y h)))))
+         (fnt (glgui-widget-get g wgt 'font))
+         (label0 (glgui-widget-get g wgt 'label))
+         (label (if label0 (if password (make-string (string-length label0) #\*) label0) #f))
+         (label-len (if label0 (glgui:stringwidth-lst label fnt) (list 0)))
+         (labelw (if label0 (glgui:stringwidth label fnt) 0))
+         (labelh (if label0 (glgui:fontheight fnt) 0))
+         (align0 (glgui-widget-get g wgt 'align))
+         (align (if (and focus (not (= align0 GUI_ALIGNRIGHT)) label (> labelw w)) GUI_ALIGNRIGHT align0))
+         (inside (and (fx> mx x) (fx< mx (fx+ x w 5)) (fx> my y) (fx< my (fx+ y h)))))
     (if (and clickable inside (fx= type EVENT_BUTTON1UP))
       (begin
         (glgui-widget-setglobal! g 'focus #f)
         (glgui-widget-set! g wgt 'focus #t)
       ))
+    (if (and clickable inside focus (fx= type EVENT_BUTTON1DOWN))
+      (if wrapped?
+        (let* ((direction (glgui-widget-get g wgt 'direction))
+               (ls ((if (= direction GUI_RIGHTTOLEFT) string-split-width-rtl string-split-width) label w fnt))
+               (row (max 0 (- (length ls) (floor (/ (- my y) labelh)) 1)))
+               (lrow (list-ref ls row))
+               (lroww (glgui:stringwidth lrow fnt))
+               (lrow-len (glgui:stringwidth-lst lrow fnt))
+               (prevchars (apply + (map string-length (sublist ls 0 row)))))
+          (let ((xpos
+            (cond
+              ((= align0 GUI_ALIGNLEFT) (- mx x 5))
+              ((= align0 GUI_ALIGNCENTER) (+ (- mx x 5 (/ w 2)) (/ lroww 2)))
+              (else (+ (- mx x w 5) lroww))
+            )))
+            (let loop ((i 0))
+              (if (or (fx= i (string-length lrow))
+                      (< xpos (apply + (sublist lrow-len 0 i))))
+                (glgui-widget-set! g wgt 'focuspos (+ prevchars i))
+                (loop (fx+ i 1))
+              )
+            ))
+        )
+        (let ((xpos
+          (cond
+            ((= align GUI_ALIGNLEFT) (- mx x 5))
+            ((= align GUI_ALIGNCENTER) (+ (- mx x 5 (/ w 2)) (/ labelw 2)))
+            (else (+ (- mx x w 5) labelw))
+          )))
+          (let loop ((i 0))
+            (if (or (fx= i (string-length label))
+                    (< xpos (apply + (sublist label-len 0 i))))
+              (glgui-widget-set! g wgt 'focuspos i)
+              (loop (fx+ i 1))
+            )
+         ))
+      ))
     (if (and focus (fx= type EVENT_KEYRELEASE))
-       (let* ((tmp (glgui-widget-get g wgt 'label))
+      (let* ((tmp (glgui-widget-get g wgt 'label))
               (label (if tmp (if clearoninput "" tmp) ""))
               (len (string-length label)))
          (cond
-	   ((and (fx= mx EVENT_KEYENTER) cb)
-              (cb g wgt type mx my) 
-	      (if (not clickable) (set! label "")))
+           ((fx= mx EVENT_KEYLEFT)
+             (glgui-widget-set! g wgt 'focuspos (max 0 (fx- focuspos 1)))
+           )
+           ((fx= mx EVENT_KEYRIGHT)
+             (glgui-widget-set! g wgt 'focuspos (min (string-length label) (fx+ focuspos 1)))
+           )
+           ((and (fx= mx EVENT_KEYENTER) cb)
+             (cb g wgt type mx my)
+	           (if (not clickable) (set! label ""))
+           )
            ((fx= mx EVENT_KEYBACKSPACE)
-              (if (> (string-length label) 0)
-                (set! label (substring label 0 (- (string-length label) 1)))))
+              (if (and (> (string-length label) 0) (> focuspos 0)) (begin
+                (set! label (string-append (substring label 0 (fx- focuspos 1)) (substring label focuspos len)))
+                (glgui-widget-set! g wgt 'focuspos (max 0 (fx- focuspos 1)))
+                (glgui-widget-set! g wgt 'focusset #t)
+              ))
+           )
+           ((fx= mx EVENT_KEYDELETE)
+              (if (and (> (string-length label) 0) (< focuspos (string-length label))) (begin
+                (set! label (string-append (substring label 0 focuspos) (substring label (fx+ focuspos 1) len)))
+                (glgui-widget-set! g wgt 'focusset #t)
+              ))
+           )
            ((fx> mx 31)
-              (set! label (string-append label (string (integer->char mx))))))
+              (set! label (string-append (substring label 0 focuspos)
+                (string (integer->char mx)) (substring label focuspos len)))
+              (glgui-widget-set! g wgt 'focuspos (max 0 (fx+ focuspos 1)))
+              (glgui-widget-set! g wgt 'focusset #t)
+           )
+         )
          (glgui-widget-set! g wgt 'clearoninput #f)
-         (glgui-widget-set! g wgt 'label label)
+         (if (not (or (fx= mx EVENT_KEYLEFT) (fx= mx EVENT_KEYRIGHT)))
+           (glgui-widget-set! g wgt 'label label)
+         )
          ;; If length of string changed, do after char callback
          (if (and aftercharcb (not (fx= (string-length label) len))) (aftercharcb g wgt type mx my))
          (if (and cb (number? password) (= (string-length label) password)) (begin
@@ -185,7 +259,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (glgui-widget-add g
      'x x
      'y y
-     'w w 
+     'w w
      'h h
      'rounded #f
      'font fnt
@@ -198,12 +272,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'password #f
      'enableinput #f   ;; This way we can make clickable labels
      'focus #f
+     'focuspos (string-length label)
      'clearoninput #f
      'showstart #f   ;; If true than centered text that is longer than the label width will show the start instead of end and left aligned text will too if focus = true
      'bgcolor (if (fx= (length bgcolor) 1) (car bgcolor) #f)
      'align GUI_ALIGNLEFT
      'draw-handle  glgui:label-draw
      'input-handle glgui:label-input
+     'update-handle glgui:label-update
+  ))
+
+(define (glgui:label-update g w id val)
+  (let ((fp (glgui-widget-get g w 'focuspos))
+        (fs (glgui-widget-get g w 'focusset))
+        (ll (string-length (glgui-widget-get g w 'label))))
+    (if (and (eq? id 'label) (not fs)) (begin
+      (glgui-widget-set! g w 'focuspos ll)
+      (glgui-widget-set! g w 'focusset #f)
+    ))
   ))
 
 (define (glgui-inputlabel g x y w h label fnt color . bgcolor)
@@ -214,6 +300,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (glgui-label-wrapped g x y w h label fnt color . bgcolor)
   (let ((wgt (glgui-label g x y w h label fnt color (if (fx= (length bgcolor) 1) (car bgcolor) #f))))
+    (glgui-widget-set! g wgt 'wrapped? #t)
     (glgui-widget-set! g wgt 'draw-handle glgui:label-wrapped-draw)
     wgt
   ))
