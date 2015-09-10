@@ -260,13 +260,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (glgui:renderstring x centery
        (if (fl> strw (flo w)) (glgui:stringclipright w label fnt) label) fnt color)))
 
-(define (glgui:draw-text-right x y w h label fnt color)
-  (let* ((strw (flo (glgui:stringwidth label fnt)))
+(define (glgui:draw-text-right x y w h label0 fnt color)
+  (let* ((strw0 (flo (glgui:stringwidth label0 fnt)))
+         (label (if (fl> strw0 (flo w)) (glgui:stringclipleft w label0 fnt) label0))
+         (strw (if (fl> strw0 (flo w)) (flo (glgui:stringwidth label fnt)) strw0))
          (strh (map flo (glgui:stringheight (string-append label "|") fnt)))
          (centery (fl+ (flo y) (fl/ (if (fl> (flo h) 0.) (flo h) (fl- (car strh) (cadr strh))) 2.)
            (fl- (fl/ (fl+ (car strh) (cadr strh)) 2.)))))
-    (glgui:renderstring (if (fl> strw (flo w)) x (fl+ (flo x) (flo w) (fl- strw))) centery
-       (if (fl> strw (flo w)) (glgui:stringclipleft w label fnt) label) fnt color)))
+    (glgui:renderstring (fl+ (flo x) (flo w) (fl- strw)) centery label fnt color)))
 
 (define (glgui:draw-text-center x y w h label fnt color . clipright)
   (let* ((strw (flo (glgui:stringwidth label fnt)))
