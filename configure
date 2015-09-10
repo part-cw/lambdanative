@@ -116,7 +116,7 @@ SYS_APPNAME=$with_app
 # determine host platform
 hostsys=`sh ./config.guess`
 case "$hostsys" in
-i686-pc-mingw32*) 
+i686-pc-mingw32*|*-cygwin) 
   SYS_HOSTPLATFORM="win32"
 ;;
 *-linux-gnu*)

@@ -40,7 +40,11 @@ if [ $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
   echo "==> attempting to install $SYS_PLATFORM application $SYS_APPNAME to local desktop.."
   pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).zip"
   assertfile $pkgfile
-  desktop=/c/Users/${user}/Desktop
+  if [ `uname | cut -c 1-6`=CYGWIN ]; then
+    desktop=/cygdrive/c/Users/${user}/Desktop
+  else
+    desktop=/c/Users/${user}/Desktop
+  fi
   assertfile "$desktop"
   exefile="$desktop/${SYS_APPNAME}${SYS_APPFIX}/$SYS_APPNAME"
   here=`pwd`
