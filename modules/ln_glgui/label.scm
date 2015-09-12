@@ -283,14 +283,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ))
 
 (define (glgui:label-update g w id val)
-  (let ((fp (glgui-widget-get g w 'focuspos))
-        (fs (glgui-widget-get g w 'focusset))
-        (ll (string-length (glgui-widget-get g w 'label))))
-    (if (and (eq? id 'label) (not fs)) (begin
-      (glgui-widget-set! g w 'focuspos ll)
-      (glgui-widget-set! g w 'focusset #f)
-    ))
-  ))
+  (if (eq? id 'label) (begin
+    (if (not (glgui-widget-get g w 'focusset))
+      (glgui-widget-set! g w 'focuspos (string-length (glgui-widget-get g w 'label)))
+    )
+    (glgui-widget-set! g w 'focusset #f)
+  )))
 
 (define (glgui-inputlabel g x y w h label fnt color . bgcolor)
   (let ((wgt (glgui-label g x y w h label fnt color (if (fx= (length bgcolor) 1) (car bgcolor) #f))))
