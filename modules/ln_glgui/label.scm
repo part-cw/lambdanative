@@ -80,7 +80,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                ((= align GUI_ALIGNCENTER) (- (+ x (/ w 2) curserw) (/ labelw 2)))
                (else (- (+ x w curserw) labelw))
                )))
-        (glgui:draw-line blinkpos y blinkpos (+ y h) color)
+        (glgui:draw-box blinkpos y 1 h color)
       )
     )
   ))
@@ -131,7 +131,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                          ((= align GUI_ALIGNCENTER) (- (+ x (/ w 2) curserw) (/ label-len 2)))
                          (else (- (+ x w curserw) labelw))
                        )))
-                  (glgui:draw-line blinkpos yline blinkpos (+ yline hline) color)
+                  (glgui:draw-box blinkpos yline 1 hline color)
                 )
               )
               (glgui:label-aligned-draw (if r (fl+ x 5.) x) yline
