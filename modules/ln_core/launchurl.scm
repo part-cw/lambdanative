@@ -49,7 +49,7 @@ void ios_launch_url(char *);
 #endif
 
 #ifdef MACOSX
-#import <ApplicationServices/ApplicationServices.h>
+#include <ApplicationServices/ApplicationServices.h>
 static void macosx_launch_url(char *urlstring){
   CFStringRef cfurlstring = CFStringCreateWithCString(NULL,urlstring,0);
   CFURLRef url = CFURLCreateWithString ( kCFAllocatorDefault, cfurlstring, NULL );
