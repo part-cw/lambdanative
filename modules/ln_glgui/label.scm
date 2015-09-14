@@ -171,7 +171,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (glgui-widget-setglobal! g 'focus #f)
         (glgui-widget-set! g wgt 'focus #t)
       ))
-    (if (and clickable inside focus (fx= type EVENT_BUTTON1DOWN))
+    (if (and inside focus (fx= type EVENT_BUTTON1DOWN))
       (if wrapped?
         (let* ((direction (glgui-widget-get g wgt 'direction))
                (ls ((if (= direction GUI_RIGHTTOLEFT) string-split-width-rtl string-split-width) label w fnt))
@@ -272,7 +272,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'password #f
      'enableinput #f   ;; This way we can make clickable labels
      'focus #f
-     'focuspos (string-length label)
+     'focuspos (if label (string-length label) 0)
      'clearoninput #f
      'showstart #f   ;; If true than centered text that is longer than the label width will show the start instead of end and left aligned text will too if focus = true
      'bgcolor (if (fx= (length bgcolor) 1) (car bgcolor) #f)
@@ -285,7 +285,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui:label-update g w id val)
   (if (eq? id 'label) (begin
     (if (not (glgui-widget-get g w 'focusset))
-      (glgui-widget-set! g w 'focuspos (string-length (glgui-widget-get g w 'label)))
+      (let ((str (glgui-widget-get g w 'label)))
+        (glgui-widget-set! g w 'focuspos (if (string? str) (string-length str) 0)))
     )
     (glgui-widget-set! g w 'focusset #f)
   )))
