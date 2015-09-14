@@ -65,8 +65,8 @@ static size_t curl_payload_callback(char *ptr, size_t size, size_t nmemb, void *
   int i,n=size*nmemb;
   payload_data=realloc(payload_data,payload_len+n+1); 
   memcpy(&payload_data[payload_len],ptr,n);
-  payload_data[n]=0;
   payload_len+=n;
+  payload_data[payload_len]=0;
   return n;
 }
 
