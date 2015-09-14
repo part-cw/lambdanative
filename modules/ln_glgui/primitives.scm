@@ -289,14 +289,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            ;; Handle an empty list (two new lines in a row) by replacing with a list with an empty string
            (lloop (cdr lines) (append strlist (if (fx= (length linelist) 0) '("") linelist))))))
     ;; If no new line, proceed normally - determine words on each line
-    (let ((strsplit (string-split str #\ )))
+    (let ((strsplit (string-split str #\ ))
+          (lastspace (and (fx> (string-length str) 0) (char=? (string-ref str (- (string-length str) 1)) #\ ))))
       (let loop ((i 0) (strlist (list)) (newstr "") (newstr_len 0))
         (if (fx= i (length strsplit))
           (if (fx> newstr_len 0) (append strlist (list newstr)) strlist)
-          (let* ((buildstr (string-append (list-ref strsplit i) " "))
+          (let* ((buildstr (string-append (list-ref strsplit i) (if (and (not lastspace) (fx= i (- (length strsplit) 1))) "" " ")))
                  (buildstr_len (fix (glgui:stringwidth buildstr fnt)))
                  (wrap? (fx> (fx+ newstr_len buildstr_len) (fix w))))
-            (loop (fx+ i 1) (append strlist (if wrap? (list newstr) '()))
+            (loop (fx+ i 1) (append strlist (if wrap? (list (string-append (substring newstr 0 (fx- (string-length newstr) 1)) "\n")) '()))
                 (string-append (if wrap? "" newstr) buildstr)
                 (fx+ buildstr_len (if wrap? 0 newstr_len)))))))
    ))
