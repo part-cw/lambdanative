@@ -1,4 +1,6 @@
-PKGURL=https://bitbucket.org/libgd/gd-libgd/downloads/libgd-2.1.1.tar.gz
+#PKGURL=https://bitbucket.org/libgd/gd-libgd/downloads/libgd-2.1.1.tar.gz
+PKGURL=http://ecem.ece.ubc.ca/~cpetersen/libgd-2.1.1.tar.gz
+
 PKGHASH=7abafc6f04a1de784a3e619a82239933a5155866
 
 package_download $PKGURL $PKGHASH
