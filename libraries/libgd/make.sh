@@ -1,9 +1,9 @@
-#PKGURL=https://bitbucket.org/libgd/gd-libgd/downloads/libgd-2.1.1.tar.gz
-PKGURL=http://ecem.ece.ubc.ca/~cpetersen/libgd-2.1.1.tar.gz
-
-PKGHASH=7abafc6f04a1de784a3e619a82239933a5155866
-
+PKGURL=https://github.com/libgd/libgd/archive/gd-2.1.1.tar.gz
+PKGHASH=b089ee7fc0b47b8aa4c2c70087506806637f03be
 package_download $PKGURL $PKGHASH
+
+# This version needs bootstrapping before configuration
+./bootstrap.sh
 
 package_patch
 
