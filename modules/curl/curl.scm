@@ -45,7 +45,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 
 #include <curl/curl.h>
-#include <oauth.h>
 
 int curl_needsinit=1;
 
