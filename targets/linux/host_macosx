@@ -35,7 +35,7 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-linux_sysroot=`ls -1d ${LINUXSDK}/i?86-*linux | head -n 1`
+linux_sysroot=`ls -1d ${LINUXSDK}/*86*-linux | head -n 1`
 linux_cross=`ls -1 ${LINUXSDK}/bin/*-gcc | head -n 1 | sed 's/gcc$//'`
 
 if [ "X$SYS_DEBUGFLAG" = "X" ]; then
