@@ -5,6 +5,8 @@ PKGHASH=
 
 package_download $PKGURL $PKGHASH $PKGBRANCH
 
+package_patch
+
 cd libraries/liblmdb
 rm *.o 2> /dev/null
 veval "$SYS_CC -c mdb.c midl.c"

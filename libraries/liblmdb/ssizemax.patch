@@ -1,0 +1,13 @@
+--- libraries/liblmdb/mdb.c	2015-09-17 09:39:13.000000000 -0700
++++ libraries/liblmdb/mdb.c	2015-09-17 10:21:08.000000000 -0700
+@@ -97,6 +97,10 @@
+ #include <string.h>
+ #include <time.h>
+ 
++#ifndef SSIZE_MAX
++#define SSIZE_MAX	INT_MAX
++#endif
++
+ #ifdef _MSC_VER
+ #include <io.h>
+ typedef SSIZE_T	ssize_t;
