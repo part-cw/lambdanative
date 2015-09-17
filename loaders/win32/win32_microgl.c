@@ -84,6 +84,8 @@ static int _microgl_key(WPARAM wParam, LPARAM lParam, int action)
      case VK_UP:     return EVENT_KEYUP;
      case VK_RIGHT:  return EVENT_KEYRIGHT;
      case VK_DOWN:   return EVENT_KEYDOWN;
+     case VK_HOME:   return EVENT_KEYHOME;
+     case VK_END:    return EVENT_KEYEND;
      default:
        GetKeyboardState( keyboard_state );
        scan_code = (lParam & 0x01ff0000) >> 16;

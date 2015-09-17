@@ -79,6 +79,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EVENT_KEYMENU             9
 #define EVENT_KEYBACK             10
 #define EVENT_KEYDELETE           11
+#define EVENT_KEYHOME             12
+#define EVENT_KEYEND              13
 
 // screen orientations
 #define GUI_PORTRAIT   1
