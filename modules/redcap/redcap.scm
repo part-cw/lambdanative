@@ -427,9 +427,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
 )
 
-(define (redcap-export-ids host token . xargs)
-  (let* ((event (redcap:arg 'event xargs #f))
-         (request (string-append "token=" token "&content=record&" (if event (string-append "events=" event "&") "") "format=json&fields=participant_id&type=flat"))
+(define (redcap-export-fieldnames host token)
+  (let* ((request (string-append "token=" token "&content=exportFieldNames&format=json"))
          (request-str (string-append "POST " redcap:url " HTTP/1.0" "\n"
            "Host: " host "\n"
            "User-Agent: " redcap:user-agent  "\n"
@@ -445,7 +444,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (if (and n (fx<= n 0))
             (begin
               (httpsclient-close)
-
               ;; Get data as a list, make sure first entry isn't an error
               (let ((msg (redcap:split-headerbody (redcap:data->string))))
                 (if (redcap:error-check msg)
@@ -460,9 +458,60 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         (log-error "REDCap error: " (cdaar datalist))
                         #f)
                       (else
-                         (maps (lambda (l)
-                                 (cdr (car l)))
-                               datalist))))
+                        (map cdr (map caddr datalist)))))
+                  #f)))
+            (begin
+              (if (and n (> n 0))
+                (redcap:data-append! (subu8vector redcap:buf 0 n)))
+              (loop (httpsclient-recv redcap:buf))
+          ))
+        )
+      )
+      (begin
+        (log-warning "Cannot export from REDCap, no valid connection")
+        (httpsclient-close)
+        #f  ;; Denote difference between no data and no connection
+      )
+    )
+  )
+)
+
+(define (redcap-export-ids host token . xargs)
+  (let* ((event (redcap:arg 'event xargs #f))
+         (fieldnames (redcap-export-fieldnames host token))
+         (id (if (list? fieldnames) (car fieldnames) #f))
+         (request (string-append "token=" token "&content=record&" (if event (string-append "events=" event "&") "")
+           "format=json&fields=" id "&type=flat"))
+         (request-str (string-append "POST " redcap:url " HTTP/1.0" "\n"
+           "Host: " host "\n"
+           "User-Agent: " redcap:user-agent  "\n"
+           "Content-Type: " redcap:content-type  "\n"
+           "Content-Length: " (number->string (+ (string-length request))) "\n"
+           "\r\n" request "\n")))
+    ;; Check if we have a valid connection before proceeding
+    (if (and (fx= (httpsclient-open host) 1) id)
+      (begin
+        (httpsclient-send (string->u8vector request-str))
+        (redcap:data-clear!)
+        (let loop ((n #f))
+          (if (and n (fx<= n 0))
+            (begin
+              (httpsclient-close)
+              ;; Get data as a list, make sure first entry isn't an error
+              (let ((msg (redcap:split-headerbody (redcap:data->string))))
+                (if (redcap:error-check msg)
+                  (let ((datalist (redcap:jsonstr->list (cadr msg))))
+                    (cond
+                      ((not (list? datalist))
+                         ;; If no list returned, json not properly formatted
+                         (log-error "REDCap error: Incomplete json")
+                         #f)
+                      ((and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
+                        ;; If the first entry is an error, then log it and return false
+                        (log-error "REDCap error: " (cdaar datalist))
+                        #f)
+                      (else
+                        (maps cdar datalist))))
                   #f)))
             (begin
               (if (and n (> n 0))
