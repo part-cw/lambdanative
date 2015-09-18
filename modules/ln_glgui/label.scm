@@ -174,10 +174,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (glgui-widget-setglobal! g 'focus #f)
         (glgui-widget-set! g wgt 'focus #t)
       ))
-    (if (and inside focus (fx= type EVENT_BUTTON1DOWN))
+    (if (and label inside focus (fx= type EVENT_BUTTON1DOWN))
       (if wrapped?
         (let* ((direction (glgui-widget-get g wgt 'direction))
-               (ls ((if (= direction GUI_RIGHTTOLEFT) string-split-width-rtl string-split-width) label w fnt))
+               (ls0 ((if (= direction GUI_RIGHTTOLEFT) string-split-width-rtl string-split-width) label w fnt))
+               (ls (if (fx= (length ls0) 0) '("") ls0))
                (lastrow (- (length ls) 1))
                (row0 (max 0 (floor (/ (- (+ y h) my) labelh))))
                ;; If past last row, put cursor on last row at last character
@@ -269,8 +270,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (if (and (> (string-length label) 0) (> focuspos 0)) (begin
                 (set! label (string-append (substring label 0 (fx- focuspos 1)) (substring label focuspos len)))
                 (glgui-widget-set! g wgt 'focuspos (max 0 (fx- focuspos 1)))
-                (glgui-widget-set! g wgt 'focusset #t)
               ))
+             (glgui-widget-set! g wgt 'focusset #t)
            )
            ((fx= mx EVENT_KEYDELETE)
               (if (and (> (string-length label) 0) (< focuspos (string-length label))) (begin
