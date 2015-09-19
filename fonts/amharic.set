@@ -1,0 +1,8 @@
+# ASCII character set
+U+0020-007E
+# Ethiopic set
+U+1200-137C
+# Ethiopic Supplemental set
+U+1380-1399
+# Ethiopic Extended set
+U+2D80-2DDE
