@@ -1,0 +1,4 @@
+<key>UIBackgroundModes</key>
+<array>
+<string>gps</string>
+</array>

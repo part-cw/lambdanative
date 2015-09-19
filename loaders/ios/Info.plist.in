@@ -10,8 +10,8 @@
 <string>@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@</string>
 <key>CFBundleInfoDictionaryVersion</key>
 <string>6.0</string>
-<key>CFBundleLongVersionString</key>
-<string></string>
+<key>CFBundleShortVersionString</key>
+<string>@SYS_APPVERSION@</string>
 <key>CFBundlePackageType</key>
 <string>APPL</string>
 <key>CFBundleResourceSpecification</key>
