@@ -349,7 +349,8 @@ compile_payload()
   #--------
   # add the library objects
   for payload_lib in $payload_libs; do
-    payload_objs="$SYS_PREFIX/build/$payload_lib/*.o $payload_objs"
+    tmp_objs=`ls -1 $SYS_PREFIX/build/$payload_lib/*.o | tr '\n' ' '`
+    payload_objs="$tmp_objs $payload_objs"
   done
   #--------
   # generate the final payload
@@ -781,6 +782,8 @@ make_setup()
   SYS_DEBUGFLAG=
   if [ "X$SYS_MODE" = "Xdebug" ]; then
     SYS_DEBUGFLAG="-g -O0"
+  else
+    SYS_DEBUGFLAG="-O2 -fomit-frame-pointer"
   fi
   mkdir -p $SYS_PREFIX/bin
   mkdir -p $SYS_PREFIX/lib
