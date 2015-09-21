@@ -782,8 +782,6 @@ make_setup()
   SYS_DEBUGFLAG=
   if [ "X$SYS_MODE" = "Xdebug" ]; then
     SYS_DEBUGFLAG="-g -O0"
-  else
-    SYS_DEBUGFLAG="-O2 -fomit-frame-pointer"
   fi
   mkdir -p $SYS_PREFIX/bin
   mkdir -p $SYS_PREFIX/lib
