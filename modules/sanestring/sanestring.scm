@@ -116,4 +116,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (sanestring-nonempty s)
   (fx> (string-length s) 0))
 
+(define (sanestring-uuid s)
+  (let* ((h "(?x: [0-9a-f] )")
+         (uuid (string-append "^" h "{8}" "\\-" h "{4}"  "\\-" h "{4}"   "\\-" h "{4}" "\\-" h "{12}" "$" )))
+    (and (fx= (string-length s) 36) (pregexp-match uuid s))))
+
 ;; eof     
