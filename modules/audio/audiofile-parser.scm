@@ -44,6 +44,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <math.h>
 
+#ifdef IOS
+#include <unistd.h>
+#endif
+
 //----------------------------------
 // Ogg Vorbis I audio decoder  -- version 0.99996
 //
