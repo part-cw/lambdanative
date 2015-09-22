@@ -32,7 +32,7 @@
 <key>LSRequiresCarbon</key>
 <true/>
 <key>MinimumOSVersion</key>
-<string>4.3</string>
+<string>@SYS_IOSVERSION</string>
 <key>NSHumanReadableCopyright</key>
 <string></string>
 <key>CFBundleIconFiles</key>
