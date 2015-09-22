@@ -46,4 +46,23 @@ cd $here
 assertfile $pkgfile
 echo "=== $pkgfile"
 
+ipafile=$SYS_PREFIXROOT/packages/$SYS_APPNAME-$SYS_APPVERSION-$SYS_PLATFORM.ipa
+ipascript=`xcrun -sdk iphoneos -f PackageApplication`
+assertfile $ipascript
+# NOTE: codesign will fail on OSX 10.9.5+ for lack of --no-strict parameter
+if [ `echo "10.9.5\n$osxver" | sed 's/^10\.//' | sort -g | head -1` == "9.5" ]; then
+  check=`grep "no-strict" $ipascript | head -n 1 | cut -c 1`
+  if [ "X$check" = "X" ]; then
+    assert "You must edit $ipascript to codesign with --no-strict\nLike this (two occurrences):\n runCmd(\"/usr/bin/codesign\", \"--verify\", \"--no-strict\", \"-vvvv\", , \$plugin );"
+  fi
+fi
+
+echo " => making $SYS_PLATFORM ipa.."
+if [ -f $ipafile ]; then
+  rm $ipafile
+fi
+veval "xcrun -sdk iphoneos PackageApplication -v $SYS_PREFIX/${SYS_APPNAME}.app -o $ipafile"
+assertfile $ipafile
+echo "=== $ipafile"
+
 #eof

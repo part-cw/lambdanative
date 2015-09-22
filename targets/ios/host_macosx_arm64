@@ -1,0 +1,4 @@
+
+SYS_CPU=arm64
+. $SYS_ROOT/targets/ios/_host_macosx
+

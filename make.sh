@@ -209,9 +209,12 @@ newerindir()
 
 ac_cache="$SYS_TMPDIR/tmp.subst"
 
-if [ -f $ac_cache ]; then
-  rm $ac_cache
-fi
+ac_reset() 
+{
+  if [ -f $ac_cache ]; then
+    rm $ac_cache
+  fi
+}
 
 ac_subst()
 {
@@ -740,7 +743,7 @@ add_items()
   done
 }
 
-make_setup()
+make_setup_profile()
 {
   setstate SETUP
   profile=`locatefile PROFILE`
@@ -776,56 +779,29 @@ make_setup()
       ;;
     esac
   fi
-  SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM"
+  SYS_LOCASEAPPNAME=`echo $SYS_APPNAME | tr A-Z a-z`
   SYS_HOSTPREFIX="$SYS_PREFIXROOT/$SYS_HOSTPLATFORM"
+  mkdir -p $SYS_HOSTPREFIX/bin
+  mkdir -p $SYS_HOSTPREFIX/lib
+  mkdir -p $SYS_HOSTPREFIX/include
   SYS_GSC=$SYS_HOSTPREFIX/bin/gsc
   SYS_DEBUGFLAG=
   if [ "X$SYS_MODE" = "Xdebug" ]; then
     SYS_DEBUGFLAG="-g -O0"
   fi
-  mkdir -p $SYS_PREFIX/bin
-  mkdir -p $SYS_PREFIX/lib
-  mkdir -p $SYS_PREFIX/include
-  mkdir -p $SYS_PREFIX/build
-  mkdir -p $SYS_HOSTPREFIX/bin
-  mkdir -p $SYS_HOSTPREFIX/lib
-  mkdir -p $SYS_HOSTPREFIX/include
   mkdir -p $SYS_PREFIXROOT/packages
   mkdir -p $SYS_PREFIXROOT/build
-  buildsys=$SYS_PLATFORM"_"$SYS_HOSTPLATFORM
-  if [ -s targets/$SYS_PLATFORM/host_$SYS_HOSTPLATFORM ]; then
-    . targets/$SYS_PLATFORM/host_$SYS_HOSTPLATFORM
-  else
-     echo "ERROR: don't know how to setup a build for $SYS_PLATFORM on a $SYS_HOSTPLATFORM host"
-     exit 1
-  fi
-  SYS_LOCASEAPPNAME=`echo $SYS_APPNAME | tr A-Z a-z`
   SYS_ANDROIDAPI=$ANDROIDAPI 
   SYS_ANDROIDSDK=$ANDROIDSDK
   SYS_ANDROIDNDK=$ANDROIDNDK
   SYS_ANDROIDARCH=$ANDROIDARCH
-  # Add git path for overlay, additional paths, and the lambdanative path
-  here=`pwd`
-  SYS_BUILDHASH=
-  for p in $(echo "$SYS_PATH" | tr ":" "\n"); do
-    cd $p
-    if [ -d "$p/.git" ]; then
-      SYS_BUILDHASH="$SYS_BUILDHASH"`basename $p`": "`git log --pretty=format:"%h" -1`","
-    fi
-    cd $here
-  done
-  SYS_BUILDHASH=`echo "$SYS_BUILDHASH" | sed 's/,$//'`
-  echo $SYS_BUILDHASH
-  SYS_BUILDEPOCH=`date +"%s"`
   SYS_HOSTEXEFIX=
   if [ "$SYS_HOSTPLATFORM" = "win32" ]; then
     SYS_HOSTEXEFIX=".exe"
   fi
-  SYS_ARCH=`$SYS_CC -dumpmachine 2> /dev/null`
-  if [ "X$SYS_ARCH" = "X" ]; then
-    # qcc does not support the dumpmachine option
-    SYS_ARCH=arm-unknown-nto-qnx6.5.0eabi
-  fi
+  SYS_BUILDHASH=`echo "$SYS_BUILDHASH" | sed 's/,$//'`
+  echo $SYS_BUILDHASH
+  SYS_BUILDEPOCH=`date +"%s"`
   # build the subtool
   if ! `test -x  $SYS_HOSTPREFIX/bin/subtool` || 
        `test tools/subtool/subtool.c -nt $SYS_HOSTPREFIX/bin/subtool`; then
@@ -835,6 +811,78 @@ make_setup()
     fi
     gcc $flags -o $SYS_HOSTPREFIX/bin/subtool tools/subtool/subtool.c 2> /dev/null
   fi
+  name=$SYS_APPNAME
+  here=`pwd`
+  appsrcdir=`locatedir apps/$name`
+  items=
+  itemname=modules
+  if [ -f "$appsrcdir/MODULES" ]; then
+    add_items `cat $appsrcdir/MODULES`
+  fi
+  modules=$items
+  items=
+  itemname=plugins
+  if [ -f "$appsrcdir/PLUGINS" ]; then
+    add_items `cat $appsrcdir/PLUGINS`
+  fi
+  plugins=$items
+  libraries=
+  if [ -f "$appsrcdir/LIBRARIES" ]; then
+    libraries=`cat $appsrcdir/LIBRARIES`
+  fi
+  for m in $modules; do
+    xlibs=`locatefile modules/$m/LIBRARIES silent`
+    if [ ! "X$xlibs" = "X" ] && [ -f "$xlibs" ]; then
+      libraries=$libraries" "`cat "$xlibs"`
+    fi
+  done
+  for p in $plugins; do
+    xlibs=`locatefile plugins/$p/LIBRARIES silent`
+    if [ ! "X$xlibs" = "X" ] && [ -f "$xlibs" ]; then
+      libraries=$libraries" "`cat "$xlibs"`
+    fi
+  done 
+  libraries=`filter_entries $SYS_PLATFORM $libraries`
+  tool_libraries=
+  if [ "$SYS_HOSTPLATFORM" = "$SYS_PLATFORM" ]; then
+    tool_libraries="libgd libgambc"
+  fi
+  setstate
+}
+
+make_setup_target()
+{
+  setstate SETUP
+  setup_target=$1
+  assertfile $setup_target "Don't know how to setup a build for $SYS_PLATFORM on a $SYS_HOSTPLATFORM host"
+  . $setup_target
+  if [ "X$SYS_CPU" = "X" ]; then
+    SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM"
+  else
+    SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM/$SYS_CPU"
+  fi
+  apptgtdir=$SYS_PREFIX/${SYS_APPNAME}${SYS_APPFIX}
+  mkdir -p $SYS_PREFIX/bin
+  mkdir -p $SYS_PREFIX/lib
+  mkdir -p $SYS_PREFIX/include
+  mkdir -p $SYS_PREFIX/build
+  buildsys=$SYS_PLATFORM"_"$SYS_HOSTPLATFORM
+  here=`pwd`
+  SYS_BUILDHASH=
+  # Add git path for overlay, additional paths, and the lambdanative path
+  for p in $(echo "$SYS_PATH" | tr ":" "\n"); do
+    cd $p
+    if [ -d "$p/.git" ]; then
+      SYS_BUILDHASH="$SYS_BUILDHASH"`basename $p`": "`git log --pretty=format:"%h" -1`","
+    fi
+    cd $here
+  done
+  SYS_ARCH=`$SYS_CC -dumpmachine 2> /dev/null`
+  if [ "X$SYS_ARCH" = "X" ]; then
+    # qcc does not support the dumpmachine option
+    SYS_ARCH=arm-unknown-nto-qnx6.5.0eabi
+  fi
+  ac_reset
   ac_subst SYS_ORGTLD
   ac_subst SYS_ORGSLD
   ac_subst SYS_APPNAME
@@ -871,54 +919,16 @@ make_setup()
   ac_subst SYS_OPENWRTTARGET
   ac_subst SYS_ARCH
   ac_output LNCONFIG.h $SYS_PREFIX/include/LNCONFIG.h
-  name=$SYS_APPNAME
-  here=`pwd`
-  appsrcdir=`locatedir apps/$name`
-  apptgtdir=$SYS_PREFIX/${SYS_APPNAME}${SYS_APPFIX}
-  items=
-  itemname=modules
-  if [ -f "$appsrcdir/MODULES" ]; then
-    add_items `cat $appsrcdir/MODULES`
-  fi
-  modules=$items
-  items=
-  itemname=plugins
-  if [ -f "$appsrcdir/PLUGINS" ]; then
-    add_items `cat $appsrcdir/PLUGINS`
-  fi
-  plugins=$items
-  libraries=
-  if [ -f "$appsrcdir/LIBRARIES" ]; then
-    libraries=`cat $appsrcdir/LIBRARIES`
-  fi
-  for m in $modules; do
-    xlibs=`locatefile modules/$m/LIBRARIES silent`
-    if [ ! "X$xlibs" = "X" ] && [ -f "$xlibs" ]; then
-      libraries=$libraries" "`cat "$xlibs"`
-    fi
-  done
-  for p in $plugins; do
-    xlibs=`locatefile plugins/$p/LIBRARIES silent`
-    if [ ! "X$xlibs" = "X" ] && [ -f "$xlibs" ]; then
-      libraries=$libraries" "`cat "$xlibs"`
-    fi
-  done 
-  libraries=`filter_entries $SYS_PLATFORM $libraries`
-#  compile_scandir $appsrcdir 
-#  for m in $modules; do
-#    compile_scandir `locatedir modules/$m`
-#  done
-#  for p in $plugins; do
-#    compile_scandir `locatedir modules/$m`
-#  done 
-  tool_libraries=
-  if [ "$SYS_HOSTPLATFORM" = "$SYS_PLATFORM" ]; then
-    tool_libraries="libgd libgambc"
-  fi
   texture_srcs=
   string_srcs=
   font_srcs=
   setstate
+}
+
+make_setup()
+{
+  make_setup_profile $@
+  make_setup_target `ls -1 targets/$SYS_PLATFORM/host_${SYS_HOSTPLATFORM}* | tail -n 1`
 }
 
 make_loader()
@@ -1434,16 +1444,20 @@ executable)
   make_executable
 ;;
 all)
-  rm -rf $SYS_TMPDIR/tmp.?????? 2> /dev/null
-  make_libraries
-if [ `is_gui_app` = "yes" ]; then
-  make_artwork
-  make_textures
-  make_fonts
-  make_strings
-fi
-  update_packfile
-  make_payload
+  targets=`ls -1 targets/$SYS_PLATFORM/host_${SYS_HOSTPLATFORM}*`
+  for target in $targets; do
+    rm -rf $SYS_TMPDIR/tmp.?????? 2> /dev/null
+    make_setup_target $target
+    make_libraries
+    if [ `is_gui_app` = "yes" ]; then
+      make_artwork
+      make_textures
+      make_fonts
+      make_strings
+    fi
+    update_packfile
+    make_payload
+  done
   make_executable
   make_package
 ;;

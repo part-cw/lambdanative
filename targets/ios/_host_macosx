@@ -47,7 +47,7 @@ if [ "X$SYS_CC" = "X" ]; then
   SYS_CC=`ls -1 $ios_cross/arm-apple-darwin*-llvm-* 2> /dev/null | sort -r | head -n 1`
 fi
 if [ "X$SYS_CC" = "X" ]; then
-  SYS_CC=`xcrun -find -sdk iphoneos clang`" -arch armv7"
+  SYS_CC=`xcrun -find -sdk iphoneos clang`" -arch $SYS_CPU"
 fi
 assertfile $SYS_CC
 SYS_CC="$SYS_CC $SYS_DEBUGFLAG -isysroot $IOSSDK -DIOS -DIPHONE -miphoneos-version-min=$SYS_IOSVERSION"
