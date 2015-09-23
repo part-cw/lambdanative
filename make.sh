@@ -855,10 +855,9 @@ make_setup_target()
   setstate SETUP
   setup_target=$1
   assertfile $setup_target "Don't know how to setup a build for $SYS_PLATFORM on a $SYS_HOSTPLATFORM host"
+  SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM"
   . $setup_target
-  if [ "X$SYS_CPU" = "X" ]; then
-    SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM"
-  else
+  if [ ! "X$SYS_CPU" = "X" ]; then
     SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM/$SYS_CPU"
   fi
   apptgtdir=$SYS_PREFIX/${SYS_APPNAME}${SYS_APPFIX}
