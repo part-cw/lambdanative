@@ -204,13 +204,15 @@ end-of-c-declare
 ))
 
 ;; assign scheme entry points
-(define (main p1 p2 p3 . px)
+(define (ln-main p1 p2 p3 . px)
   (set! hook:init p1)
   (set! hook:event p2)
   (set! hook:terminate (lambda () (p3) (force-terminate)))
   (if (> (length px) 0) (set! hook:suspend (car px)))
   (if (> (length px) 1) (set! hook:resume (cadr px)))
 )
+;; override gambit main definition for backwards compatibility
+(set! main ln-main)
 
 (define (terminate)
   (if (procedure? hook:terminate) (hook:terminate))
