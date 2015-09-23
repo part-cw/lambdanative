@@ -4,7 +4,7 @@ PKGHASH=50893291621658f355bc5b4d450a8d06a563053d
 
 package_download $PKGURL $PKGHASH
 
-if [ ! $SYS_PLATFORM = win32 ] || [ `uname | cut -c 1-6`=CYGWIN ]; then
+if [ ! "$SYS_PLATFORM" = "win32" ] || [ `uname | cut -c 1-6` = "CYGWIN" ]; then
   NOQUIET=yupgofigure package_configure --static
 else
   PREFIX=`echo "$SYS_STRIP" | sed 's/strip$//;s/ $//'`
