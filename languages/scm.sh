@@ -119,7 +119,10 @@ compile_payload_scm()
     scm_lotgt=`echo "$scm_lctgt" | sed 's/c$/o/'`
     if [ $scm_link_dirty = yes ] || [ ! -f $scm_lotgt ]; then
       vecho "$SYS_GSC -link $scm_csrcs"
+      scm_link_here=`pwd`
+      cd `dirname $scm_lctgt`
       $SYS_GSC -link $scm_csrcs
+      cd $scm_link_here
       assertfile $scm_lctgt
       veval "$SYS_ENV $SYS_CC $payload_cdefs -o $scm_lotgt -c $scm_lctgt -I$SYS_PREFIX/include"
     fi

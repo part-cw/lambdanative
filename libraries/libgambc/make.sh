@@ -1,8 +1,9 @@
-
-PKGURL=https://www.iro.umontreal.ca/~gambit/download/gambit/v4.7/source/gambc-v4_7_3.tgz
-PKGHASH=a92db1a54b13a4a0304376c4de52f7467d6340a4
+PKGURL=https://www.iro.umontreal.ca/~gambit/download/gambit/v4.7/source/gambc-v4_7_9.tgz
+PKGHASH=3af67937b3e3fb11b6fd87040fde7184b2e753f3
 
 package_download $PKGURL $PKGHASH
+
+package_patch
 
 case $SYS_PLATFORM in
 ios)
@@ -37,7 +38,6 @@ fi
 
 package_configure $EXTRACONF
 
-package_patch
 
 if [ "$SYS_PLATFORM" = "$SYS_HOSTPLATFORM" ]; then
   package_make

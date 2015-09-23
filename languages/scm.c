@@ -8,7 +8,7 @@
 #define DMSG(fmt...)
 #endif
 
-#define ___VERSION 407003
+#define ___VERSION 407009
 #include <gambit.h>
 #define LINKER ____20_@SCM_LINKER@
 ___BEGIN_C_LINKAGE
