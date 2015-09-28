@@ -10,7 +10,7 @@ if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
   EXTRACONF=--host=$SYS_ARCH
 fi
 
-package_configure $EXTRACONF --disable-ldap --disable-shared --enable-static --without-librtmp --without-libidn
+package_configure $EXTRACONF --disable-ldap --disable-shared --enable-static --without-librtmp --without-libidn --without-libssh2
 
 package_make
 asserterror $? "compilation failed"
