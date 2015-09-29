@@ -14,6 +14,13 @@ if [ ! -d $LAMBDANATIVE ] || [ ! -d $LAMBDANATIVE/apps ]; then
   exit
 fi
 
+if [ "X$LAMBDANATIVE" = "X$PWD" ]; then
+  echo "ERROR: Current location and SDKROOT are identical"
+  echo "       This would overwrite the configure script! Please"
+  echo "       create a new folder and run:  lambdanative init"
+  exit
+fi
+
 cmd=$1
 appname=$2
 apptype=$3
