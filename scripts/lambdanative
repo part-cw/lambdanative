@@ -14,6 +14,12 @@ if [ ! -d $LAMBDANATIVE ] || [ ! -d $LAMBDANATIVE/apps ]; then
   exit
 fi
 
+iHERE=`pwd`
+if [ "$LAMBDANATIVE" = "$HERE" ]; then
+    echo "ERROR: Please don't run this script from the installation folder"
+    exit
+fi
+
 cmd=$1
 appname=$2
 apptype=$3
