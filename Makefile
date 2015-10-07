@@ -30,3 +30,6 @@ gcc:
 
 smoke:
 	@ ./make.sh smoke
+
+.emacs:
+	@ ./make.sh .emacs

@@ -1361,6 +1361,51 @@ make_smoke()
 
 ##############################
 
+make_dot_emacs()
+{
+  echo " => checking emacs configuration.."
+  emacs_update=no
+  dotemacs="$HOME/.emacs"
+  if [ -f $dotemacs ]; then
+    emacs_match=`grep "^(require 'lambdanative)" $dotemacs | cut -c 1`
+    if [ "X$emacs_match" = "X" ]; then
+      emacs_update=yes
+    fi
+  fi
+  if [ ! -d $SYS_PREFIXROOT/emacs ]; then
+    asserttool wget gunzip
+    mkdir -p $SYS_PREFIXROOT/emacs
+    echo " => downloading emacs modes.."
+    #veval "wget http://www.neilvandyke.org/quack/quack.el -O - | sed 's/\"mzscheme\"/\"telnet -4 localhost 7000\"/g;s/(if cmd/(setq comint-process-echoes t)(if cmd/' > $SYS_PREFIXROOT/emacs/quack.el"
+    veval "wget http://www.neilvandyke.org/quack/quack.el -O $SYS_PREFIXROOT/emacs/quack.el"
+    veval "wget http://synthcode.com/emacs/scheme-complete-0.8.11.el.gz -O - | gunzip > $SYS_PREFIXROOT/emacs/scheme-complete.el"
+    veval "wget http://mumble.net/~campbell/emacs/paredit.el -O $SYS_PREFIXROOT/emacs/paredit.el"
+cat << _EOF > $SYS_PREFIXROOT/emacs/lambdanative.el
+(global-font-lock-mode 1)
+(setq show-paren-delay 0 show-paren-style 'parenthesis)
+(show-paren-mode 1)
+(setq quack-global-menu-p nil)
+(setq comint-process-echoes t)
+(require 'quack)
+(setq quack-default-program "telnet -4 localhost 7000")
+(setq quack-programs '("telnet -4 localhost 7000"))
+(require 'scheme-complete)
+(autoload 'scheme-smart-complete "scheme-complete" nil t)
+(eval-after-load 'scheme '(define-key scheme-mode-map "\t" 'scheme-complete-or-indent))
+(require 'paredit)
+(add-hook 'scheme-mode-hook #'enable-paredit-mode)
+(provide 'lambdanative)
+_EOF
+  fi
+  if [ $emacs_update = yes ]; then
+    echo "(add-to-list 'load-path \"$SYS_PREFIXROOT/emacs\")" >> $dotemacs
+    echo "(require 'lambdanative)" >> $dotemacs
+    echo " == $dotemacs configuration updated"
+  fi
+}
+
+##############################
+
 usage()
 {
   echo "usage: make.sh <clean|tools|resources|libraries|payload|executable|all|install|package|info>"
@@ -1477,6 +1522,9 @@ gcc)
 ;;
 smoke)
   make_smoke
+;;
+.emacs)
+  make_dot_emacs
 ;;
 *)
   usage
