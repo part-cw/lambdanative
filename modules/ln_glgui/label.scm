@@ -112,13 +112,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (let* ((labelsplit0 ((if (= direction GUI_RIGHTTOLEFT) string-split-width-rtl string-split-width) label w fnt))
              (hline lblh)
              (linecount (fix (/ h lblh)))
+             (focuspos (glgui-widget-get g wgt 'focuspos))
              (labelsplit (if (fx> (length labelsplit0) linecount)
                            (if focus
-                             (list-tail labelsplit0 (- (length labelsplit0) linecount))
+                             (let ((index (- (length labelsplit0) linecount)))
+                               ;; Remove hidden characters from focuspos count
+                               (set! focuspos (- focuspos (apply + (map string-length (list-head labelsplit0 index)))))
+                               (list-tail labelsplit0 index))
                              (list-head labelsplit0 linecount))
                            labelsplit0))
-             (labelsplit-len (length labelsplit))
-             (focuspos (glgui-widget-get g wgt 'focuspos)))
+             (labelsplit-len (length labelsplit)))
         (let loop ((i 0) (yline (fl+ y h (fl- hline))) (charct 0))
           (if (fx= i labelsplit-len)
             (if (fl= h0 0.) (glgui-widget-set! g wgt 'h (fl+ y h (fl- yline))) #t)
@@ -179,8 +182,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (let* ((direction (glgui-widget-get g wgt 'direction))
                (ls0 ((if (= direction GUI_RIGHTTOLEFT) string-split-width-rtl string-split-width) label w fnt))
                (ls (if (fx= (length ls0) 0) '("") ls0))
+               (maxrows (fix (/ h labelh)))
+               (hiddenrows (max (- (length ls) maxrows) 0))
                (lastrow (- (length ls) 1))
-               (row0 (max 0 (floor (/ (- (+ y h) my) labelh))))
+               (row0 (max 0 (+ (floor (/ (- (+ y h) my) labelh)) hiddenrows)))
                ;; If past last row, put cursor on last row at last character
                (row (if (> row0 lastrow)
                       (begin
