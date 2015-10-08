@@ -91,3 +91,4 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "barchart.scm")
 (include "recurrence.scm")
 (include "xyplot.scm")
+(include "bubbleselector.scm")
