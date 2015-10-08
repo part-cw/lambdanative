@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2014, University of British Columbia
+Copyright (c) 2009-2015, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -61,5 +61,24 @@ c-declare-end
 (define FCGI-Finish (c-lambda () void "FCGI_Finish"))
 
 (define (FCGI-getenv s) (getenv s ""))
+
+(define (fcgi-server init-proc session-proc close-proc)
+  (if init-proc (init-proc))
+  (let loop ()
+    (if (>= (FCGI-Accept) 0) (begin
+      (cgi-env-init)
+      (let ((outp (with-output-to-string "" (lambda ()
+              (if session-proc (session-proc) (for-each display (list
+                 "Content-Type: text/plain\n\n"
+                 "No session hook?\n")))))))
+        (cgi-env-clear)
+        (FCGI-display outp)
+        (FCGI-Finish))) (thread-sleep! 0.1)) 
+      (loop))
+  (if close-proc (close-proc)) ;; not reached
+ )
+
+;; override cgi-server for automatic CGI->FastCGI conversion
+(set! cgi-server fcgi-server)
 
 ;; eof
