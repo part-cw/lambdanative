@@ -92,7 +92,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (display "\n" fh)
       (force-output fh)
       (instance-setvar! store instance "Prv" ##now)
-      (instance-setvar! store instance "NextRun" (fl+ nextrun (flo interval)))
+      (let ((skipintervals (flfloor (fl/ (flo (- ##now nextrun)) (flo interval)))))
+        (if (fl> skipintervals 0.) (log-system "trendoutput: !! skipped " skipintervals " intervals"))
+        (instance-setvar! store instance "NextRun" (fl+ nextrun (fl* (flo interval) (fl+ 1. skipintervals))))
+      )
     ))
   ))
 
