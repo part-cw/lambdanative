@@ -8,6 +8,9 @@ EXTRACONF=
 if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
   EXTRACONF=--host=$SYS_ARCH
 fi
+if [ $SYS_PLATFORM = android ]; then
+  EXTRACONF="$EXTRACONF --without-vpx"
+fi
 
 # prevent DLL hell on win32
 cp src/gd.h tmp
