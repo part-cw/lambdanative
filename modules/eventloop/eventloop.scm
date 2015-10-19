@@ -64,6 +64,7 @@ end-of-c-declare
 (define EVENT_MULTITOUCH ((c-lambda () int "___result = EVENT_MULTITOUCH;")))
 (define EVENT_DEBUG ((c-lambda () int "___result = EVENT_DEBUG;")))
 (define EVENT_IDLE ((c-lambda () int "___result = EVENT_IDLE;")))
+(define EVENT_NOTIFICATION ((c-lambda () int "___result = EVENT_NOTIFICATION;")))
 
 ;; keyboard related constants
 (define EVENT_KEYENTER ((c-lambda () int "___result = EVENT_KEYENTER;")))

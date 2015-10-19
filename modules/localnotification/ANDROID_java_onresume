@@ -1,0 +1,5 @@
+if (alarm_message != null) {
+  if (getIntent().getStringExtra(alarm_message) != null) {
+    notification_store(alarm_message,alarm_timestamp);
+  }
+}

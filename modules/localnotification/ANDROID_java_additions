@@ -1,0 +1,27 @@
+class AlarmReceiver extends WakefulBroadcastReceiver {
+  public void onReceive(Context context, Intent intent) {
+    try {
+      Bundle bundle = intent.getExtras();
+      String message = bundle.getString("alarm_message");
+      Double timestamp = bundle.getDouble("alarm_timestamp");
+  
+      NotificationCompat.Builder ncb = new NotificationCompat.Builder(context)
+        .setSmallIcon(R.drawable.icon)
+        .setContentTitle("@SYS_APPNAME@")
+        .setContentText(message);
+
+      Intent ni = new Intent(context, @SYS_APPNAME@.class);
+      ni.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      ni.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+      ni.putExtra("alarm_message", message);
+      ni.putExtra("alarm_timestamp", timestamp);
+      PendingIntent pi = PendingIntent.getActivity(context, 0, ni, PendingIntent.FLAG_UPDATE_CURRENT);
+      
+      ncb.setContentIntent(pi);
+      NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+      nm.notify((new Double(timestamp)).intValue(), ncb.build());
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+}

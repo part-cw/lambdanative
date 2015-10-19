@@ -1,0 +1,34 @@
+@Override
+protected void onNewIntent(Intent intent) {
+  alarm_message = intent.getStringExtra("alarm_message");
+  alarm_timestamp = intent.getDoubleExtra("alarm_timestamp",0);
+  notification_store(alarm_message,alarm_timestamp);
+  super.onNewIntent(intent);
+} 
+
+private int scheduleNotification(String msg, double ts) {
+  int ts_sec = (new Double(ts)).intValue();
+  long ts_msec = (new Double(1000*ts)).longValue();
+  
+  // Get the AlarmManager service
+  AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
+  
+  Intent intent = new Intent(this, AlarmReceiver.class);
+  intent.putExtra("alarm_message", msg);
+  intent.putExtra("alarm_timestamp", ts_sec);
+  PendingIntent sender = PendingIntent.getBroadcast(this, ts_sec, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+  // setup the alarm - depending on version [Build.VERSION_CODES.KITKAT=19]
+  if (Build.VERSION.SDK_INT < 19) {
+    am.set(am.RTC_WAKEUP, ts_msec, sender);
+  }else{
+    am.setExact (am.RTC_WAKEUP, ts_msec, sender);
+  }
+  return 1;
+}
+
+public void notification_store(String msg, Double ts){
+  storeAlarmMessage(msg, ts);
+  nativeEvent(20,0,0); // EVENT_NOTIFICATION
+}
+
+native void storeAlarmMessage(String msg, Double ts);

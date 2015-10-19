@@ -81,6 +81,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound | UIRemoteNotificationTypeAlert)];
 #endif
 
+#ifdef USE_LOCALNOTIFICATION
+// Let the device know we want to receive local notifications
+  if ([application respondsToSelector:@selector(registerUserNotificationSettings:)]) {
+    [[UIApplication sharedApplication] registerUserNotificationSettings:
+      (UIUserNotificationTypeBadge | UIUserNotificationTypeSound | UIUserNotificationTypeAlert)];
+  }
+#endif
+
 #ifdef USE_NOLOCK
 // this will prevent the screen from locking up
    [UIApplication sharedApplication].idleTimerDisabled = YES;
@@ -190,6 +198,28 @@ extern int pushnotification_gottoken;
 - (void)application:(UIApplication*)application didFailToRegisterForRemoteNotificationsWithError:(NSError*)error {
   pushnotification_gottoken=0;
   NSLog(@"Failed to get APN token: %@", error);
+}
+#endif
+
+#ifdef USE_LOCALNOTIFICATION
+extern char localnotification_msg[100];
+extern int localnotification_gotmsg;
+extern double localnotification_timestamp;
+- (void)application:(UIApplication*)application didReceiveLocalNotification:(UILocalNotification *)notification{
+  int len = [notification.alertBody length];
+  const char* msg = [notification.alertBody cStringUsingEncoding:[NSString defaultCStringEncoding]];
+  int i;
+  for (i=0;i<len;i++){
+    localnotification_msg[i] = msg[i];
+  }
+  localnotification_msg[len] = 0;
+  localnotification_timestamp = [notification.fireDate timeIntervalSince1970];
+  localnotification_gotmsg = 1;
+  UIApplicationState state = [application applicationState];
+  ffi_event(EVENT_NOTIFICATION,0,0);
+  if (state == UIApplicationStateActive) {
+    [UIApplication sharedApplication].applicationIconBadgeNumber = 0;
+  }
 }
 #endif
 

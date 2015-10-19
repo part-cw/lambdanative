@@ -180,6 +180,28 @@ char pushnotification_devicetoken[512];
 int pushnotification_gottoken;
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%
+// Apple Local Notifications
+
+char localnotification_msg[100];
+int localnotification_gotmsg;
+double localnotification_timestamp;
+extern "C" int ios_localnotification_schedule(char* text, double time) {
+  NSArray *eventArray = [[UIApplication sharedApplication] scheduledLocalNotifications];
+  UILocalNotification* localNotification = [[UILocalNotification alloc] init];
+  int eventnum = [eventArray count];
+  localNotification.timeZone = [NSTimeZone localTimeZone];
+  localNotification.fireDate = [NSDate dateWithTimeIntervalSince1970: time];
+  localNotification.alertBody = [NSString stringWithUTF8String: text];
+  localNotification.applicationIconBadgeNumber =
+    [UIApplication sharedApplication].applicationIconBadgeNumber + eventnum + 1;
+  [[UIApplication sharedApplication] scheduleLocalNotification:localNotification];
+  // see if we got it scheduled?
+  eventArray = [[UIApplication sharedApplication] scheduledLocalNotifications];
+  if ([eventArray count]>eventnum) return 1;
+  return 0;
+}
+
+// %%%%%%%%%%%%%%%%%%%%%%%%%%%
 // device identification
 
 #import <sys/sysctl.h>

@@ -1,0 +1,23 @@
+// FFI for getting localnotification data to Scheme
+char localnotification_msg[100];
+int localnotification_gotmsg;
+double localnotification_timestamp;
+
+int android_localnotification_schedule(char* msg, double ts){
+  JNIEnv *env = GetJNIEnv();
+  jstring jmsg = (*env)->NewStringUTF(env,msg);
+  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "scheduleNotification", "(Ljava/lang/String;D)I");
+    return (*env)->CallIntMethod(env, globalObj, method, jmsg, ts);
+  }
+}
+
+
+JNIEXPORT Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_storeAlarmMessage(JNIEnv *env, jobject obj, jstring msg, jdouble ts){
+  const char *str= (*env)->GetStringUTFChars(env,msg,0);
+  strcpy(localnotification_msg, str);
+  localnotification_timestamp = ts;
+  localnotification_gotmsg=1;
+  (*env)->ReleaseStringUTFChars(env, msg, str);
+}
