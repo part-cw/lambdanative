@@ -83,10 +83,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef USE_LOCALNOTIFICATION
 // Let the device know we want to receive local notifications
+  #ifdef __IPHONE_8_0
   if ([application respondsToSelector:@selector(registerUserNotificationSettings:)]) {
     [[UIApplication sharedApplication] registerUserNotificationSettings:
       (UIUserNotificationTypeBadge | UIUserNotificationTypeSound | UIUserNotificationTypeAlert)];
   }
+  #endif
 #endif
 
 #ifdef USE_NOLOCK
