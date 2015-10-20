@@ -33,7 +33,7 @@ compile_payload_scm()
       if [ $m = "syntax-case" ]; then
         scm_modsrc="$SYS_HOSTPREFIX/lib/syntax-case.scm"
       else
-        scm_modsrc="$modsrc `locatefile modules/$m/$m.scm silent`"
+        scm_modsrc=`locatefile modules/$m/$m.scm silent`
       fi
       if [ `string_contains "$scm_coremodules" " $m "` = yes ]; then
         scm_coresrcs="$scm_coresrcs $scm_modsrc"
@@ -42,7 +42,7 @@ compile_payload_scm()
       fi
     done
     for p in $plugins; do
-      scm_plugsrc="$scm_plugsrc `locatefile plugins/$p/$p.scm silent`"
+      scm_plugsrc=`locatefile plugins/$p/$p.scm silent`
       scm_auxsrcs="$scm_auxsrcs $scm_plugsrc"
     done
     scm_mainsrc=$appsrcdir/main.scm
