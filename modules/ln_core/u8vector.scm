@@ -65,6 +65,21 @@ end-of-c-declare
       (loop (+ i 1)))
     ))))))
 
+(define (u8vector->hexstring u8v)
+  (if (u8vector? u8v)
+    (apply string-append (map (lambda (x)
+      (let* ((s (number->string x 16))
+             (spad (if (= (string-length s) 1) "0" "")))
+        (string-append spad s))) (u8vector->list u8v))) "??"))
+
+(define (hexstring->u8vector str)
+  (list->u8vector (map
+     (lambda (s) (string->number s 16))
+       (let loop ((s str)(res '()))
+         (if (= (string-length s) 0) res
+           (loop (substring s 2 (string-length s))
+             (append res (list (substring s 0 2)))))))))
+
 ;;write a u8vector to a file
 (define (u8vector->file u8v filename)
   (let ((file (open-output-file filename)))
@@ -136,5 +151,16 @@ end-of-c-declare
 (define (s48->u8vector v) (sXX->u8vector v 6))
 (define (s64->u8vector v) (sXX->u8vector v 8))
 (define (s96->u8vector v) (sXX->u8vector v 12))
+
+(define (u8vector->integer u8v)
+  (let loop ((i (- (u8vector-length u8v) 1))(e 1)(res 0))
+    (if (< i 0) res
+      (loop (- i 1) (* e 256) (+ res (* e (u8vector-ref u8v i)))))))
+
+(define (integer->u8vector val)
+  (let loop ((v val)(res (u8vector)))
+    (if (= v 0) (if (= (u8vector-length res) 0) (u8vector 0) res)
+      (loop (arithmetic-shift v -8)
+        (u8vector-append (u8vector (bitwise-and v 255)) res)))))
 
 ;; eof
