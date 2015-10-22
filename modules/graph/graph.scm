@@ -187,7 +187,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (graph-moveto g x y) 			(graph:cmd g '@moveto (flo x) (flo y)))
 (define (graph-lineto g x y) 			(graph:cmd g '@lineto (flo x) (flo y)))
 (define (graph-closepathstroke g) 		(graph:cmd g '@closepathstroke))
+(define (graph-closepathfill g) 		(graph:cmd g '@closepathfill))
 (define (graph-stroke g) 			(graph:cmd g '@stroke))
+(define (graph-fill g) 				(graph:cmd g '@fill))
 (define (graph-linewidth g w)			(graph:cmd g '@linewidth w))
 (define (graph-dash g t m)			(graph:cmd g '@dash t m))
 (define (graph-rorigin g x y)			(graph:cmd g '@rorigin x y))
@@ -221,8 +223,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (graph-solidcircle g x y r)	   	(graph:cmd g '@solidcircle x y r))
 (define (graph-box g x1 y1 x2 y2)		(graph:cmd g '@box x1 y1 x2 y2))
 (define (graph-solidbox g x1 y1 x2 y2)		(graph:cmd g '@solidbox x1 y1 x2 y2))
-(define (graph-triangle g x1 y1 x2 y2 x3 y3)    (graph:cmd g '@triangle x1 y2 x2 y2 x3 y3))
-(define (graph-solidtriangle g x1 y1 x2 y2 x3 y3)    (graph:cmd g '@solidtriangle x1 y2 x2 y2 x3 y3))
+(define (graph-triangle g x1 y1 x2 y2 x3 y3)    (graph:cmd g '@triangle x1 y1 x2 y2 x3 y3))
+(define (graph-solidtriangle g x1 y1 x2 y2 x3 y3)    (graph:cmd g '@solidtriangle x1 y1 x2 y2 x3 y3))
 (define (graph-newpage g)			(graph:cmd g '@newpage))
 
 ;; %%%%%%%%%%%%%%%%%%%% MISC OUTPUT GENERATION

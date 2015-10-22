@@ -132,11 +132,41 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (else (graph:hook g o 'STROKE))
     )))
 
+;; fill path
+(define (graphout:fill g)
+  (graph:log 3 "graphout:fill " g)
+  (let ((o (table-ref g 'output)))
+    (case o
+       ((GRAPH_PDF)
+         (let ((page (table-ref g 'hpage)))
+           (HPDF_Page_Fill page)
+         )
+       )
+       ((GRAPH_SVG)
+          (let ((svg (table-ref g 'svg))
+                (fill-color  (table-ref g 'svg-color "#000000"))
+                (fill-opacity (graphout:svgflo (table-ref g 'svg-opacity 1.)))
+                (path (table-ref g 'svg-path)))
+            (table-set! g 'svg (append svg (list `(path (@ (d ,path) 
+              (fill ,fill-color) (fill-opacity ,fill-opacity) (stroke "none")
+              ) ""))))
+            (table-set! g 'svg-path "")
+          )
+       )
+       (else (graph:hook g o 'STROKE))
+    )))
+
 ;; closepath, then stroke
 (define (graphout:closepathstroke g)
  (graph:log 3 "graphout:closepathstroke " g)
   (graphout:closepath g)
   (graphout:stroke g))
+
+;; closepath, then fill
+(define (graphout:closepathfill g)
+ (graph:log 3 "graphout:closepathfill " g)
+  (graphout:closepath g)
+  (graphout:fill g))
 
 ;; save current state
 (define (graphout:gsave g)
