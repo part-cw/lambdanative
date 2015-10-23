@@ -87,7 +87,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (= type EVENT_BUTTON1DOWN) (glgui-widget-set! g wgt 'armed #t))
     (cond
       ;; Releasing, choose just one item
-      ((and inside (= type EVENT_BUTTON1UP))
+      ((and inside armed (= type EVENT_BUTTON1UP))
         (let* ((imgs (glgui-widget-get g wgt 'imglist))
                (imglen (length imgs))
                (totalw (apply + (map car imgs)))
@@ -143,7 +143,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'y y
      'w w
      'h h
-     'callback #f
      'value #f
      'bubblepercent 0.
      'draw-handle  glgui:bubbleselector-draw
