@@ -160,4 +160,35 @@ class RS232Manager implements Runnable{
     }
     if (DEBUG) Log.d("RS232Manager","Flush mInBuffer");
   }
+  // Control DTR/RTS signaling
+  public boolean getdtr(int dev){
+    try {
+      return mSerialPort.getDTR();
+    } catch (IOException e){
+      Log.d("RS232Manager","Exception: "+e);
+      return false;
+    }
+  }
+  public void setdtr(int dev,boolean val){
+    try {
+      mSerialPort.setDTR(val);
+    } catch (IOException e){
+      Log.d("RS232Manager","Exception: "+e);
+    }
+  }
+  public boolean getrts(int dev){
+    try {
+      return mSerialPort.getRTS();
+    } catch (IOException e){
+      Log.d("RS232Manager","Exception: "+e);
+      return false;
+    }
+  }
+  public void setrts(int dev,boolean val){
+    try {
+      mSerialPort.setRTS(val);
+    } catch (IOException e){
+      Log.d("RS232Manager","Exception: "+e);
+    }
+  }
 }

@@ -6,6 +6,10 @@ static jmethodID s_serial_close=NULL;
 static jmethodID s_serial_writechar=NULL;
 static jmethodID s_serial_readchar=NULL;
 static jmethodID s_serial_flush=NULL;
+static jmethodID s_serial_getdtr=NULL;
+static jmethodID s_serial_setdtr=NULL;
+static jmethodID s_serial_getrts=NULL;
+static jmethodID s_serial_setrts=NULL;
 
 int serial_init(){
   JNIEnv *env = GetJNIEnv();
@@ -19,6 +23,10 @@ int serial_init(){
       s_serial_writechar = (*env)->GetMethodID(env,serial_class, "writechar", "(II)V");
       s_serial_readchar = (*env)->GetMethodID(env,serial_class, "readchar", "(I)I");
       s_serial_flush = (*env)->GetMethodID(env,serial_class, "flush", "(I)V");
+      s_serial_getdtr = (*env)->GetMethodID(env,serial_class, "getdtr", "(I)Z");
+      s_serial_setdtr = (*env)->GetMethodID(env,serial_class, "setdtr", "(IZ)V");
+      s_serial_getrts = (*env)->GetMethodID(env,serial_class, "getrts", "(I)Z");
+      s_serial_setrts = (*env)->GetMethodID(env,serial_class, "setrts", "(IZ)V");
       if (getRS232Instance) {
          jobject thiz = (*env)->CallStaticObjectMethod(env,main_class, getRS232Instance);
          serial_object = (*env)->NewGlobalRef(env,thiz);  
@@ -108,7 +116,49 @@ void serial_flush(int dev){
   JNIEnv *env = GetJNIEnv();
   if (env&&serial_object) {
     (*env)->CallIntMethod(env,serial_object, s_serial_flush, dev);
-  } 
+  }
+}
+int serial_getDTR(int dev){
+  if (needs_init==1){
+    serial_init();
+    needs_init=0;
+  }
+  JNIEnv *env = GetJNIEnv();
+  if (env&&serial_object) {
+    return (*env)->CallIntMethod(env,serial_object, s_serial_getdtr, dev);
+  }
+  return 0;
+}
+void serial_setDTR(int dev, int val){
+  if (needs_init==1){
+    serial_init();
+    needs_init=0;
+  }
+  JNIEnv *env = GetJNIEnv();
+  if (env&&serial_object) {
+    (*env)->CallIntMethod(env,serial_object, s_serial_setdtr, dev, val);
+  }
+}
+int serial_getRTS(int dev){
+  if (needs_init==1){
+    serial_init();
+    needs_init=0;
+  }
+  JNIEnv *env = GetJNIEnv();
+  if (env&&serial_object) {
+    return (*env)->CallIntMethod(env,serial_object, s_serial_getrts, dev);
+  }
+  return 0;
+}
+void serial_setRTS(int dev, int val){
+  if (needs_init==1){
+    serial_init();
+    needs_init=0;
+  }
+  JNIEnv *env = GetJNIEnv();
+  if (env&&serial_object) {
+    (*env)->CallIntMethod(env,serial_object, s_serial_setrts, dev, val);
+  }
 }
 int serial_openfile(char *filepath){
   serial_error_set(1);

@@ -114,6 +114,10 @@ int serial_readchar(int dev);
 int serial_error();
 int serial_timeout();
 void serial_flush(int dev);
+int serial_getDTR(int dev);
+void serial_setDTR(int dev, int val);
+int serial_getRTS(int dev);
+void void_setRTS(int dev, int val);
 
 // error codes
 static int _serial_error, _serial_notready;
@@ -402,6 +406,103 @@ void serial_flush(int d){
     tcflush(fd, TCIOFLUSH);
   #endif
 }
+
+// Change and query control lines
+int serial_getDTR(int d){
+  _serial_error=_serial_notready=0;
+#ifdef WIN32
+  HANDLE fd=(HANDLE)d;
+  if (!fd) { _serial_error=1;  return 0; }
+  DCB dcb;
+  if (!GetCommState(fd,&dcb)){
+    fprintf(stderr,"serial: GetCommState failed\n");
+    _serial_error=1; return 0;
+  }
+  return dcb.fDtrControl;
+#endif
+#if defined(OPENBSD) || defined(NETBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
+  int fd=d;
+  if (!fd) { _serial_error=1;  return 0; }
+  int serial;
+  ioctl(fd, TIOCMGET, &serial);
+  return (serial & TIOCM_DTR);
+#endif
+}
+
+int serial_getRTS(int d){
+  _serial_error=_serial_notready=0;
+#ifdef WIN32
+  HANDLE fd=(HANDLE)d;
+  if (!fd) { _serial_error=1;  return 0; }
+  DCB dcb;
+  if (!GetCommState(fd,&dcb)){
+    fprintf(stderr,"serial: GetCommState failed\n");
+    _serial_error=1; return 0;
+  }
+  return dcb.fRtsControl;
+#endif
+#if defined(OPENBSD) || defined(NETBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
+  int fd=d;
+  if (!fd) { _serial_error=1;  return 0; }
+  int serial;
+  ioctl(fd, TIOCMGET, &serial);
+  return (serial & TIOCM_RTS);
+#endif
+}
+
+void serial_setDTR(int d, int s){
+  _serial_error=_serial_notready=0;
+#ifdef WIN32
+  HANDLE fd=(HANDLE)d;
+  if (!fd) { _serial_error=1;  return; }
+  DCB dcb;
+  if (!GetCommState(fd,&dcb)){
+    fprintf(stderr,"serial: GetCommState failed\n");
+    _serial_error=1; return;
+  }
+  dcb.fDtrControl=DTR_CONTROL_ENABLE;
+  if (!SetCommState(fd,&dcb)) {
+    fprintf(stderr,"serial: SetCommState failed\n");
+    _serial_error=1; return;
+  }
+#endif
+#if defined(OPENBSD) || defined(NETBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
+  int fd=d;
+  if (!fd) { _serial_error=1;  return; }
+  if (s==0) {
+    ioctl(fd, TIOCMBIC, TIOCM_DTR);
+  } else {
+   ioctl(fd, TIOCMBIS, TIOCM_DTR);
+  }
+#endif
+}
+
+void serial_setRTS(int d, int s){
+  _serial_error=_serial_notready=0;
+#ifdef WIN32
+  HANDLE fd=(HANDLE)d;
+  if (!fd) { _serial_error=1;  return; }
+  DCB dcb;
+  if (!GetCommState(fd,&dcb)){
+    fprintf(stderr,"serial: GetCommState failed\n");
+    _serial_error=1; return;
+  }
+  dcb.fRtsControl=RTS_CONTROL_ENABLE;
+  if (!SetCommState(fd,&dcb)) {
+    fprintf(stderr,"serial: SetCommState failed\n");
+    _serial_error=1; return;
+  }
+#endif
+#if defined(OPENBSD) || defined(NETBSD) || defined(LINUX) || defined(MACOSX) || defined(IOS) || defined(BB10)
+  int fd=d;
+  if (!fd) { _serial_error=1;  return; }
+  if (s==0) {
+    ioctl(fd, TIOCMBIC, TIOCM_RTS);
+  } else {
+   ioctl(fd, TIOCMBIS, TIOCM_RTS);
+  }
+#endif
+}
 #endif // ANDROID
 
 int serial_error(void) { return _serial_error; }
@@ -424,6 +525,11 @@ end-of-c-declare
 (define serial:timeout (c-lambda () int "serial_timeout"))
 (define (serial-error) (not (fx= (serial:error) 0)))
 (define (serial-timeout) (not (fx= (serial:timeout) 0)))
+
+(define serial-dtr-set! (c-lambda (int bool) void "serial_setDTR"))
+(define serial-dtr-get (c-lambda (int) bool "serial_getDTR"))
+(define serial-rts-set! (c-lambda (int bool) void "serial_setRTS"))
+(define serial-rts-get (c-lambda (int) bool "serial_getRTS"))
 
 ;; ----------------------
 ;; device autodetection
