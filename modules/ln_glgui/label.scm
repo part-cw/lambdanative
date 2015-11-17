@@ -71,7 +71,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       ))
     (if label (glgui:label-aligned-draw (if r (+ x 5) x) y (if r (- w 10) w)
       h label fnt (if clearoninput Black color) align showstart))
-    (if (and label focus (fx= blinkfactor 0))
+    (if (and focus (fx= blinkfactor 0))
       (let* ((label-len (if label0 (glgui:stringwidth-lst label fnt) (list 0)))
              (curserpos (glgui-widget-get g wgt 'focuspos))
              (curserw (apply + (sublist label-len 0 curserpos)))
@@ -134,7 +134,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                        (curserw (apply + (sublist label-len 0 curserpos)))
                        (blinkpos (cond
                          ((= align GUI_ALIGNLEFT) (+ x curserw))
-                         ((= align GUI_ALIGNCENTER) (- (+ x (/ w 2) curserw) (/ label-len 2)))
+                         ((= align GUI_ALIGNCENTER) (- (+ x (/ w 2) curserw) (/ (apply + label-len) 2)))
                          (else (- (+ x w curserw) labelw))
                        )))
                   (glgui:draw-box blinkpos yline 1 hline color)
@@ -145,7 +145,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (loop (fx+ i 1) (fl- yline hline) (fx+ charct linelabel-len))
             )
         ))
-    ))
+    )
+    ;; Draw cursor if in focus, even if there is no text
+    (if (and focus (fx= blinkfactor 0))
+      (let ((blinkpos (cond
+                        ((= align GUI_ALIGNLEFT) x)
+                        ((= align GUI_ALIGNCENTER) (+ x (/ w 2)))
+                        (else (- (+ x w) 1))))
+            (lineh (flo (glgui:fontheight fnt))))
+        (glgui:draw-box blinkpos (fl+ y h (fl- lineh)) 1 lineh color))))
 ))
 
 (define (glgui:label-input g wgt type mx0 my0)
