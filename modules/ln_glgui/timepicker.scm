@@ -52,11 +52,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ;; The wgt parameter in the lambda is the specific picker
   (lambda (g wgt . x)
     ;; Build a date string from the hour and minute
-    (let* ((hour (fix (glgui-widget-get g hpicker 'value)))
-           (minute (fix (glgui-widget-get g mpicker 'value))))
+    (let* ((hourrange (glgui-widget-get g hpicker 'vallist))
+           (hourindex (fix (glgui-widget-get g hpicker 'value)))
+           (hour (if (fx< hourindex (length hourrange)) (list-ref hourrange hourindex) (car hourrange)))
+           (minuterange (glgui-widget-get g mpicker 'vallist))
+           (minuteindex (fix (glgui-widget-get g mpicker 'value)))
+           (minute (if (fx< minuteindex (length minuterange)) (list-ref minuterange minuteindex) (car minuterange))))
 
        ;; Get the time specified in the pickers as a string
-       (let* ((timestr (string-append "1/1/1970 " (number->string hour) ":" (number->string minute) ":00" ))
+       (let* ((timestr (string-append "1/1/1970 " hour ":" minute ":00" ))
               (newvalue (string->seconds timestr "%m/%d/%Y %H:%M:%S")))
          ;; Set the current time
          (glgui-widget-set! g widget 'value newvalue))
@@ -66,12 +70,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (if cb (cb g widget)))
   ))
 
-(define (glgui:timepicker-get-hour secs)
-  (string->number (seconds->string secs "%H"))
+(define (glgui:timepicker-get-hour range secs)
+  (let* ((hourstr (seconds->string secs "%H"))
+         (index (list-pos range hourstr)))
+    (if index index 0))
 )
 
-(define (glgui:timepicker-get-minute secs)
-  (string->number (seconds->string secs "%M"))
+(define (glgui:timepicker-get-minute range secs)
+  (let* ((minutestr (seconds->string secs "%M"))
+         (index (list-pos range minutestr)))
+    (if index index 0))
 )
 
 ;; When any parameters of the widget are updated, potentially update the individual pickers for hours and minutes
@@ -99,8 +107,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (glgui-widget-set! g mpicker id val))
       ;; Change in value - update pickers
       ((eqv? id 'value)
-        (glgui-widget-set! g hpicker 'value (glgui:timepicker-get-hour val))
-        (glgui-widget-set! g mpicker 'value (glgui:timepicker-get-minute val)))
+        (glgui-widget-set! g hpicker 'value (glgui:timepicker-get-hour (glgui-widget-get g hpicker 'vallist) val))
+        (glgui-widget-set! g mpicker 'value (glgui:timepicker-get-minute (glgui-widget-get g mpicker 'vallist) val)))
       ;; Update x or w
       ((or (eqv? id 'x) (eqv? id 'w))
         (let* ((w (glgui-widget-get g wgt 'w))
@@ -110,7 +118,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (glgui-widget-set! g hpicker 'w dx)
           (glgui-widget-set! g mpicker 'x (+ x dx))
           (glgui-widget-set! g mpicker 'w dx)
-          (glgui-widget-set! g clabel 'x (- (+ x dx) 5))))))
+          (glgui-widget-set! g clabel 'x (- (+ x dx) 5))))
+      ;; Update the limits
+      ((or (eqv? id 'hourmax) (eqv? id 'hourmin))
+         (let* ((max (glgui-widget-get g wgt 'hourmax))
+                (min (glgui-widget-get g wgt 'hourmin))
+                (wrapped (fx< max min))
+                (lastindex (if wrapped (- 23 (- min max 1)) (- max min)))
+                (newrange (if wrapped
+                            (append (list-tail glgui:timepicker_hours min) (list-head glgui:timepicker_hours (+ max 1)))
+                            (list-head (list-tail glgui:timepicker_hours min) (+ lastindex 1)))))
+           (glgui-widget-set! g hpicker 'vallist newrange)
+           (glgui-widget-set! g hpicker 'valmax lastindex)
+           ;; Now reset value
+           (glgui:timepicker-update g wgt 'value (glgui-widget-get g wgt 'value))))))
 )
 
 ;; Create this time widget
@@ -130,6 +151,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           'update-handle glgui:timepicker-update
           'hidden #f
           'value time
+          ;; Maximum and minimum hour selectable, can wrap around (ex. 20 and 6 for range 20:00-6:59)
+          'hourmin 0
+          'hourmax 23
           'colorarrows colorarrows
           'colorhighlight colorhighlight
           'colorvalue colorvalue
