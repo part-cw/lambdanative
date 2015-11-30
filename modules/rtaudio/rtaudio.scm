@@ -184,6 +184,8 @@ extern int portaudio_needsinit;
 extern int portaudio_idev;
 extern int portaudio_odev;
 
+static int portaudio_use_mono=0;
+
 static PaStream *stream;
 
 static int rt_portaudio_cb( const void *inputBuffer, void *outputBuffer,
@@ -195,7 +197,8 @@ static int rt_portaudio_cb( const void *inputBuffer, void *outputBuffer,
   SAMPLE_TYPE *obuf=(SAMPLE_TYPE*)outputBuffer;
   if (!ibuf||!obuf) return 0;
   for (i=0;i<framesPerBuffer;i++) {
-     float ival = FLO(ibuf[2*i]), oval1,oval2;
+    float ival = (portaudio_use_mono?FLO(ibuf[i]):FLO(ibuf[2*i]));
+    float oval1,oval2;
      if (rtaudio_inputcb) rtaudio_inputcb(ival);
      if (rtaudio_outputcb) rtaudio_outputcb(&oval1,&oval2);
      obuf[2*i]=FIX(oval1); obuf[2*i+1]=FIX(oval2);
@@ -219,7 +222,14 @@ void rtaudio_start(int samplerate, double volume)
     }
     inputParameters.device = (portaudio_idev<0?INPUT_DEVICE:portaudio_idev);
     if (inputParameters.device == paNoDevice) { goto error; }
-    inputParameters.channelCount = 2;
+    PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(inputParameters.device);
+    if (deviceInfo->maxInputChannels==1) {
+      portaudio_use_mono=1;
+      inputParameters.channelCount = 1;
+    } else {
+      portaudio_use_mono=0;
+      inputParameters.channelCount = 2;
+    }
     inputParameters.sampleFormat = SAMPLE_FORMAT;
     inputParameters.suggestedLatency = Pa_GetDeviceInfo( inputParameters.device )->defaultLowInputLatency;
     outputParameters.device = (portaudio_odev<0?OUTPUT_DEVICE:portaudio_odev);
