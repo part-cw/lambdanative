@@ -252,14 +252,14 @@ end-of-c-declare
 ;;; the time structure; creates the accessors, too.
 ;;; wf: changed to match srfi documentation. uses mzscheme structures & inspectors
 
-(define-type time type nanosecond second)
+(define-type srfi19:time type nanosecond second)
 
 ;; thanks, Martin Gasbichler ...
 
 (define (copy-time time)
-  (make-time (time-type time)
-	     (time-second time)
-	     (time-nanosecond time)))
+  (make-srfi19:time (srfi19:time-type time)
+	     (srfi19:time-second time)
+	     (srfi19:time-nanosecond time)))
 
 
 ;;; current-time
@@ -286,11 +286,11 @@ end-of-c-declare
 
 (define (tm:current-time-utc)
   (receive (seconds ms) (tm:get-time-of-day)
-	   (make-time  time-utc (* ms 10000) seconds )))
+	   (make-srfi19:time  time-utc (* ms 10000) seconds )))
 
 (define (tm:current-time-tai)
   (receive (seconds ms) (tm:get-time-of-day)
-	   (make-time time-tai
+	   (make-srfi19:time time-tai
 		      (* ms 10000)
 		      (+ seconds (tm:leap-second-delta seconds))
 		      )))
@@ -299,7 +299,7 @@ end-of-c-declare
 
 (define (tm:current-time-ms-time time-type proc)
   (let ((current-ms (proc)))
-    (make-time time-type
+    (make-srfi19:time time-type
 	       (* (remainder current-ms 1000) 10000)
 	       (quotient current-ms 10000)
 	       )))
@@ -311,7 +311,7 @@ end-of-c-declare
 
 (define (tm:current-time-monotonic)
   (receive (seconds ms) (tm:get-time-of-day)
-	   (make-time time-monotonic
+	   (make-srfi19:time time-monotonic
 		      (* ms 10000)
 		      (+ seconds (tm:leap-second-delta seconds))
 		      )))
@@ -354,50 +354,50 @@ end-of-c-declare
 ;; -- time comparisons
 
 (define (tm:time-compare-check time1 time2 caller)
-  (if (or (not (and (time? time1) (time? time2)))
-	  (not (eq? (time-type time1) (time-type time2))))
+  (if (or (not (and (srfi19:time? time1) (srfi19:time? time2)))
+	  (not (eq? (srfi19:time-type time1) (srfi19:time-type time2))))
       (tm:time-error caller 'incompatible-time-types #f)
       #t))
 
 (define (time=? time1 time2)
   (tm:time-compare-check time1 time2 'time=?)
-  (and (= (time-second time1) (time-second time2))
-       (= (time-nanosecond time1) (time-nanosecond time2))))
+  (and (= (srfi19:time-second time1) (srfi19:time-second time2))
+       (= (srfi19:time-nanosecond time1) (srfi19:time-nanosecond time2))))
 
 (define (time>? time1 time2)
   (tm:time-compare-check time1 time2 'time>?)
-  (or (> (time-second time1) (time-second time2))
-      (and (= (time-second time1) (time-second time2))
-	   (> (time-nanosecond time1) (time-nanosecond time2)))))
+  (or (> (srfi19:time-second time1) (srfi19:time-second time2))
+      (and (= (srfi19:time-second time1) (srfi19:time-second time2))
+	   (> (srfi19:time-nanosecond time1) (srfi19:time-nanosecond time2)))))
 
 (define (time<? time1 time2)
   (tm:time-compare-check time1 time2 'time<?)
-  (or (< (time-second time1) (time-second time2))
-      (and (= (time-second time1) (time-second time2))
-	   (< (time-nanosecond time1) (time-nanosecond time2)))))
+  (or (< (srfi19:time-second time1) (srfi19:time-second time2))
+      (and (= (srfi19:time-second time1) (srfi19:time-second time2))
+	   (< (srfi19:time-nanosecond time1) (srfi19:time-nanosecond time2)))))
 
 (define (time>=? time1 time2)
   (tm:time-compare-check time1 time2 'time>=?)
-  (or (>= (time-second time1) (time-second time2))
-      (and (= (time-second time1) (time-second time2))
-	   (>= (time-nanosecond time1) (time-nanosecond time2)))))
+  (or (>= (srfi19:time-second time1) (srfi19:time-second time2))
+      (and (= (srfi19:time-second time1) (srfi19:time-second time2))
+	   (>= (srfi19:time-nanosecond time1) (srfi19:time-nanosecond time2)))))
 
 (define (time<=? time1 time2)
   (tm:time-compare-check time1 time2 'time<=?)
-  (or (<= (time-second time1) (time-second time2))
-      (and (= (time-second time1) (time-second time2))
-	   (<= (time-nanosecond time1) (time-nanosecond time2)))))
+  (or (<= (srfi19:time-second time1) (srfi19:time-second time2))
+      (and (= (srfi19:time-second time1) (srfi19:time-second time2))
+	   (<= (srfi19:time-nanosecond time1) (srfi19:time-nanosecond time2)))))
 
 ;; -- time arithmetic
 
 (define (tm:time->nanoseconds time)
   (define (sign1 n)
     (if (negative? n) -1 1))
-  (+ (* (time-second time) tm:nano)
-      (time-nanosecond time)))
+  (+ (* (srfi19:time-second time) tm:nano)
+      (srfi19:time-nanosecond time)))
 
 (define (tm:nanoseconds->time time-type nanoseconds)
-  (make-time time-type
+  (make-srfi19:time time-type
              (remainder nanoseconds tm:nano)
              (quotient nanoseconds tm:nano)))
 
@@ -406,73 +406,73 @@ end-of-c-declare
           (quotient nanoseconds tm:nano)))
 
 (define (tm:time-difference time1 time2 time3)
-  (if (or (not (and (time? time1) (time? time2)))
-	  (not (eq? (time-type time1) (time-type time2))))
+  (if (or (not (and (srfi19:time? time1) (srfi19:time? time2)))
+	  (not (eq? (srfi19:time-type time1) (srfi19:time-type time2))))
       (tm:time-error 'time-difference 'incompatible-time-types #f))
-  (time-type-set! time3 time-duration)
+  (srfi19:time-type-set! time3 time-duration)
   (if (time=? time1 time2)
       (begin
-	(time-second-set! time3 0)
-	(time-nanosecond-set! time3 0))
+	(srfi19:time-second-set! time3 0)
+	(srfi19:time-nanosecond-set! time3 0))
       (receive
        (nanos secs)
        (tm:nanoseconds->values (- (tm:time->nanoseconds time1)
                                   (tm:time->nanoseconds time2)))
-       (time-second-set! time3 secs)
-       (time-nanosecond-set! time3 nanos)))
+       (srfi19:time-second-set! time3 secs)
+       (srfi19:time-nanosecond-set! time3 nanos)))
   time3)
 
 (define (time-difference time1 time2)
-  (tm:time-difference time1 time2 (make-time #f #f #f)))
+  (tm:time-difference time1 time2 (make-srfi19:time #f #f #f)))
 
 (define (time-difference! time1 time2)
   (tm:time-difference time1 time2 time1))
 
 (define (tm:add-duration time1 duration time3)
-  (if (not (and (time? time1) (time? duration)))
+  (if (not (and (srfi19:time? time1) (srfi19:time? duration)))
       (tm:time-error 'add-duration 'incompatible-time-types #f))
-  (if (not (eq? (time-type duration) time-duration))
+  (if (not (eq? (srfi19:time-type duration) time-duration))
       (tm:time-error 'add-duration 'not-duration duration)
-      (let ( (sec-plus (+ (time-second time1) (time-second duration)))
-	     (nsec-plus (+ (time-nanosecond time1) (time-nanosecond duration))) )
+      (let ( (sec-plus (+ (srfi19:time-second time1) (srfi19:time-second duration)))
+	     (nsec-plus (+ (srfi19:time-nanosecond time1) (srfi19:time-nanosecond duration))) )
 	(let ((r (remainder nsec-plus tm:nano))
 	      (q (quotient nsec-plus tm:nano)))
-          ; (set-time-type! time3 (time-type time1))
+          ; (set-time-type! time3 (srfi19:time-type time1))
 	  (if (negative? r)
 	      (begin
-		(time-second-set! time3 (+ sec-plus q -1))
-		(time-nanosecond-set! time3 (+ tm:nano r)))
+		(srfi19:time-second-set! time3 (+ sec-plus q -1))
+		(srfi19:time-nanosecond-set! time3 (+ tm:nano r)))
 	      (begin
-		(time-second-set! time3 (+ sec-plus q))
-		(time-nanosecond-set! time3 r)))
+		(srfi19:time-second-set! time3 (+ sec-plus q))
+		(srfi19:time-nanosecond-set! time3 r)))
 	  time3))))
 
 (define (add-duration time1 duration)
-  (tm:add-duration time1 duration (make-time (time-type time1) #f #f)))
+  (tm:add-duration time1 duration (make-srfi19:time (srfi19:time-type time1) #f #f)))
 
 (define (add-duration! time1 duration)
   (tm:add-duration time1 duration time1))
 
 (define (tm:subtract-duration time1 duration time3)
-  (if (not (and (time? time1) (time? duration)))
+  (if (not (and (srfi19:time? time1) (srfi19:time? duration)))
       (tm:time-error 'add-duration 'incompatible-time-types #f))
-  (if (not (eq? (time-type duration) time-duration))
+  (if (not (eq? (srfi19:time-type duration) time-duration))
       (tm:time-error 'tm:subtract-duration 'not-duration duration)
-      (let ( (sec-minus  (- (time-second time1) (time-second duration)))
-	     (nsec-minus (- (time-nanosecond time1) (time-nanosecond duration))) )
+      (let ( (sec-minus  (- (srfi19:time-second time1) (srfi19:time-second duration)))
+	     (nsec-minus (- (srfi19:time-nanosecond time1) (srfi19:time-nanosecond duration))) )
 	(let ((r (remainder nsec-minus tm:nano))
 	      (q (quotient nsec-minus tm:nano)))
 	  (if (negative? r)
 	      (begin
-		(time-second-set! time3 (- sec-minus q 1))
-		(time-nanosecond-set! time3 (+ tm:nano r)))
+		(srfi19:time-second-set! time3 (- sec-minus q 1))
+		(srfi19:time-nanosecond-set! time3 (+ tm:nano r)))
 	      (begin
-		(time-second-set! time3 (- sec-minus q))
-		(time-nanosecond-set! time3 r)))
+		(srfi19:time-second-set! time3 (- sec-minus q))
+		(srfi19:time-nanosecond-set! time3 r)))
 	  time3))))
 
 (define (subtract-duration time1 duration)
-  (tm:subtract-duration time1 duration (make-time (time-type time1) #f #f)))
+  (tm:subtract-duration time1 duration (make-srfi19:time (srfi19:time-type time1) #f #f)))
 
 (define (subtract-duration! time1 duration)
   (tm:subtract-duration time1 duration time1))
@@ -481,17 +481,17 @@ end-of-c-declare
 ;; -- converters between types.
 
 (define (tm:time-tai->time-utc! time-in time-out caller)
-  (if (not (eq? (time-type time-in) time-tai))
+  (if (not (eq? (srfi19:time-type time-in) time-tai))
       (tm:time-error caller 'incompatible-time-types time-in))
-  (time-type-set! time-out time-utc)
-  (time-nanosecond-set! time-out (time-nanosecond time-in))
-  (time-second-set!     time-out (- (time-second time-in)
+  (srfi19:time-type-set! time-out time-utc)
+  (srfi19:time-nanosecond-set! time-out (srfi19:time-nanosecond time-in))
+  (srfi19:time-second-set!     time-out (- (srfi19:time-second time-in)
 				    (tm:leap-second-neg-delta
-				     (time-second time-in))))
+				     (srfi19:time-second time-in))))
   time-out)
 
 (define (time-tai->time-utc time-in)
-  (tm:time-tai->time-utc! time-in (make-time #f #f #f) 'time-tai->time-utc))
+  (tm:time-tai->time-utc! time-in (make-srfi19:time #f #f #f) 'time-tai->time-utc))
 
 
 (define (time-tai->time-utc! time-in)
@@ -499,78 +499,78 @@ end-of-c-declare
 
 
 (define (tm:time-utc->time-tai! time-in time-out caller)
-  (if (not (eq? (time-type time-in) time-utc))
+  (if (not (eq? (srfi19:time-type time-in) time-utc))
       (tm:time-error caller 'incompatible-time-types time-in))
-  (time-type-set! time-out time-tai)
-  (time-nanosecond-set! time-out (time-nanosecond time-in))
-  (time-second-set!     time-out (+ (time-second time-in)
+  (srfi19:time-type-set! time-out time-tai)
+  (srfi19:time-nanosecond-set! time-out (srfi19:time-nanosecond time-in))
+  (srfi19:time-second-set!     time-out (+ (srfi19:time-second time-in)
 				    (tm:leap-second-delta
-				     (time-second time-in))))
+				     (srfi19:time-second time-in))))
   time-out)
 
 
 (define (time-utc->time-tai time-in)
-  (tm:time-utc->time-tai! time-in (make-time #f #f #f) 'time-utc->time-tai))
+  (tm:time-utc->time-tai! time-in (make-srfi19:time #f #f #f) 'time-utc->time-tai))
 
 (define (time-utc->time-tai! time-in)
   (tm:time-utc->time-tai! time-in time-in 'time-utc->time-tai!))
 
 ;; -- these depend on time-monotonic having the same definition as time-tai!
 (define (time-monotonic->time-utc time-in)
-  (if (not (eq? (time-type time-in) time-monotonic))
+  (if (not (eq? (srfi19:time-type time-in) time-monotonic))
       (tm:time-error 'time-monotonic->time-utc 'incompatible-time-types time-in))
   (let ((ntime (copy-time time-in)))
-    (time-type-set! ntime time-tai)
+    (srfi19:time-type-set! ntime time-tai)
     (tm:time-tai->time-utc! ntime ntime 'time-monotonic->time-utc)))
 
 (define (time-monotonic->time-utc! time-in)
-  (if (not (eq? (time-type time-in) time-monotonic))
+  (if (not (eq? (srfi19:time-type time-in) time-monotonic))
       (tm:time-error 'time-monotonic->time-utc! 'incompatible-time-types time-in))
-  (time-type-set! time-in time-tai)
+  (srfi19:time-type-set! time-in time-tai)
   (tm:time-tai->time-utc! time-in time-in 'time-monotonic->time-utc))
 
 (define (time-monotonic->time-tai time-in)
-  (if (not (eq? (time-type time-in) time-monotonic))
+  (if (not (eq? (srfi19:time-type time-in) time-monotonic))
       (tm:time-error 'time-monotonic->time-tai 'incompatible-time-types time-in))
   (let ((ntime (copy-time time-in)))
-    (time-type-set! ntime time-tai)
+    (srfi19:time-type-set! ntime time-tai)
     ntime))
 
 (define (time-monotonic->time-tai! time-in)
-  (if (not (eq? (time-type time-in) time-monotonic))
+  (if (not (eq? (srfi19:time-type time-in) time-monotonic))
       (tm:time-error 'time-monotonic->time-tai! 'incompatible-time-types time-in))
-  (time-type-set! time-in time-tai)
+  (srfi19:time-type-set! time-in time-tai)
   time-in)
 
 (define (time-utc->time-monotonic time-in)
-  (if (not (eq? (time-type time-in) time-utc))
+  (if (not (eq? (srfi19:time-type time-in) time-utc))
       (tm:time-error 'time-utc->time-monotonic 'incompatible-time-types time-in))
-  (let ((ntime (tm:time-utc->time-tai! time-in (make-time #f #f #f)
+  (let ((ntime (tm:time-utc->time-tai! time-in (make-srfi19:time #f #f #f)
 				       'time-utc->time-monotonic)))
-    (time-type-set! ntime time-monotonic)
+    (srfi19:time-type-set! ntime time-monotonic)
     ntime))
 
 
 (define (time-utc->time-monotonic! time-in)
-  (if (not (eq? (time-type time-in) time-utc))
+  (if (not (eq? (srfi19:time-type time-in) time-utc))
       (tm:time-error 'time-utc->time-montonic! 'incompatible-time-types time-in))
   (let ((ntime (tm:time-utc->time-tai! time-in time-in
 				       'time-utc->time-monotonic!)))
-    (time-type-set! ntime time-monotonic)
+    (srfi19:time-type-set! ntime time-monotonic)
     ntime))
 
 
 (define (time-tai->time-monotonic time-in)
-  (if (not (eq? (time-type time-in) time-tai))
+  (if (not (eq? (srfi19:time-type time-in) time-tai))
       (tm:time-error 'time-tai->time-monotonic 'incompatible-time-types time-in))
   (let ((ntime (copy-time time-in)))
-    (time-type-set! ntime time-monotonic)
+    (srfi19:time-type-set! ntime time-monotonic)
     ntime))
 
 (define (time-tai->time-monotonic! time-in)
-  (if (not (eq? (time-type time-in) time-tai))
+  (if (not (eq? (srfi19:time-type time-in) time-tai))
       (tm:time-error 'time-tai->time-monotonic!  'incompatible-time-types time-in))
-  (time-type-set! time-in time-monotonic)
+  (srfi19:time-type-set! time-in time-monotonic)
   time-in)
 
 
@@ -669,17 +669,17 @@ end-of-c-declare
 	   tm:leap-second-table))
 
 (define (tm:time->date time tz-offset ttype)
-  (if (not (eq? (time-type time) ttype))
+  (if (not (eq? (srfi19:time-type time) ttype))
       (tm:time-error 'time->date 'incompatible-time-types  time))
   (let* ( (offset (:optional tz-offset (tm:local-tz-offset))) )
     (receive (secs date month year)
 	     (tm:decode-julian-day-number
-	      (tm:time->julian-day-number (time-second time) offset))
+	      (tm:time->julian-day-number (srfi19:time-second time) offset))
 	     (let* ( (hours    (quotient secs (* 60 60)))
 		     (rem      (remainder secs (* 60 60)))
 		     (minutes  (quotient rem 60))
 		     (seconds  (remainder rem 60)) )
-	       (make-date (time-nanosecond time)
+	       (make-date (srfi19:time-nanosecond time)
 			  seconds
 			  minutes
 			  hours
@@ -689,9 +689,9 @@ end-of-c-declare
 		  offset)))))
 
 (define (time-tai->date time . tz-offset)
-  (if (tm:tai-before-leap-second? (time-second time))
+  (if (tm:tai-before-leap-second? (srfi19:time-second time))
       ;; if it's *right* before the leap, we need to pretend to subtract a second ...
-      (let ((d (tm:time->date (subtract-duration! (time-tai->time-utc time) (make-time time-duration 0 1)) tz-offset time-utc)))
+      (let ((d (tm:time->date (subtract-duration! (time-tai->time-utc time) (make-srfi19:time time-duration 0 1)) tz-offset time-utc)))
 	(tm:set-date-second! d 60)
 	d)
       (tm:time->date (time-tai->time-utc time) tz-offset time-utc)))
@@ -714,7 +714,7 @@ end-of-c-declare
 	 (offset (date-zone-offset date)) )
     (let ( (jdays (- (tm:encode-julian-day-number day month year)
 		     tm:tai-epoch-in-jd)) )
-      (make-time
+      (make-srfi19:time
        time-utc
        nanosecond
        (+ (* (- jdays 1/2) 24 60 60)
@@ -726,7 +726,7 @@ end-of-c-declare
 
 (define (date->time-tai d)
   (if (= (date-second d) 60)
-      (subtract-duration! (time-utc->time-tai! (date->time-utc d)) (make-time time-duration 0 1))
+      (subtract-duration! (time-utc->time-tai! (date->time-utc d)) (make-srfi19:time time-duration 0 1))
       (time-utc->time-tai! (date->time-utc d))))
 
 (define (date->time-monotonic date)
@@ -820,9 +820,9 @@ end-of-c-declare
 
 
 (define (time-utc->julian-day time)
-  (if (not (eq? (time-type time) time-utc))
+  (if (not (eq? (srfi19:time-type time) time-utc))
       (tm:time-error 'time-utc->julian-day 'incompatible-time-types  time))
-  (+ (/ (+ (time-second time) (/ (time-nanosecond time) tm:nano))
+  (+ (/ (+ (srfi19:time-second time) (/ (srfi19:time-nanosecond time) tm:nano))
 	tm:sid)
      tm:tai-epoch-in-jd))
 
@@ -831,11 +831,11 @@ end-of-c-declare
      4800001/2))
 
 (define (time-tai->julian-day time)
-  (if (not (eq? (time-type time) time-tai))
+  (if (not (eq? (srfi19:time-type time) time-tai))
       (tm:time-error 'time-tai->julian-day 'incompatible-time-types  time))
-  (+ (/ (+ (- (time-second time)
-	      (tm:leap-second-delta (time-second time)))
-	   (/ (time-nanosecond time) tm:nano))
+  (+ (/ (+ (- (srfi19:time-second time)
+	      (tm:leap-second-delta (srfi19:time-second time)))
+	   (/ (srfi19:time-nanosecond time) tm:nano))
 	tm:sid)
      tm:tai-epoch-in-jd))
 
@@ -845,11 +845,11 @@ end-of-c-declare
 
 ;; this is the same as time-tai->julian-day
 (define (time-monotonic->julian-day time)
-  (if (not (eq? (time-type time) time-monotonic))
+  (if (not (eq? (srfi19:time-type time) time-monotonic))
       (tm:time-error 'time-monotonic->julian-day 'incompatible-time-types  time))
-  (+ (/ (+ (- (time-second time)
-	      (tm:leap-second-delta (time-second time)))
-	   (/ (time-nanosecond time) tm:nano))
+  (+ (/ (+ (- (srfi19:time-second time)
+	      (tm:leap-second-delta (srfi19:time-second time)))
+	   (/ (srfi19:time-nanosecond time) tm:nano))
 	tm:sid)
      tm:tai-epoch-in-jd))
 
@@ -861,7 +861,7 @@ end-of-c-declare
 
 (define (julian-day->time-utc jdn)
   (let ( (nanosecs (* tm:nano tm:sid (- jdn tm:tai-epoch-in-jd))) )
-    (make-time time-utc
+    (make-srfi19:time time-utc
 	       (remainder nanosecs tm:nano)
 	       (floor (/ nanosecs tm:nano)))))
 
@@ -889,10 +889,10 @@ end-of-c-declare
   (julian-day->time-monotonic (+ jdn 4800001/2)))
 
 (define (current-julian-day)
-  (time-utc->julian-day (current-time time-utc)))
+  (time-utc->julian-day (current-time-tc time-utc)))
 
 (define (current-modified-julian-day)
-  (time-utc->modified-julian-day (current-time time-utc)))
+  (time-utc->modified-julian-day (current-time-tc time-utc)))
 
 ;; returns a string rep. of number N, of minimum LENGTH,
 ;; padded with character PAD-WITH. If PAD-WITH if #f,
@@ -1070,7 +1070,7 @@ end-of-c-declare
    (cons #\r (lambda (date pad-with port)
 	       (display (date->string date "~I:~M:~S ~p") port)))
    (cons #\s (lambda (date pad-with port)
-	       (display (time-second (date->time-utc date)) port)))
+	       (display (srfi19:time-second (date->time-utc date)) port)))
    (cons #\S (lambda (date pad-with port)
 	       (if (> (date-nanosecond date)
 		      tm:nano)
@@ -1489,8 +1489,8 @@ end-of-c-declare
   (let* ((tz (if (= (length tz0) 1) (car tz0) (timezone-hours)))
          (date (string->date str (tm:tildify fmt)))
          (t (date->time-monotonic date))
-         (s (time-second t))
-         (ns (time-nanosecond t)))
+         (s (srfi19:time-second t))
+         (ns (srfi19:time-nanosecond t)))
     (+ 0.0 (* tz -3600.) s (* ns 1.0e-9))))
 
 (define (seconds->string sec0 fmt . tz0)
@@ -1498,7 +1498,7 @@ end-of-c-declare
          (sec (+ sec0 (* tz 3600.)))
          (s (inexact->exact (floor sec)))
          (ns (inexact->exact (floor (* 1.0e9 (- sec s)))))
-         (t (make-time time-monotonic ns s))
+         (t (make-srfi19:time time-monotonic ns s))
          (d (time-monotonic->date t)))
     (date->string d (tm:tildify fmt))))
 
