@@ -396,8 +396,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     (if (string=? format "json")
                       ;; If format is json, turn into a list, otherwise just return output
                       (if (string? output)
-                        ;; If format is json, turn into a list, otherwise just return output
-                        (let ((datalist (redcap:jsonstr->list output)))
+                        ;; If a string turn into a list, otherwise just return false
+                        (let ((datalist (vector->list (json-decode output))))
                           (cond
                             ((not (list? datalist))
                               ;; If no list returned, json not properly formatted
