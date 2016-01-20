@@ -91,40 +91,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (if (or (list? str) (fx< (string-length str) 3) (not (string-contains str "[{")) (not (string-contains str "}]")))
     ;; Determine whether content just empty or whether it was improperly formatted (possibly incomplete)
     (if (and (string? str) (fx>= (string-length str) 3)) #f (list))
-    (map (lambda (li) (if (fx> (length li) 0)
-                        ;; THIRD, go through each field and recombine values that have commas in them
-                        ;; while splitting between the field name and value, handling possible colons in the value
-                        ;; and making a field name, value pair
-                        (let cloop ((in (cdr li)) (transfer (car li)) (out '()))
-                           (if (fx> (length in) 0)
-                             (let ((item (car in)))
-                                (if (and (char=? (string-ref item 0) #\") (fx> (string-length item) 1))
-                                  ;; If string starts with a quotation mark (and isn't just the closing quotation mark), just transfer it to output list
-                                   (cloop (cdr in) item (append out (list transfer)))
-                                   ;; Otherwise, combine it with previous item being transferred as this is from the split of a comma within a value
-                                   (cloop (cdr in) (string-append transfer "," item) out)))
-                             ;; Once through the whole list, split by :'s
-                             (map (lambda (s)
-                                     (let ((p (string-split s #\:)))
-                                        (if (fx= (length p) 2)
-                                          ;; If there was only one colon, make field name, value pair
-                                          (cons (redcap:string-remove-quotes (car p)) (redcap:string-remove-quotes (cadr p)))
-                                          ;; Otherwise colons must have been found in the value, put it back into one string with colons and then make pair
-                                          (cons (redcap:string-remove-quotes (car p)) (redcap:string-remove-quotes (string-mapconcat (cdr p) ":"))))))
-                                  (append out (list transfer)))))
-                        ;; If list is empty, do nothing to it
-                        li))
-         ;; SECOND split by commas after removing the extra starting two characters of each record - [{ or ,{
-         ;; This split will separate into individual fields, although may split by commas in the middle of values
-         (map (lambda (s) (string-split (substring s 2 (string-length s)) #\,))
-              (string-split
-                 ;; FIRST remove anything before the opening [{ or after the end }], include remove the ]
-                 ;; and split by }, this splits it into records, but after this the first one will
-                 ;; begin with [{ and the others will begin with ,{
-                 (let ((index0 (string-contains str "[{"))
-                       (index1 (string-contains str "}]")))
-                    (substring str index0 index1))
-                 #\}))))
+    (let* ((index (string-contains str "[{"))
+           ;; Remove anything outside brackets first
+           (output (json-decode (substring str index (string-length str)))))
+      (if (json-error? output) #f (vector->list output))))
 )
 
 ;; Helper function to split return string into header and body
@@ -397,7 +367,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                       ;; If format is json, turn into a list, otherwise just return output
                       (if (string? output)
                         ;; If a string turn into a list, otherwise just return false
-                        (let ((datalist (vector->list (json-decode output))))
+                        (let ((datalist (redcap:jsonstr->list output)))
                           (cond
                             ((not (list? datalist))
                               ;; If no list returned, json not properly formatted
