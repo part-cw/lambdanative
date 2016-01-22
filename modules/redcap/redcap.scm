@@ -648,6 +648,53 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
 )
 
+(define (redcap-delete-file host token record field . xargs)
+  (let* ((event (redcap:arg 'event xargs ""))
+         (form (redcap:arg 'form xargs #f))
+         (request (string-append "content=file&action=delete&token=" token
+                                 "&record=" record
+                                 (if event
+                                   (string-append "&event=" event)
+                                   ""
+                                 )
+                                 (if form
+                                   (string-append "&form_instance_id=" form)
+                                   ""
+                                 )
+                                 "&field=" field))
+         (request-str (string-append "POST " redcap:url " HTTP/1.0" "\n"
+           "Host: " host "\n"
+           "User-Agent: " redcap:user-agent  "\n"
+           "Content-Type: " redcap:content-type  "\n"
+           "Content-Length: " (number->string (string-length request)) "\n"
+           "\r\n" request "\n")))
+    ;; Check if we have a valid connection before proceeding
+    (if (fx= (httpsclient-open host) 1)
+      (begin
+        (httpsclient-send (string->u8vector request-str))
+        (redcap:data-clear!)
+        (let loop ((n #f))
+          (if (and n (fx<= n 0))
+            (begin
+              (httpsclient-close)
+              (let ((msg (redcap:split-headerbody (redcap:data->string))))
+                (redcap:error-check msg)
+              )
+            ) (begin
+            (if (and n (> n 0))
+              (redcap:data-append! (subu8vector redcap:buf 0 n)))
+            (loop (httpsclient-recv redcap:buf))
+          ))
+        )
+      )
+      (begin
+        (log-warning "Cannot delete file on REDCap, no valid connection")
+        (httpsclient-close)
+      )
+    )
+  )
+)
+
 (define (redcap-get-filename header)
          ;; Get index of name=" which occurs before file name in the header
   (let* ((nameindex1 (string-contains header "name=\""))
