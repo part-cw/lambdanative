@@ -148,7 +148,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (redcap-export-metadata host token . xargs)
          ;; See if format was specified in xargs, use json by default
   (let* ((format (redcap:arg 'format xargs "json"))
-         (request (string-append "format=" format "&content=metadata&token=" token "\n"))
+         (request (string-append "format=" format "&content=metadata&token=" token))
          (request-str (string-append "POST " redcap:url " HTTP/1.0" "\n"
            "Host: " host "\n"
            "User-Agent: " redcap:user-agent  "\n"
