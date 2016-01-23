@@ -74,13 +74,26 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ))
 
 ;; img is a texture list (w h t x1 y1 x2 y2)
-;; stretch is used to stretch the texture to a desired size (use 0 to reinit on the fly)
+;; stretch list (sw sh) [2 items] is used to stretch the texture to a desired size (use 0 to reinit on the fly)
+;; stretch list (s) [1 item] is used to scale the image by strech factor s
 (define (glgui-pixmap g x y img . stretch)
+  (let ((iy (cadr img))
+        (ix (car img))
+        (sw #f)
+        (sh #f))
+     (if (= (length stretch ) 2)
+     (begin 
+       (set! sw  (car stretch))
+       (set! sh (cadr stretch)))
+      (if (= (length stretch ) 1)
+          (begin
+           (set! sw  (* ix (car stretch)))
+      	   (set! sh (* iy (car stretch))))))
   (glgui-widget-add g
      'x x
      'y y
-     'sw (if (= (length stretch) 2) (car stretch) #f)
-     'sh (if (= (length stretch) 2) (cadr stretch) #f)
+     'sw sw
+     'sh sh
      'angle 0.
      'image img
      'callback #f
@@ -91,7 +104,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'draw-handle  glgui:pixmap-draw
      'input-handle glgui:pixmap-input
   )
-;; )
+ )
 )
 
 ;;eof
