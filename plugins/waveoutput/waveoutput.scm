@@ -55,8 +55,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (waveoutput:start store instance)
   (let* ((casepath (instance-refvar store instance "CasePath" #f))
-         (casefile (string-append casepath (system-pathseparator)
-           (instance-refvar store instance "Source" #f) ".csv"))
+         (namesuffix (instance-refvar store instance "NameSuffix" #f))
+         (casefile (string-append casepath (system-pathseparator) 
+           (instance-refvar store instance "Source" #f) "_" (seconds->string ##now "%Y%m%d_%H%M%S")
+           (if (string? namesuffix) namesuffix "") ".csv"))
          (fh (open-output-file casefile)))
    (instance-setvar! store instance "Handle" fh)
    (instance-setvar! store instance "FilePath" casefile)
