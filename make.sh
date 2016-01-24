@@ -394,7 +394,7 @@ cat > $hctgt  << _EOF
 // automatically generated. Do not edit.
 #include <stdlib.h>
 #include <LNCONFIG.h>
-#define ___VERSION 407003
+#define ___VERSION 407000
 #include <gambit.h>
 #define LINKER ____20_$linker
 ___BEGIN_C_LINKAGE

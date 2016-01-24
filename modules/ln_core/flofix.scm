@@ -45,7 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     ((##fixnum? n) n)
     ((##bignum? n) n) 
     ((##flonum? n) (if (##fl< n fix:fixnum-max-as-flonum)
-        (##flonum->fixnum n) (##flonum->exact-int n)))
+        (##flonum.->fixnum n) (##flonum.->exact-int n)))
     ((##ratnum? n) (##floor n))
     (else #f) ;; no complex numbers
   ))
