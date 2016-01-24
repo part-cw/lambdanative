@@ -65,7 +65,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (port? p) (begin
       (table-set! fifo:table name p)
       (input-port-timeout-set! p 0)
-      (let ((data (read-all p)))
+      (let ((data (with-exception-catcher (lambda (e) 
+               (fifo:log 0 "read exception: " name ": " (exception->string e)) '())
+               (lambda () (read-all p)))))
         (if (> (length data) 0) (fifo:log 2 "read: " data))
 ;;        (close-port p)
         data)) #f)))
