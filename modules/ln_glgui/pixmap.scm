@@ -77,18 +77,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; stretch list (sw sh) [2 items] is used to stretch the texture to a desired size (use 0 to reinit on the fly)
 ;; stretch list (s) [1 item] is used to scale the image by strech factor s
 (define (glgui-pixmap g x y img . stretch)
-  (let ((iy (cadr img))
-        (ix (car img))
+  (let ((pw (car img))
+        (ph (cadr img))
         (sw #f)
         (sh #f))
-     (if (= (length stretch ) 2)
-     (begin 
-       (set! sw  (car stretch))
-       (set! sh (cadr stretch)))
-      (if (= (length stretch ) 1)
-          (begin
-           (set! sw  (* ix (car stretch)))
-      	   (set! sh (* iy (car stretch))))))
+     (if (= (length stretch ) 2) 
+       (begin 
+         (set! sw (car stretch))
+         (set! sh (cadr stretch))
+       )
+       (if (= (length stretch ) 1)
+         (begin
+           (set! sw (* pw (car stretch)))
+      	   (set! sh (* ph (car stretch))))
+       )
+     )
   (glgui-widget-add g
      'x x
      'y y
