@@ -170,6 +170,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (cb (glgui-widget-get g wgt 'callback))
          (clearoninput (glgui-widget-get g wgt 'clearoninput))
          (aftercharcb (glgui-widget-get g wgt 'aftercharcb))
+         (onfocuscb (glgui-widget-get g wgt 'onfocuscb))
          (password (glgui-widget-get g wgt 'password))
          (fnt (glgui-widget-get g wgt 'font))
          (label0 (glgui-widget-get g wgt 'label))
@@ -184,6 +185,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (begin
         (glgui-widget-setglobal! g 'focus #f)
         (glgui-widget-set! g wgt 'focus #t)
+        (if (and onfocuscb (not focus)) (onfocuscb g wgt type mx my))
       ))
     (if (and label inside focus (fx= type EVENT_BUTTON1DOWN))
       (if wrapped?
@@ -322,6 +324,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'label label
      'callback #f
      'aftercharcb #f    ;; A callback that is called after every character and after delete
+     'onfocuscb #f    ;; A callback that is called when the label is clicked and gets focus
      'color color
      'hidden #f
      'direction GUI_LEFTTORIGHT
