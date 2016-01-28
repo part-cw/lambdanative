@@ -481,7 +481,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         (log-error "REDCap error: " (cdaar datalist))
                         #f)
                       (else
-                        (maps cdar datalist))))
+                        (maps
+                          (lambda (entry)
+                            (let ((id (cdar entry)))
+                              ;; May be a number if downloaded from newer REDCap - convert back to string
+                              (if (number? id) (number->string id) id)))
+                          datalist))))
                   #f)))
             (begin
               (if (and n (> n 0))
