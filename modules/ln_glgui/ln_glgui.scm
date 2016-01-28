@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "glgui_keypad_shift_on.scm")
 (include "glgui_keypad_shift_lock.scm")
 (include "glgui_keypad_toggle.scm")
+(include "glgui_keypad_toggleChar.scm")
 (include "glgui_modal.scm")
 (include "glgui_rounded_box.scm")
 (include "glgui_rounded_corner.scm")

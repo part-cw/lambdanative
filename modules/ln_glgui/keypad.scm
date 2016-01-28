@@ -91,12 +91,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ( (#\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\0)
     (#\@ #\# #\$ #\% #\& #\( #\) #\- #\\)
  ((shift "*-+" 1.5) #\! #\; #\: #\' #\" #\? #\/ (,delchar ,glgui_keypad_delete.img 1.5))
-   ((toggle ,glgui_keypad_toggle.img 1.5)  #\, (#\space " " 4.) #\. (,retchar ,glgui_keypad_return.img 1.5))
+   ((toggle ,glgui_keypad_toggleChar.img 1.5)  #\, (#\space " " 4.) #\. (,retchar ,glgui_keypad_return.img 1.5))
   )
   ( (#\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\0)
     (#\^ #\[ #\] #\{ #\} #\< #\>)
  ((shift "@#$" 1.5)  #\* #\- #\+ #\= #\_ #\~ #\| (,delchar ,glgui_keypad_delete.img 1.5))
-   ((toggle ,glgui_keypad_toggle.img 1.5)  #\, (#\space " " 4.) #\. (,retchar ,glgui_keypad_return.img 1.5))
+   ((toggle ,glgui_keypad_toggleChar.img 1.5)  #\, (#\space " " 4.) #\. (,retchar ,glgui_keypad_return.img 1.5))
   )
 ))
 
@@ -116,7 +116,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ( (#\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\0)
     (#\@ #\# #\$ #\% #\& #\* #\- #\+ #\( #\))
     (#\! #\" #\' #\: #\; #\/ #\? (,delchar ,glgui_keypad_delete.img 1.5))
-   ((toggle ,glgui_keypad_toggle.img 1.5)  #\, (#\space " " 4.) #\. (,retchar ,glgui_keypad_return.img 1.5))
+   ((toggle ,glgui_keypad_toggleChar.img 1.5)  #\, (#\space " " 4.) #\. (,retchar ,glgui_keypad_return.img 1.5))
   )
 ))
 
@@ -143,7 +143,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (keycmd (keypad:keycmd key))
         (keyimg (if (and (eq? keycmd 'shift) persistcap) glgui_keypad_shift_lock.img (keypad:keyimage key)))
         (highlighted (and highlight (char? keycmd) (char=? keycmd highlight))))
-    ((if rounded glgui:draw-rounded-box glgui:draw-box) (+ x 2) (+ y 3) (- w 4) (- h 6) 
+    ((if rounded glgui:draw-rounded-box glgui:draw-box) (+ x 2) (+ y 3) (- w 4) (- h 6)
         (if highlighted White (keypad:keycolor key btcolor)))
     (if (string? keyimg)
       (glgui:draw-text-center x y w h keyimg fnt (if highlighted Black fgcolor))
@@ -157,7 +157,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       )
     ))
  w))
- 
+
 (define (keypad:render x y w h pad fnt highlight floatinghighlight rounded btcolor fgcolor persistcap)
   (let* ((ncols (flo (length (car pad))))
          (nrows (flo (length pad)))
@@ -169,8 +169,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                (units (keypad:rowwidth (car rowdata)))
                (padx  (/ (- w (* units wchar)) 2.)))
            (let colloop ((xx (+ x padx)) (coldata (car rowdata)))
-             (if (> (length coldata) 0) 
-               (colloop (+ xx (keypad:renderkey xx yy wchar hchar (car coldata) 
+             (if (> (length coldata) 0)
+               (colloop (+ xx (keypad:renderkey xx yy wchar hchar (car coldata)
                  fnt highlight floatinghighlight rounded btcolor fgcolor persistcap))
                  (cdr coldata))))
            (rowloop (cdr rowdata)))))
@@ -207,8 +207,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (npad (+ (if toggle 2 0) (if shift 1 0)))
          (key (keypad:lookup mx my x y w h (list-ref keypad npad)))
          (inside (and (> mx x) (< mx (+ x w)) (> my y) (< my (+ y h)))))
-    (cond 
-      ((fx= type EVENT_BUTTON1DOWN) 
+    (cond
+      ((fx= type EVENT_BUTTON1DOWN)
         (let* ((keycmd (if key (keypad:keycmd key) #f))
                (keyevent (if (and (char? keycmd) (not (char=? keycmd #\nul))) (char->integer keycmd) #f)))
           (if (equal? keycmd 'shift)
@@ -233,7 +233,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (event-push EVENT_KEYPRESS keyevent 0)
             (glgui-widget-set! g wgt 'highlight keycmd)
           ))
-          
+
           ;; If button down somewhere over keyboard, arm for key release
           (if inside (glgui-widget-set! g wgt 'armed #t))
         ))
@@ -245,7 +245,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           ;; (for letter keypad only)
           (if (and (not persistcap) (< npad 2) (not (equal? keycmd 'shift))) (glgui-widget-set! g wgt 'shift #f))
           (if (and hideonreturn (char=? keycmd retchar))  (begin
-            (glgui-widget-set! g wgt 'hidden #t)                                           
+            (glgui-widget-set! g wgt 'hidden #t)
             (if (procedure? hideonreturn) (hideonreturn))
           ))
           (let ((keyevent (if (and (char? keycmd) (not (char=? keycmd #\nul))) (char->integer keycmd) #f)))
@@ -257,7 +257,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         )))
    ;; Return the key, but if false, return whether event was from inside rectangle dimensions
    (if key key inside)
- )) 
+ ))
 
 (define (glgui:keypad-draw g wgt)
   (let* ((x (glgui-widget-get-dyn g wgt 'x))
