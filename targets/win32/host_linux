@@ -35,8 +35,8 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-win_sysroot=`ls -1d ${WIN32SDK}/i?86-*mingw32 | head -n 1`
-win_cross=`ls -1 ${WIN32SDK}/bin/*-gcc | head -n 1 | sed 's/gcc$//'`
+win_sysroot=`ls -1d ${WIN32SDK}/i?86-*mingw32* | head -n 1`
+win_cross=`ls -1 ${WIN32SDK}/bin/*mingw32*-gcc | head -n 1 | sed 's/gcc$//'`
 
 SYS_CC=$win_cross"gcc $SYS_DEBUGFLAG -isysroot $win_sysroot -DWIN32 -DWINVER=0x0501"
 SYS_AR=$win_cross"ar"
