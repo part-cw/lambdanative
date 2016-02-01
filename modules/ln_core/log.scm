@@ -42,6 +42,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (log:grab!) (mutex-lock! log:mutex))
 (define (log:release!) (mutex-unlock! log:mutex))
 
+(define log:maxfiles 10)
+
 (define log:verbose 0)
 
 (define (log-verbose n) (set! log:verbose n))
@@ -55,6 +57,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define log:on (not (or (not (file-exists? (system-directory))) (not (file-exists? log:path)))))
 
 (define log:hook #f)
+
+;;adjusts the number of log files to keep. Default is 10
+(define (log-maxfiles n)  (set! log:maxfiles n))
 
 ;; general log submission
 (define log:submit (lambda (t . s)
@@ -86,7 +91,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (log-folder-cleanup)
   (if log:on (begin
     (log:grab!)
-    (let ((maxfiles 10))
+    (let ((maxfiles log:maxfiles))
        (let loop ((fs (sort (directory-files log:path) string>?))(n 0))
          (if (fx> (length fs) 0)
             (let* ((f (car fs))(match (string-contains f "log_")))
