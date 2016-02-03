@@ -407,13 +407,15 @@ make_artwork()
   pngsrc=`locatefile "apps/$SYS_APPNAME/artwork.png" silent`
   if [ "X$pngsrc" = "X" ]; then
     if [ ! "X$svgsrc" = "X" ]; then
-      echo " => generating master pixmap from SVG.."
-      inkscape=inkscape
-      if [ $SYS_HOSTPLATFORM = macosx ]; then
-        inkscape=/Applications/Inkscape.app/Contents/Resources/bin/inkscape
+      if [ `isnewer $svgsrc $pngtgt` = "yes" ]; then
+        echo " => generating master pixmap from SVG.."
+        inkscape=inkscape
+        if [ $SYS_HOSTPLATFORM = macosx ]; then
+          inkscape=/Applications/Inkscape.app/Contents/Resources/bin/inkscape
+        fi
+        asserttool $inkscape
+        veval "$inkscape -z $svgsrc -w 1200 -e $pngtgt"
       fi
-      asserttool $inkscape
-      $inkscape -z "$svgsrc" -w 1200 -e "$pngtgt"
     else
       if [ "X$epssrc" = "X" ]; then
         if [ "X$objsrc" = "X" ]; then
@@ -433,7 +435,7 @@ make_artwork()
       fi
       assertfile $epssrc
       tmpfile="$SYS_PREFIXROOT/build/$SYS_APPNAME/tmp.png"
-      if [ `isnewer $epssrc $pngsrc` = "yes" ]; then
+      if [ `isnewer $epssrc $pngtgt` = "yes" ]; then
         echo " => generating master pixmap from EPS.."
         gspostfix=
         if [ $SYS_HOSTPLATFORM = win32 ]; then
