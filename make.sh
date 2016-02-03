@@ -1211,6 +1211,8 @@ make_lntoolcheck()
       if [ ! "X$SYS_VERBOSE" = "X" ]; then
         lntool_verbose=verbose
       fi
+      tmp_sys_cpu=$SYS_CPU
+      SYS_CPU=
       SYS_PATH="$SYS_PATH" ./configure $tool $lntool_verbose > /dev/null
       . $SYS_TMPDIR/config.cache
       rmifexists $SYS_TMPDIR/tmp.subst
@@ -1219,6 +1221,7 @@ make_lntoolcheck()
       make_payload
       make_executable
       make_install_tool
+      SYS_CPU=$tmp_sys_cpu
     fi
   done 
   if [ -f $SYS_TMPDIR/tmp.config.cache ]; then
