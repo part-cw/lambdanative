@@ -53,8 +53,20 @@ assertfile $SYS_CC
 SYS_CC="$SYS_CC $SYS_DEBUGFLAG -isysroot $IOSSDK -DIOS -DIPHONE -miphoneos-version-min=$SYS_IOSVERSION"
 SYS_CC="$SYS_CC -fPIC -fsigned-char -fomit-frame-pointer"
 SYS_AR="$ios_cross/ar"
+if [ ! -f $SYS_AR ]; then
+  SYS_AR=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar 
+fi
 SYS_RANLIB="$ios_cross/ranlib"
+if [ ! -f $SYS_RANLIB ]; then
+  SYS_RANLIB=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib
+fi
 SYS_STRIP="$ios_cross/strip"
+if [ ! -f $SYS_STRIP ]; then
+  SYS_STRIP=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/strip
+fi
+assertfile $SYS_AR
+assertfile $SYS_RANLIB
+assertfile $SYS_STRIP
 SYS_NM="$ios_cross/nm"
 SYS_AS=$ios_cross"/as"
 SYS_LD=$ios_cross"/ld"
