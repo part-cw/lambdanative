@@ -205,6 +205,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (tl1 (if (or (= logtnposition 3) (= logtnposition 4)) 0 (- logticlen10)))
          (tr (if (or (= logtnposition 1) (= logtnposition 6)) 0 logticlen))
          (tr1 (if (or (= logtnposition 1) (= logtnposition 6)) 0 logticlen10)))
+    (table-set! g 'tndirection (if (or (= logtnposition 3) (= logtnposition 4)) -1 1))
     (table-set! g 'ispolar #f) (table-set! g 'logy #t)
     (table-set! g 'physysize physysize)
     (table-set! g 'axisymax yma) (table-set! g 'axisymin ymi)
