@@ -401,40 +401,53 @@ make_artwork()
   mkdir -p "$SYS_PREFIX/build"
   mkdir -p "$SYS_PREFIXROOT/build/$SYS_APPNAME"
   pngtgt="$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork.png"
+  svgsrc=`locatefile "apps/$SYS_APPNAME/artwork.svg" silent`
   objsrc=`locatefile "apps/$SYS_APPNAME/artwork.obj" silent`
   epssrc=`locatefile "apps/$SYS_APPNAME/artwork.eps" silent`
   pngsrc=`locatefile "apps/$SYS_APPNAME/artwork.png" silent`
   if [ "X$pngsrc" = "X" ]; then
-    if [ "X$epssrc" = "X" ]; then
-      if [ "X$objsrc" = "X" ]; then
-        echo "ERROR: artwork not found"
-        exit 1
+    if [ ! "X$svgsrc" = "X" ]; then
+      if [ `isnewer $svgsrc $pngtgt` = "yes" ]; then
+        echo " => generating master pixmap from SVG.."
+        inkscape=inkscape
+        if [ $SYS_HOSTPLATFORM = macosx ]; then
+          inkscape=/Applications/Inkscape.app/Contents/Resources/bin/inkscape
+        fi
+        asserttool $inkscape
+        veval "$inkscape -z $svgsrc -w 1200 -e $pngtgt"
       fi
-      assertfile $objsrc
-      epssrc=`echo $objsrc | sed 's/obj$/eps/'`
-    fi
-    if [ `isnewer $objsrc $epssrc` = "yes" ]; then
-      if [ ! "X$objsrc" = "X" ]; then
+    else
+      if [ "X$epssrc" = "X" ]; then
+        if [ "X$objsrc" = "X" ]; then
+          echo "ERROR: artwork not found"
+          exit 1
+        fi
         assertfile $objsrc
-        echo " => generating eps artwork.."
-        asserttool tgif
-        tgif -print -stdout -eps -color $objsrc > $epssrc
+        epssrc=`echo $objsrc | sed 's/obj$/eps/'`
       fi
-    fi
-    assertfile $epssrc
-    tmpfile="$SYS_PREFIXROOT/build/$SYS_APPNAME/tmp.png"
-    if [ `isnewer $epssrc $pngsrc` = "yes" ]; then
-      echo " => generating master pixmap.."
-      gspostfix=
-      if [ $SYS_HOSTPLATFORM = win32 ]; then
-        gspostfix=win32
+      if [ `isnewer $objsrc $epssrc` = "yes" ]; then
+        if [ ! "X$objsrc" = "X" ]; then
+          assertfile $objsrc
+          echo " => generating eps artwork.."
+          asserttool tgif
+          tgif -print -stdout -eps -color $objsrc > $epssrc
+        fi
       fi
-      asserttool gs${gspostfix}
-      veval "gs${gspostfix} -r600 -dNOPAUSE -sDEVICE=png16m -dEPSCrop -sOutputFile=$tmpfile $epssrc quit.ps"
-      assertfile $tmpfile
-      asserttool convert
-      veval "convert $tmpfile -trim -transparent \"#00ff00\" $pngtgt"
-      rm $tmpfile
+      assertfile $epssrc
+      tmpfile="$SYS_PREFIXROOT/build/$SYS_APPNAME/tmp.png"
+      if [ `isnewer $epssrc $pngtgt` = "yes" ]; then
+        echo " => generating master pixmap from EPS.."
+        gspostfix=
+        if [ $SYS_HOSTPLATFORM = win32 ]; then
+          gspostfix=win32
+        fi
+        asserttool gs${gspostfix}
+        veval "gs${gspostfix} -r600 -dNOPAUSE -sDEVICE=png16m -dEPSCrop -sOutputFile=$tmpfile $epssrc quit.ps"
+        assertfile $tmpfile
+        asserttool convert
+        veval "convert $tmpfile -trim -transparent \"#00ff00\" $pngtgt"
+        rm $tmpfile
+      fi
     fi
   else
     assertfile $pngsrc
@@ -814,6 +827,7 @@ make_setup_profile()
   name=$SYS_APPNAME
   here=`pwd`
   appsrcdir=`locatedir apps/$name`
+  appsrcdirs=$appsrcdir
   items=
   itemname=modules
   if [ -f "$appsrcdir/MODULES" ]; then
@@ -835,18 +849,22 @@ make_setup_profile()
     if [ ! "X$xlibs" = "X" ] && [ -f "$xlibs" ]; then
       libraries=$libraries" "`cat "$xlibs"`
     fi
+    appsrcdirs="$appsrcdirs modules/$m"
   done
   for p in $plugins; do
     xlibs=`locatefile plugins/$p/LIBRARIES silent`
     if [ ! "X$xlibs" = "X" ] && [ -f "$xlibs" ]; then
       libraries=$libraries" "`cat "$xlibs"`
     fi
+    appsrcdirs="$appsrcdirs plugins/$p"
   done 
   libraries=`filter_entries $SYS_PLATFORM $libraries`
   tool_libraries=
   if [ "$SYS_HOSTPLATFORM" = "$SYS_PLATFORM" ]; then
     tool_libraries="libgd libgambc"
   fi
+  appsrcdirs="$appsrcdirs loaders/$SYS_PLATFORM"
+# compile_target_options $appsrcdirs
   setstate
 }
 
@@ -1193,6 +1211,8 @@ make_lntoolcheck()
       if [ ! "X$SYS_VERBOSE" = "X" ]; then
         lntool_verbose=verbose
       fi
+      tmp_sys_cpu=$SYS_CPU
+      SYS_CPU=
       SYS_PATH="$SYS_PATH" ./configure $tool $lntool_verbose > /dev/null
       . $SYS_TMPDIR/config.cache
       rmifexists $SYS_TMPDIR/tmp.subst
@@ -1201,6 +1221,7 @@ make_lntoolcheck()
       make_payload
       make_executable
       make_install_tool
+      SYS_CPU=$tmp_sys_cpu
     fi
   done 
   if [ -f $SYS_TMPDIR/tmp.config.cache ]; then
@@ -1218,7 +1239,7 @@ make_gcc()
 {
   echo "==> building gcc compiler (this will take a while).."
   asserttool flex bison
-  gcc_version="4.8.1"
+  gcc_version="5.2.0"
   gcc_ball="gcc-${gcc_version}.tar.gz"
   gcc_prefix=$SYS_PREFIXROOT/gcc/$SYS_HOSTPLATFORM/gcc-${gcc_version}
   tgt=$SYS_PREFIXROOT/packages/$gcc_ball
@@ -1237,7 +1258,7 @@ make_gcc()
   cd build
   veval "../configure \
     --prefix=$gcc_prefix \
-    --enable-languages=c \
+    --enable-languages=c,c++ \
     --disable-nls"
   veval "make -j 4 bootstrap"
   mkdir -p $gcc_prefix

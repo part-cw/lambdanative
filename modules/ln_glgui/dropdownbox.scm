@@ -72,6 +72,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (h (glgui-widget-get-dyn g wgt 'h))
           (armed (glgui-widget-get g wgt 'armed))
           (cb (glgui-widget-get g wgt 'callback))
+          (bidir (glgui-widget-get g wgt 'bidir))
           (inside (and (> mx x) (< mx (+ x w)) (> my y) (< my (+ y h)))))
      (cond
        ((and (= type EVENT_BUTTON1DOWN) inside)
@@ -98,11 +99,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     ;; If more space below, put list below
                     (begin
                       (set! ly (modulo y h))
-                      (set! lh (- y ly)))
-                    ;; Otherwise, put list above
-                    (begin
-                      (set! ly (+ y h))
-                      (set! lh (- upper (modulo upper h)))
+                      (if bidir
+                        (let ((vspace (- (glgui-height-get) ly)))
+                          ;; If bidirectional, fit just within the screen height
+                          (if (> lh vspace)
+                            (set! lh (* (floor (/ vspace h)) h))))
+                        ;; Otherwise fit below the box
+                        (set! lh (- y ly))))
+                    ;; Otherwise, put list above (extend below as well if bidirectional)
+                    (let ((lh0 (- upper (modulo upper h))))
+                      (if bidir
+                        ;; Expand downward as well
+                        (let ((diff (- lh lh0)))
+                          (if (> diff (+ y h))
+                            ;; Not enough room for full height
+                            (begin
+                              (set! ly (modulo y h))
+                              (set! lh (+ lh0 h (- y ly))))
+                            ;; Full desired height
+                            (set! ly (- (+ y h) diff))))
+                        ;; Otherwise just show above
+                        (set! lh lh0))
                     )
                   )
                 ))
@@ -142,6 +159,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 (glgui-widget-set! g listw 'bgcol1 bgcolor)
                 (glgui-widget-set! g listw 'bgcol2 bgcolor)
                 (glgui-widget-set! g listw 'bordercolor bordercolor)
+                ;; Scroll if necessary based on selected item
+                (if (> (* cur h) lh)
+                  ;; Put selected item just off bottom
+                  (glgui-widget-set! g listw 'offset (fix (round (/ (- (* cur h) lh) h)))))
                 ;; Remember the popped up components, so apps have access to them
                 (set! glgui:dropdownbox:box boxw)
                 (set! glgui:dropdownbox:list listw)
@@ -174,6 +195,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'hidden #f
      'list lst
      'maxitems 5    ;; Max number of items to make visible at once
+     'bidir #f      ;; If set to true, may expand in both directions
      'current -1
      'focus #f
      'arrowcolor arrowcolor

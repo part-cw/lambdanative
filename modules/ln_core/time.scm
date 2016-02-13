@@ -1490,8 +1490,9 @@ end-of-c-declare
          (date (string->date str (tm:tildify fmt)))
          (t (date->time-monotonic date))
          (s (srfi19:time-second t))
-         (ns (srfi19:time-nanosecond t)))
-    (+ 0.0 (* tz -3600.) s (* ns 1.0e-9))))
+         (ns (srfi19:time-nanosecond t))
+         (utc (+ 0.0 (* tz -3600.) s (* ns 1.0e-9))))
+    (- utc (tm:leap-second-delta utc))))
 
 (define (seconds->string sec0 fmt . tz0)
   (let* ((tz (if (= (length tz0) 1) (car tz0) (timezone-hours)))

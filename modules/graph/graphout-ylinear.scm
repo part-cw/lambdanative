@@ -77,6 +77,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (numdist (fix (+ linnumdist 1)))
          (tl (if (or (= lintnposition 3) (= lintnposition 4)) 0 (- linticlen)))
          (tr (if (or (= lintnposition 1) (= lintnposition 6)) 0 linticlen)))
+  (table-set! g 'tndirection (if (or (= lintnposition 3) (= lintnposition 4)) -1 1))
   (table-set! g 'xstring "")
   (if (table-ref g 'axisenable) (begin
     (table-set! g 'coord GRAPH_PHYS)
