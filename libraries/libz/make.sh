@@ -1,4 +1,3 @@
-
 PKGURL=https://github.com/madler/zlib.git
 PKGHASH=50893291621658f355bc5b4d450a8d06a563053d
 
@@ -12,7 +11,7 @@ else
 fi
 
 package_make 
-INCLUDE_PATH="$SYS_PREFIX/include" LIBRARY_PATH="$SYS_PREFIX/lib" BINARY_PATH="$SYS_PREFIX/bin" package_make install
+INCLUDE_PATH="$SYS_PREFIX/include" LIBRARY_PATH="$SYS_PREFIX/lib" BINARY_PATH="$SYS_PREFIX/bin" make install -s
 package_cleanup
 
 #eof
