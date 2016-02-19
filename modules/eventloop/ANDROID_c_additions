@@ -1,0 +1,8 @@
+void ln_android_finish(){
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "ln_finish", "()V");
+    (*env)->CallVoidMethod(env, globalObj, method);
+  }
+}
