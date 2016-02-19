@@ -39,6 +39,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (c-declare  #<<end-of-c-declare
 
 #include "LNCONFIG.h"
+#ifdef ANDROID
+  void ln_android_finish();
+#endif
+
+void android_finish(){
+#ifdef ANDROID
+  ln_android_finish();
+#endif
+}
 
 end-of-c-declare
 )
@@ -106,7 +115,10 @@ end-of-c-declare
 
 (define app:mustinit #t)
 (define app:suspended #f)
+
+;; Android specials
 (define app:android? (string=? (system-platform) "android"))
+(define android-finish (c-lambda () void "android_finish"))
 
 (define event:fifo '())
 (define (event-push t x y)
@@ -157,7 +169,8 @@ end-of-c-declare
       )
       ((fx= t EVENT_TERMINATE)
         (log-system "System shutdown")
-        (if (procedure? hook:terminate) (hook:terminate)))
+        (if (procedure? hook:terminate) (hook:terminate))
+        (if app:android? (android-finish)))
       ((fx= t EVENT_SUSPEND)
         (if (and (not app:mustinit) (not app:suspended)) (begin
           (set! app:suspended #t)
@@ -217,6 +230,7 @@ end-of-c-declare
 
 (define (terminate)
   (if (procedure? hook:terminate) (hook:terminate))
+  (if app:android? (android-finish))
 )
 
 ;; eof
