@@ -152,6 +152,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   }
   @Override 
   protected void onDestroy() {
+    @ANDROID_JAVA_ONDESTROY@
     nativeEvent(14,0,0); // EVENT_CLOSE
     nativeEvent(127,0,0); // EVENT_TERMINATE
     if (isBatteryRegistered){
@@ -161,7 +162,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     try { openSLThread.join(); } catch (InterruptedException e) { }
     openSLThread = null;
     idleHandler.removeCallbacks(idleRunnable);
-    @ANDROID_JAVA_ONDESTROY@
     super.onDestroy();
   }
   @Override
