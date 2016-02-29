@@ -186,6 +186,13 @@ char localnotification_msg[100];
 int localnotification_gotmsg;
 double localnotification_timestamp;
 extern "C" int ios_localnotification_schedule(char* text, double time) {
+  // Update unique ids
+  NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+  int localnotification_id = [userDefaults integerForKey:@"LocalNotificationId"];
+  localnotification_id += 1;
+  [userDefaults setInteger: localnotification_id forKey:@"LocalNotificationId"];
+  [userDefaults synchronize];
+  // Schedule the notification
   NSArray *eventArray = [[UIApplication sharedApplication] scheduledLocalNotifications];
   UILocalNotification* localNotification = [[UILocalNotification alloc] init];
   int eventnum = [eventArray count];
@@ -194,15 +201,32 @@ extern "C" int ios_localnotification_schedule(char* text, double time) {
   localNotification.alertBody = [NSString stringWithUTF8String: text];
   localNotification.applicationIconBadgeNumber =
     [UIApplication sharedApplication].applicationIconBadgeNumber + eventnum + 1;
-  [[UIApplication sharedApplication] scheduleLocalNotification:localNotification];
+  NSDictionary *infoDict = [NSDictionary dictionaryWithObject: [NSNumber numberWithInteger: localnotification_id] forKey: @"LocalNotificationId"];
+  localNotification.userInfo = infoDict;
+  [[UIApplication sharedApplication] scheduleLocalNotification: localNotification];
   // see if we got it scheduled?
   eventArray = [[UIApplication sharedApplication] scheduledLocalNotifications];
-  if ([eventArray count]>eventnum) return 1;
+  if ([eventArray count]>eventnum) return localnotification_id;
   return 0;
 }
 
-extern "C" void ios_localnotification_cancelall() {
+extern "C" int ios_localnotification_cancelall() {
   [[UIApplication sharedApplication] cancelAllLocalNotifications];
+  return 1;
+}
+
+extern "C" int ios_localnotification_cancel(int id) {
+  NSArray *eventArray = [[UIApplication sharedApplication] scheduledLocalNotifications];
+  for (int i=0; i<[eventArray count]; i++){
+    UILocalNotification* localNotification = [eventArray objectAtIndex:i];
+    NSInteger lid = [[localNotification.userInfo objectForKey: @"LocalNotificationId"] intValue];
+    int localnotification_id = (int) lid;
+    if (localnotification_id == id){
+      [[UIApplication sharedApplication] cancelLocalNotification: localNotification];
+      return localnotification_id;
+    }
+  }
+  return 0;
 }
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%

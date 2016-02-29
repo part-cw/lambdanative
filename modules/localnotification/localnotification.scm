@@ -43,7 +43,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   extern double localnotification_timestamp;
   extern int localnotification_gotmsg;
   int ios_localnotification_schedule(char*, double);
-  void ios_localnotification_cancelall();
+  int ios_localnotification_cancelall();
+  int ios_localnotification_cancel(int id);
 #elif ANDROID
   extern char localnotification_msg[100];
   extern double localnotification_timestamp;
@@ -57,18 +58,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int localnotification_schedule(char* text, double time){
 #ifdef IOS
-  ios_localnotification_schedule(text, time);
+  return ios_localnotification_schedule(text, time);
 #elif ANDROID
   android_localnotification_schedule(text, time);
 #endif
   return 0;
 }
 
-void localnotification_cancelall(){
+int localnotification_cancelall(){
 #ifdef IOS
-  ios_localnotification_cancelall();
+  return ios_localnotification_cancelall();
 #elif ANDROID
 #endif
+  return 0;
+}
+
+int localnotification_cancel(int id){
+#ifdef IOS
+  return ios_localnotification_cancel(id);
+#elif ANDROID
+#endif
+  return 0;
 }
 
 void localnotification_resetmsg(){
@@ -85,13 +95,15 @@ end-of-c-declare
 ;; Create local notification
 (define (localnotification-schedule str time)
   (if (and (> time ##now) (string? str) (fx<= (string-length str) 100))
-    ((c-lambda (char-string double) bool "___result=localnotification_schedule(___arg1,___arg2);") str time)
+    ((c-lambda (char-string double) int "___result=localnotification_schedule(___arg1,___arg2);") str time)
     #f
   ))
 
 ;; Clear notifications
 (define (localnotification-cancelall)
-  ((c-lambda () void "localnotification_cancelall")))
+  ((c-lambda () int "___result=localnotification_cancelall();")))
+(define (localnotification-cancel id)
+  ((c-lambda (int) int "___result=localnotification_cancel(___arg1);") id))
 
 ;; Retrieve local notification
 (define (localnotification-getalert)
