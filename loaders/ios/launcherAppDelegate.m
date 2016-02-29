@@ -89,6 +89,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (UIUserNotificationTypeBadge | UIUserNotificationTypeSound | UIUserNotificationTypeAlert)];
   }
   #endif
+// Clear the badge icon
+[UIApplication sharedApplication].applicationIconBadgeNumber = 0;
 #endif
 
 #ifdef USE_NOLOCK
@@ -219,9 +221,7 @@ extern double localnotification_timestamp;
   localnotification_gotmsg = 1;
   UIApplicationState state = [application applicationState];
   ffi_event(EVENT_NOTIFICATION,0,0);
-  if (state == UIApplicationStateActive) {
-    [UIApplication sharedApplication].applicationIconBadgeNumber = 0;
-  }
+  [UIApplication sharedApplication].applicationIconBadgeNumber = 0;
 }
 #endif
 

@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   extern double localnotification_timestamp;
   extern int localnotification_gotmsg;
   int ios_localnotification_schedule(char*, double);
+  void ios_localnotification_cancelall();
 #elif ANDROID
   extern char localnotification_msg[100];
   extern double localnotification_timestamp;
@@ -63,6 +64,13 @@ int localnotification_schedule(char* text, double time){
   return 0;
 }
 
+void localnotification_cancelall(){
+#ifdef IOS
+  ios_localnotification_cancelall();
+#elif ANDROID
+#endif
+}
+
 void localnotification_resetmsg(){
   localnotification_gotmsg = 0;
 }
@@ -81,7 +89,10 @@ end-of-c-declare
     #f
   ))
 
-;;
+;; Clear notifications
+(define (localnotification-cancelall)
+  ((c-lambda () void "localnotification_cancelall")))
+
 ;; Retrieve local notification
 (define (localnotification-getalert)
   (if ((c-lambda () bool "___result=localnotification_gotmsg;"))

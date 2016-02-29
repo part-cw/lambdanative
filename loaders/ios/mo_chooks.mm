@@ -201,6 +201,10 @@ extern "C" int ios_localnotification_schedule(char* text, double time) {
   return 0;
 }
 
+extern "C" void ios_localnotification_cancelall() {
+  [[UIApplication sharedApplication] cancelAllLocalNotifications];
+}
+
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%
 // device identification
 
