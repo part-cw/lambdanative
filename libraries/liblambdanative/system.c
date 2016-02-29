@@ -42,6 +42,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef FREEBSD
+#include <sys/param.h>
+#endif
+
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -105,7 +109,7 @@ static void find_directories()
     sys_dir=strdup(buf);
   }
 #endif
-#if defined(OPENBSD) || defined(NETBSD)
+#if defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD)
   char buf[PATH_MAX];
   if (realpath(cmd_argv[0],buf)) {
     int i = strlen(buf)-1;

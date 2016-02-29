@@ -58,7 +58,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <GLES/gl.h>
 #endif
 
-#if defined(WIN32) || defined(LINUX) || defined(OPENBSD) || defined(NETBSD)
+#if defined(WIN32) || defined(LINUX) || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD)
 #include <GL/gl.h>
 #endif
 

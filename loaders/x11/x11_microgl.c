@@ -44,7 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
 
-#if defined(OPENBSD)||defined(LINUX)||defined(NETBSD)
+#if defined(OPENBSD)||defined(LINUX)||defined(NETBSD) || defined(FREEBSD)
 #define USE_GLX 1
 #endif
 

@@ -73,6 +73,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define USE_PORTAUDIO
 #endif
 
+#ifdef FREEBSD
+#define USE_PORTAUDIO
+#endif
+
 #ifdef BB10
 #define USE_BB10AUDIO
 #endif 

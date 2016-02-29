@@ -131,6 +131,9 @@ i386-unknown-openbsd*)
 i386-unknown-netbsd*)
   SYS_HOSTPLATFORM="netbsd"
 ;;
+*-freebsd*)
+  SYS_HOSTPLATFORM="freebsd"
+;;
 *)
   echo "ERROR: this host platform is not supported [$hostsys]"
   exit 1
