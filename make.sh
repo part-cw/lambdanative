@@ -824,6 +824,9 @@ make_setup_profile()
     fi
     gcc $flags -o $SYS_HOSTPREFIX/bin/subtool tools/subtool/subtool.c 2> /dev/null
   fi
+  if [ ! -x $SYS_HOSTPREFIX/bin/subtool ]; then
+    assert "cannot build subtool. Broken gcc or insufficient permissions??"
+  fi
   name=$SYS_APPNAME
   here=`pwd`
   appsrcdir=`locatedir apps/$name`
