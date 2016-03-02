@@ -1,6 +1,6 @@
 /*
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2014, University of British Columbia
+Copyright (c) 2009-2016, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -126,6 +126,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 }
 #endif // USE_AUDIOINIT
 
+  @IOS_LAUNCHERAPPDELEGATE_DIDFINISHLAUNCHING@
+
   ffi_event(EVENT_INIT,screenSize.size.width,screenSize.size.height);
 
 }
@@ -159,6 +161,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ffi_event(EVENT_CLOSE,0,0);
   ffi_event(EVENT_TERMINATE,0,0);
 }
+
+// Additional pieces to be included here
+@IOS_LAUNCHERAPPDELEGATE_ADDITION@
 
 #ifdef USE_ORIENTATION
 - (void) didRotate:(NSNotification *)notification

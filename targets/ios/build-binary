@@ -53,6 +53,8 @@ ios_subst()
   ac_subst IOS_OBJC_DEFINES "@$1/IOS_objc_defines"
   ac_subst IOS_FRAMEWORK_ADDITIONS "@$1/IOS_framework_additions"
   ac_subst IOS_FRAMEWORK_SEARCHPATH "@$1/IOS_framework_searchpath"
+  ac_subst IOS_LAUNCHERAPPDELEGATE_ADDITIONS "@$1/IOS_launcherappdelegate_additions"
+  ac_subst IOS_LAUNCHERAPPDELEGATE_DIDFINISHLAUNCHING "@$1/IOS_launcherappdelegate_didfinishlaunching"
   ac_subst IOS_XML_PERMISSIONS "@$1/IOS_xml_permissions"
   ac_subst IOS_XML_REQUIREDDEVICECAP "@$1/IOS_xml_requireddevicecap"
 }
