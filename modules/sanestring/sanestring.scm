@@ -113,6 +113,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (sanestring-num s)
   (pregexp-match "^([0-9]+)$" s))
 
+;; Number of months
+(define (sanestring-months s)
+  (pregexp-match "^(?x: [0-9] | 1[0-2])$" s))
+
 (define (sanestring-nonempty s)
   (fx> (string-length s) 0))
 
