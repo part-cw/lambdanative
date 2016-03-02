@@ -51,6 +51,8 @@ ios_subst()
   ac_subst IOS_OBJC_ADDITIONS "@$1/IOS_objc_additions"
   ac_subst IOS_OBJCPP_ADDITIONS "@$1/IOS_objcpp_additions"
   ac_subst IOS_OBJC_DEFINES "@$1/IOS_objc_defines"
+  ac_subst IOS_FRAMEWORK_ADDITIONS "@$1/IOS_framework_additions"
+  ac_subst IOS_FRAMEWORK_SEARCHPATH "@$1/IOS_framework_searchpath"
   ac_subst IOS_XML_PERMISSIONS "@$1/IOS_xml_permissions"
   ac_subst IOS_XML_REQUIREDDEVICECAP "@$1/IOS_xml_requireddevicecap"
 }
@@ -117,6 +119,7 @@ fi
 assertfile $tmpappdir
 
 echo " => verifying application.."
+
 osxver=`sw_vers -productVersion`
 if [ `echo "10.9.5\n$osxver" | sed 's/^10\.//' | sort -g | head -1` == "9.5" ]; then
   checkfail=`codesign --verify --no-strict $tmpappdir 2>&1`
