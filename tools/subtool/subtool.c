@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //#define DEBUG_SUBTOOL 1
 
-#define PARAM_MAXLEN 32
+#define PARAM_MAXLEN 42
 
 #ifdef DEBUG_SUBTOOL
 #define DMSG(fmt...) (fprintf(stderr,"SUBTOOL: " fmt),fprintf(stderr,"\n"))
@@ -127,8 +127,8 @@ struct parser {
 char *parse_char(struct parser *p, char c)
 {
   if (p->in_at&&c==':') {
-    fprintf(stderr,"ERROR: illegal character in substitution parameter\n");
-    exit(1);
+    DMSG("ERROR: illegal character in substitution parameter\n");
+    return 0;
   }
   // bail out of possible parameter impossible length, or <=32 ascii
   if (p->in_at) {
