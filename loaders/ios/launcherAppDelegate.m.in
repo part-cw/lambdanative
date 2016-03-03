@@ -75,12 +75,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   
   [window makeKeyAndVisible];
 
-#ifdef USE_PUSHNOTIFICATION
-// Let the device know we want to receive push notifications
-  [[UIApplication sharedApplication] registerForRemoteNotificationTypes:
-    (UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound | UIRemoteNotificationTypeAlert)];
-#endif
-
 #ifdef USE_NOLOCK
 // this will prevent the screen from locking up
    [UIApplication sharedApplication].idleTimerDisabled = YES;
@@ -177,26 +171,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   if (res>=0) ffi_event(EVENT_ORIENTATION,res,0);
 }
 #endif // USE_ORIENTATION
-
-#ifdef USE_PUSHNOTIFICATION
-extern char pushnotification_devicetoken[512];
-extern int pushnotification_gottoken;
-- (void)application:(UIApplication*)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken{
-  int len = [deviceToken length];
-  Byte *token = (Byte*)malloc(len);
-  memcpy(token, [deviceToken bytes], len);
-  int i;
-  for (i=0;i<len;i++){
-    pushnotification_devicetoken[i]=token[i];
-  }
-  free(token);
-  pushnotification_gottoken=len;
-}
-- (void)application:(UIApplication*)application didFailToRegisterForRemoteNotificationsWithError:(NSError*)error {
-  pushnotification_gottoken=0;
-  NSLog(@"Failed to get APN token: %@", error);
-}
-#endif
 
 - (void)dealloc {
   DMSG("dealloc");
