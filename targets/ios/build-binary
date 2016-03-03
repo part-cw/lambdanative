@@ -71,6 +71,8 @@ cmakedir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 ac_output $srcdir/CMakeLists.txt $cmakedir/CMakeLists.txt
 ac_output $srcdir/objc_additions.m $cmakedir/objc_additions.m
 ac_output $srcdir/objcpp_additions.mm $cmakedir/objcpp_additions.mm
+ac_output $srcdir/mo_chooks.mm $cmakedir/mo_chooks.mm
+ac_output $srcdir/launcherAppDelegate.m $cmakedir/launcherAppDelegate.m
 cp $srcdir/*.m $cmakedir
 cp $srcdir/*.mm $cmakedir
 cp $srcdir/*.h $cmakedir
