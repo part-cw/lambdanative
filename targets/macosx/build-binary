@@ -81,16 +81,16 @@ tmpdir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 echo " => compiling application.."
 if [ `is_standalone_app` = "yes" ]; then
   cd "$tmpdir"
-  veval "$SYS_HOST_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload"
+  veval "$SYS_HOST_CC $cflag_additions $ldflag_additions -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload"
 else
   if [ `is_gui_app` = "yes" ]; then
     cp loaders/macosx/*.[mh] $tmpdir
     cd "$tmpdir"
-    veval "$SYS_HOST_CC -framework OpenGL -framework Cocoa -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -x objective-c -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -o $apptgtdir/$SYS_APPNAME -lpayload main.m SimpleOpenGLView.m"
+    veval "$SYS_HOST_CC $cflag_additions $ldflag_additions -framework OpenGL -framework Cocoa -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -x objective-c -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -o $apptgtdir/$SYS_APPNAME -lpayload main.m SimpleOpenGLView.m"
   else
     cp loaders/common/main.c $tmpdir
     cd "$tmpdir"
-    veval "$SYS_HOST_CC -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload main.c"
+    veval "$SYS_HOST_CC $cflag_additions $ldflag_additions -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload main.c"
   fi
 fi
 cd $here

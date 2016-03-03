@@ -38,11 +38,12 @@
 SDKROOT="$CARLSONMINOTSDK/arm-none-linux-gnueabi"
 SDKROOT=`ls -1d /usr/local/carlson-minot/crosscompilers/arm-none-linux-gnueabi/libc-*-sysroot | head -n 1`
 CROSS="$CARLSONMINOTSDK/bin/arm-none-linux-gnueabi-"
-SYS_CC=$CROSS"gcc $SYS_DEBUGFLAG -isysroot $SDKROOT -DCARLSONMINOT -DLINUX"
+SYS_CC=$CROSS"gcc $SYS_DEBUGFLAG -isysroot $SDKROOT -DCARLSONMINOT -DLINUX $cflag_additions"
 SYS_ARCH=`$SYS_CC -dumpmachine`
 SYS_AR=$CROSS"ar"
 SYS_RANLIB=$CROSS"ranlib"
 SYS_STRIP=$CROSS"strip"
+SYS_NM=$CROSS"nm"
 SYS_WINDRES=
 SYS_EXEFIX=
 SYS_APPFIX=

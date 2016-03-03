@@ -41,12 +41,13 @@ source "$script"
 TOOLCHAIN=`wildcard_dir ${PLAYBOOKSDK}/host/macosx/x86`
 assertfile "$TOOLCHAIN" "Playbook host tool chain not found"
 CROSS=`ls $TOOLCHAIN/usr/bin/arm-*-qnx*eabi-ranlib | sed 's/ranlib$//'`
-SYS_CC="qcc -Vgcc_ntoarmv7le $SYS_DEBUGFLAG -DPLAYBOOK -DQNX -DNO_SYSLOG"
+SYS_CC="qcc -Vgcc_ntoarmv7le $SYS_DEBUGFLAG -DPLAYBOOK -DQNX -DNO_SYSLOG $cflag_additions"
 SYS_AR=$CROSS"ar"
 assertfile $SYS_AR "Playbook tool chain setup is invalid"
 SYS_RANLIB=$CROSS"ranlib"
 assertfile $SYS_RANLIB "Playbook tool chain setup is invalid"
 SYS_STRIP=$CROSS"strip"
+SYS_NM=$CROSS"nm"
 assertfile $SYS_STRIP "Playbook tool chain setup is invalid"
 SYS_WINDRES=
 SYS_EXEFIX=

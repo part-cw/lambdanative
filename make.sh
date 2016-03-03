@@ -334,6 +334,28 @@ compile_payload()
   payload_objs=
   payload_libs="$libraries"
   #--------
+  # register custom compiler/linker options
+  ldflag_additions=
+  cflag_additions=
+  payload_spcaps=`echo $SYS_PLATFORM | tr 'a-z' 'A-Z'`
+  for m in $modules; do
+    modpath=`locatedir modules/$m silent`
+    if [ -f $modpath/${payload_spcaps}_CFLAG_ADDITIONS ]; then
+      cflag_additions="$cflag_additions "`cat $modpath/${payload_spcaps}_CFLAG_ADDITIONS`
+    fi
+    if [ -f $modpath/${payload_spcaps}_LDFLAG_ADDITIONS ]; then
+      ldflag_additions="$ldflag_additions "`cat $modpath/${payload_spcaps}_LDFLAG_ADDITIONS`
+    fi
+  done
+  if [ -f $appsrcdir/${payload_spcaps}_CFLAG_ADDITIONS ]; then
+    cflag_additions="$cflag_additions "`cat $appsrcdir/${payload_spcaps}_CFLAG_ADDITIONS`
+  fi
+  if [ -f $appsrcdir/${payload_spcaps}_LDFLAG_ADDITIONS ]; then
+    ldflag_additions="$ldflag_additions "`cat $appsrcdir/${payload_spcaps}_LDFLAG_ADDITIONS`
+  fi
+  ac_subst CFLAG_ADDITIONS "$cflag_additions"
+  ac_subst LDFLAG_ADDITIONS "$ldflag_additions"
+  #--------
   # step 1: compile and assemble the payload objs
   for lng in $languages; do
     dmsg_make "running compile_payload_${lng}.."

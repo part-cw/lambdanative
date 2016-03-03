@@ -41,11 +41,16 @@ if [ "X$SYS_ABI" = "X" ]; then
 fi
 
 SYS_HOST_CC="gcc $SYS_DEBUGFLAG -DMACOSX -m$SYS_ABI"
+
 SDKROOT=`ls -1d $SYS_PREFIXROOT/gcc/$SYS_HOSTPLATFORM/gcc-* 2> /dev/null`
 if [ -d "$SDKROOT" ]; then
-  CUSTOMGCC=`ls -1 $SDKROOT/bin/x*-gcc | tail -n 1`
-  osxsdk=`ls -1 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/ | tail -n 1`
-  SYS_CC="$CUSTOMGCC -m$SYS_ABI $SYS_DEBUGFLAG -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/${osxsdk} -DMACOSX"
+  CUSTOMGCC=`ls -1 $SDKROOT/bin/x*-gcc | tail -n 1 2> /dev/null`
+  if [ "X$CUSTOMGCC" = "X" ]; then
+    SYS_CC=$SYS_HOST_CC
+  else
+    osxsdk=`ls -1 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/ | tail -n 1`
+    SYS_CC="$CUSTOMGCC -m$SYS_ABI $SYS_DEBUGFLAG -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/${osxsdk} -DMACOSX"
+  fi
 else
   SYS_CC=$SYS_HOST_CC
 fi
@@ -56,5 +61,7 @@ SYS_NM=nm
 SYS_WINDRES=
 SYS_EXEFIX=
 SYS_APPFIX=.app
+
+SYS_CC="$SYS_CC $cflag_additions"
 
 #eof

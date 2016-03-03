@@ -147,14 +147,9 @@ cp $SYS_PREFIX/lib/libpayload.a $tmpmoddir/libpayload
 
 echo " => preparing JNI.."
 mkdir $tmpdir/jni
-# opensl was introduced at api 10
-if [ `echo "$ANDROIDAPI > 9" | bc` = 1 ]; then
-  cp loaders/android/Android.mk.jni $tmpdir/jni/Android.mk
-else
-  cat loaders/android/Android.mk.jni | sed 's/-lOpenSLES//' > $tmpdir/jni/Android.mk
-fi
+ac_output loaders/android/Android.mk.jni.in $tmpdir/jni/Android.mk
 cp $SYS_PREFIX/include/LNCONFIG.h $tmpdir/jni
-ac_output loaders/android/bootstrap.c $tmpdir/jni/bootstrap.c
+ac_output loaders/android/bootstrap.c.in $tmpdir/jni/bootstrap.c
 cd $tmpdir
 
 APP_ABI=armeabi
