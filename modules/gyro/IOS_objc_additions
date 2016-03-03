@@ -1,0 +1,26 @@
+// gyroscope
+#import <CoreMotion/CoreMotion.h>
+
+static double ios_gyro(int idx){
+  double value=1.0;
+  static int needsinit=1;
+  static CMMotionManager *motionManager;
+  if (needsinit) {
+    motionManager = [[CMMotionManager alloc] init];
+    motionManager.deviceMotionUpdateInterval = 1.0/60.0;
+    if  (motionManager.isDeviceMotionAvailable) {
+      [motionManager startDeviceMotionUpdates];
+    }
+    needsinit=0;
+  }
+  CMDeviceMotion *deviceMotion = motionManager.deviceMotion;
+  CMAttitude *attitude = deviceMotion.attitude;
+  if (idx==0) value=(double)attitude.yaw;
+  if (idx==1) value=(double)attitude.pitch;
+  if (idx==2) value=(double)attitude.roll;
+  return value;
+}
+
+extern double ios_gyro_yaw() { return ios_gyro(0); }
+extern double ios_gyro_pitch() { return ios_gyro(1); }
+extern double ios_gyro_roll() { return ios_gyro(2); }
