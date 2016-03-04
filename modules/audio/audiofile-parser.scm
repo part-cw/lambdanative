@@ -5443,7 +5443,7 @@ struct wavfile {
 
 #define AUDIOFILE_BUFSIZE 4410
 
-static int audiofile_curid=1;
+typedef enum {NOT_PLAYING, PLAYING, LOOPING} playing_state;
 
 struct audiofile {
   char *fname;
@@ -5456,10 +5456,11 @@ struct audiofile {
   int len;
   int lock;
   int16 buf[AUDIOFILE_BUFSIZE];
-  struct audiofile *nxt;
+  playing_state playing;
 };
 
-static struct audiofile *fst=0,*lst=0,*cur=0;
+static struct audiofile *audiofiles=0, *cur=0;
+int audiofile_count = 0;
 
 static int audiofile_reset(struct audiofile *af)
 {
@@ -5479,6 +5480,7 @@ static int audiofile_reset(struct audiofile *af)
     }
     af->lock=0;
     af->idx=af->len=0;
+    af->playing = NOT_PLAYING;
     if (!af->fd) return 0;
     return 1;
   } else {
@@ -5493,6 +5495,7 @@ static int audiofile_reset(struct audiofile *af)
     if (info.sample_rate!=44100) { stb_vorbis_close(af->vorbis); af->vorbis=0; return 0; }
     af->lock=0;
     af->idx=af->len=0;
+    af->playing = NOT_PLAYING;
     return 1;
   }
   return 0;
@@ -5505,60 +5508,97 @@ static int audiofile_loadany(const char *fname)
   int l = strlen(fname); 
   if ((fd=fopen(fname, "rb") )!=NULL ) {
     fclose(fd);
-    struct audiofile *af = (struct audiofile*)malloc(sizeof(struct audiofile));
-    if (!af) return 0;
-    af->fname=strdup(fname);
-    af->id=audiofile_curid++;
-    af->vorbis=0; 
-    af->lock=0;
-    af->fd=0;
-    if (fname[l-1]=='v') { af->type=AUDIOFILE_WAV; } else { af->type=AUDIOFILE_OGG; }
-    if (!audiofile_reset(af)) { free(af); return 0; }
-    af->nxt=0;
-    if (!fst) fst=af; else { lst->nxt=af; } lst=af;
-    return af->id;
+    audiofile_count = audiofile_count + 1;
+    audiofiles =  (struct audiofile*)realloc(audiofiles, sizeof(struct audiofile)*(audiofile_count));
+    audiofiles[audiofile_count-1].fname=strdup(fname);
+    audiofiles[audiofile_count-1].id=audiofile_count;
+    audiofiles[audiofile_count-1].vorbis=0; 
+    audiofiles[audiofile_count-1].lock=0;
+    audiofiles[audiofile_count-1].fd=0;
+    audiofiles[audiofile_count-1].playing = NOT_PLAYING;
+    if (fname[l-1]=='v') { audiofiles[audiofile_count-1].type=AUDIOFILE_WAV; } else { audiofiles[audiofile_count-1].type=AUDIOFILE_OGG; }
+    if (!audiofile_reset(&audiofiles[audiofile_count-1])) { 
+      audiofile_count=audiofile_count-1;
+      audiofiles = (struct audiofile*)realloc(audiofiles, sizeof(struct audiofile)*(audiofile_count));
+      return 0; 
+    }
+    return audiofiles[audiofile_count-1].id;
   }
   return 0;
 }
 
 static void audiofile_select(int id)
 {
-  struct audiofile *tmp = fst;
-  while (tmp) { 
-    if (tmp->id==id) { cur=tmp; if (!audiofile_reset(cur)) cur=0; } 
-    tmp=tmp->nxt; 
+ id = id - 1;
+    fflush(stderr);
+  cur = &audiofiles[id];
+  if(!audiofile_reset(cur)){
+    fprintf(stderr, "Tried Starting audio file with id %d playing\n, but failed.", id); 
+    fflush(stderr);
+    cur = 0;
+  } else {
+    fflush(stderr);
+    cur->playing = PLAYING;
   }
 }
 
-void audiofile_nextsample(int16 *l, int16 *r)
+void audiofile_nextsample_from(struct audiofile * af, int16 *l, int16 *r)
 {
-  static int16 cur_l,cur_r;
-  int nread;
-  if (cur) {
-    if (cur->len==0||cur->idx>cur->len-(cur->channels==2?2:1)) {
-      if (cur->type==AUDIOFILE_WAV) {
-        while (cur->lock) {usleep(1000);};
-        cur->lock=1;
-        nread=fread(cur->buf,2,AUDIOFILE_BUFSIZE,cur->fd); 
-        cur->lock=0;
-        if (nread<=0||ferror(cur->fd)) { fclose(cur->fd); cur->fd=0; cur=0; *l=*r=0; return; }
+  int nread; 
+  if (af->playing == PLAYING || af->playing == LOOPING) {
+    if (af->len==0||af->idx>af->len-(af->channels==2?2:1)) {
+      if (af->type==AUDIOFILE_WAV) {
+        while (af->lock) {usleep(1000);};
+        af->lock=1;
+        nread=fread(af->buf,2,AUDIOFILE_BUFSIZE,af->fd); 
+        af->lock=0;
+        if (nread<=0||ferror(af->fd)) { 
+	  if(af->playing == PLAYING){
+            fclose(af->fd);
+	    af->fd=0;
+	    *l=*r=0;
+	    af->playing = NOT_PLAYING;
+	    return;
+          } else { /* af->playing must be LOOPING */
+            fclose(af->fd);
+	    af->fd=0;
+	    audiofile_reset(af);
+	    af->playing = LOOPING;
+	    audiofile_nextsample_from(af, l, r);
+	    return;
+          }
+	}
       } else {
-        while (cur->lock) {usleep(1000);};
-        cur->lock=1; 
-        if (cur->vorbis) {
-          nread = stb_vorbis_get_samples_short_interleaved(cur->vorbis,cur->channels, cur->buf, AUDIOFILE_BUFSIZE);
+        while (af->lock) {usleep(1000);};
+        af->lock=1; 
+        if (af->vorbis) {
+          nread = stb_vorbis_get_samples_short_interleaved(af->vorbis,af->channels, af->buf, AUDIOFILE_BUFSIZE);
         } else {
           nread=0;
         }
-        cur->lock=0;
-        nread*=cur->channels;
-        if (nread<=0) { stb_vorbis_close(cur->vorbis); cur->vorbis=0; cur=0; *l=*r=0; return; }
+        af->lock=0;
+        nread*=af->channels;
+        if (nread<=0) { stb_vorbis_close(af->vorbis);
+	  if(af->playing == PLAYING){
+            af->vorbis=0;
+	    *l=*r=0;
+	    af->playing = NOT_PLAYING;
+	    return;
+          } else { /* af->playing must be LOOPING */
+            af->vorbis=0;
+            audiofile_reset(af);
+	    af->playing = LOOPING;
+            audiofile_nextsample_from(af, l, r);
+	    return;
+          }
+	}
       }
-      cur->len=nread; cur->idx=0;
+      af->len=nread; 
+      af->idx=0;
     }
-    *l=cur->buf[cur->idx];
-    *r=(cur->channels==2?cur->buf[cur->idx+1]:*l);
-    cur->idx+=(cur->channels==2?2:1); 
+    *l=af->buf[af->idx];
+    *r=(af->channels==2?af->buf[af->idx+1]:*l);
+    af->idx+=(af->channels==2?2:1); 
   } else {
     *l=*r=0;
   }

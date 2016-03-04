@@ -105,15 +105,18 @@ static void iphone_realtime_callback( float *buffer, unsigned int framesize, voi
 {
   int16 l,r;
   static double t=0;
-  unsigned int i;
+  unsigned int i; 
+  unsigned int j;
   for (i=0; i<framesize; i++) {
-    if (cur) { 
-      audiofile_nextsample(&l,&r); 
-      buffer[2*i]=SHORT2FLOAT(l);
-      buffer[2*i+1]=SHORT2FLOAT(r);
-    } else {
-      buffer[2*i] = buffer[2*i+1] = 0;
-    } 
+    buffer[2*i] = 0.0f;
+    buffer[2*i+1] = 0.0f;
+    for(j=0; j<audiofile_count; j = j + 1){
+	if (audiofiles[j].playing == PLAYING || audiofiles[j].playing == LOOPING) { 
+          audiofile_nextsample_from(&audiofiles[j], &l,&r); 
+          buffer[2*i]+=(SHORT2FLOAT(l));
+          buffer[2*i+1]+=(SHORT2FLOAT(r));
+        } 
+    }
     t+=1./AF_SRATE;
   }
 }
@@ -174,16 +177,20 @@ static int af_portaudio_cb( const void *inputBuffer, void *outputBuffer,
   int i;
 //  short *out=(short*)outputBuffer;
   int16 *out=(int16 *)outputBuffer;
+  int j;
   for (i=0;i<framesPerBuffer;i++) { 
-    if (cur) {
-      audiofile_nextsample(&l,&r);
-      out[2*i]=l; out[2*i+1]=r;
-    } else {
-      out[2*i]=0; out[2*i+1]=0;
+    out[2*i]=0; out[2*i+1]=0;
+    for(j=0;j<audiofile_count;j=j+1){
+      if (audiofiles[j].playing == PLAYING || audiofiles[j].playing == LOOPING) {
+	audiofile_nextsample_from(&audiofiles[j],&l,&r);
+	out[2*i]=out[2*i]+l; 
+	out[2*i+1]=out[2*i+1]+r;
+      } 
     }
   }
   return 0;
 }
+
 
 static int portaudio_init(void)
 {
@@ -214,6 +221,13 @@ static void portaudio_play(int id)
 {
   audiofile_select(id);
 }
+
+static void portaudio_loop(int id)
+{
+  audiofile_select(id);
+  audiofiles[id-1].playing = LOOPING;
+}
+
 
 #endif 
 
@@ -301,6 +315,29 @@ void audiofile_play(int id)
 #endif
 }
 
+void audiofile_loop(int id)
+{
+#ifdef USE_ANDROID_NATIVE
+ SoundPoolPlaySound(id,1.0,1.0,0.0,-1,1.0); 
+#endif
+#ifdef USE_IOS_REALTIME
+ iphone_realtime_play(id);
+#endif
+#ifdef USE_APPLE_NATIVE
+  SystemSoundID sid=(SystemSoundID)id;
+  AudioServicesPlaySystemSound(sid);
+#endif
+#ifdef USE_PORTAUDIO
+  portaudio_loop(id);  
+#endif
+#ifdef USE_WIN32_NATIVE
+  soundfile_play(id);
+#endif
+#ifdef USE_BB10_PCM
+  audiofile_select(id);
+#endif
+}
+
 // don't ever allow them to silence us for critical alerts
 void audiofile_forceplay(int id)
 {
@@ -334,19 +371,26 @@ end-of-c-declare
   (let* ((file  (cond
            ((member (system-platform) '("ios" "bb10" "playbook"))
               (autoext (string-append (system-appdirectory) (system-pathseparator) name)))
-           ((member (system-platform) '("win32" "linux" "openbsd" "freebsd"))
+           ((member (system-platform) '("win32" "linux" "openbsd"))
               (autoext (string-append (system-appdirectory) (system-pathseparator) "sounds" (system-pathseparator) name)))
            ((member (system-platform) '("macosx"))
               (autoext (string-append (system-appdirectory) (system-pathseparator) "sounds" (system-pathseparator) name)))
-           ((string=? (system-platform) "android") (string-downcase name))
+           ((string=? (system-platform) "android") 
+	    (string-downcase name))
            (else #f)))
           (filesane (or (string=? (system-platform) "android") (file-exists? file)))
           (loadres (if filesane (audiofile:load file) 0)))
     (if (> loadres 0) loadres (begin
       (log-system "audiofile: file " file " not found") #f))))
  
-(define (audiofile-play id) (if (and id (> id 0)) ((c-lambda (int) void "audiofile_play") id)))
-(define (audiofile-forceplay id) (if (and id (> id 0)) ((c-lambda (int) void "audiofile_forceplay") id)))
+(define (audiofile-play id) 
+  ((c-lambda (int) void "audiofile_play") id))
+
+(define (audiofile-loop id) 
+  ((c-lambda (int) void "audiofile_loop") id))
+
+(define (audiofile-forceplay id) 
+  ((c-lambda (int) void "audiofile_forceplay") id))
 
 (define audiofile-start (c-lambda () int "audiofile_start"))
 (define audiofile-stop (c-lambda () void "audiofile_stop"))
