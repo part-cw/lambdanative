@@ -38,6 +38,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package @SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+import java.util.ArrayList;
+import java.util.List;
 import android.app.Activity;
 import android.content.pm.ActivityInfo;
 import android.content.Context;
@@ -174,6 +176,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONPAUSE@
     mGLView.onPause();
+    AudioHelper.getInstance().onPause();
   }
   @Override
   protected void onResume() {
@@ -181,6 +184,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONRESUME@
     mGLView.onResume();
+    AudioHelper.getInstance().onResume();
   }
   @Override
   public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -215,6 +219,55 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
 }
 
 class AudioHelper {
+    private static class MediaPlayerHelper {
+	private static enum PlayState {
+	    STOPPED, PLAYING, LOOPING, PAUSED;
+	}
+	private final MediaPlayer player;
+	private PlayState playState;
+	public MediaPlayerHelper(Context context, int resId){
+	    this.player = MediaPlayer.create(context, resId);
+	    this.playState = PlayState.STOPPED;
+	    MediaPlayer.OnCompletionListener listener = 
+		new MediaPlayer.OnCompletionListener(){
+		    @Override
+		    public void onCompletion(MediaPlayer mp){
+			if(playState == PlayState.PLAYING){
+			    playState = PlayState.STOPPED;
+			}
+		    }
+		};
+	    this.player.setOnCompletionListener(listener);
+	}
+	public void start(float lv, float rv, int loop){
+	    this.player.setVolume(lv, rv);
+	    this.player.seekTo(0);
+	    if(loop != 0){
+		this.player.setLooping(true);
+		this.playState = PlayState.LOOPING;
+	    } else {
+		this.player.setLooping(false);
+		this.playState = PlayState.PLAYING;
+	    }
+	    this.player.start();
+	}
+	public void pause(){
+	    if(this.playState == PlayState.PLAYING || this.playState == PlayState.LOOPING){
+		this.player.pause();
+		this.playState = PlayState.PAUSED;
+	    }
+	}
+	public void resume(){
+	    if(this.playState == PlayState.PAUSED){
+		this.player.start();
+		if(this.player.isLooping()){
+		    this.playState = PlayState.LOOPING;
+		} else {
+		    this.playState = PlayState.PLAYING;
+		}
+	    }
+	}
+    }
   private static final int MAX_SOUND_STREAMS = 16;
   private static String ResourceLocation = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@:raw/";
   private Context context = null;
@@ -222,6 +275,7 @@ class AudioHelper {
   private static AudioHelper instance = null;
   private AudioManager audioManager = null;
   private MediaPlayer mediaPlayer = null;
+  private List<MediaPlayerHelper> mediaPlayers = null;
   private AudioHelper()
   {	
   }
@@ -231,7 +285,10 @@ class AudioHelper {
      Sounds = new SoundPool(MAX_SOUND_STREAMS,  AudioManager.STREAM_MUSIC,0); 
      if (Sounds==null) { 
        Log.e(TAG,"SoundPool init failed");
-     } 
+     } else {
+	 Log.e(TAG,"SoundPool init succeeded.");
+     }
+     mediaPlayers = new ArrayList<MediaPlayerHelper>();
   }	
   public void finalize()
   {		
@@ -261,15 +318,21 @@ class AudioHelper {
     int     SoundID;
     String s = ResourceLocation + filename;
     int resID = context.getResources().getIdentifier(s, null, null);
+    Log.d(TAG,"Entered load sound method.");
     if (resID == 0) {
       Log.e(TAG,"Failed to load sound resource=" + s);
       return 0;
     }
-    SoundID = Sounds.load(context, resID, Priority);
-    return SoundID;
+    //SoundID = Sounds.load(context, resID, Priority);
+    MediaPlayerHelper localMediaPlayer = new MediaPlayerHelper(context, resID);
+    mediaPlayers.add(localMediaPlayer);
+    return mediaPlayers.size();
   } 
   public int PlaySound(int SoundID, float lv, float rv, int priority, int loop, float rate) {
-    return Sounds.play(SoundID, lv, rv, priority, loop, rate); 
+      //return Sounds.play(SoundID, lv, rv, priority, loop, rate); 
+      MediaPlayerHelper localMediaPlayer = mediaPlayers.get(SoundID-1);
+      localMediaPlayer.start(rv, lv, loop);
+      return SoundID;
   }
   public boolean UnloadSound(int SoundID) {                                   
     return Sounds.unload(SoundID); 
@@ -285,6 +348,18 @@ class AudioHelper {
      }
      return true;
   }
+    public void onPause(){
+	for(MediaPlayerHelper player : this.mediaPlayers){
+	    player.pause();
+	}
+    }
+
+    public void onResume(){
+	for(MediaPlayerHelper player : this.mediaPlayers){
+	    player.resume();
+	}
+    }
+   
   public float GetVolume()
   {
      float SYSTEM_MAX_VOLUME = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
