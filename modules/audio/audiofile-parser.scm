@@ -5459,7 +5459,7 @@ struct audiofile {
   playing_state playing;
 };
 
-static struct audiofile *audiofiles=0, *cur=0;
+static struct audiofile *audiofiles=0;
 int audiofile_count = 0;
 
 static int audiofile_reset(struct audiofile *af)
@@ -5508,36 +5508,34 @@ static int audiofile_loadany(const char *fname)
   int l = strlen(fname); 
   if ((fd=fopen(fname, "rb") )!=NULL ) {
     fclose(fd);
-    audiofile_count = audiofile_count + 1;
-    audiofiles =  (struct audiofile*)realloc(audiofiles, sizeof(struct audiofile)*(audiofile_count));
-    audiofiles[audiofile_count-1].fname=strdup(fname);
-    audiofiles[audiofile_count-1].id=audiofile_count;
-    audiofiles[audiofile_count-1].vorbis=0; 
-    audiofiles[audiofile_count-1].lock=0;
-    audiofiles[audiofile_count-1].fd=0;
-    audiofiles[audiofile_count-1].playing = NOT_PLAYING;
-    if (fname[l-1]=='v') { audiofiles[audiofile_count-1].type=AUDIOFILE_WAV; } else { audiofiles[audiofile_count-1].type=AUDIOFILE_OGG; }
-    if (!audiofile_reset(&audiofiles[audiofile_count-1])) { 
-      audiofile_count=audiofile_count-1;
-      audiofiles = (struct audiofile*)realloc(audiofiles, sizeof(struct audiofile)*(audiofile_count));
-      return 0; 
+    audiofiles = (struct audiofile*)realloc(audiofiles, sizeof(struct audiofile)*(audiofile_count + 1));
+    audiofiles[audiofile_count].fname=strdup(fname);
+    audiofiles[audiofile_count].id=audiofile_count + 1;
+    audiofiles[audiofile_count].vorbis=0;
+    audiofiles[audiofile_count].lock=0;
+    audiofiles[audiofile_count].fd=0;
+    audiofiles[audiofile_count].playing = NOT_PLAYING;
+    if (fname[l-1]=='v') {
+      audiofiles[audiofile_count].type=AUDIOFILE_WAV;
+    } else {
+      audiofiles[audiofile_count].type=AUDIOFILE_OGG;
     }
-    return audiofiles[audiofile_count-1].id;
+    if (!audiofile_reset(&audiofiles[audiofile_count])) {
+      return 0;
+    }
+    return audiofiles[audiofile_count++].id;
   }
   return 0;
 }
 
 static void audiofile_select(int id)
 {
- id = id - 1;
-    fflush(stderr);
-  cur = &audiofiles[id];
+  struct audiofile *cur = &audiofiles[id-1];
   if(!audiofile_reset(cur)){
     fprintf(stderr, "Tried Starting audio file with id %d playing\n, but failed.", id); 
     fflush(stderr);
     cur = 0;
   } else {
-    fflush(stderr);
     cur->playing = PLAYING;
   }
 }
