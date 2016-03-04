@@ -177,16 +177,20 @@ static int af_portaudio_cb( const void *inputBuffer, void *outputBuffer,
   int i;
 //  short *out=(short*)outputBuffer;
   int16 *out=(int16 *)outputBuffer;
+  int j;
   for (i=0;i<framesPerBuffer;i++) { 
-    if (cur) {
-      audiofile_nextsample(&l,&r);
-      out[2*i]=l; out[2*i+1]=r;
-    } else {
-      out[2*i]=0; out[2*i+1]=0;
+    out[2*i]=0; out[2*i+1]=0;
+    for(j=0;j<audiofile_count;j=j+1){
+      if (audiofiles[j].playing == PLAYING || audiofiles[j].playing == LOOPING) {
+	audiofile_nextsample_from(&audiofiles[j],&l,&r);
+	out[2*i]=out[2*i]+l; 
+	out[2*i+1]=out[2*i+1]+r;
+      } 
     }
   }
   return 0;
 }
+
 
 static int portaudio_init(void)
 {
