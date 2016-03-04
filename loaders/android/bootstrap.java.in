@@ -59,7 +59,6 @@ import android.view.Surface;
 import android.view.WindowManager;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioManager;
-import android.media.SoundPool;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.util.Log;
@@ -239,6 +238,9 @@ class AudioHelper {
 		};
 	    this.player.setOnCompletionListener(listener);
 	}
+	public void release(){
+	    this.player.release();
+	}
 	public void start(float lv, float rv, int loop){
 	    this.player.setVolume(lv, rv);
 	    this.player.seekTo(0);
@@ -271,7 +273,6 @@ class AudioHelper {
   private static final int MAX_SOUND_STREAMS = 16;
   private static String ResourceLocation = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@:raw/";
   private Context context = null;
-  private SoundPool Sounds = null;
   private static AudioHelper instance = null;
   private AudioManager audioManager = null;
   private MediaPlayer mediaPlayer = null;
@@ -282,21 +283,13 @@ class AudioHelper {
   void Initialise()
   {     	
      final String TAG = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@";
-     Sounds = new SoundPool(MAX_SOUND_STREAMS,  AudioManager.STREAM_MUSIC,0); 
-     if (Sounds==null) { 
-       Log.e(TAG,"SoundPool init failed");
-     } else {
-	 Log.e(TAG,"SoundPool init succeeded.");
-     }
      mediaPlayers = new ArrayList<MediaPlayerHelper>();
   }	
   public void finalize()
   {		
-    if (Sounds != null) 
-    {
-      Sounds.release();
-      Sounds = null;
-    }
+      for(MediaPlayerHelper mp : mediaPlayers){
+	  mp.release();
+      }
   }
   public void setContext(Context context, MediaPlayer mediaPlayer)
   {
