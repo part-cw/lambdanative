@@ -222,6 +222,13 @@ static void portaudio_play(int id)
   audiofile_select(id);
 }
 
+static void portaudio_loop(int id)
+{
+  audiofile_select(id);
+  audiofiles[id-1].playing = LOOPING;
+}
+
+
 #endif 
 
 // %%%%%%%%%%%%%%%%%%%%%%
@@ -308,6 +315,29 @@ void audiofile_play(int id)
 #endif
 }
 
+void audiofile_loop(int id)
+{
+#ifdef USE_ANDROID_NATIVE
+ SoundPoolPlaySound(id,1.0,1.0,0.0,-1,1.0); 
+#endif
+#ifdef USE_IOS_REALTIME
+ iphone_realtime_play(id);
+#endif
+#ifdef USE_APPLE_NATIVE
+  SystemSoundID sid=(SystemSoundID)id;
+  AudioServicesPlaySystemSound(sid);
+#endif
+#ifdef USE_PORTAUDIO
+  portaudio_loop(id);  
+#endif
+#ifdef USE_WIN32_NATIVE
+  soundfile_play(id);
+#endif
+#ifdef USE_BB10_PCM
+  audiofile_select(id);
+#endif
+}
+
 // don't ever allow them to silence us for critical alerts
 void audiofile_forceplay(int id)
 {
@@ -341,19 +371,29 @@ end-of-c-declare
   (let* ((file  (cond
            ((member (system-platform) '("ios" "bb10" "playbook"))
               (autoext (string-append (system-appdirectory) (system-pathseparator) name)))
-           ((member (system-platform) '("win32" "linux" "openbsd" "freebsd"))
+           ((member (system-platform) '("win32" "linux" "openbsd"))
               (autoext (string-append (system-appdirectory) (system-pathseparator) "sounds" (system-pathseparator) name)))
            ((member (system-platform) '("macosx"))
               (autoext (string-append (system-appdirectory) (system-pathseparator) "sounds" (system-pathseparator) name)))
-           ((string=? (system-platform) "android") (string-downcase name))
+           ((string=? (system-platform) "android") 
+	    (string-downcase name))
            (else #f)))
           (filesane (or (string=? (system-platform) "android") (file-exists? file)))
           (loadres (if filesane (audiofile:load file) 0)))
     (if (> loadres 0) loadres (begin
       (log-system "audiofile: file " file " not found") #f))))
  
-(define (audiofile-play id) (if (and id (> id 0)) ((c-lambda (int) void "audiofile_play") id)))
-(define (audiofile-forceplay id) (if (and id (> id 0)) ((c-lambda (int) void "audiofile_forceplay") id)))
+(define (audiofile-play id) 
+  (display (list "audiofile-play" id))
+  ((c-lambda (int) void "audiofile_play") id))
+
+(define (audiofile-loop id) 
+  (display (list "audiofile-loop" id))
+  ((c-lambda (int) void "audiofile_loop") id))
+
+(define (audiofile-forceplay id) 
+  (display (list "audiofile-forceplay" id))
+  ((c-lambda (int) void "audiofile_forceplay") id))
 
 (define audiofile-start (c-lambda () int "audiofile_start"))
 (define audiofile-stop (c-lambda () void "audiofile_stop"))
