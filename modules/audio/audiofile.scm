@@ -105,15 +105,18 @@ static void iphone_realtime_callback( float *buffer, unsigned int framesize, voi
 {
   int16 l,r;
   static double t=0;
-  unsigned int i;
+  unsigned int i; 
+  unsigned int j;
   for (i=0; i<framesize; i++) {
-    if (cur) { 
-      audiofile_nextsample(&l,&r); 
-      buffer[2*i]=SHORT2FLOAT(l);
-      buffer[2*i+1]=SHORT2FLOAT(r);
-    } else {
-      buffer[2*i] = buffer[2*i+1] = 0;
-    } 
+    buffer[2*i] = 0.0f;
+    buffer[2*i+1] = 0.0f;
+    for(j=0; j<audiofile_count; j = j + 1){
+	if (audiofiles[j].playing == PLAYING || audiofiles[j].playing == LOOPING) { 
+          audiofile_nextsample_from(&audiofiles[j], &l,&r); 
+          buffer[2*i]+=(SHORT2FLOAT(l));
+          buffer[2*i+1]+=(SHORT2FLOAT(r));
+        } 
+    }
     t+=1./AF_SRATE;
   }
 }
