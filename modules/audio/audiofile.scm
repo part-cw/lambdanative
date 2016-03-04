@@ -384,15 +384,12 @@ end-of-c-declare
       (log-system "audiofile: file " file " not found") #f))))
  
 (define (audiofile-play id) 
-  (display (list "audiofile-play" id))
   ((c-lambda (int) void "audiofile_play") id))
 
 (define (audiofile-loop id) 
-  (display (list "audiofile-loop" id))
   ((c-lambda (int) void "audiofile_loop") id))
 
 (define (audiofile-forceplay id) 
-  (display (list "audiofile-forceplay" id))
   ((c-lambda (int) void "audiofile_forceplay") id))
 
 (define audiofile-start (c-lambda () int "audiofile_start"))

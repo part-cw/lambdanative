@@ -288,7 +288,9 @@ class AudioHelper {
   public void finalize()
   {		
       for(MediaPlayerHelper mp : mediaPlayers){
-	  mp.release();
+	  if(mp!=null){
+	      mp.release();
+	  }
       }
   }
   public void setContext(Context context, MediaPlayer mediaPlayer)
@@ -316,19 +318,25 @@ class AudioHelper {
       Log.e(TAG,"Failed to load sound resource=" + s);
       return 0;
     }
-    //SoundID = Sounds.load(context, resID, Priority);
     MediaPlayerHelper localMediaPlayer = new MediaPlayerHelper(context, resID);
     mediaPlayers.add(localMediaPlayer);
     return mediaPlayers.size();
   } 
   public int PlaySound(int SoundID, float lv, float rv, int priority, int loop, float rate) {
-      //return Sounds.play(SoundID, lv, rv, priority, loop, rate); 
       MediaPlayerHelper localMediaPlayer = mediaPlayers.get(SoundID-1);
-      localMediaPlayer.start(rv, lv, loop);
+      if(localMediaPlayer!=null){
+	  localMediaPlayer.start(rv, lv, loop);
+      }
       return SoundID;
   }
-  public boolean UnloadSound(int SoundID) {                                   
-    return Sounds.unload(SoundID); 
+  public boolean UnloadSound(int SoundID) {
+      // We null out removed sounds - we have to null check sounds
+      // later but this simplifies the representation of sounds by
+      // their offset index.
+      MediaPlayerHelper toRemove = mediaPlayers.get(SoundID-1);
+      toRemove.release();
+      mediaPlayers.set(SoundID-1,null);
+      return true;
   }
   public boolean SetVolume(float volume)
   {
@@ -343,13 +351,17 @@ class AudioHelper {
   }
     public void onPause(){
 	for(MediaPlayerHelper player : this.mediaPlayers){
-	    player.pause();
+	    if(player!=null){
+		player.pause();
+	    }
 	}
     }
 
     public void onResume(){
 	for(MediaPlayerHelper player : this.mediaPlayers){
-	    player.resume();
+	    if(player!=null){
+		player.resume();
+	    }
 	}
     }
    
