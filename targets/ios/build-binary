@@ -140,6 +140,11 @@ rmifexists "$tgtdir"
 cp -R $tmpappdir $tgtdir
 
 echo " => cleaning up.."
-rm -rf "$cmakedir" "$xcodedir" 2> /dev/null
+rm -rf "$xcodedir" 2> /dev/null
+if [ $SYS_MODE = "debug" ]; then
+  echo "DEBUG: ios build is in $cmakedir"
+else
+  rm -rf "$cmakedir" 2> /dev/null
+fi
 
 #eof

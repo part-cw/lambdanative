@@ -126,13 +126,9 @@ struct parser {
  
 char *parse_char(struct parser *p, char c)
 {
-  if (p->in_at&&c==':') {
-    DMSG("ERROR: illegal character in substitution parameter\n");
-    return 0;
-  }
   // bail out of possible parameter impossible length, or <=32 ascii
   if (p->in_at) {
-    if (c<=32||p->n>PARAM_MAXLEN) {
+    if (c<=32||p->n>PARAM_MAXLEN||c==':') {
       DMSG("parse_char bailed on c=%i n=%i", (int)c, p->n);
       p->buf[p->n]=0;
       printf("@%s%c", p->buf,c);
