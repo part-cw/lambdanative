@@ -341,7 +341,7 @@
   (let ((output (list))) 
 	(system-for-each-entity 
 	 (lambda (#!rest args)
-	   (if (apply f rest)
+	   (if (apply f args)
 		   (set! output (cons (car args) output))))
 	 s)
 	(reverse output)))
