@@ -36,11 +36,18 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 echo "==> attempting to install $SYS_PLATFORM application $SYS_APPNAME.."
-havefruit="X"`which fruitstrap`
-if [ ! $havefruit = "X" ]; then 
-  fruitstrap -b $SYS_PREFIX/$SYS_APPNAME$SYS_APPFIX
+haveiosdeploy="X"`which ios-deploy`
+if [ ! $haveiosdeploy = "X" ]; then
+  echo " => using ios-deploy.."
+  ios-deploy -v -b $SYS_PREFIX/$SYS_APPNAME$SYS_APPFIX
 else
-  echo "Fruitstrap not found, must install manually"
+  havefruit="X"`which fruitstrap`
+  if [ ! $havefruit = "X" ]; then 
+    echo " => using fruitstrap.."
+    fruitstrap -b $SYS_PREFIX/$SYS_APPNAME$SYS_APPFIX
+  else
+    echo "Neither fruitstrap nor ios-deploy found, must install manually"
+  fi
 fi
 
 #eof
