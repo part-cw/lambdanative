@@ -80,13 +80,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    [UIApplication sharedApplication].idleTimerDisabled = YES;
 #endif
 
-#ifdef USE_ORIENTATION
-  [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-  [[NSNotificationCenter defaultCenter] addObserver:self
-      selector:@selector(didRotate:)
-      name:@"UIDeviceOrientationDidChangeNotification" object:nil];
-#endif // USE_ORIENTATION
-
 #ifdef USE_AUDIOINIT
 // this is (possibly?) necessary for getting audio from sleeping/backgrounded apps
 {
@@ -146,31 +139,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Additional pieces to be included here
 @IOS_LAUNCHERAPPDELEGATE_ADDITIONS@
-
-#ifdef USE_ORIENTATION
-- (void) didRotate:(NSNotification *)notification
-{
-  DMSG("didRotate");
-  int res = -1;
-  UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
-  switch (orientation) {
-    case UIDeviceOrientationPortrait:
-      res=GUI_PORTRAIT; break;
-    case UIDeviceOrientationLandscapeLeft:
-      res=GUI_LANDSCAPE; break;
-    case UIDeviceOrientationLandscapeRight:
-      res=GUI_SEASCAPE; break;
-    case UIDeviceOrientationPortraitUpsideDown:
-      res=GUI_UPSIDEDOWN; break;
-    case UIDeviceOrientationUnknown:
-    case UIDeviceOrientationFaceUp:
-    case UIDeviceOrientationFaceDown:
-    default:
-      break;
-  }
-  if (res>=0) ffi_event(EVENT_ORIENTATION,res,0);
-}
-#endif // USE_ORIENTATION
 
 - (void)dealloc {
   DMSG("dealloc");

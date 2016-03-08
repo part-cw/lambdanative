@@ -1,0 +1,23 @@
+- (void) didRotate:(NSNotification *)notification
+{
+  DMSG("didRotate");
+  int res = -1;
+  UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
+  switch (orientation) {
+    case UIDeviceOrientationPortrait:
+      res=GUI_PORTRAIT; break;
+    case UIDeviceOrientationLandscapeLeft:
+      res=GUI_LANDSCAPE; break;
+    case UIDeviceOrientationLandscapeRight:
+      res=GUI_SEASCAPE; break;
+    case UIDeviceOrientationPortraitUpsideDown:
+      res=GUI_UPSIDEDOWN; break;
+    case UIDeviceOrientationUnknown:
+    case UIDeviceOrientationFaceUp:
+    case UIDeviceOrientationFaceDown:
+    default:
+      break;
+  }
+  if (res>=0) ffi_event(EVENT_ORIENTATION,res,0);
+}
+
