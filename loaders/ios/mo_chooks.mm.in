@@ -93,15 +93,6 @@ extern "C" void iphone_vibrate(){
 }
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%
-// accelerometer
-
-#import "mo_accel.h"
-
-extern "C" double ios_accel_getx() { return MoAccel::getX(); }
-extern "C" double ios_accel_gety() { return MoAccel::getY(); }
-extern "C" double ios_accel_getz() { return MoAccel::getZ(); }
-
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%
 // location
 
 #import "mo_location.h"

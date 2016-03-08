@@ -47,6 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 #import <CoreAudio/CoreAudioTypes.h>
+#import <CoreMotion/CoreMotion.h>
 
 // for setting audio volume
 #ifdef USE_AUDIOVOLUMEINIT
@@ -101,6 +102,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 }
 #endif // USE_AUDIOINIT
 
+  // MotionManager is needed for accelerometer and gyro
+  static int motionmanager_needsinit=1;
+  static CMMotionManager *motionManager;
   @IOS_LAUNCHERAPPDELEGATE_DIDFINISHLAUNCHING@
 
   ffi_event(EVENT_INIT,screenSize.size.width,screenSize.size.height);

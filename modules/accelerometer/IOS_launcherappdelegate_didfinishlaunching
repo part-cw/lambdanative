@@ -1,0 +1,15 @@
+// Accelerometer
+if (motionmanager_needsinit) {
+  motionManager = [[CMMotionManager alloc] init];
+  motionmanager_needsinit = 0;
+}
+
+if ([motionManager isAccelerometerAvailable]) {
+  [motionManager setAccelerometerUpdateInterval: (1.0 / 50)];
+  [motionManager startAccelerometerUpdatesToQueue: [NSOperationQueue currentQueue] withHandler: ^(CMAccelerometerData *accelerometerData, NSError *error) {
+    [[NSUserDefaults standardUserDefaults] setValue: [NSNumber numberWithDouble: accelerometerData.acceleration.x] forKey: @"accel_x"];
+    [[NSUserDefaults standardUserDefaults] setValue: [NSNumber numberWithDouble: accelerometerData.acceleration.y] forKey: @"accel_y"];
+    [[NSUserDefaults standardUserDefaults] setValue: [NSNumber numberWithDouble: accelerometerData.acceleration.z] forKey: @"accel_z"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+  }];
+}

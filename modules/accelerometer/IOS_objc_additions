@@ -1,0 +1,13 @@
+// accelerometer
+extern double ios_accel_getx() {
+  NSNumber* x = [[NSUserDefaults standardUserDefaults] valueForKey:@"accel_x"];
+  return [x doubleValue];
+}
+extern double ios_accel_gety() {
+  NSNumber* y = [[NSUserDefaults standardUserDefaults] valueForKey:@"accel_y"];
+  return [y doubleValue];
+}
+extern double ios_accel_getz() {
+  NSNumber* z = [[NSUserDefaults standardUserDefaults] valueForKey:@"accel_z"];
+  return [z doubleValue];
+}
