@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   extern char localnotification_msg[100];
   extern double localnotification_timestamp;
   extern int localnotification_gotmsg;
-  int ios_localnotification_schedule(char*, double);
+  int ios_localnotification_schedule(char*, double, int);
   int ios_localnotification_cancelall();
   int ios_localnotification_cancel(int id);
 #elif ANDROID
@@ -56,9 +56,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   int localnotification_gotmsg = 0;
 #endif
 
-int localnotification_schedule(char* text, double time){
+int localnotification_schedule(char* text, double time, int repeatmin){
 #ifdef IOS
-  return ios_localnotification_schedule(text, time);
+  return ios_localnotification_schedule(text, time, repeatmin);
 #elif ANDROID
   android_localnotification_schedule(text, time);
 #endif
@@ -93,9 +93,10 @@ end-of-c-declare
 (define localnotification:timestamp 0.)
 
 ;; Create local notification
-(define (localnotification-schedule str time)
+(define (localnotification-schedule str time . repeataftermin)
   (if (and (> time ##now) (string? str) (fx<= (string-length str) 100))
-    ((c-lambda (char-string double) int "___result=localnotification_schedule(___arg1,___arg2);") str time)
+    ((c-lambda (char-string double int) int "___result=localnotification_schedule(___arg1,___arg2,___arg3);")
+      str time (if (pair? repeataftermin) (fix (car repeataftermin)) 0))
     #f
   ))
 

@@ -3,7 +3,7 @@
 char localnotification_msg[100];
 int localnotification_gotmsg;
 double localnotification_timestamp;
-extern int ios_localnotification_schedule(char* text, double time) {
+extern int ios_localnotification_schedule(char* text, double time, int repeatmin) {
   // Update unique ids
   NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
   int localnotification_id = [userDefaults integerForKey:@"LocalNotificationId"];
@@ -17,11 +17,39 @@ extern int ios_localnotification_schedule(char* text, double time) {
   localNotification.timeZone = [NSTimeZone localTimeZone];
   localNotification.fireDate = [NSDate dateWithTimeIntervalSince1970: time];
   localNotification.alertBody = [NSString stringWithUTF8String: text];
+  // Every NSDayCalendarUnit repeating is easy
+  if (repeatmin == 1){
+    localNotification.repeatInterval =  NSMinuteCalendarUnit;
+  }else if (repeatmin == 60){
+    localNotification.repeatInterval =  NSHourCalendarUnit;
+  }else if (repeatmin == 1440){
+    localNotification.repeatInterval =  NSDayCalendarUnit;
+  }
+  localNotification.soundName = UILocalNotificationDefaultSoundName;
   localNotification.applicationIconBadgeNumber =
     [UIApplication sharedApplication].applicationIconBadgeNumber + eventnum + 1;
   NSDictionary *infoDict = [NSDictionary dictionaryWithObject: [NSNumber numberWithInteger: localnotification_id] forKey: @"LocalNotificationId"];
   localNotification.userInfo = infoDict;
   [[UIApplication sharedApplication] scheduleLocalNotification: localNotification];
+  // Hack as Apple won't support sensible intervals
+  if (repeatmin > 1){
+    int dt;
+    if (repeatmin > 1 && repeatmin < 60){
+      localNotification.repeatInterval =  NSHourCalendarUnit;
+      for (dt=repeatmin;dt<60;dt+=repeatmin){
+         localNotification.fireDate = [NSDate dateWithTimeIntervalSince1970: (time + 60*dt)];
+         localNotification.applicationIconBadgeNumber += 1;
+         [[UIApplication sharedApplication] scheduleLocalNotification: localNotification];
+      }
+    }else if (repeatmin > 60 && repeatmin < 1440){
+      localNotification.repeatInterval =  NSDayCalendarUnit;
+      for (dt=repeatmin;dt<1440;dt+=repeatmin){
+         localNotification.fireDate = [NSDate dateWithTimeIntervalSince1970: (time + 60*dt)];
+         localNotification.applicationIconBadgeNumber += 1;
+         [[UIApplication sharedApplication] scheduleLocalNotification: localNotification];
+      }
+    } 
+  }
   // see if we got it scheduled?
   eventArray = [[UIApplication sharedApplication] scheduledLocalNotifications];
   if ([eventArray count]>eventnum) return localnotification_id;
@@ -35,14 +63,19 @@ extern int ios_localnotification_cancelall() {
 
 extern int ios_localnotification_cancel(int id) {
   NSArray *eventArray = [[UIApplication sharedApplication] scheduledLocalNotifications];
+  int matched = 0;
   for (int i=0; i<[eventArray count]; i++){
     UILocalNotification* localNotification = [eventArray objectAtIndex:i];
     NSInteger lid = [[localNotification.userInfo objectForKey: @"LocalNotificationId"] intValue];
     int localnotification_id = (int) lid;
     if (localnotification_id == id){
       [[UIApplication sharedApplication] cancelLocalNotification: localNotification];
-      return localnotification_id;
+      matched = 1;
     }
   }
-  return 0;
+  if (matched){
+    return id;
+  }else{
+    return 0;
+  }
 }
