@@ -1,0 +1,10 @@
+
+private void startVideoPlayer(String mov_name) {
+  File f = new File(mov_name);
+  if (f != null) { 
+    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.fromFile(f));
+    intent.setDataAndType(Uri.fromFile(f), "video/*");
+    startActivity(intent);
+  }
+}
+

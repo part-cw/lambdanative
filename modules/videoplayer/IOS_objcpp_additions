@@ -1,0 +1,60 @@
+
+#import <UIKit/UIKit.h>
+#import <MediaPlayer/MediaPlayer.h>
+
+@interface PlayerDelegate : UIViewController<UINavigationControllerDelegate> {
+  MPMoviePlayerViewController *moviePlayer;
+  char *img_filename;
+};
+
+@property (retain)MPMoviePlayerViewController *movieController;
+@property (assign)char *img_filename;
+
+-(id)init;
+-(void)dealloc;
+-(void)moviePlayerControllerDidCancel:(MPMoviePlayerViewController *)player;
+
+@end
+
+@implementation PlayerDelegate;
+
+-(id)init
+{
+  NSString *moviePath = [NSString stringWithUTF8String: img_filename];
+  NSURL *movieURL = [NSURL fileURLWithPath:moviePath];
+  movieController = [[MPMoviePlayerViewController alloc] initWithContentURL:movieURL];
+  [self presentMoviePlayerViewControllerAnimated:movieController];
+  [movieController.moviePlayer play];
+  return [super init];
+}
+
+-(void)dealloc
+{
+  [movieController release];
+  movieController = nil;
+  [super dealloc];
+}
+
+- (void)moviePlayerControllerDidCancel:(MPMoviePlayerViewController *)player {
+  [[UIApplication sharedApplication].keyWindow.rootViewController dismissViewControllerAnimated:NO completion:NULL];
+}
+
+@synthesize movieController;
+@synthesize img_filename;
+
+@end
+
+static PlayerDelegate* playerDele = NULL;
+
+#import "EAGLView.h"
+#import "GLViewController.h"
+
+extern "C" void ios_videoplayer(char *img_filename)
+{
+  if (playerDele==NULL) playerDele=[PlayerDelegate alloc];
+  playerDele.img_filename = strdup(img_filename);
+  [playerDele init];
+  [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:playerDele.movieController animated:NO completion:NULL];
+}
+
+// eof
