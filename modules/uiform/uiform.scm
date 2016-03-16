@@ -1342,6 +1342,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   inside
 ))
 
+;; Clears the underlying nodemap so that on the next redraw it will be built
+;; Use this if what is being drawn has changed without any actions within uiform itself
+(define (uiform-refresh-input)
+  (uiset 'nodemap '())
+)
 
 (define (glgui-uiform g x y w h)
   (let ((wgt (glgui-widget-add g
