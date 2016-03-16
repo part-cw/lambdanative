@@ -284,4 +284,38 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        ))
     ))
 
+;; %%%%%%%%%%%% functions to reduce graph data
+
+(define (graph-coord-reduce data tolx toly)
+  (let loop ((pts data)(lst #f)(res '()))
+     (if (fx= (length pts) 0) res
+       (let* ((cur (car pts))
+              (x (car cur))
+              (y (cadr cur))
+              (x-ok (if lst (or (fx= (length pts) 1) (> (abs (- x (car lst))) tolx)) #t))
+              (y-ok (if lst (or (fx= (length pts) 1) (> (abs (- y (cadr lst))) toly)) #t))
+              (ok (or x-ok y-ok)))
+         (loop (cdr pts) (if (or ok (not lst)) cur lst)
+            (append res (if ok (list cur) '())))))))
+
+(define (graph-coord-reduce-range data xmin xmax ymin ymax n)
+  (let ((data2 (let loop ((pts data)(res '()))
+           (if (fx= (length pts) 0) res
+             (let* ((pt (car pts))
+                    (x (car pt))
+                    (y (cadr pt)))
+               (loop (cdr pts) (append res (if (and
+                 (>= x xmin) (<= x xmax) (>= y ymin) (<= y ymax))
+                 (list pt) '())))))))
+        (tolx (/ (- xmax xmin) n))
+        (toly (/ (- ymax ymin) n)))
+     (graph-coord-reduce data2 tolx toly)))
+
+(define (graph-coord-reduce-auto data n)
+  (let ((xmin (apply min (map car data)))
+        (xmax (apply max (map car data)))
+        (ymin (apply min (map cadr data)))
+        (ymax (apply max (map cadr data))))
+    (graph-coord-reduce-range data xmin xmax ymin ymax n)))
+
 ;; eof
