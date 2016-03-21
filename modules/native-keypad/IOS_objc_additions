@@ -1,0 +1,81 @@
+#import <LNCONFIG.h>
+
+@interface KeypadView: UIView <UIKeyInput> {
+}
+@property(nonatomic) UITextAutocorrectionType autocorrectionType;
+@property(nonatomic) UIKeyboardType keyboardType;
+@end
+
+@implementation KeypadView
+
+@synthesize autocorrectionType;
+
+- (id)initWithFrame: (CGRect)frame {
+  self = [super initWithFrame:frame];
+  if (self){
+    [self setAutocorrectionType: UITextAutocorrectionTypeNo];
+    [self setKeyboardType: UIKeyboardTypeASCIICapable];
+  }
+  return self;
+}
+
+// UIKeyInput required methods
+- (void)insertText:(NSString *)text {
+  //NSLog(@"Text: %@",text);
+  ffi_event(EVENT_KEYPRESS,[text characterAtIndex: 0],0);
+}
+
+- (void)deleteBackward {
+  //ffi_event(EVENT_KEYBACKSPACE,0,0);
+  ffi_event(EVENT_KEYPRESS,3,0);
+}
+
+- (BOOL)hasText{
+  return YES;
+}
+
+// Allow this thing to show the keyboard
+- (BOOL)canBecomeFirstResponder {
+  return YES;
+}
+- (BOOL)canResignFirstResponder {
+  return YES;
+}
+@end
+
+// Hooks to C
+static KeypadView *keypad = NULL;
+
+void ios_keypad_init() {
+  keypad = [KeypadView alloc];
+  UIWindow* window = [UIApplication sharedApplication].keyWindow;
+  CGRect bounds = [window bounds];
+  CGFloat height = bounds.size.height;
+  CGFloat width = bounds.size.width;
+  [keypad initWithFrame: CGRectMake(0,height-216,width,216)];
+  [window addSubview: keypad];
+}
+
+extern void ios_show_keypad(int orientation) {
+  if (keypad == NULL) ios_keypad_init();
+orientation=GUI_SEASCAPE;
+  if (orientation == GUI_PORTRAIT) {
+    [UIApplication sharedApplication].statusBarOrientation = UIInterfaceOrientationPortrait;
+  } else if (orientation == GUI_LANDSCAPE) {
+    [UIApplication sharedApplication].statusBarOrientation = UIInterfaceOrientationLandscapeLeft;
+  } else if (orientation == GUI_SEASCAPE) {
+    [UIApplication sharedApplication].statusBarOrientation = UIDeviceOrientationLandscapeRight;
+  } else if (orientation == GUI_UPSIDEDOWN) {
+    [UIApplication sharedApplication].statusBarOrientation = UIDeviceOrientationPortraitUpsideDown;
+  }
+  [keypad setHidden: NO];
+  //[keypad becomeFirstResponder];
+  [keypad performSelector:@selector(becomeFirstResponder) withObject:nil afterDelay:0];
+}
+extern void ios_hide_keypad(){
+  if (keypad == NULL) ios_keypad_init();
+  [UIApplication sharedApplication].statusBarOrientation = UIInterfaceOrientationPortrait;
+  [keypad setHidden: YES];
+  [keypad resignFirstResponder];
+}
+// eof

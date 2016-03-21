@@ -421,44 +421,18 @@ class  xGLSurfaceView extends GLSurfaceView {
   }
   public boolean onKeyDown(int keyCode, KeyEvent event) {
     t=x=y=0;
+    // Get known keys
+    int asciiKey = event.getUnicodeChar(event.getMetaState());
+    if (asciiKey > 0) {
+      t=2;
+      x=asciiKey;
+      queueEvent(new Runnable(){ public void run() {
+        renderer.nativeEvent(t,x,y); }});
+      return true;
+    }
+    // Get everything else
     switch (keyCode) {
-      case KeyEvent.KEYCODE_A: t=2; x='A'; break;
-      case KeyEvent.KEYCODE_B: t=2; x='B'; break;
-      case KeyEvent.KEYCODE_C: t=2; x='C'; break;
-      case KeyEvent.KEYCODE_D: t=2; x='D'; break;
-      case KeyEvent.KEYCODE_E: t=2; x='E'; break;
-      case KeyEvent.KEYCODE_F: t=2; x='F'; break;
-      case KeyEvent.KEYCODE_G: t=2; x='G'; break;
-      case KeyEvent.KEYCODE_H: t=2; x='H'; break;
-      case KeyEvent.KEYCODE_I: t=2; x='I'; break;
-      case KeyEvent.KEYCODE_J: t=2; x='J'; break;
-      case KeyEvent.KEYCODE_K: t=2; x='K'; break;
-      case KeyEvent.KEYCODE_L: t=2; x='L'; break;
-      case KeyEvent.KEYCODE_M: t=2; x='M'; break;
-      case KeyEvent.KEYCODE_N: t=2; x='N'; break;
-      case KeyEvent.KEYCODE_O: t=2; x='O'; break;
-      case KeyEvent.KEYCODE_P: t=2; x='P'; break;
-      case KeyEvent.KEYCODE_Q: t=2; x='Q'; break;
-      case KeyEvent.KEYCODE_R: t=2; x='R'; break;
-      case KeyEvent.KEYCODE_S: t=2; x='S'; break;
-      case KeyEvent.KEYCODE_T: t=2; x='T'; break;
-      case KeyEvent.KEYCODE_U: t=2; x='U'; break;
-      case KeyEvent.KEYCODE_V: t=2; x='V'; break;
-      case KeyEvent.KEYCODE_W: t=2; x='W'; break;
-      case KeyEvent.KEYCODE_X: t=2; x='X'; break;
-      case KeyEvent.KEYCODE_Y: t=2; x='Y'; break;
-      case KeyEvent.KEYCODE_Z: t=2; x='Z'; break;
-      case KeyEvent.KEYCODE_0: t=2; x='0'; break;
-      case KeyEvent.KEYCODE_1: t=2; x='1'; break;
-      case KeyEvent.KEYCODE_2: t=2; x='2'; break;
-      case KeyEvent.KEYCODE_3: t=2; x='3'; break;
-      case KeyEvent.KEYCODE_4: t=2; x='4'; break;
-      case KeyEvent.KEYCODE_5: t=2; x='5'; break;
-      case KeyEvent.KEYCODE_6: t=2; x='6'; break;
-      case KeyEvent.KEYCODE_7: t=2; x='7'; break;
-      case KeyEvent.KEYCODE_8: t=2; x='8'; break;
-      case KeyEvent.KEYCODE_9: t=2; x='9'; break;
-      case KeyEvent.KEYCODE_SPACE: t=2; x=' '; break; 
+      case KeyEvent.KEYCODE_DEL: t=2; x=3; break;
       case KeyEvent.KEYCODE_ENTER: t=2; x=1; break;
       case KeyEvent.KEYCODE_DPAD_CENTER: t=2; x=1; break;
       case KeyEvent.KEYCODE_DPAD_UP: t=2; x=6; break;
@@ -469,6 +443,7 @@ class  xGLSurfaceView extends GLSurfaceView {
       case KeyEvent.KEYCODE_MENU: t=2; x=9; break;
       case KeyEvent.KEYCODE_VOLUME_DOWN: return false;
       case KeyEvent.KEYCODE_VOLUME_UP: return false;
+      case KeyEvent.KEYCODE_SOFT_LEFT: return true;
     }
     if (t>0) {
       queueEvent(new Runnable(){ public void run() {
