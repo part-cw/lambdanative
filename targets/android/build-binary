@@ -81,6 +81,10 @@ $ANDROIDSDK/tools/android --silent create project \
   --target $ANDROIDSDKTARGET --name $SYS_APPNAME --path $tmpdir \
   --activity $SYS_APPNAME --package $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME
 
+if [ -f $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar ]; then
+  cp -r $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar $tmpdir/libs
+fi
+
 if [ "$NEED_GCM" = "yes" ]; then
   cp -r $ANDROIDSDK/extras/google/google_play_services/libproject/google-play-services_lib $tmpdir
   cp -r $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar $tmpdir/libs
@@ -201,7 +205,7 @@ if [ ! -e $keystore ]; then
   asserterror $?
 fi
 echo " => signing application with keystore $keystore"
-jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore $keystore -keypass "$SYS_ANDROIDPW" -storepass "$SYS_ANDROIDPW" $fnlfile $SYS_ORGTLD.$SYS_ORGSLD
+jarsigner -tsa http://zeitstempel.dfn.de -sigalg SHA256withRSA -digestalg SHA1 -keystore $keystore -keypass "$SYS_ANDROIDPW" -storepass "$SYS_ANDROIDPW" $fnlfile $SYS_ORGTLD.$SYS_ORGSLD
 asserterror $?
 
 echo " => zipaligning.."
