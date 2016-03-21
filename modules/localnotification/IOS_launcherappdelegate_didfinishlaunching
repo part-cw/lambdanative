@@ -7,3 +7,6 @@
   #endif
 // Clear the badge icon
 [UIApplication sharedApplication].applicationIconBadgeNumber = 0;
+// Renumber remaining notifications
+ios_localnotification_renumber();
+// eof

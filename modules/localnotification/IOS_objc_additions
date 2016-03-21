@@ -1,8 +1,10 @@
 // Apple Local Notifications
-
 char localnotification_msg[100];
 int localnotification_gotmsg;
 double localnotification_timestamp;
+void ios_localnotification_renumber();
+
+
 extern int ios_localnotification_schedule(char* text, double time, int repeatmin) {
   // Update unique ids
   NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
@@ -50,6 +52,8 @@ extern int ios_localnotification_schedule(char* text, double time, int repeatmin
       }
     } 
   }
+  // Renumber remaining notifications
+  ios_localnotification_renumber();
   // see if we got it scheduled?
   eventArray = [[UIApplication sharedApplication] scheduledLocalNotifications];
   if ([eventArray count]>eventnum) return localnotification_id;
@@ -73,9 +77,79 @@ extern int ios_localnotification_cancel(int id) {
       matched = 1;
     }
   }
+  // Renumber remaining notifications
+  ios_localnotification_renumber();
+  //
   if (matched){
     return id;
   }else{
     return 0;
   }
 }
+
+// renumber methods as Apple doesn't do this automatically
+// From https://stackoverflow.com/questions/24844731
+@implementation UILocalNotification (LastFireDate)
+- (NSDate *)lastFireDateBeforeDate:(NSDate *)afterDate {
+  // Check if fire date is in the future:
+  if ([afterDate compare:self.fireDate] == NSOrderedAscending)
+    return [NSDate dateWithTimeIntervalSince1970:0];
+
+  NSCalendar *cal = self.repeatCalendar;
+  if (cal == nil) cal = [NSCalendar currentCalendar];
+
+  NSDateComponents *difference = [cal components:self.repeatInterval
+    fromDate:self.fireDate toDate:afterDate options:0];
+  NSDate *lastFireDate = [cal dateByAddingComponents:difference
+    toDate:self.fireDate options:0];
+
+  if ([lastFireDate compare:afterDate] == NSOrderedDescending) {
+    switch (self.repeatInterval) {
+      case NSWeekCalendarUnit:
+        difference.week--;
+        break;
+      case NSDayCalendarUnit:
+        difference.day--;
+        break;
+      case NSHourCalendarUnit:
+        difference.hour--;
+        break;
+      case NSMinuteCalendarUnit:
+        difference.minute--;
+        break;
+      default:
+        break;
+      }
+    lastFireDate = [cal dateByAddingComponents:difference
+      toDate:self.fireDate options:0];
+  }
+  return lastFireDate;
+}
+@end
+
+
+void ios_localnotification_renumber() {
+  NSArray *eventArray = [[UIApplication sharedApplication] scheduledLocalNotifications];
+  int eventnum = [eventArray count];
+  if (eventnum > 0){
+    // Sort notifications
+    NSDate *date = [NSDate date];
+    NSArray *sortedArray = [eventArray sortedArrayUsingComparator: ^NSComparisonResult(UILocalNotification *ln1, UILocalNotification *ln2) {
+      NSDate *fire_ln1 = [ln1 lastFireDateBeforeDate: date];
+      NSDate *fire_ln2 = [ln2 lastFireDateBeforeDate: date];
+      return [fire_ln1 compare: fire_ln2];
+    }];
+    if(![eventArray isEqualToArray: sortedArray]){
+      // Cancel all notifications
+      [[UIApplication sharedApplication] cancelAllLocalNotifications];
+      // Reschedule
+      int newnum = 1;
+      for (UILocalNotification *notification in sortedArray){
+        notification.applicationIconBadgeNumber = newnum++;
+        [[UIApplication sharedApplication] scheduleLocalNotification: notification];
+      }
+    }
+  }
+}
+
+// eof
