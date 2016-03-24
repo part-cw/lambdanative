@@ -2,8 +2,7 @@
 char localnotification_msg[100];
 int localnotification_gotmsg=0;
 double localnotification_timestamp;
-void ios_localnotification_renumber();
-
+extern void ios_localnotification_renumber();
 
 extern int ios_localnotification_schedule(char* text, double time, int repeatmin) {
   // Update unique ids
@@ -55,8 +54,6 @@ extern int ios_localnotification_schedule(char* text, double time, int repeatmin
   // see if we got it scheduled?
   eventArray = [[UIApplication sharedApplication] scheduledLocalNotifications];
   if ([eventArray count]>eventnum){
-    // Renumber remaining notifications
-    ios_localnotification_renumber();
     return localnotification_id;
   }
   return 0;
@@ -89,7 +86,7 @@ extern int ios_localnotification_cancel(int id) {
 }
 
 // renumber methods as Apple doesn't do this automatically
-void ios_localnotification_renumber() {
+extern void ios_localnotification_renumber() {
   NSArray *eventArray = [[UIApplication sharedApplication] scheduledLocalNotifications];
   int eventnum = [eventArray count];
   if (eventnum > 0){

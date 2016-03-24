@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   int ios_localnotification_schedule(char*, double, int);
   int ios_localnotification_cancelall();
   int ios_localnotification_cancel(int id);
+  void ios_localnotification_renumber();
 #elif ANDROID
   extern char localnotification_msg[100];
   extern double localnotification_timestamp;
@@ -55,6 +56,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   double localnotification_timestamp = 0;
   int localnotification_gotmsg = 0;
 #endif
+
+void localnotification_renumber(){
+#ifdef IOS
+  ios_localnotification_renumber();
+#endif
+}
 
 int localnotification_schedule(char* text, double time, int repeatmin){
 #ifdef IOS
@@ -93,12 +100,31 @@ end-of-c-declare
 (define localnotification:timestamp 0.)
 
 ;; Create local notification
-(define (localnotification-schedule str time . repeataftermin)
-  (if (and (> time ##now) (string? str) (fx<= (string-length str) 100))
-    ((c-lambda (char-string double int) int "___result=localnotification_schedule(___arg1,___arg2,___arg3);")
-      str time (if (pair? repeataftermin) (fix (car repeataftermin)) 0))
-    #f
+(define (localnotification:schedule lst)
+  (let ((str (car lst))
+        (time (cadr lst))
+        (repeataftermin (if (fx= (length lst) 3) (caddr lst) '())))
+    (if (and (> time ##now) (string? str) (fx<= (string-length str) 100))
+      ((c-lambda (char-string double int) int "___result=localnotification_schedule(___arg1,___arg2,___arg3);")
+        str time (if (pair? repeataftermin) (fix (car repeataftermin)) 0))
+      #f
+    )
   ))
+(define (localnotification-schedule str time . repeataftermin)
+  (let ((ret (localnotification:schedule (list str time repeataftermin))))
+    (if (fx> ret 0) (localnotification:renumber))
+    ret
+  ))
+
+(define (localnotification-schedule-batch nfs)
+  (let ((ret (map (lambda (n) (localnotification:schedule n)) nfs)))
+    (localnotification:renumber)
+    ret
+  ))
+
+;; Renumber notifications
+(define (localnotification:renumber)
+  ((c-lambda () void "localnotification_renumber")))
 
 ;; Clear notifications
 (define (localnotification-cancelall)
