@@ -205,7 +205,7 @@ if [ ! -e $keystore ]; then
   asserterror $?
 fi
 echo " => signing application with keystore $keystore"
-jarsigner -tsa http://zeitstempel.dfn.de -sigalg SHA256withRSA -digestalg SHA1 -keystore $keystore -keypass "$SYS_ANDROIDPW" -storepass "$SYS_ANDROIDPW" $fnlfile $SYS_ORGTLD.$SYS_ORGSLD
+jarsigner -tsa http://zeitstempel.dfn.de -sigalg SHA1withRSA -digestalg SHA1 -keystore $keystore -keypass "$SYS_ANDROIDPW" -storepass "$SYS_ANDROIDPW" $fnlfile $SYS_ORGTLD.$SYS_ORGSLD
 asserterror $?
 
 echo " => zipaligning.."
