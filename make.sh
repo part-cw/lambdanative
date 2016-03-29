@@ -356,6 +356,19 @@ compile_payload()
   ac_subst CFLAG_ADDITIONS "$cflag_additions"
   ac_subst LDFLAG_ADDITIONS "$ldflag_additions"
   #--------
+  # register global macros
+  globalmacrofile="${SYS_HOSTPREFIX}/lib/global-macros.scm"
+  rmifexists "$globalmacrofile"
+  for m in $modules; do
+    modpath=`locatedir modules/$m silent`
+    if [ -f "$modpath/global-macros.scm" ]; then
+      cat "$modpath/global-macros.scm" >> "$globalmacrofile"
+    fi
+  done
+  if [ -f "$appsrcdir/global-macros.scm" ]; then
+    cat "$appsrcdir/global-macros.scm" >> "$globalmacrofile"
+  fi
+  #--------
   # step 1: compile and assemble the payload objs
   for lng in $languages; do
     dmsg_make "running compile_payload_${lng}.."

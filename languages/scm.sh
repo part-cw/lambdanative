@@ -56,6 +56,10 @@ compile_payload_scm()
     else
       scm_opts="(declare (block)(not safe)(standard-bindings)(extended-bindings))"
     fi
+    # support global macro definitions
+    if [ -f "${SYS_HOSTPREFIX}/lib/global-macros.scm" ]; then
+      scm_opts="${scm_opts}(include \\\"~~lib/global-macros.scm\\\")"
+    fi
     payload_cdefs="$payload_cdefs -D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
     if [ `is_standalone_app` = "yes" ]; then
        payload_cdefs="$payload_cdefs -DSTANDALONE"
