@@ -90,7 +90,7 @@ bool setupRemoteIO( AudioUnit & inRemoteIOUnit, AURenderCallbackStruct inRenderP
 // name: setMicrophoneGain()
 // desc: set input gain (0 ~ 1.0)
 //-----------------------------------------------------------------------------
-extern "C" void setMicrophoneGain(Float32 inputGain)
+extern "C" void ln_setMicrophoneGain(Float32 inputGain)
 {
     AVAudioSession* avSession = [AVAudioSession sharedInstance];
 
@@ -98,7 +98,7 @@ extern "C" void setMicrophoneGain(Float32 inputGain)
     [avSession setInputGain:inputGain error:&error];
 }
 
-extern "C" float getMicrophoneGain()
+extern "C" float ln_getMicrophoneGain()
 {
 	AVAudioSession* avSession = [AVAudioSession sharedInstance];
 	return avSession.inputGain;
