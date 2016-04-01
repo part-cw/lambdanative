@@ -1,6 +1,6 @@
 /*
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2014, University of British Columbia
+Copyright (c) 2009-2016, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -47,6 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 #import <CoreAudio/CoreAudioTypes.h>
+#import <CoreMotion/CoreMotion.h>
 
 // for setting audio volume
 #ifdef USE_AUDIOVOLUMEINIT
@@ -75,33 +76,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   
   [window makeKeyAndVisible];
 
-#ifdef USE_PUSHNOTIFICATION
-// Let the device know we want to receive push notifications
-  [[UIApplication sharedApplication] registerForRemoteNotificationTypes:
-    (UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeSound | UIRemoteNotificationTypeAlert)];
-#endif
-
-#ifdef USE_LOCALNOTIFICATION
-// Let the device know we want to receive local notifications
-  #ifdef __IPHONE_8_0
-  if ([application respondsToSelector:@selector(registerUserNotificationSettings:)]) {
-    [[UIApplication sharedApplication] registerUserNotificationSettings:
-      (UIUserNotificationTypeBadge | UIUserNotificationTypeSound | UIUserNotificationTypeAlert)];
-  }
-  #endif
-#endif
-
 #ifdef USE_NOLOCK
 // this will prevent the screen from locking up
    [UIApplication sharedApplication].idleTimerDisabled = YES;
 #endif
-
-#ifdef USE_ORIENTATION
-  [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
-  [[NSNotificationCenter defaultCenter] addObserver:self
-      selector:@selector(didRotate:)
-      name:@"UIDeviceOrientationDidChangeNotification" object:nil];
-#endif // USE_ORIENTATION
 
 #ifdef USE_AUDIOINIT
 // this is (possibly?) necessary for getting audio from sleeping/backgrounded apps
@@ -123,6 +101,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   [audioSession setActive: YES error: &myErr];  
 }
 #endif // USE_AUDIOINIT
+
+  // MotionManager is needed for accelerometer and gyro
+  static int motionmanager_needsinit=1;
+  static CMMotionManager *motionManager;
+  @IOS_LAUNCHERAPPDELEGATE_DIDFINISHLAUNCHING@
 
   ffi_event(EVENT_INIT,screenSize.size.width,screenSize.size.height);
 
@@ -158,72 +141,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ffi_event(EVENT_TERMINATE,0,0);
 }
 
-#ifdef USE_ORIENTATION
-- (void) didRotate:(NSNotification *)notification
-{
-  DMSG("didRotate");
-  int res = -1;
-  UIDeviceOrientation orientation = [[UIDevice currentDevice] orientation];
-  switch (orientation) {
-    case UIDeviceOrientationPortrait:
-      res=GUI_PORTRAIT; break;
-    case UIDeviceOrientationLandscapeLeft:
-      res=GUI_LANDSCAPE; break;
-    case UIDeviceOrientationLandscapeRight:
-      res=GUI_SEASCAPE; break;
-    case UIDeviceOrientationPortraitUpsideDown:
-      res=GUI_UPSIDEDOWN; break;
-    case UIDeviceOrientationUnknown:
-    case UIDeviceOrientationFaceUp:
-    case UIDeviceOrientationFaceDown:
-    default:
-      break;
-  }
-  if (res>=0) ffi_event(EVENT_ORIENTATION,res,0);
-}
-#endif // USE_ORIENTATION
-
-#ifdef USE_PUSHNOTIFICATION
-extern char pushnotification_devicetoken[512];
-extern int pushnotification_gottoken;
-- (void)application:(UIApplication*)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken{
-  int len = [deviceToken length];
-  Byte *token = (Byte*)malloc(len);
-  memcpy(token, [deviceToken bytes], len);
-  int i;
-  for (i=0;i<len;i++){
-    pushnotification_devicetoken[i]=token[i];
-  }
-  free(token);
-  pushnotification_gottoken=len;
-}
-- (void)application:(UIApplication*)application didFailToRegisterForRemoteNotificationsWithError:(NSError*)error {
-  pushnotification_gottoken=0;
-  NSLog(@"Failed to get APN token: %@", error);
-}
-#endif
-
-#ifdef USE_LOCALNOTIFICATION
-extern char localnotification_msg[100];
-extern int localnotification_gotmsg;
-extern double localnotification_timestamp;
-- (void)application:(UIApplication*)application didReceiveLocalNotification:(UILocalNotification *)notification{
-  int len = [notification.alertBody length];
-  const char* msg = [notification.alertBody cStringUsingEncoding:[NSString defaultCStringEncoding]];
-  int i;
-  for (i=0;i<len;i++){
-    localnotification_msg[i] = msg[i];
-  }
-  localnotification_msg[len] = 0;
-  localnotification_timestamp = [notification.fireDate timeIntervalSince1970];
-  localnotification_gotmsg = 1;
-  UIApplicationState state = [application applicationState];
-  ffi_event(EVENT_NOTIFICATION,0,0);
-  if (state == UIApplicationStateActive) {
-    [UIApplication sharedApplication].applicationIconBadgeNumber = 0;
-  }
-}
-#endif
+// Additional pieces to be included here
+@IOS_LAUNCHERAPPDELEGATE_ADDITIONS@
 
 - (void)dealloc {
   DMSG("dealloc");

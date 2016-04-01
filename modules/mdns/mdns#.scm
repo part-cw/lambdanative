@@ -1,0 +1,6 @@
+
+(##namespace (""
+  mdns-register
+))
+
+;; eof

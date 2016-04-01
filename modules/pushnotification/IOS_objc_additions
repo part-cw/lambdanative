@@ -1,0 +1,3 @@
+// Apple Push Notifications
+char pushnotification_devicetoken[512];
+int pushnotification_gottoken;

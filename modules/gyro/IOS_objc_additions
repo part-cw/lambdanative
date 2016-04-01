@@ -1,0 +1,13 @@
+// gyroscope
+extern double ios_gyro_yaw() {
+  NSNumber* yaw = [[NSUserDefaults standardUserDefaults] valueForKey:@"gyro_yaw"];
+  return [yaw doubleValue];
+}
+extern double ios_gyro_pitch() {
+  NSNumber* pitch = [[NSUserDefaults standardUserDefaults] valueForKey:@"gyro_pitch"];
+  return [pitch doubleValue];
+}
+extern double ios_gyro_roll() {
+  NSNumber* roll = [[NSUserDefaults standardUserDefaults] valueForKey:@"gyro_roll"];
+  return [roll doubleValue];
+}

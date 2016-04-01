@@ -42,7 +42,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   extern char localnotification_msg[100];
   extern double localnotification_timestamp;
   extern int localnotification_gotmsg;
-  int ios_localnotification_schedule(char*, double);
+  int ios_localnotification_schedule(char*, double, int);
+  int ios_localnotification_cancelall();
+  int ios_localnotification_cancel(int id);
+  void ios_localnotification_renumber();
 #elif ANDROID
   extern char localnotification_msg[100];
   extern double localnotification_timestamp;
@@ -54,11 +57,33 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   int localnotification_gotmsg = 0;
 #endif
 
-int localnotification_schedule(char* text, double time){
+void localnotification_renumber(){
 #ifdef IOS
-  ios_localnotification_schedule(text, time);
+  ios_localnotification_renumber();
+#endif
+}
+
+int localnotification_schedule(char* text, double time, int repeatmin){
+#ifdef IOS
+  return ios_localnotification_schedule(text, time, repeatmin);
 #elif ANDROID
   android_localnotification_schedule(text, time);
+#endif
+  return 0;
+}
+
+int localnotification_cancelall(){
+#ifdef IOS
+  return ios_localnotification_cancelall();
+#elif ANDROID
+#endif
+  return 0;
+}
+
+int localnotification_cancel(int id){
+#ifdef IOS
+  return ios_localnotification_cancel(id);
+#elif ANDROID
 #endif
   return 0;
 }
@@ -75,13 +100,38 @@ end-of-c-declare
 (define localnotification:timestamp 0.)
 
 ;; Create local notification
-(define (localnotification-schedule str time)
-  (if (and (> time ##now) (string? str) (fx<= (string-length str) 100))
-    ((c-lambda (char-string double) bool "___result=localnotification_schedule(___arg1,___arg2);") str time)
-    #f
+(define (localnotification:schedule lst)
+  (let ((str (car lst))
+        (time (cadr lst))
+        (repeataftermin (if (fx= (length lst) 3) (caddr lst) '())))
+    (if (and (> time ##now) (string? str) (fx<= (string-length str) 100))
+      ((c-lambda (char-string double int) int "___result=localnotification_schedule(___arg1,___arg2,___arg3);")
+        str time (if (pair? repeataftermin) (fix (car repeataftermin)) 0))
+      #f
+    )
+  ))
+(define (localnotification-schedule str time . repeataftermin)
+  (let ((ret (localnotification:schedule (list str time repeataftermin))))
+    (if (fx> ret 0) (localnotification:renumber))
+    ret
   ))
 
-;;
+(define (localnotification-schedule-batch nfs)
+  (let ((ret (map (lambda (n) (localnotification:schedule n)) nfs)))
+    (localnotification:renumber)
+    ret
+  ))
+
+;; Renumber notifications
+(define (localnotification:renumber)
+  ((c-lambda () void "localnotification_renumber")))
+
+;; Clear notifications
+(define (localnotification-cancelall)
+  ((c-lambda () int "___result=localnotification_cancelall();")))
+(define (localnotification-cancel id)
+  ((c-lambda (int) int "___result=localnotification_cancel(___arg1);") id))
+
 ;; Retrieve local notification
 (define (localnotification-getalert)
   (if ((c-lambda () bool "___result=localnotification_gotmsg;"))

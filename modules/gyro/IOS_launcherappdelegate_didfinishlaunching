@@ -1,0 +1,15 @@
+// Gyroscope
+if (motionmanager_needsinit) {
+  motionManager = [[CMMotionManager alloc] init];
+  motionmanager_needsinit = 0;
+}
+
+if ([motionManager isGyroAvailable]) {
+  [motionManager setGyroUpdateInterval: (1.0 / 50)];
+  [motionManager startGyroUpdatesToQueue: [NSOperationQueue mainQueue] withHandler: ^(CMGyroData *gyroData, NSError *error) {
+    [[NSUserDefaults standardUserDefaults] setValue: [NSNumber numberWithDouble: gyroData.rotationRate.x] forKey: @"gyro_pitch"];
+    [[NSUserDefaults standardUserDefaults] setValue: [NSNumber numberWithDouble: gyroData.rotationRate.y] forKey: @"gyro_roll"];
+    [[NSUserDefaults standardUserDefaults] setValue: [NSNumber numberWithDouble: gyroData.rotationRate.z] forKey: @"gyro_yaw"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+  }];
+}

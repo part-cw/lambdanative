@@ -57,12 +57,12 @@ echo " => compiling application.."
 tgt=$apptgtdir/$SYS_APPNAME$SYS_EXEFIX
 if [ `is_standalone_app` = "yes" ]; then
   veval "$SYS_CC -static -I$SYS_PREFIX/include \
-    -DUSECONSOLE -o $tgt \
-    -L$SYS_PREFIX/lib -lpayload -lutil -lpthread -ldl -lm"
+    $cflag_additions -DUSECONSOLE -o $tgt \
+    -L$SYS_PREFIX/lib $ldflag_additions -lpayload -lutil -lpthread -ldl -lm"
 else
   veval "$SYS_CC -static -I$SYS_PREFIX/include \
-    -DUSECONSOLE main.c -o $tgt \
-    -L$SYS_PREFIX/lib -lpayload -lutil -lpthread -ldl -lm"
+    $cflag_additions -DUSECONSOLE main.c -o $tgt \
+    -L$SYS_PREFIX/lib $ldflag_additions -lpayload -lutil -lpthread -ldl -lm"
 fi
 asserterror $?
 assertfile $tgt

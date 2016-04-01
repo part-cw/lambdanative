@@ -69,7 +69,7 @@ assertfile $android_customtoolchain
 android_sysroot="$android_customtoolchain/sysroot"
 android_cross=`ls -1 $android_customtoolchain/bin/*-gcc | sed 's/gcc$//'`
 
-SYS_CC=$android_cross"gcc $SYS_DEBUGFLAG -DANDROID -isysroot $android_sysroot"
+SYS_CC=$android_cross"gcc $SYS_DEBUGFLAG -DANDROID -isysroot $android_sysroot $cflag_additions"
 SYS_CPP=$android_cross"cpp"
 SYS_AR=$android_cross"ar"
 SYS_AS=$android_cross"as"

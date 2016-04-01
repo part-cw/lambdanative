@@ -38,6 +38,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package @SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+import java.util.ArrayList;
+import java.util.List;
 import android.app.Activity;
 import android.content.pm.ActivityInfo;
 import android.content.Context;
@@ -57,7 +59,6 @@ import android.view.Surface;
 import android.view.WindowManager;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioManager;
-import android.media.SoundPool;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.util.Log;
@@ -152,6 +153,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   }
   @Override 
   protected void onDestroy() {
+    @ANDROID_JAVA_ONDESTROY@
     nativeEvent(14,0,0); // EVENT_CLOSE
     nativeEvent(127,0,0); // EVENT_TERMINATE
     if (isBatteryRegistered){
@@ -161,7 +163,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     try { openSLThread.join(); } catch (InterruptedException e) { }
     openSLThread = null;
     idleHandler.removeCallbacks(idleRunnable);
-    @ANDROID_JAVA_ONDESTROY@
     super.onDestroy();
   }
   @Override
@@ -174,6 +175,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONPAUSE@
     mGLView.onPause();
+    AudioHelper.getInstance().onPause();
   }
   @Override
   protected void onResume() {
@@ -181,6 +183,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONRESUME@
     mGLView.onResume();
+    AudioHelper.getInstance().onResume();
   }
   @Override
   public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -215,31 +218,80 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
 }
 
 class AudioHelper {
+    private static class MediaPlayerHelper {
+	private static enum PlayState {
+	    STOPPED, PLAYING, LOOPING, PAUSED;
+	}
+	private final MediaPlayer player;
+	private PlayState playState;
+	public MediaPlayerHelper(Context context, int resId){
+	    this.player = MediaPlayer.create(context, resId);
+	    this.playState = PlayState.STOPPED;
+	    MediaPlayer.OnCompletionListener listener = 
+		new MediaPlayer.OnCompletionListener(){
+		    @Override
+		    public void onCompletion(MediaPlayer mp){
+			if(playState == PlayState.PLAYING){
+			    playState = PlayState.STOPPED;
+			}
+		    }
+		};
+	    this.player.setOnCompletionListener(listener);
+	}
+	public void release(){
+	    this.player.release();
+	}
+	public void start(float lv, float rv, int loop){
+	    this.player.setVolume(lv, rv);
+	    this.player.seekTo(0);
+	    if(loop != 0){
+		this.player.setLooping(true);
+		this.playState = PlayState.LOOPING;
+	    } else {
+		this.player.setLooping(false);
+		this.playState = PlayState.PLAYING;
+	    }
+	    this.player.start();
+	}
+	public void pause(){
+	    if(this.playState == PlayState.PLAYING || this.playState == PlayState.LOOPING){
+		this.player.pause();
+		this.playState = PlayState.PAUSED;
+	    }
+	}
+	public void resume(){
+	    if(this.playState == PlayState.PAUSED){
+		this.player.start();
+		if(this.player.isLooping()){
+		    this.playState = PlayState.LOOPING;
+		} else {
+		    this.playState = PlayState.PLAYING;
+		}
+	    }
+	}
+    }
   private static final int MAX_SOUND_STREAMS = 16;
   private static String ResourceLocation = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@:raw/";
   private Context context = null;
-  private SoundPool Sounds = null;
   private static AudioHelper instance = null;
   private AudioManager audioManager = null;
   private MediaPlayer mediaPlayer = null;
+  private List<MediaPlayerHelper> mediaPlayers = null;
   private AudioHelper()
   {	
   }
   void Initialise()
   {     	
      final String TAG = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@";
-     Sounds = new SoundPool(MAX_SOUND_STREAMS,  AudioManager.STREAM_MUSIC,0); 
-     if (Sounds==null) { 
-       Log.e(TAG,"SoundPool init failed");
-     } 
+     mediaPlayers = new ArrayList<MediaPlayerHelper>();
   }	
   public void finalize()
   {		
-    if (Sounds != null) 
-    {
-      Sounds.release();
-      Sounds = null;
-    }
+      for(MediaPlayerHelper mp : mediaPlayers){
+	  if(mp!=null){
+	      mp.release();
+	  }
+      }
   }
   public void setContext(Context context, MediaPlayer mediaPlayer)
   {
@@ -261,18 +313,30 @@ class AudioHelper {
     int     SoundID;
     String s = ResourceLocation + filename;
     int resID = context.getResources().getIdentifier(s, null, null);
+    Log.d(TAG,"Entered load sound method.");
     if (resID == 0) {
       Log.e(TAG,"Failed to load sound resource=" + s);
       return 0;
     }
-    SoundID = Sounds.load(context, resID, Priority);
-    return SoundID;
+    MediaPlayerHelper localMediaPlayer = new MediaPlayerHelper(context, resID);
+    mediaPlayers.add(localMediaPlayer);
+    return mediaPlayers.size();
   } 
   public int PlaySound(int SoundID, float lv, float rv, int priority, int loop, float rate) {
-    return Sounds.play(SoundID, lv, rv, priority, loop, rate); 
+      MediaPlayerHelper localMediaPlayer = mediaPlayers.get(SoundID-1);
+      if(localMediaPlayer!=null){
+	  localMediaPlayer.start(rv, lv, loop);
+      }
+      return SoundID;
   }
-  public boolean UnloadSound(int SoundID) {                                   
-    return Sounds.unload(SoundID); 
+  public boolean UnloadSound(int SoundID) {
+      // We null out removed sounds - we have to null check sounds
+      // later but this simplifies the representation of sounds by
+      // their offset index.
+      MediaPlayerHelper toRemove = mediaPlayers.get(SoundID-1);
+      toRemove.release();
+      mediaPlayers.set(SoundID-1,null);
+      return true;
   }
   public boolean SetVolume(float volume)
   {
@@ -285,6 +349,22 @@ class AudioHelper {
      }
      return true;
   }
+    public void onPause(){
+	for(MediaPlayerHelper player : this.mediaPlayers){
+	    if(player!=null){
+		player.pause();
+	    }
+	}
+    }
+
+    public void onResume(){
+	for(MediaPlayerHelper player : this.mediaPlayers){
+	    if(player!=null){
+		player.resume();
+	    }
+	}
+    }
+   
   public float GetVolume()
   {
      float SYSTEM_MAX_VOLUME = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
@@ -341,44 +421,18 @@ class  xGLSurfaceView extends GLSurfaceView {
   }
   public boolean onKeyDown(int keyCode, KeyEvent event) {
     t=x=y=0;
+    // Get known keys
+    int asciiKey = event.getUnicodeChar(event.getMetaState());
+    if (asciiKey > 0) {
+      t=2;
+      x=asciiKey;
+      queueEvent(new Runnable(){ public void run() {
+        renderer.nativeEvent(t,x,y); }});
+      return true;
+    }
+    // Get everything else
     switch (keyCode) {
-      case KeyEvent.KEYCODE_A: t=2; x='A'; break;
-      case KeyEvent.KEYCODE_B: t=2; x='B'; break;
-      case KeyEvent.KEYCODE_C: t=2; x='C'; break;
-      case KeyEvent.KEYCODE_D: t=2; x='D'; break;
-      case KeyEvent.KEYCODE_E: t=2; x='E'; break;
-      case KeyEvent.KEYCODE_F: t=2; x='F'; break;
-      case KeyEvent.KEYCODE_G: t=2; x='G'; break;
-      case KeyEvent.KEYCODE_H: t=2; x='H'; break;
-      case KeyEvent.KEYCODE_I: t=2; x='I'; break;
-      case KeyEvent.KEYCODE_J: t=2; x='J'; break;
-      case KeyEvent.KEYCODE_K: t=2; x='K'; break;
-      case KeyEvent.KEYCODE_L: t=2; x='L'; break;
-      case KeyEvent.KEYCODE_M: t=2; x='M'; break;
-      case KeyEvent.KEYCODE_N: t=2; x='N'; break;
-      case KeyEvent.KEYCODE_O: t=2; x='O'; break;
-      case KeyEvent.KEYCODE_P: t=2; x='P'; break;
-      case KeyEvent.KEYCODE_Q: t=2; x='Q'; break;
-      case KeyEvent.KEYCODE_R: t=2; x='R'; break;
-      case KeyEvent.KEYCODE_S: t=2; x='S'; break;
-      case KeyEvent.KEYCODE_T: t=2; x='T'; break;
-      case KeyEvent.KEYCODE_U: t=2; x='U'; break;
-      case KeyEvent.KEYCODE_V: t=2; x='V'; break;
-      case KeyEvent.KEYCODE_W: t=2; x='W'; break;
-      case KeyEvent.KEYCODE_X: t=2; x='X'; break;
-      case KeyEvent.KEYCODE_Y: t=2; x='Y'; break;
-      case KeyEvent.KEYCODE_Z: t=2; x='Z'; break;
-      case KeyEvent.KEYCODE_0: t=2; x='0'; break;
-      case KeyEvent.KEYCODE_1: t=2; x='1'; break;
-      case KeyEvent.KEYCODE_2: t=2; x='2'; break;
-      case KeyEvent.KEYCODE_3: t=2; x='3'; break;
-      case KeyEvent.KEYCODE_4: t=2; x='4'; break;
-      case KeyEvent.KEYCODE_5: t=2; x='5'; break;
-      case KeyEvent.KEYCODE_6: t=2; x='6'; break;
-      case KeyEvent.KEYCODE_7: t=2; x='7'; break;
-      case KeyEvent.KEYCODE_8: t=2; x='8'; break;
-      case KeyEvent.KEYCODE_9: t=2; x='9'; break;
-      case KeyEvent.KEYCODE_SPACE: t=2; x=' '; break; 
+      case KeyEvent.KEYCODE_DEL: t=2; x=3; break;
       case KeyEvent.KEYCODE_ENTER: t=2; x=1; break;
       case KeyEvent.KEYCODE_DPAD_CENTER: t=2; x=1; break;
       case KeyEvent.KEYCODE_DPAD_UP: t=2; x=6; break;
@@ -389,6 +443,7 @@ class  xGLSurfaceView extends GLSurfaceView {
       case KeyEvent.KEYCODE_MENU: t=2; x=9; break;
       case KeyEvent.KEYCODE_VOLUME_DOWN: return false;
       case KeyEvent.KEYCODE_VOLUME_UP: return false;
+      case KeyEvent.KEYCODE_SOFT_LEFT: return true;
     }
     if (t>0) {
       queueEvent(new Runnable(){ public void run() {

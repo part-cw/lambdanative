@@ -42,7 +42,7 @@ source "$script"
 TOOLCHAIN=`wildcard_dir ${BB10SDK}/host_${bbapi}_*/darwin/x86`
 assertfile "$TOOLCHAIN" "Blackberry 10 host tool chain not found"
 CROSS=`echo $TOOLCHAIN/usr/bin/arm-*-qnx*eabi-`
-SYS_CC="qcc -Vgcc_ntoarmv7le $SYS_DEBUGFLAG -DBB10 -DQNX -DNO_SYSLOG"
+SYS_CC="qcc -Vgcc_ntoarmv7le $SYS_DEBUGFLAG -DBB10 -DQNX -DNO_SYSLOG $cflag_additions"
 # ix86 setup (to target simulator)
 # CROSS=`echo $TOOLCHAIN/usr/bin/i486-*-qnx*-`
 # SYS_CC="qcc -Vgcc_ntox86 $SYS_DEBUGFLAG -DBB10 -DQNX"
@@ -52,6 +52,7 @@ SYS_RANLIB=$CROSS"ranlib"
 assertfile $SYS_RANLIB "Blackberry 10 tool chain setup is invalid"
 SYS_STRIP=$CROSS"strip"
 assertfile $SYS_STRIP "Blackberry 10 tool chain setup is invalid"
+SYS_NM=$CROSS"nm"
 SYS_WINDRES=
 SYS_EXEFIX=
 SYS_APPFIX=

@@ -93,15 +93,6 @@ extern "C" void iphone_vibrate(){
 }
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%
-// accelerometer
-
-#import "mo_accel.h"
-
-extern "C" double ios_accel_getx() { return MoAccel::getX(); }
-extern "C" double ios_accel_gety() { return MoAccel::getY(); }
-extern "C" double ios_accel_getz() { return MoAccel::getZ(); }
-
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%
 // location
 
 #import "mo_location.h"
@@ -138,67 +129,6 @@ extern "C" void ios_launch_url(char *urlchar){
   NSString* urlString = [NSString stringWithUTF8String: urlchar];
   NSURL *url = [NSURL URLWithString:urlString];
   [[UIApplication sharedApplication] openURL:url];
-}
-
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%
-// gyroscope
-
-#ifdef USE_GYROSCOPE
-#import <CoreMotion/CoreMotion.h>
-#endif
-
-static double ios_gyro(int idx)
-{
-  double value=1.0;
-#ifdef USE_GYROSCOPE
-  static int needsinit=1;
-  static CMMotionManager *motionManager;
-  if (needsinit) {
-    motionManager = [[CMMotionManager alloc] init];
-    motionManager.deviceMotionUpdateInterval = 1.0/60.0;
-    if  (motionManager.isDeviceMotionAvailable) {
-      [motionManager startDeviceMotionUpdates];
-    }
-    needsinit=0;
-  }
-  CMDeviceMotion *deviceMotion = motionManager.deviceMotion;      
-  CMAttitude *attitude = deviceMotion.attitude;
-  if (idx==0) value=(double)attitude.yaw; 
-  if (idx==1) value=(double)attitude.pitch; 
-  if (idx==2) value=(double)attitude.roll; 
-#endif
-  return value;
-}
-
-extern "C" double ios_gyro_yaw() { return ios_gyro(0); }
-extern "C" double ios_gyro_pitch() { return ios_gyro(1); }
-extern "C" double ios_gyro_roll() { return ios_gyro(2); }
-
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%
-// Apple Push Notifications
-char pushnotification_devicetoken[512];
-int pushnotification_gottoken;
-
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%
-// Apple Local Notifications
-
-char localnotification_msg[100];
-int localnotification_gotmsg;
-double localnotification_timestamp;
-extern "C" int ios_localnotification_schedule(char* text, double time) {
-  NSArray *eventArray = [[UIApplication sharedApplication] scheduledLocalNotifications];
-  UILocalNotification* localNotification = [[UILocalNotification alloc] init];
-  int eventnum = [eventArray count];
-  localNotification.timeZone = [NSTimeZone localTimeZone];
-  localNotification.fireDate = [NSDate dateWithTimeIntervalSince1970: time];
-  localNotification.alertBody = [NSString stringWithUTF8String: text];
-  localNotification.applicationIconBadgeNumber =
-    [UIApplication sharedApplication].applicationIconBadgeNumber + eventnum + 1;
-  [[UIApplication sharedApplication] scheduleLocalNotification:localNotification];
-  // see if we got it scheduled?
-  eventArray = [[UIApplication sharedApplication] scheduledLocalNotifications];
-  if ([eventArray count]>eventnum) return 1;
-  return 0;
 }
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%

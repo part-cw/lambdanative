@@ -57,20 +57,20 @@ echo " => compiling application.."
 tgt=$apptgtdir/$SYS_APPNAME$SYS_EXEFIX
 if [ `is_standalone_app` = "yes" ]; then
   veval "$SYS_CC -I$SYS_PREFIX/include \
-    -DUSECONSOLE -o $tgt \
+    $cflag_additions -DUSECONSOLE -o $tgt \
     -L/usr/local/linux/i686-linux/lib \
-    -L$SYS_PREFIX/lib -lpayload -lrt -lutil -lpthread -ldl -lm"
+    -L$SYS_PREFIX/lib $ldflag_additions -lpayload -lrt -lutil -lpthread -ldl -lm"
 else
   if [ `is_gui_app` = yes ]; then
     veval "$SYS_CC -I$SYS_PREFIX/include \
-      x11_microgl.c main.c -o $tgt \
+      $cflag_additions x11_microgl.c main.c -o $tgt \
       -L/usr/local/linux/i686-linux/lib \
-      -L$SYS_PREFIX/lib -lpayload -lGL -lXext -lX11 -lasound -lrt -lutil -lpthread -ldl -lm"
+      -L$SYS_PREFIX/lib $ldflag_additions -lpayload -lGL -lXext -lX11 -lasound -lrt -lutil -lpthread -ldl -lm"
   else
     veval "$SYS_CC -I$SYS_PREFIX/include \
-      -DUSECONSOLE main.c -o $tgt \
+      $cflag_additions -DUSECONSOLE main.c -o $tgt \
       -L/usr/local/linux/i686-linux/lib \
-      -L$SYS_PREFIX/lib -lpayload -lrt -lasound -lutil -lpthread -ldl -lm"
+      -L$SYS_PREFIX/lib $ldflag_additions -lpayload -lrt -lutil -lpthread -ldl -lm"
   fi
 fi
 asserterror $?

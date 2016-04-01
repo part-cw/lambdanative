@@ -51,6 +51,10 @@ ios_subst()
   ac_subst IOS_OBJC_ADDITIONS "@$1/IOS_objc_additions"
   ac_subst IOS_OBJCPP_ADDITIONS "@$1/IOS_objcpp_additions"
   ac_subst IOS_OBJC_DEFINES "@$1/IOS_objc_defines"
+  ac_subst IOS_FRAMEWORK_ADDITIONS "@$1/IOS_framework_additions"
+  ac_subst IOS_FRAMEWORK_SEARCHPATH "@$1/IOS_framework_searchpath"
+  ac_subst IOS_LAUNCHERAPPDELEGATE_ADDITIONS "@$1/IOS_launcherappdelegate_additions"
+  ac_subst IOS_LAUNCHERAPPDELEGATE_DIDFINISHLAUNCHING "@$1/IOS_launcherappdelegate_didfinishlaunching"
   ac_subst IOS_XML_PERMISSIONS "@$1/IOS_xml_permissions"
   ac_subst IOS_XML_REQUIREDDEVICECAP "@$1/IOS_xml_requireddevicecap"
 }
@@ -67,6 +71,8 @@ cmakedir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 ac_output $srcdir/CMakeLists.txt $cmakedir/CMakeLists.txt
 ac_output $srcdir/objc_additions.m $cmakedir/objc_additions.m
 ac_output $srcdir/objcpp_additions.mm $cmakedir/objcpp_additions.mm
+ac_output $srcdir/mo_chooks.mm $cmakedir/mo_chooks.mm
+ac_output $srcdir/launcherAppDelegate.m $cmakedir/launcherAppDelegate.m
 cp $srcdir/*.m $cmakedir
 cp $srcdir/*.mm $cmakedir
 cp $srcdir/*.h $cmakedir
@@ -117,6 +123,7 @@ fi
 assertfile $tmpappdir
 
 echo " => verifying application.."
+
 osxver=`sw_vers -productVersion`
 if [ `echo "10.9.5\n$osxver" | sed 's/^10\.//' | sort -g | head -1` == "9.5" ]; then
   checkfail=`codesign --verify --no-strict $tmpappdir 2>&1`
@@ -133,6 +140,11 @@ rmifexists "$tgtdir"
 cp -R $tmpappdir $tgtdir
 
 echo " => cleaning up.."
-rm -rf "$cmakedir" "$xcodedir" 2> /dev/null
+rm -rf "$xcodedir" 2> /dev/null
+if [ $SYS_MODE = "debug" ]; then
+  echo "DEBUG: ios build is in $cmakedir"
+else
+  rm -rf "$cmakedir" 2> /dev/null
+fi
 
 #eof

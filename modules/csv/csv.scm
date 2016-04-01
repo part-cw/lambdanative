@@ -42,37 +42,26 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; Useful procedures for working with csv files.
 
 (define (csv-read file)
-  (with-input-from-file file (lambda ()
-    ;; When reading in initially split by new line character
-    (let loop ((line (read-line (current-input-port) #\newline)) (res '()))
-      (if (eof-object? line)
-        ;; Then split the cells within each row, but keep track of where commas or new lines are actually inside quotations, so shouldn't apply
-        (let sploop ((rows res) (leftover #f) (leftovercount 0) (finalrows '()))
-          (if (fx> (length rows) 0)
-            (let* ((row (car rows))
-                   (quotecount (+ leftovercount (string-count row "\""))))
-              (if (odd? quotecount)
-                ;; If the number of quotation marks on the line (combined with any from leftover unfinished lines before)
-                ;; is odd then the line is unfinished, so combine with later lines
-                (sploop (cdr rows) (if leftover (string-append leftover "\n" row) row) quotecount finalrows)
-                ;; Otherwise this is a complete row, so just add to final output after splitting the row
-                (sploop (cdr rows) #f 0 (append finalrows (list (csv:split (if leftover (string-append leftover "\n" row) row)))))
-              )
-            )
-            ;; Once done all rows, return the final output, add last row if necessary
-            (if leftover
-              (append finalrows (list (csv:split leftover)))
-              finalrows
-            )
-          )
-        )
-        ;; First, just make list of strings (one string per potential row) by breaking input on #\newline and #\x0d
-        (loop (read-line) (append res (let ((rowsplit (string-split line #\x0d)))
-                                        (if (fx= (length rowsplit) 0) (list "") rowsplit))))
-      )
-    )
-  ))
-)
+  (let ((raw (file->u8vector file)))
+     (let loop ((i (fx- (u8vector-length raw) 1)))
+       (if (fx>= i 0) (begin
+         (if (fx= (u8vector-ref raw i) 13) (u8vector-set! raw i 10))
+         (loop (- i 1)))))
+    (let* ((rows (string-split (u8vector->string raw) #\newline))
+           (qcount 0) (qrow "") (idx 0)
+           (finalrows (make-vector (length rows))))
+      (for-each (lambda (row) 
+         (set! qcount (+ qcount (string-count row "\"")))
+         (set! qrow (string-append qrow (if (> (string-length qrow) 0) "\n" "") row))
+         (if (even? qcount) (begin
+           (vector-set! finalrows idx (csv:split qrow))
+           (set! idx (+ idx 1))
+           (set! qrow "") (set! qcount 0)
+         ))) rows)
+      (if (> (string-length qrow) 0) (begin 
+        (vector-set! finalrows idx (csv:split qrow))
+        (set! idx (+ idx 1))))
+      (vector->list (subvector finalrows 0 idx)))))
 
 (define (csv:split str)
   ;; First, split the line normally on all commas

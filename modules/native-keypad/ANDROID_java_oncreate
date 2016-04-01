@@ -1,0 +1,1 @@
+imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);

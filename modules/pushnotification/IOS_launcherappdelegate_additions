@@ -1,0 +1,17 @@
+extern char pushnotification_devicetoken[512];
+extern int pushnotification_gottoken;
+- (void)application:(UIApplication*)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken{
+  int len = [deviceToken length];
+  Byte *token = (Byte*)malloc(len);
+  memcpy(token, [deviceToken bytes], len);
+  int i;
+  for (i=0;i<len;i++){
+    pushnotification_devicetoken[i]=token[i];
+  }
+  free(token);
+  pushnotification_gottoken=len;
+}
+- (void)application:(UIApplication*)application didFailToRegisterForRemoteNotificationsWithError:(NSError*)error {
+  pushnotification_gottoken=0;
+  NSLog(@"Failed to get APN token: %@", error);
+}

@@ -1,0 +1,7 @@
+public void showKeyboard(){
+  imm.toggleSoftInputFromWindow(mGLView.getApplicationWindowToken(), InputMethodManager.SHOW_FORCED, 
+    InputMethodManager.HIDE_IMPLICIT_ONLY);
+}
+public void hideKeyboard(){
+  imm.hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
+}

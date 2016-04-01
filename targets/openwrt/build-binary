@@ -45,7 +45,7 @@ cp $SYS_PREFIX/lib/libpayload.a $tmpdir/src/libpayload.a
 echo " => compiling application.."
 cat > $tmpdir/src/Makefile  << _EOF
 $SYS_APPNAME:
-	\$(CC) \$(LDFLAGS) -o $SYS_APPNAME libpayload.a libgambc.a -lutil -ldl -lm
+	\$(CC) \$(LDFLAGS) $cflag_additions -o $SYS_APPNAME libpayload.a libgambc.a $ldflag_additions -lutil -ldl -lm
 _EOF
 cat > $tmpdir/Makefile  << _EOF
 include \$(TOPDIR)/rules.mk

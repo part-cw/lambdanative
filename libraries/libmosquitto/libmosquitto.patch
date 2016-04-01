@@ -1,25 +1,25 @@
---- lib/mosquitto.h	2013-12-02 15:03:39.000000000 -0800
-+++ lib/mosquitto.h	2014-02-04 15:06:42.000000000 -0800
-@@ -41,15 +41,7 @@
+--- lib/mosquitto.h.orig  2016-02-14 06:36:55.000000000 -0800
++++ lib/mosquitto.h 2016-03-21 15:01:28.000000000 -0700
+@@ -21,15 +21,7 @@
  extern "C" {
  #endif
  
 -#if defined(WIN32) && !defined(WITH_BROKER)
--#	ifdef libmosquitto_EXPORTS
--#		define libmosq_EXPORT  __declspec(dllexport)
--#	else
--#		define libmosq_EXPORT  __declspec(dllimport)
--#	endif
+-#  ifdef libmosquitto_EXPORTS
+-#    define libmosq_EXPORT  __declspec(dllexport)
+-#  else
+-#    define libmosq_EXPORT  __declspec(dllimport)
+-#  endif
 -#else
--#	define libmosq_EXPORT
+-#  define libmosq_EXPORT
 -#endif
 +#define libmosq_EXPORT
  
  #ifdef WIN32
- #	ifndef __cplusplus
---- lib/net_mosq.c	2014-03-24 16:52:40.000000000 -0700
-+++ lib/net_mosq.c	2014-04-17 23:27:15.000000000 -0700
-@@ -246,7 +246,7 @@
+ #  ifndef __cplusplus
+--- lib/net_mosq.c.orig 2016-02-14 06:36:55.000000000 -0800
++++ lib/net_mosq.c  2016-03-21 15:01:28.000000000 -0700
+@@ -276,7 +276,7 @@
  	int s;
  	int rc;
  #ifdef WIN32
@@ -28,9 +28,9 @@
  #endif
  
  	*sock = INVALID_SOCKET;
---- lib/time_mosq.c	2013-12-02 15:03:39.000000000 -0800
-+++ lib/time_mosq.c	2014-02-04 15:09:44.000000000 -0800
-@@ -43,6 +43,7 @@
+--- lib/time_mosq.c.orig 2016-02-14 06:36:55.000000000 -0800
++++ lib/time_mosq.c 2016-03-21 15:01:28.000000000 -0700
+@@ -30,6 +30,7 @@
  #include "mosquitto.h"
  #include "time_mosq.h"
  
@@ -38,7 +38,7 @@
  #ifdef WIN32
  static bool tick64 = false;
  
-@@ -61,15 +62,15 @@
+@@ -48,15 +49,15 @@
  	}
  }
  #endif
@@ -59,9 +59,9 @@
  #elif _POSIX_TIMERS>0 && defined(_POSIX_MONOTONIC_CLOCK)
  	struct timespec tp;
  
---- lib/util_mosq.c	2013-12-02 15:03:39.000000000 -0800
-+++ lib/util_mosq.c	2014-02-04 14:28:53.000000000 -0800
-@@ -32,6 +32,9 @@
+--- lib/util_mosq.c.orig  2016-02-14 06:36:55.000000000 -0800
++++ lib/util_mosq.c 2016-03-21 15:01:28.000000000 -0700
+@@ -19,6 +19,9 @@
  
  #ifdef WIN32
  #include <winsock2.h>
@@ -69,5 +69,15 @@
 +char* strtok_r( char *, const char *, char **);
 +
  #endif
+
+
+--- lib/mosquitto_internal.h.orig 2016-03-21 15:07:15.000000000 -0700
++++ lib/mosquitto_internal.h  2016-03-21 15:07:37.000000000 -0700
+@@ -42,6 +42,7 @@
  
+ #ifdef WIN32
+ #  if _MSC_VER < 1600
++   typedef char int8_t;
+    typedef unsigned char uint8_t;
+    typedef unsigned short uint16_t;
  

@@ -41,7 +41,7 @@ linux_cross=`ls -1 ${LINUXSDK}/bin/*-gcc | head -n 1 | sed 's/gcc$//'`
 if [ "X$SYS_DEBUGFLAG" = "X" ]; then
   SYS_DEBUGFLAG="-O3"
 fi
-SYS_CC=$linux_cross"gcc $SYS_DEBUGFLAG -isysroot $linux_sysroot -m32 -DLINUX"
+SYS_CC=$linux_cross"gcc $SYS_DEBUGFLAG -isysroot $linux_sysroot -m32 -DLINUX $cflag_additions"
 SYS_AR=$linux_cross"ar"
 SYS_NM=$linux_cross"nm"
 SYS_RANLIB=$linux_cross"ranlib"

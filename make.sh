@@ -334,6 +334,41 @@ compile_payload()
   payload_objs=
   payload_libs="$libraries"
   #--------
+  # register custom compiler/linker options
+  ldflag_additions=
+  cflag_additions=
+  payload_spcaps=`echo $SYS_PLATFORM | tr 'a-z' 'A-Z'`
+  for m in $modules; do
+    modpath=`locatedir modules/$m silent`
+    if [ -f $modpath/${payload_spcaps}_CFLAG_ADDITIONS ]; then
+      cflag_additions="$cflag_additions "`cat $modpath/${payload_spcaps}_CFLAG_ADDITIONS`
+    fi
+    if [ -f $modpath/${payload_spcaps}_LDFLAG_ADDITIONS ]; then
+      ldflag_additions="$ldflag_additions "`cat $modpath/${payload_spcaps}_LDFLAG_ADDITIONS`
+    fi
+  done
+  if [ -f $appsrcdir/${payload_spcaps}_CFLAG_ADDITIONS ]; then
+    cflag_additions="$cflag_additions "`cat $appsrcdir/${payload_spcaps}_CFLAG_ADDITIONS`
+  fi
+  if [ -f $appsrcdir/${payload_spcaps}_LDFLAG_ADDITIONS ]; then
+    ldflag_additions="$ldflag_additions "`cat $appsrcdir/${payload_spcaps}_LDFLAG_ADDITIONS`
+  fi
+  ac_subst CFLAG_ADDITIONS "$cflag_additions"
+  ac_subst LDFLAG_ADDITIONS "$ldflag_additions"
+  #--------
+  # register global macros
+  globalmacrofile="${SYS_HOSTPREFIX}/lib/global-macros.scm"
+  rmifexists "$globalmacrofile"
+  for m in $modules; do
+    modpath=`locatedir modules/$m silent`
+    if [ -f "$modpath/global-macros.scm" ]; then
+      cat "$modpath/global-macros.scm" >> "$globalmacrofile"
+    fi
+  done
+  if [ -f "$appsrcdir/global-macros.scm" ]; then
+    cat "$appsrcdir/global-macros.scm" >> "$globalmacrofile"
+  fi
+  #--------
   # step 1: compile and assemble the payload objs
   for lng in $languages; do
     dmsg_make "running compile_payload_${lng}.."
@@ -823,6 +858,9 @@ make_setup_profile()
       flags=-DMINGW32
     fi
     gcc $flags -o $SYS_HOSTPREFIX/bin/subtool tools/subtool/subtool.c 2> /dev/null
+  fi
+  if [ ! -x $SYS_HOSTPREFIX/bin/subtool ]; then
+    assert "cannot build subtool. Broken gcc or insufficient permissions??"
   fi
   name=$SYS_APPNAME
   here=`pwd`

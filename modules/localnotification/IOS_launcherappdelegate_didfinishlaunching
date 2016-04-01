@@ -1,0 +1,13 @@
+// Let the device know we want to receive local notifications
+  #ifdef __IPHONE_8_0
+  if ([application respondsToSelector: @selector(registerUserNotificationSettings:)]) {
+    UIUserNotificationSettings* notificationSettings = [UIUserNotificationSettings settingsForTypes:
+      UIUserNotificationTypeAlert | UIUserNotificationTypeBadge | UIUserNotificationTypeSound categories:nil];
+    [[UIApplication sharedApplication] registerUserNotificationSettings:notificationSettings];
+  }
+  #endif
+// Clear the badge icon
+[UIApplication sharedApplication].applicationIconBadgeNumber = 0;
+// Renumber remaining notifications
+ios_localnotification_renumber();
+// eof

@@ -81,6 +81,10 @@ $ANDROIDSDK/tools/android --silent create project \
   --target $ANDROIDSDKTARGET --name $SYS_APPNAME --path $tmpdir \
   --activity $SYS_APPNAME --package $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME
 
+if [ -f $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar ]; then
+  cp -r $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar $tmpdir/libs
+fi
+
 if [ "$NEED_GCM" = "yes" ]; then
   cp -r $ANDROIDSDK/extras/google/google_play_services/libproject/google-play-services_lib $tmpdir
   cp -r $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar $tmpdir/libs
@@ -147,14 +151,9 @@ cp $SYS_PREFIX/lib/libpayload.a $tmpmoddir/libpayload
 
 echo " => preparing JNI.."
 mkdir $tmpdir/jni
-# opensl was introduced at api 10
-if [ `echo "$ANDROIDAPI > 9" | bc` = 1 ]; then
-  cp loaders/android/Android.mk.jni $tmpdir/jni/Android.mk
-else
-  cat loaders/android/Android.mk.jni | sed 's/-lOpenSLES//' > $tmpdir/jni/Android.mk
-fi
+ac_output loaders/android/Android.mk.jni.in $tmpdir/jni/Android.mk
 cp $SYS_PREFIX/include/LNCONFIG.h $tmpdir/jni
-ac_output loaders/android/bootstrap.c $tmpdir/jni/bootstrap.c
+ac_output loaders/android/bootstrap.c.in $tmpdir/jni/bootstrap.c
 cd $tmpdir
 
 APP_ABI=armeabi
@@ -206,7 +205,7 @@ if [ ! -e $keystore ]; then
   asserterror $?
 fi
 echo " => signing application with keystore $keystore"
-jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore $keystore -keypass "$SYS_ANDROIDPW" -storepass "$SYS_ANDROIDPW" $fnlfile $SYS_ORGTLD.$SYS_ORGSLD
+jarsigner -tsa http://zeitstempel.dfn.de -sigalg SHA1withRSA -digestalg SHA1 -keystore $keystore -keypass "$SYS_ANDROIDPW" -storepass "$SYS_ANDROIDPW" $fnlfile $SYS_ORGTLD.$SYS_ORGSLD
 asserterror $?
 
 echo " => zipaligning.."

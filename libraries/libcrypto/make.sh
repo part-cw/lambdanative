@@ -1,5 +1,5 @@
-PKGURL=https://www.openssl.org/source/openssl-1.0.2d.tar.gz
-PKGHASH=d01d17b44663e8ffa6a33a5a30053779d9593c3d
+PKGURL=https://www.openssl.org/source/openssl-1.0.2g.tar.gz
+PKGHASH=36af23887402a5ea4ebef91df8e61654906f58f2
 
 package_download $PKGURL $PKGHASH
 
@@ -15,7 +15,10 @@ linux486*)
   EXTRACONF=linux-generic32
 ;;
 linux*)
-  cpu=`$SYS_ROOT/config.guess | cut -f 1 -d "-"`
+  cpu=
+  if [ $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
+    cpu=`$SYS_ROOT/config.guess | cut -f 1 -d "-"`
+  fi
   if [ "X$cpu" = "Xx86_64" ]; then
     EXTRACONF=linux-x86_64
   else
