@@ -50,7 +50,7 @@ static TS_REQ *createTSQ(unsigned char *hash, int len){
   else if (len==SHA256_DIGEST_LENGTH)
     md=EVP_sha256();
   else if (len==SHA_DIGEST_LENGTH)
-    md=EVP_sha();
+    md=EVP_sha1();
   else
     return 0;
   // Define structures
