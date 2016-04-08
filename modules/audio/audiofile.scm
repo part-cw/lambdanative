@@ -371,7 +371,7 @@ end-of-c-declare
   (let* ((file  (cond
            ((member (system-platform) '("ios" "bb10" "playbook"))
              (autoext (string-append (system-appdirectory) (system-pathseparator) name)))
-           ((member (system-platform) '("win32" "linux" "openbsd" "freebsd"))
+           ((member (system-platform) '("win32" "linux" "openbsd" "freebsd" "netbsd"))
              (autoext (string-append (system-appdirectory) (system-pathseparator) "sounds" (system-pathseparator) name)))
            ((member (system-platform) '("macosx"))
              (autoext (string-append (system-appdirectory) (system-pathseparator) "sounds" (system-pathseparator) name)))
