@@ -68,7 +68,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; ---- MAIN PROCESSING
 
-;; this function runs all inputs 
+;; this function runs all inputs
 ;; returns false if one input returns false
 (define (scheduler:doinputs)
   (let loop ((sl (store-list))(ret #t))
@@ -153,6 +153,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 )
 
 (define (scheduler-iterate . guiwaveproc)
+  (if (not (scheduler-initialized?)) (begin
+    (log-error "scheduler: (scheduler-init) was not called. Initializing with default timefunc.")
+    (scheduler-init)
+  ))
   (for-each (lambda (s) (store-set! s "Now" ##now)) (store-list))
   (scheduler:endoldcases)
   (scheduler:initnewcases ##now (seconds->string (fix ##now) "%T"))
