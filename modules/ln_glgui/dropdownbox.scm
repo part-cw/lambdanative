@@ -82,6 +82,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             ;; Dynamically create list for choosing items
             (let* ((bgcolor (glgui-widget-get g wgt 'bgcolor))
                    (bordercolor (glgui-widget-get g wgt 'bordercolor))
+                   (scrollcolor (glgui-widget-get g wgt 'scrollcolor))
                    (modal (glgui-widget-get g wgt 'modal))
                    (lst (glgui-widget-get g wgt 'list))
                    (cur (glgui-widget-get g wgt 'current))
@@ -159,6 +160,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 (glgui-widget-set! g listw 'bgcol1 bgcolor)
                 (glgui-widget-set! g listw 'bgcol2 bgcolor)
                 (glgui-widget-set! g listw 'bordercolor bordercolor)
+                (glgui-widget-set! g listw 'scrollcolor scrollcolor)
                 ;; Scroll if necessary based on selected item
                 (if (> (* cur h) lh)
                   ;; Put selected item just off bottom
@@ -201,6 +203,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'arrowcolor arrowcolor
      'bgcolor bgcolor
      'bordercolor bordercolor
+     'scrollcolor DimGray
      'draw-handle  glgui:dropdownbox-draw
      'input-handle glgui:dropdownbox-input
   ))

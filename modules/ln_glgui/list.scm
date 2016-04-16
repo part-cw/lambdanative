@@ -89,10 +89,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
    ;; Draw scrollbar if not auto-hidden or scrolling needed
    (if showscroll?
-     (let* ((sw 5.) (sx (fl+ x w -6.))
+     (let* ((scrollc (glgui-widget-get-dyn g wgt 'scrollcolor))
+            (sw 5.) (sx (fl+ x w -6.))
             (sh (if allvis h (fl* h (fl/ (flo n) (flo nlist)))))
             (sy (fl- (fl+ y h)  (if (fl= sh h) 0. (fl* (fl- h sh) (fl/ flofs (fl- (flo nlist) (flo n))))) sh)))
-       (glgui:draw-box sx sy sw sh DimGray)
+       (glgui:draw-box sx sy sw sh scrollc)
    ))
 
    (glCoreClipPop)
@@ -198,6 +199,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'old  #f
      'drag #f
      'autohidebar #f    ;; Hide scrollbar when list not long enough to need scrolling
+     'scrollcolor DimGray
      'oldy  0
      'fsty  0
      'bordercolor #f
