@@ -1,0 +1,1 @@
+stopService(new Intent(this, LambdaNativeBackgroundService.class));
