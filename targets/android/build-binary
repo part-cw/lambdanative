@@ -53,6 +53,7 @@ android_subst()
   ac_subst ANDROID_XML_PERMISSIONS "@$d/ANDROID_xml_permissions"
   ac_subst ANDROID_INTENT_FILTERS "@$d/ANDROID_intent_filters"
   ac_subst ANDROID_XML_RECEIVERS "@$d/ANDROID_xml_receivers"
+  ac_subst ANDROID_XML_SERVICES "@$d/ANDROID_xml_services"
 }
 android_subst loaders/android
 
@@ -136,6 +137,20 @@ fi
 
 echo " => transferring java hook.."
 ac_output loaders/android/bootstrap.java.in $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
+
+echo " => transferring java public classes.."
+for m in $modules; do
+  modpath=`locatedir modules/$m silent`
+  pubclasses=`ls -1 $modpath/ANDROID_java_public_* 2> /dev/null`
+  for pubclass in $pubclasses; do
+    pubclassdir=`basename $pubclass | sed 's/ANDROID_java_public_//'`
+    pubclassfile="${pubclassdir}.java"
+    echo "    $pubclassfile.."
+    mkdir -p $tmpdir/src/$pubclassdir
+    echo "package $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME;" > $tmpdir/src/$pubclassdir/$pubclassfile
+    cat $pubclass >> $tmpdir/src/$pubclassdir/$pubclassfile
+  done
+done
 
 echo " => preparing manifest.."
 ac_output loaders/android/AndroidManifest.xml.in $SYS_TMPDIR/tmp.xml
