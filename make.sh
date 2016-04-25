@@ -80,9 +80,11 @@ getparam()
 
 rmifexists()
 {
-  if [ "$1" ]; then
+  if [ ! "X$1" = "X" ]; then
     if [ -e "$1" ]; then
-      vecho " => removing old $1.."
+      if [ ! "X$2" = "Xsilent" ]; then
+        vecho " => removing old $1.."
+      fi
       rm -rf "$1"
     fi
   fi
@@ -95,6 +97,16 @@ string_contains() {
     echo yes
   else
     echo no
+  fi
+}
+
+string_append_uniq() {
+  string="$1"
+  newstring="$2"
+  if test "${string#*$newstring}" != "$string"; then
+    echo "$string"
+  else
+    echo "$string $newstring"
   fi
 }
 
@@ -334,28 +346,6 @@ compile_payload()
   payload_objs=
   payload_libs="$libraries"
   #--------
-  # register custom compiler/linker options
-  ldflag_additions=
-  cflag_additions=
-  payload_spcaps=`echo $SYS_PLATFORM | tr 'a-z' 'A-Z'`
-  for m in $modules; do
-    modpath=`locatedir modules/$m silent`
-    if [ -f $modpath/${payload_spcaps}_CFLAG_ADDITIONS ]; then
-      cflag_additions="$cflag_additions "`cat $modpath/${payload_spcaps}_CFLAG_ADDITIONS`
-    fi
-    if [ -f $modpath/${payload_spcaps}_LDFLAG_ADDITIONS ]; then
-      ldflag_additions="$ldflag_additions "`cat $modpath/${payload_spcaps}_LDFLAG_ADDITIONS`
-    fi
-  done
-  if [ -f $appsrcdir/${payload_spcaps}_CFLAG_ADDITIONS ]; then
-    cflag_additions="$cflag_additions "`cat $appsrcdir/${payload_spcaps}_CFLAG_ADDITIONS`
-  fi
-  if [ -f $appsrcdir/${payload_spcaps}_LDFLAG_ADDITIONS ]; then
-    ldflag_additions="$ldflag_additions "`cat $appsrcdir/${payload_spcaps}_LDFLAG_ADDITIONS`
-  fi
-  ac_subst CFLAG_ADDITIONS "$cflag_additions"
-  ac_subst LDFLAG_ADDITIONS "$ldflag_additions"
-  #--------
   # register global macros
   globalmacrofile="${SYS_HOSTPREFIX}/lib/global-macros.scm"
   rmifexists "$globalmacrofile"
@@ -400,6 +390,7 @@ compile_payload()
   vecho "$SYS_RANLIB $tgtlib"
   $SYS_RANLIB $tgtlib 2> /dev/null
   assertfile "$tgtlib"
+  echo " == $tgtlib"
   dmsg_make "payload : $tgtlib"
   dmsg_make "leaving compile_payload"
 }
@@ -911,7 +902,33 @@ make_setup_target()
   setstate SETUP
   setup_target=$1
   assertfile $setup_target "Don't know how to setup a build for $SYS_PLATFORM on a $SYS_HOSTPLATFORM host"
+  ac_reset
   SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM"
+  #--------
+  # register custom compiler/linker options
+  payload_spcaps=`echo $SYS_PLATFORM | tr 'a-z' 'A-Z'`
+  for m in $modules; do
+    modpath=`locatedir modules/$m silent`
+    if [ -f $modpath/${payload_spcaps}_CFLAG_ADDITIONS ]; then
+      cflag_new=`cat $modpath/${payload_spcaps}_CFLAG_ADDITIONS`
+      cflag_additions=`string_append_uniq "$cflag_additions" "$cflag_new"`
+    fi
+    if [ -f $modpath/${payload_spcaps}_LDFLAG_ADDITIONS ]; then
+      ldflag_new=`cat $modpath/${payload_spcaps}_LDFLAG_ADDITIONS`
+      ldflag_additions=`string_append_uniq "$ldflag_additions" "$ldflag_new"`
+    fi
+  done
+  if [ -f $appsrcdir/${payload_spcaps}_CFLAG_ADDITIONS ]; then
+    cflag_new=`cat $appsrcdir/${payload_spcaps}_CFLAG_ADDITIONS`
+    cflag_additions=`string_append_uniq "$cflag_additions" "$cflag_new"`
+  fi
+  if [ -f $appsrcdir/${payload_spcaps}_LDFLAG_ADDITIONS ]; then
+    ldflag_new=`cat $appsrcdir/${payload_spcaps}_LDFLAG_ADDITIONS`
+    ldflag_additions=`string_append_uniq "$ldflag_additions" "$ldflag_new"`
+  fi
+  ac_subst CFLAG_ADDITIONS "$cflag_additions"
+  ac_subst LDFLAG_ADDITIONS "$ldflag_additions"
+  #--------
   . $setup_target
   if [ ! "X$SYS_CPU" = "X" ]; then
     SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM/$SYS_CPU"
@@ -937,7 +954,6 @@ make_setup_target()
     # qcc does not support the dumpmachine option
     SYS_ARCH=arm-unknown-nto-qnx6.5.0eabi
   fi
-  ac_reset
   ac_subst SYS_ORGTLD
   ac_subst SYS_ORGSLD
   ac_subst SYS_APPNAME
@@ -1266,6 +1282,9 @@ make_lntoolcheck()
     mv $SYS_TMPDIR/tmp.config.cache $SYS_TMPDIR/config.cache
     . $SYS_TMPDIR/config.cache
     rmifexists $SYS_TMPDIR/tmp.subst
+    ldflag_additions=
+    cflag_additions=
+    make_clean
     make_setup
   fi
   vecho " => lambdanative tools complete"
@@ -1338,13 +1357,15 @@ smoke_one()
   make_setup silent
   make_libraries     
   if [ `is_gui_app` = "yes" ]; then
-    make_artwork
     make_textures
     make_fonts
     make_strings
   fi
   update_packfile
   make_payload
+  if [ `is_gui_app` = "yes" ]; then
+    make_artwork
+  fi
   make_executable
   result=$?
   if [ ! "X$result" = "X0" ]; then
@@ -1532,10 +1553,11 @@ explode)
   explode_library $2
 ;;
 payload)
+  cflag_additions="$cflag_additions -DPAYLOADONLY"
+  make_setup
   rm -rf $SYS_TMPDIR/tmp.?????? 2> /dev/null
   make_libraries
 if [ `is_gui_app` = "yes" ]; then
-  make_artwork
   make_textures
   make_fonts
   make_strings
@@ -1544,6 +1566,9 @@ fi
   make_payload
 ;;
 executable)
+if [ `is_gui_app` = "yes" ]; then
+  make_artwork
+fi
   make_executable
 ;;
 all)
@@ -1590,8 +1615,8 @@ smoke)
 ;;
 esac
 
-rmifexists $evallog
-rmifexists $ac_cache
+rmifexists $evallog silent
+rmifexists $ac_cache silent
 
 # all is well if we got here, so clear the state cache
 resetstate

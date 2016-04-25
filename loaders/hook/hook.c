@@ -5,37 +5,16 @@
 
 #include <LNCONFIG.h>
 
-//#define DEBUG_HOOK 1
-
-#ifdef DEBUG_HOOK
-#define DMSG(fmt...) (fprintf(stderr,"DEBUG_HOOK: " fmt),fprintf(stderr,"\n"))
-#else
-#define DMSG(fmt...)
-#endif
-
 // ---------------
 // lambdanative payload bootstrap
 
+#ifndef PAYLOADONLY
+
 #include <lambdanative.h>
 
-void lambdanative_payload_setup(char *);
+void lambdanative_payload_setup();
 void lambdanative_payload_cleanup();
 void lambdanative_payload_event(int,int,int);
-
-void lambdanative_setup()
-{
-  DMSG("lambdanative_setup");
-  system_init();
-  lambdanative_payload_setup(system_dir());
-}
-
-void lambdanative_cleanup()
-{
-  DMSG("lambdanative_cleanup");
-  lambdanative_payload_cleanup();
-}
-
-// ---------------
 
 #ifdef STANDALONE
 // standalone setup
@@ -44,8 +23,8 @@ int cmd_argc=0;
 int main(int argc, char *argv[])
 {
   cmd_argc=argc; cmd_argv=argv;
-  lambdanative_setup();
-  lambdanative_cleanup();
+  lambdanative_payload_setup();
+  lambdanative_payload_cleanup();
   return 0;
 }
 #else
@@ -74,15 +53,17 @@ void ffi_event(int t, int x, int y)
 {
   static int lambdanative_needsinit=1;
   if (lambdanative_needsinit) {
-      lambdanative_setup();
+      lambdanative_payload_setup();
       FFI_EVENT_INIT
       lambdanative_needsinit=0;
-  }
+  } 
   FFI_EVENT_LOCK
   if (!lambdanative_needsinit&&t) lambdanative_payload_event(t,x,y);
-  if (t==EVENT_TERMINATE) { lambdanative_cleanup(); exit(0); }
+  if (t==EVENT_TERMINATE) { lambdanative_payload_cleanup(); exit(0); }
   FFI_EVENT_UNLOCK
 }
-#endif
+#endif // STANDALONE
+
+#endif // PAYLOADONLY
 
 // eof
