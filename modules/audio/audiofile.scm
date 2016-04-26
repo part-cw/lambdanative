@@ -292,6 +292,19 @@ void audiofile_stop()
 #endif
 }
 
+void audiofile_stop_specific(int id)
+{
+#ifdef USE_PORTAUDIO
+  portaudio_stop(id);
+#endif
+#ifdef USE_IOS_REALTIME
+  iphone_realtime_stop(id);
+#endif
+#ifdef USE_ANDROID_NATIVE
+  SoundPoolStopSound(id);
+#endif
+}
+
 void audiofile_play(int id)
 {
 #ifdef USE_ANDROID_NATIVE
