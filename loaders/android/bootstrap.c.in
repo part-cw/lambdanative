@@ -139,6 +139,7 @@ void SoundPoolInit()
            "()L@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/AudioHelper;");
         s_load = (*env)->GetMethodID(env,soundpool_class, "LoadSound", "(Ljava/lang/String;I)I");
         s_play = (*env)->GetMethodID(env,soundpool_class, "PlaySound", "(IFFIIF)I");
+	s_stop = (*env)->GetMethodID(env,soundpool_class, "StopSound", "(I)I");
         s_unload = (*env)->GetMethodID(env,soundpool_class, "UnloadSound", "(I)Z");
         s_setvolume = (*env)->GetMethodID(env,soundpool_class, "SetVolume", "(F)Z");
         s_getvolume = (*env)->GetMethodID(env,soundpool_class, "GetVolume", "()F");
@@ -173,6 +174,16 @@ int SoundPoolPlaySound(int SoundID, float LeftVolume, float RightVolume, int Pri
   JNIEnv *env = GetJNIEnv();
   if (env&&s_globalThiz) {
     return (*env)->CallIntMethod(env,s_globalThiz, s_play, SoundID, LeftVolume, RightVolume, Priority, Loop, Rate);
+  } else {
+    return -1;
+  }
+}
+
+int SoundPoolStopSound(int SoundID)
+{
+  JNIEnv *env = GetJNIEnv();
+  if (env&&s_globalThiz) {
+    return (*env)->CallIntMethod(env,s_globalThiz, s_stop);
   } else {
     return -1;
   }

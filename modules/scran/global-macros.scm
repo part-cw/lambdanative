@@ -5,3 +5,8 @@
 
 (define-macro (define-component name args #!rest body)
   `(define ,name (component! (lambda ,args ,@body) (symbol->string ',name))))
+
+(define-macro (define-system name args)
+  `(define ,name (system! ,@args)))
+
+

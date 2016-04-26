@@ -253,6 +253,11 @@ class AudioHelper {
 	    }
 	    this.player.start();
 	}
+	public void stop(){
+	    this.playState = STOPPED;
+	    this.player.seekTo(0);
+	    this.payer.stop();
+	}
 	public void pause(){
 	    if(this.playState == PlayState.PLAYING || this.playState == PlayState.LOOPING){
 		this.player.pause();
@@ -326,6 +331,13 @@ class AudioHelper {
       MediaPlayerHelper localMediaPlayer = mediaPlayers.get(SoundID-1);
       if(localMediaPlayer!=null){
 	  localMediaPlayer.start(rv, lv, loop);
+      }
+      return SoundID;
+  }
+  public int StopSound(int SoundID) {
+      MediaPlayerHelper localMediaPlayer = mediaPlayers.get(SoundID-1);
+      if(localMediaPlayer!=null){
+	  localMediaPlayer.stop();
       }
       return SoundID;
   }
