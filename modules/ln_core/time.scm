@@ -58,7 +58,6 @@ double timezone_hours() {
   t1 = localtime(&tm1);
   dtime = (long)(tm1 - tm2);
   tz = (dtime>=0?1.:-1.)*abs(dtime)/3600.;
-  if ((abs(dtime) % 3600)==1800) tz+=0.5;
 #ifndef WIN32
   // adjust for daylight saving
   tz+=(t1->tm_isdst?1.:0.);
