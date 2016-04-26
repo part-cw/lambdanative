@@ -133,6 +133,17 @@ static void iphone_realtime_play(int id)
   audiofile_select(id);
 }
 
+static void iphone_realtime_loop(int id)
+{
+  audiofile_select(id);
+  audiofiles[id-1].playing = LOOPING;
+}
+
+static void iphone_realtime_stop(int id){
+  audiofile_select(id);
+  audiofiles[id-1].playing = NOT_PLAYING;
+}
+
 #endif
 
 // %%%%%%%%%%%%%%%%%%%%%%
@@ -227,6 +238,14 @@ static void portaudio_loop(int id)
   audiofile_select(id);
   audiofiles[id-1].playing = LOOPING;
 }
+
+static void portaudio_stop(int id)
+{
+  audiofile_select(id);
+  audiofiles[id-1].playing = NOT_PLAYING;
+}
+
+
 
 
 #endif
@@ -334,7 +353,7 @@ void audiofile_loop(int id)
  SoundPoolPlaySound(id,1.0,1.0,0.0,-1,1.0);
 #endif
 #ifdef USE_IOS_REALTIME
- iphone_realtime_play(id);
+ iphone_realtime_loop(id);
 #endif
 #ifdef USE_APPLE_NATIVE
   SystemSoundID sid=(SystemSoundID)id;
@@ -418,7 +437,13 @@ end-of-c-declare
   ))
 
 (define audiofile-start (c-lambda () int "audiofile_start"))
-(define audiofile-stop (c-lambda () void "audiofile_stop"))
+(define audiofile-stop-all (c-lambda () void "audiofile_stop"))
+(define audiofile-stop-one (c-lambda (int) void "audiofile_stop_specific"))
+(define (audiofile-stop #!optional (id #f))
+  (if (eq? id #f)
+      (audiofile-stop-all)
+      (audiofile-stop-one id)))
+
 
 (define audiofile-getvolume (c-lambda () float "audiofile_getvolume"))
 ;;eof
