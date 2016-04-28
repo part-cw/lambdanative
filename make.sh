@@ -993,6 +993,7 @@ make_setup_target()
   texture_srcs=
   string_srcs=
   font_srcs=
+  embed_srcs=
   setstate
 }
 
@@ -1073,28 +1074,39 @@ make_install_tool()
   setstate
 }
 
-update_packfile()
+make_embedfile()
+{
+  srcdir=$1
+  prefix=$2
+  scmfile=$tgtdir/${prefix}.scm
+  here=`pwd`
+  cd `locatedir apps/$SYS_APPNAME`
+  $SYS_HOSTPREFIX/bin/packtool $scmfile
+  if [ -f $scmfile ]; then
+    if `test "$scmfile" -nt "${prefix}.scm"`; then
+      touch ${prefix}.scm
+    fi
+    embed_srcs="$embed_srcs $scmfile"
+  fi
+  cd $here
+}
+
+make_embeds()
 {
   setstate PACKTOOL
-  embedfile=`locatefile apps/$SYS_APPNAME/EMBED silent`
-  if [ ! "X$embedfile" = "X" ]; then
-    echo "==> Updating packfile for $SYS_APPNAME.."
-    here=`pwd`
-    cd `locatedir apps/$SYS_APPNAME`
-    $SYS_HOSTPREFIX/bin/packtool
-    if [ -f embed.scm ]; then
-      if `test "embed.scm" -nt "main.scm"`; then
-        touch main.scm
-      fi
-    fi
-    cd $here
-    mainfile=`locatefile apps/$SYS_APPNAME/main.scm`
-    if [ "X"`cat "$mainfile" | grep "(include \"embed.scm\")" | cut -c 1` = "X" ]; then
-      echo "ERROR: $SYS_APPNAME/main.scm is missing include for embed.scm" 
-      echo "Please add  (include \"embed.scm\")  to the top of it."
-      exit 1
-    fi
+  echo "==> Updating embeded files for $SYS_APPNAME.."
+  tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/embed
+  mkdir -p $tgtdir
+  srcfile="$appsrcdir/EMBED"
+  if [ -f $srcfile ]; then
+    make_embedfile "$appsrcdir" "main"
   fi
+  for m in $modules; do
+    srcdir=`locatefile modules/$m/EMBED silent`
+    if [ ! "X$srcdir" = "X" ]; then
+      make_embedfile "$srcdir" "${m}"
+    fi
+  done
   setstate
 }
 
@@ -1361,7 +1373,7 @@ smoke_one()
     make_fonts
     make_strings
   fi
-  update_packfile
+  make_embedfile
   make_payload
   if [ `is_gui_app` = "yes" ]; then
     make_artwork
@@ -1562,7 +1574,7 @@ if [ `is_gui_app` = "yes" ]; then
   make_fonts
   make_strings
 fi
-  update_packfile
+  make_embeds
   make_payload
 ;;
 executable)
@@ -1583,7 +1595,7 @@ all)
       make_fonts
       make_strings
     fi
-    update_packfile
+    make_embeds
     make_payload
   done
   make_executable

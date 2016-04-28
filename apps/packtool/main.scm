@@ -40,6 +40,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define srcfile "EMBED")
 (define tgtfile "embed.scm")
+(if (fx> (system-cmdargc) 1)
+  (set! tgtfile (system-cmdarg))
+)
 
 (define (packtool:pack file overwrite)
   (if (file-exists? file)
@@ -59,13 +62,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if dirty (begin
       (with-output-to-file tgtfile (lambda () (display ";; automatically generated. Do not edit.\n")))
       (let loop ((files srcfiles))
-        (if (> (length files) 0) 
+        (if (> (length files) 0)
           (let* ((tmp (string-split (car files) #\!))
                  (overwrite (fx= (length tmp) 2))
                  (file (if (fx= (length tmp) 2) (cadr tmp) (car tmp))))
             (if (file-exists? file) (begin
               (for-each display (list " => embedding " file " " (if overwrite "(overwrite)" "(write once)") "..\n"))
-              (with-output-to-file (list path: tgtfile append: #t) (lambda () 
+              (with-output-to-file (list path: tgtfile append: #t) (lambda ()
                 (write (packtool:pack file overwrite))))))
             (loop (cdr files))))))
      (display " => embedded data is up to date, nothing to do.\n")))
