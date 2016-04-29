@@ -121,6 +121,7 @@ static jobject s_globalThiz=NULL;
 static jclass soundpool_class=NULL;
 static jmethodID s_load=NULL;
 static jmethodID s_play=NULL;
+static jmethodID s_stop=NULL;
 static jmethodID s_unload=NULL;
 static jmethodID s_setvolume=NULL;
 static jmethodID s_getvolume=NULL;

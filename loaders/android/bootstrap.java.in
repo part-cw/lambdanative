@@ -254,9 +254,9 @@ class AudioHelper {
 	    this.player.start();
 	}
 	public void stop(){
-	    this.playState = STOPPED;
+	    this.playState = PlayState.STOPPED;
 	    this.player.seekTo(0);
-	    this.payer.stop();
+	    this.player.stop();
 	}
 	public void pause(){
 	    if(this.playState == PlayState.PLAYING || this.playState == PlayState.LOOPING){
