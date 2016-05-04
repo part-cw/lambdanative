@@ -1,0 +1,11 @@
+--- configure.old	2016-03-17 14:39:58.000000000 -0700
++++ configure	2016-03-17 14:40:27.000000000 -0700
+@@ -7069,7 +7069,7 @@
+ 
+        mingw*) # add Windows libraries needed by MinGW
+ 
+-               PATH_SEP="\\\\\\\\\\\\\\\\"
++               PATH_SEP="/"
+ 
+                LIBS="$LIBS -lws2_32"
+ 
