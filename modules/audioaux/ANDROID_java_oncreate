@@ -1,0 +1,1 @@
+audioManager = (AudioManager) getSystemService(Activity.AUDIO_SERVICE);

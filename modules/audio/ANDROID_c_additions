@@ -1,0 +1,82 @@
+// AudioHelper ffi
+static jobject audiohelper_object=NULL;
+static jclass audiohelper_class=NULL;
+static jmethodID s_load=NULL;
+static jmethodID s_play=NULL;
+static jmethodID s_stop=NULL;
+static jmethodID s_unload=NULL;
+static jmethodID s_setvolume=NULL;
+
+void android_audio_init(){
+  static int needsinit=1;
+  if (needsinit) {
+    JNIEnv *env = GetJNIEnv();
+    if (env) {
+      audiohelper_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/AudioHelper");
+      if (audiohelper_class) {
+        jmethodID getInstance = (*env)->GetStaticMethodID(env,audiohelper_class, "getInstance", 
+           "()L@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/AudioHelper;");
+        s_load = (*env)->GetMethodID(env,audiohelper_class, "LoadSound", "(Ljava/lang/String;I)I");
+        s_play = (*env)->GetMethodID(env,audiohelper_class, "PlaySound", "(IFFIIF)I");
+        s_stop = (*env)->GetMethodID(env,audiohelper_class, "StopSound", "(I)I");
+        s_unload = (*env)->GetMethodID(env,audiohelper_class, "UnloadSound", "(I)Z");
+        s_setvolume = (*env)->GetMethodID(env,audiohelper_class, "SetVolume", "(F)Z");
+        if (getInstance) {
+          jobject thiz = (*env)->CallStaticObjectMethod(env,audiohelper_class, getInstance);
+          audiohelper_object = (*env)->NewGlobalRef(env,thiz);
+        }
+      }
+    } else {
+      audiohelper_object=NULL;
+    }
+    needsinit=0;
+  }
+}
+
+int android_audio_loadfile(const char *FileName, int Priority){
+  int SoundID=-1;
+  JNIEnv *env = GetJNIEnv();
+  if (env&&audiohelper_object) {
+    jstring s = (*env)->NewStringUTF(env,FileName);
+    SoundID = (*env)->CallIntMethod(env,audiohelper_object, s_load, s, Priority);
+    (*env)->DeleteLocalRef(env,(jobject)s);
+  }
+  return SoundID;
+}
+
+int android_audio_playfile(int SoundID, float LeftVolume, float RightVolume, int Priority, int Loop, float Rate){
+  JNIEnv *env = GetJNIEnv();
+  if (env&&audiohelper_object) {
+    return (*env)->CallIntMethod(env,audiohelper_object, s_play, SoundID, LeftVolume, RightVolume, Priority, Loop, Rate);
+  } else {
+    return -1;
+  }
+}
+
+int android_audio_stopfile(int SoundID){
+  JNIEnv *env = GetJNIEnv();
+  if (env&&audiohelper_object) {
+    return (*env)->CallIntMethod(env,audiohelper_object, s_stop);
+  } else {
+    return -1;
+  }
+}
+
+int android_audio_unloadfile(int SoundID){
+  JNIEnv *env = GetJNIEnv();
+  if (env&&audiohelper_object) {
+    return (*env)->CallBooleanMethod(env,audiohelper_object, s_unload, SoundID);
+  } else {
+    return -1;
+  }
+}
+
+int android_audio_setvolume(float vol){
+  JNIEnv *env = GetJNIEnv();
+  if (env&&audiohelper_object) {
+    return (*env)->CallBooleanMethod(env,audiohelper_object, s_setvolume, vol);
+  } else {
+    return -1;
+  }
+}
+// eof AudioHelper FFI

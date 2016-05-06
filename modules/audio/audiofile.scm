@@ -98,8 +98,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int iphone_realtime_audio_init(double,unsigned int);
 int iphone_realtime_audio_start(void (*)(float*,unsigned int, void*));
 int iphone_realtime_audio_stop();
-void iphone_setvolume(double);
-double iphone_getvolume();
 
 static void iphone_realtime_callback( float *buffer, unsigned int framesize, void* userData)
 {
@@ -110,12 +108,12 @@ static void iphone_realtime_callback( float *buffer, unsigned int framesize, voi
   for (i=0; i<framesize; i++) {
     buffer[2*i] = 0.0f;
     buffer[2*i+1] = 0.0f;
-    for(j=0; j<audiofile_count; j = j + 1){
-	if (audiofiles[j].playing == PLAYING || audiofiles[j].playing == LOOPING) {
-          audiofile_nextsample_from(&audiofiles[j], &l,&r);
-          buffer[2*i]+=(SHORT2FLOAT(l));
-          buffer[2*i+1]+=(SHORT2FLOAT(r));
-        }
+    for(j=0; j<audiofile_count; j++){
+      if (audiofiles[j].playing == PLAYING || audiofiles[j].playing == LOOPING) {
+        audiofile_nextsample_from(&audiofiles[j], &l,&r);
+        buffer[2*i]+=(SHORT2FLOAT(l));
+        buffer[2*i+1]+=(SHORT2FLOAT(r));
+      }
     }
     t+=1./AF_SRATE;
   }
@@ -190,12 +188,13 @@ static int af_portaudio_cb( const void *inputBuffer, void *outputBuffer,
   int16 *out=(int16 *)outputBuffer;
   int j;
   for (i=0;i<framesPerBuffer;i++) {
-    out[2*i]=0; out[2*i+1]=0;
-    for(j=0;j<audiofile_count;j=j+1){
+    out[2*i]=0;
+    out[2*i+1]=0;
+    for(j=0;j<audiofile_count;j++){
       if (audiofiles[j].playing == PLAYING || audiofiles[j].playing == LOOPING) {
-	audiofile_nextsample_from(&audiofiles[j],&l,&r);
-	out[2*i]=out[2*i]+l;
-	out[2*i+1]=out[2*i+1]+r;
+        audiofile_nextsample_from(&audiofiles[j],&l,&r);
+        out[2*i]=out[2*i]+l;
+        out[2*i+1]=out[2*i+1]+r;
       }
     }
   }
@@ -245,19 +244,18 @@ static void portaudio_stop(int id)
   audiofiles[id-1].playing = NOT_PLAYING;
 }
 
-
-
-
 #endif
 
 // %%%%%%%%%%%%%%%%%%%%%%
 
 #ifdef USE_ANDROID_NATIVE
-void SoundPoolInit(void);
-int SoundPoolLoadSFX(const char*, int);
-int SoundPoolLoadSFXAsset(const char*, int);
-int SoundPoolPlaySound(int, float, float, int, int, float);
-float SoundPoolGetVolume();
+void android_audio_init(void);
+int android_audio_loadfile(const char*, int);
+int android_audio_playfile(int, float, float, int, int, float);
+int android_audio_stopfile(int);
+int android_audio_setvolume(float vol);
+#else
+int android_audio_setvolume(float vol){ return 0;}
 #endif
 
 // %%%%%%%%%%%%%%%%%%%%%%
@@ -270,7 +268,7 @@ float SoundPoolGetVolume();
 
 void audiofile_init(void) {
 #ifdef USE_ANDROID_NATIVE
-  SoundPoolInit();
+  android_audio_init();
 #endif
 #ifdef USE_PORTAUDIO
   portaudio_init();
@@ -283,7 +281,7 @@ void audiofile_init(void) {
 int audiofile_load(char *name)
 {
   #ifdef USE_ANDROID_NATIVE
-  return SoundPoolLoadSFX(name, 0);
+  return android_audio_loadfile(name, 0);
   #endif
   #ifdef USE_APPLE_NATIVE
   SystemSoundID sid;
@@ -320,14 +318,14 @@ void audiofile_stop_specific(int id)
   iphone_realtime_stop(id);
 #endif
 #ifdef USE_ANDROID_NATIVE
-  SoundPoolStopSound(id);
+  android_audio_stopfile(id);
 #endif
 }
 
 void audiofile_play(int id)
 {
 #ifdef USE_ANDROID_NATIVE
- SoundPoolPlaySound(id,1.0,1.0,0,0,1.);
+ android_audio_playfile(id,1.0,1.0,0,0,1.);
 #endif
 #ifdef USE_IOS_REALTIME
  iphone_realtime_play(id);
@@ -350,7 +348,7 @@ void audiofile_play(int id)
 void audiofile_loop(int id)
 {
 #ifdef USE_ANDROID_NATIVE
- SoundPoolPlaySound(id,1.0,1.0,0.0,-1,1.0);
+ android_audio_playfile(id,1.0,1.0,0.0,-1,1.0);
 #endif
 #ifdef USE_IOS_REALTIME
  iphone_realtime_loop(id);
@@ -377,17 +375,6 @@ void audiofile_forceplay(int id)
   if (iphone_getvolume()==0.) iphone_setvolume(0.1);
 #endif
   audiofile_play(id);
-}
-
-// Returns a float between 0 and 1 on Android and iOS, returns -1 on other platforms - not yet supported
-float audiofile_getvolume()
-{
-#ifdef USE_IOS_REALTIME
-  return iphone_getvolume();
-#elif ANDROID
-  return SoundPoolGetVolume();
-#endif
-return -1;
 }
 
 end-of-c-declare
@@ -444,6 +431,30 @@ end-of-c-declare
       (audiofile-stop-all)
       (audiofile-stop-one id)))
 
+;; Compabibility
+(define (audiofile-getvolume) (audioaux-getvolume))
+(define (audiofile-setvolume vol)
+  (audioaux-setvolume vol)
+  (if (string=? (system-platform) "android")
+    ((c-lambda (double) void "android_audio_setvolume") vol)
+  )
+)
 
-(define audiofile-getvolume (c-lambda () float "audiofile_getvolume"))
+;; unit tests
+;; -----------------
+
+(unit-test "audiofile" "1000 sine waves played at random intervals"
+  (lambda () (audiofile-init)
+    (let ((af (audiofile-load "test")))
+      (let loop ((n 1000))
+        (if (fx= n 0)
+          #t
+          (if (not (audiofile-play af))
+            #f
+            (begin (thread-sleep! (random-real)) (loop (fx- n 1)))
+          )
+      ))
+    )
+  ))
+
 ;;eof

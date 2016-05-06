@@ -1,0 +1,35 @@
+// android_audioaux_ FFI
+int android_audioaux_setvolume(float vol){
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "SetVolume", "(F)Z");
+    return (*env)->CallBooleanMethod(env, globalObj, method, vol);
+  } else {
+    return -1;
+  }
+}
+
+float android_audioaux_getvolume(){
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "GetVolume", "()F");
+    return (*env)->CallFloatMethod(env, globalObj, method);
+  } else {
+    return 0.9;
+  }
+}
+
+int android_audioaux_headphonepresent(void){
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "HeadphonePresent", "()Z");
+    return (*env)->CallBooleanMethod(env, globalObj, method);
+  } else {
+    return 0;
+  }
+}
+
+// eof android_audioaux_ FFI

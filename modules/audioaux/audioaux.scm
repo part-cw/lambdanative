@@ -51,10 +51,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #ifdef ANDROID
-  void SoundPoolInit();
-  int SoundPoolSetVolume(float vol);
-  float SoundPoolGetVolume();
-  int SoundPoolHeadphonePresent(void);
+  int android_audioaux_setvolume(float vol);
+  float android_audioaux_getvolume();
+  int android_audioaux_headphonepresent(void);
 #endif
 
 #ifdef MACOSX
@@ -82,8 +81,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define THRESHOLD 0.005
 
-static AudioDeviceID obtainDefaultOutputDevice()
-{
+static AudioDeviceID obtainDefaultOutputDevice(){
   AudioDeviceID theAnswer = kAudioObjectUnknown;
   UInt32 theSize = sizeof(AudioDeviceID);
   AudioObjectPropertyAddress theAddress;
@@ -95,8 +93,7 @@ static AudioDeviceID obtainDefaultOutputDevice()
   return theAnswer;
 }
 
-static double macosx_getvolume()
-{ 
+static double macosx_getvolume(){
   AudioDeviceID defaultDevID = kAudioObjectUnknown;
   UInt32 theSize = sizeof(Float32);
   OSStatus theError;
@@ -114,8 +111,7 @@ static double macosx_getvolume()
   return (double)theVolume;
 }
 
-static void macosx_setvolume(double v)
-{
+static void macosx_setvolume(double v){
   float theVolume = (float)v;
   float newValue = theVolume;
   AudioObjectPropertyAddress  theAddress;
@@ -157,8 +153,7 @@ static void macosx_setvolume(double v)
   }
 }
 
-static int macosx_headphonepresent()
-{
+static int macosx_headphonepresent(){
   int res=0;
   AudioObjectPropertyAddress sourceAddr;
   AudioDeviceID defaultDevID = obtainDefaultOutputDevice();
@@ -174,15 +169,13 @@ static int macosx_headphonepresent()
 
 #endif // MACOSX
 
-static int audioaux_headphonepresent()
-{
+static int audioaux_headphonepresent(){
   int res=0;
 #ifdef IOS
   res=iphone_headphonepresent();
 #endif
 #ifdef ANDROID
-  SoundPoolInit();
-  res = SoundPoolHeadphonePresent();
+  res = android_audioaux_headphonepresent();
 #endif
 #ifdef MACOSX
   res = macosx_headphonepresent();
@@ -190,29 +183,25 @@ static int audioaux_headphonepresent()
   return res;
 }
 
-static void audioaux_setvolume(double v)
-{
+static void audioaux_setvolume(double v){
 #ifdef IOS
   iphone_setvolume(v);
 #endif
 #ifdef ANDROID
-  SoundPoolInit();
-  SoundPoolSetVolume((float)v);
+  android_audioaux_setvolume((float)v);
 #endif
 #ifdef MACOSX
   macosx_setvolume((float)v);
 #endif
 }
 
-static double audioaux_getvolume()
-{
+static double audioaux_getvolume(){
   double res=0;
 #ifdef IOS
   res=iphone_getvolume();
 #endif
 #ifdef ANDROID
-  SoundPoolInit();
-  res = (double) SoundPoolGetVolume();
+  res = (double) android_audioaux_getvolume();
 #endif
 #ifdef MACOSX
   res = (double) macosx_getvolume();
