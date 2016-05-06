@@ -79,7 +79,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef BB10
 #define USE_BB10AUDIO
-#endif 
+#endif
 
 static int rtaudio_srate=0;
 
@@ -119,7 +119,7 @@ static void rtaudio_callback( float *buffer, unsigned int framesize, void* userD
   if (1) {
     for (i=0; i<framesize; i++) {
       if (rtaudio_inputcb) rtaudio_inputcb(buffer[2*i]);
-      if (rtaudio_outputcb) rtaudio_outputcb(&buffer[2*i], &buffer[2*i+1]); 
+      if (rtaudio_outputcb) rtaudio_outputcb(&buffer[2*i], &buffer[2*i+1]);
     }
   } else {
     for (i=0; i<framesize; i++) {
@@ -128,7 +128,7 @@ static void rtaudio_callback( float *buffer, unsigned int framesize, void* userD
   }
 }
 
-static void rtaudio_start(int samplerate, double volume) 
+static void rtaudio_start(int samplerate, double volume)
 {
   static int needsinit=1;
   if (needsinit) {
@@ -215,7 +215,7 @@ void rtaudio_start(int samplerate, double volume)
   PaError err;
   static int needsinit=1;
   // XXX set volume here
-  if (needsinit) { 
+  if (needsinit) {
     rtaudio_srate=samplerate;
     if (rtaudio_initcb) rtaudio_initcb(samplerate);
     PaStreamParameters inputParameters, outputParameters;
@@ -247,19 +247,19 @@ void rtaudio_start(int samplerate, double volume)
       PaMacCore_SetupStreamInfo( &macInfoOut, paMacCorePlayNice );
       int chcount = Pa_GetDeviceInfo( outputParameters.device )->maxOutputChannels;
       PaMacCore_SetupChannelMap(&macInfoOut, rtaudio_pa_chmap_out, chcount);
-      outputParameters.hostApiSpecificStreamInfo = &macInfoOut;    
+      outputParameters.hostApiSpecificStreamInfo = &macInfoOut;
     } else outputParameters.hostApiSpecificStreamInfo = NULL;
     static PaMacCoreStreamInfo macInfoIn;
     if (rtaudio_pa_map_input) {
       PaMacCore_SetupStreamInfo(&macInfoIn, paMacCorePlayNice);
       PaMacCore_SetupChannelMap(&macInfoIn, rtaudio_pa_chmap_in, 2);
-      inputParameters.hostApiSpecificStreamInfo = &macInfoIn;    
+      inputParameters.hostApiSpecificStreamInfo = &macInfoIn;
     } else inputParameters.hostApiSpecificStreamInfo = NULL;
 #else
     outputParameters.hostApiSpecificStreamInfo = NULL;
     inputParameters.hostApiSpecificStreamInfo = NULL;
 #endif
-    err = Pa_OpenStream( &stream, &inputParameters, &outputParameters, 
+    err = Pa_OpenStream( &stream, &inputParameters, &outputParameters,
         rtaudio_srate, RT_FRAMES_PER_CALLBACK, paClipOff, rt_portaudio_cb, 0);
     if( err != paNoError ) goto error;
     needsinit=0;
@@ -272,7 +272,7 @@ error:
   return;
 }
 
-void rtaudio_stop(void) { 
+void rtaudio_stop(void) {
   if (rtaudio_closecb) rtaudio_closecb();
   Pa_StopStream( stream );
 }
@@ -287,16 +287,14 @@ void ln_setMicrophoneGain(float inputGain) {}
 int opensl_on=0;
 int opensl_rate=0;
 
-void SoundPoolInit(void);
-int SoundPoolSetVolume(float);
+int android_audioaux_setvolume(float vol);
 
-void rtaudio_start(int samplerate, double volume)  
+void rtaudio_start(int samplerate, double volume)
 {
   static int opensl_needsinit=1;
   if (opensl_needsinit) {
     rtaudio_srate=samplerate;
-    SoundPoolInit();
-    if (volume>=0) SoundPoolSetVolume(volume);
+    if (volume>=0) android_audioaux_setvolume(volume);
     if (rtaudio_initcb) rtaudio_initcb(samplerate);
     opensl_needsinit=0;
   }
@@ -304,7 +302,7 @@ void rtaudio_start(int samplerate, double volume)
   opensl_rate=rtaudio_srate;
 }
 
-void rtaudio_stop(void) { 
+void rtaudio_stop(void) {
   if (opensl_on&&rtaudio_closecb) rtaudio_closecb();
   opensl_on=0;
 }
@@ -316,9 +314,9 @@ void ln_setMicrophoneGain(float inputGain) {}
 // %%%%%%%%%%%%%%%%%%%%%%%%
 #ifdef USE_BB10AUDIO
 
-void rtaudio_start(int samplerate, double volume) 
+void rtaudio_start(int samplerate, double volume)
 {
-  rtaudio_srate=samplerate; 
+  rtaudio_srate=samplerate;
 }
 void rtaudio_stop(void) { }
 void ln_setMicrophoneGain(float inputGain) {}
