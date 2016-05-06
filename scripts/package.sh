@@ -122,6 +122,7 @@ package_download_git()
     else
       echo " == "`git log | head -n 1`
     fi
+    git submodule init && git submodule update
     cd ..
     veval "tar -zcvf $pkg_git_file *"
     assertfile "$pkg_git_file"
