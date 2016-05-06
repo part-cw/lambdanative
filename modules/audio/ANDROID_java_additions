@@ -112,6 +112,16 @@ class AudioHelper {
     }
     return SoundID;
   }
+  public int StopAll() {
+    int ct=0;
+    for(MediaPlayerHelper player : this.mediaPlayers){
+      if(player!=null){
+        player.stop();
+        ct++;
+      }
+    }
+    return ct;
+  }
   public boolean UnloadSound(int SoundID) {
     // We null out removed sounds - we have to null check sounds
     // later but this simplifies the representation of sounds by

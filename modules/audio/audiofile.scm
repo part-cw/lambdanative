@@ -138,7 +138,6 @@ static void iphone_realtime_loop(int id)
 }
 
 static void iphone_realtime_stop(int id){
-  audiofile_select(id);
   audiofiles[id-1].playing = NOT_PLAYING;
 }
 
@@ -238,10 +237,16 @@ static void portaudio_loop(int id)
   audiofiles[id-1].playing = LOOPING;
 }
 
-static void portaudio_stop(int id)
+static void portaudio_stopfile(int id)
 {
-  audiofile_select(id);
   audiofiles[id-1].playing = NOT_PLAYING;
+}
+
+static void portaudio_stop(void){
+  int id;
+  for (id=0;id<audiofile_count;id++){
+    audiofiles[id-1].playing = NOT_PLAYING;
+  }
 }
 
 #endif
@@ -253,6 +258,7 @@ void android_audio_init(void);
 int android_audio_loadfile(const char*, int);
 int android_audio_playfile(int, float, float, int, int, float);
 int android_audio_stopfile(int);
+int android_audio_stop();
 int android_audio_setvolume(float vol);
 #else
 int android_audio_setvolume(float vol){ return 0;}
@@ -304,15 +310,21 @@ int audiofile_start()
 
 void audiofile_stop()
 {
+#ifdef USE_PORTAUDIO
+  portaudio_stop();
+#endif
 #ifdef USE_IOS_REALTIME
   iphone_realtime_audio_stop();
+#endif
+#ifdef USE_ANDROID_NATIVE
+  android_audio_stop();
 #endif
 }
 
 void audiofile_stop_specific(int id)
 {
 #ifdef USE_PORTAUDIO
-  portaudio_stop(id);
+  portaudio_stopfile(id);
 #endif
 #ifdef USE_IOS_REALTIME
   iphone_realtime_stop(id);

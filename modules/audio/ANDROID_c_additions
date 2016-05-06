@@ -4,6 +4,7 @@ static jclass audiohelper_class=NULL;
 static jmethodID s_load=NULL;
 static jmethodID s_play=NULL;
 static jmethodID s_stop=NULL;
+static jmethodID s_stopfile=NULL;
 static jmethodID s_unload=NULL;
 static jmethodID s_setvolume=NULL;
 
@@ -18,7 +19,8 @@ void android_audio_init(){
            "()L@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/AudioHelper;");
         s_load = (*env)->GetMethodID(env,audiohelper_class, "LoadSound", "(Ljava/lang/String;I)I");
         s_play = (*env)->GetMethodID(env,audiohelper_class, "PlaySound", "(IFFIIF)I");
-        s_stop = (*env)->GetMethodID(env,audiohelper_class, "StopSound", "(I)I");
+        s_stop = (*env)->GetMethodID(env,audiohelper_class, "StopAll", "()I");
+        s_stopfile = (*env)->GetMethodID(env,audiohelper_class, "StopSound", "(I)I");
         s_unload = (*env)->GetMethodID(env,audiohelper_class, "UnloadSound", "(I)Z");
         s_setvolume = (*env)->GetMethodID(env,audiohelper_class, "SetVolume", "(F)Z");
         if (getInstance) {
@@ -54,6 +56,15 @@ int android_audio_playfile(int SoundID, float LeftVolume, float RightVolume, int
 }
 
 int android_audio_stopfile(int SoundID){
+  JNIEnv *env = GetJNIEnv();
+  if (env&&audiohelper_object) {
+    return (*env)->CallIntMethod(env,audiohelper_object, s_stopfile, SoundID);
+  } else {
+    return -1;
+  }
+}
+
+int android_audio_stop(){
   JNIEnv *env = GetJNIEnv();
   if (env&&audiohelper_object) {
     return (*env)->CallIntMethod(env,audiohelper_object, s_stop);
