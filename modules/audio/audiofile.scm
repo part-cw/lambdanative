@@ -245,7 +245,7 @@ static void portaudio_stopfile(int id)
 static void portaudio_stop(void){
   int id;
   for (id=0;id<audiofile_count;id++){
-    audiofiles[id-1].playing = NOT_PLAYING;
+    audiofiles[id].playing = NOT_PLAYING;
   }
 }
 
