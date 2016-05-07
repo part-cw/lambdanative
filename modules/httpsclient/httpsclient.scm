@@ -63,6 +63,7 @@ static   SSL *ssl=0;
 static   SSL_CTX *ctx=0;
 
 #ifdef WIN32
+#include <Ws2tcpip.h>
 #define bzero(a, b) memset(a, 0x0, b)
 #define bcopy(a, b, c) memmove(b, a, c)
 #endif
@@ -97,7 +98,8 @@ static int httpsclient_open(char *host, int port, int use_keys, char *cert, char
   }
   SSL_load_error_strings();
   SSL_library_init();
-  ctx = SSL_CTX_new(TLS_method());
+  ctx = SSL_CTX_new(SSLv23_client_method());
+  // ctx = SSL_CTX_new(TLS_client_method());
   if ( ctx == NULL ) { return 0; }
   SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2); //disable SSLv2
   SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3);
