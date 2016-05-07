@@ -69,17 +69,16 @@ static   SSL_CTX *ctx=0;
 
 static int httpsclient_open(char *host, int port, int use_keys, char *cert, char *key, char *pwd){
   int ret,flags;
-  struct hostent *servhost; 
-  struct sockaddr_in server;
-  s = socket(AF_INET, SOCK_STREAM, 0); 
-  if ( s < 0 ) { return 0; }
-  servhost = gethostbyname(host);
-  if ( servhost == NULL ) { return 0; } 
-  bzero((char *)&server, sizeof(server));
-  server.sin_family = AF_INET;
-  bcopy(servhost->h_addr, (char *)&server.sin_addr.s_addr, servhost->h_length);
-  server.sin_port = htons(port);
-  if (connect(s, (struct sockaddr*) &server, sizeof(server)) == -1 ) {
+  struct addrinfo *addr;
+  char portstr[6];
+  sprintf(portstr,"%d",port);
+  if (getaddrinfo(host, portstr, 0, &addr) != 0) {
+    return 0;
+  }
+  if (addr == NULL) { return 0; }
+  s = socket(addr->ai_family, SOCK_STREAM, 0);
+  if (s < 0) { return 0; }
+  if (connect(s, addr->ai_addr, (int)addr->ai_addrlen) != 0) {
     if (errno==EINTR) {
       #ifndef WIN32
       // wait for call to complete
@@ -98,9 +97,11 @@ static int httpsclient_open(char *host, int port, int use_keys, char *cert, char
   }
   SSL_load_error_strings();
   SSL_library_init();
-  ctx = SSL_CTX_new(SSLv23_client_method());
+  ctx = SSL_CTX_new(TLS_method());
   if ( ctx == NULL ) { return 0; }
-  SSL_CTX_set_options(ctx,SSL_OP_NO_SSLv2); //disable SSLv2
+  SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2); //disable SSLv2
+  SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3);
+  //SSL_CTX_set_min_proto_version(ctx, TLS1_VERSION);
 
   // If we want to use key for authentication.
   if (use_keys == 1) {
