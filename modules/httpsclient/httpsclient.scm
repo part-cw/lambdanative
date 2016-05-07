@@ -61,12 +61,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static   int s=0;
 static   SSL *ssl=0;
 static   SSL_CTX *ctx=0;
+static int check_chain=0;
+static char chainfile[256];
 
 #ifdef WIN32
 #include <Ws2tcpip.h>
 #define bzero(a, b) memset(a, 0x0, b)
 #define bcopy(a, b, c) memmove(b, a, c)
 #endif
+
+static int httpsclient_setchain(char *chain){
+  check_chain = 1;
+  strncpy (chainfile,chain,255);
+  return 1;
+}
+
+static int httpsclient_verify_cb(int ok, X509_STORE_CTX *ctx){
+  if (ok==0){
+    const unsigned char *err= X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx));
+    X509 *err_cert = X509_STORE_CTX_get_current_cert(ctx);
+    X509_NAME *subj = X509_get_subject_name(err_cert);
+    log_c(X509_NAME_oneline(subj,0,0));
+    log_c(err);
+  }
+  return ok;
+}
 
 static int httpsclient_open(char *host, int port, int use_keys, char *cert, char *key, char *pwd){
   int ret,flags;
@@ -114,6 +133,14 @@ static int httpsclient_open(char *host, int port, int use_keys, char *cert, char
     if (ret <= 0) { return 0; }
   }
 
+  // Check the certificate chain
+  if (check_chain == 1) {
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, httpsclient_verify_cb);
+    ret = SSL_CTX_load_verify_locations(ctx, chainfile, NULL);
+    if (!ret) { return 0; }
+  }
+
+  // Continue setting up the SSL connection
   ssl = SSL_new(ctx);
   if ( ssl == NULL ){ return 0; }
   ret = SSL_set_fd(ssl, s);
@@ -151,6 +178,12 @@ int SSL_retryread(SSL *ssl, void *buf, int num){
 
 end-of-c-declare
 )
+
+(define (httpsclient-set-chain certchain)
+  (if (file-exists? certchain)
+    ((c-lambda (char-string) bool "httpsclient_setchain") certchain)
+    #f
+  ))
 
 (define (httpsclient-open host . port)
   (if (fx= (length port) 1)
