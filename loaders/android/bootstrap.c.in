@@ -94,29 +94,6 @@ void android_launch_url(char* urlstring){
 }
 
 #ifdef RTAUDIO
-// OpenSL support
-
-void start_opensl();
-void stop_opensl();
-#endif
-
-void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_nativeStartOpenSL(JNIEnv* e, jobject o)
-{
-  if ((*e)->ExceptionCheck(e)) return;
-#ifdef RTAUDIO
-  start_opensl();
-#endif
-}
-
-void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_nativeStopOpenSL(JNIEnv* e, jobject o)
-{
-  if ((*e)->ExceptionCheck(e)) return;
-#ifdef RTAUDIO
-  stop_opensl();
-#endif
-}
-
-#ifdef RTAUDIO
 
 /*
 Android OpenSL input/output module
@@ -733,50 +710,6 @@ void destroyThreadLock(void *lock)
   pthread_cond_destroy(&(p->c));
   pthread_mutex_destroy(&(p->m));
   free(p);
-}
-
-// ---------------------------
-// hook into the OpenSL interface
-
-#define RT_SRATE 8000
-#define BUFFERFRAMES 1024
-#define BUFSIZE 1024
-
-static OPENSL_STREAM  *p=0;
-
-// this is located in the rtaudio.scm file
-extern int opensl_on;
-extern int opensl_rate;
-
-extern void (*rtaudio_initcb)(int);
-extern void (*rtaudio_inputcb)(float);
-extern void (*rtaudio_outputcb)(float*,float*);
-extern void (*rtaudio_closecb)(void);
-
-void start_opensl()
-{
-  float ival[BUFSIZE],oval[2*BUFSIZE];
-  int i,s; 
-  while (!opensl_on) { usleep(100000); }
-  p = android_OpenAudioDevice(opensl_rate,1,2,BUFFERFRAMES);
-  while (p) {
-    s = android_AudioIn(p,ival,BUFSIZE);
-    for (i=0;i<s;i++) {
-      if (opensl_on) {
-        if (rtaudio_inputcb) rtaudio_inputcb(ival[i]);
-        if (rtaudio_outputcb) rtaudio_outputcb(&oval[2*i],&oval[2*i+1]);
-      } else {
-        oval[2*i]=oval[2*i+1]=0;
-      }
-    }
-    android_AudioOut(p,oval,2*s);
-  }
-}
-
-void stop_opensl()
-{
-  android_CloseAudioDevice(p);
-  p=0;
 }
 
 #endif // RTAUDIO

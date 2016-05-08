@@ -98,6 +98,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int iphone_realtime_audio_init(double,unsigned int);
 int iphone_realtime_audio_start(void (*)(float*,unsigned int, void*));
 int iphone_realtime_audio_stop();
+extern void iphone_setvolume(double);
+extern double iphone_getvolume();
 
 static void iphone_realtime_callback( float *buffer, unsigned int framesize, void* userData)
 {

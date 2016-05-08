@@ -1,0 +1,3 @@
+  nativeStopOpenSL();
+  try { openSLThread.join(); } catch (InterruptedException e) { }
+  openSLThread = null;

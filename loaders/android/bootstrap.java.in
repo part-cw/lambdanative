@@ -70,7 +70,6 @@ import android.hardware.SensorManager;
 @ANDROID_JAVA_ADDITIONS@
 
 public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@ SensorEventListener{
-  Thread openSLThread;  // OpenSL real-time sound
   private SensorManager mSensorManager;
   //Battery information variables
   private IntentFilter batteryLevelFilter;
@@ -136,15 +135,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     this.registerReceiver(batteryLevelReceiver, batteryLevelFilter);
     isBatteryRegistered = true;
 
-    // openSL support
-    openSLThread = new Thread() {
-      public void run() {
-        setPriority(Thread.MAX_PRIORITY);
-        nativeStartOpenSL();
-      }
-    };
-    openSLThread.start();
-
     nativeInstanceInit();
   }
   @Override 
@@ -155,9 +145,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     if (isBatteryRegistered){
       try { unregisterReceiver(batteryLevelReceiver); } catch (Exception e) {}
     }
-    nativeStopOpenSL();
-    try { openSLThread.join(); } catch (InterruptedException e) { }
-    openSLThread = null;
     idleHandler.removeCallbacks(idleRunnable);
     super.onDestroy();
   }
@@ -191,10 +178,8 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   // Extra functions calls needed by modules, e.g. gps
   @ANDROID_JAVA_ACTIVITYADDITIONS@
 
-  // OpenSL bindings
+  // Native event bindings
   GLSurfaceView mGLView;
-  native void nativeStartOpenSL();
-  native void nativeStopOpenSL();
   native void nativeEvent(int t, int x, int y);
   static { System.loadLibrary("payloadshared"); }
   // OpenURL code
