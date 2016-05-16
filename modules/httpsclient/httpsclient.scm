@@ -57,6 +57,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
+void log_c(char *);
 
 static   int s=0;
 static   SSL *ssl=0;

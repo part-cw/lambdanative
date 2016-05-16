@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (c-declare #<<end-of-c-declare
 #include <string.h>
 #include <openssl/ts.h>
+void log_c(char *);
 
 static int verify_cb(int ok, X509_STORE_CTX *ctx){
   if (ok==0){
