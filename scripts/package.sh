@@ -210,10 +210,12 @@ package_configure()
 {
   echo " => configuring source.."
   pkg_conf_opt=$@
+  pkg_ccdir=`echo "$SYS_CC" | cut -f 1 -d " "`
+  pkg_ccdir=`dirname ${pkg_ccdir}`
   veval "\
   CHOST=$SYS_ARCH \
   PKG_CONFIG_PATH=$SYS_PREFIX/lib/pkgconfig \
-  PATH=\"$SYS_PREFIX/bin:$PATH\" \
+  PATH=\"$SYS_PREFIX/bin:${pkg_ccdir}:$PATH\" \
   LDFLAGS=-L$SYS_PREFIX/lib \
   LD_LIBRARY_PATH=$SYS_PREFIX/lib \
   CPPFLAGS=-I$SYS_PREFIX/include \
@@ -241,11 +243,13 @@ package_make()
     pkg_make="gmake -j 9"
   fi
   pkg_make_opt=$@
+  pkg_ccdir=`echo "$SYS_CC" | cut -f 1 -d " "`
+  pkg_ccdir=`dirname ${pkg_ccdir}`
   echo " => compiling source.."
   veval "\
   CHOST=$SYS_ARCH \
   PKG_CONFIG_PATH=$SYS_PREFIX/lib/pkgconfig \
-  PATH=\"$SYS_PREFIX/bin:$PATH\" \
+  PATH=\"$SYS_PREFIX/bin:${pkg_ccdir}:$PATH\" \
   LDFLAGS=-L$SYS_PREFIX/lib \
   LD_LIBRARY_PATH=$SYS_PREFIX/lib \
   CPPFLAGS=-I$SYS_PREFIX/include \
