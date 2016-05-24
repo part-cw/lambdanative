@@ -79,4 +79,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (append (alist-delkeys res 'timestamp) (list (list 'timestamp (time->seconds (current-time)))))
       (loop (cddr kvs) (append (alist-delkeys res (car kvs)) (list (list (car kvs) (cadr kvs))))))))
 
+(define (write-alist-to-file filename alist)
+  (with-output-to-file filename
+    (lambda ()
+      (write alist))))
+
+(define (read-alist-from-file filename)
+  (with-input-from-file filename
+    (lambda ()
+      (read))))
+
 ;; eof
