@@ -1399,7 +1399,7 @@ end-of-c-declare
      (list #\H char-numeric? ireader2 (lambda (val object)
                                         (tm:set-date-hour! object val)))
      (list #\I char-numeric? ireader2 (lambda (val object)
-                                        (tm:set-date-hour! object val)))
+                                        (tm:set-date-hour! object (modulo val 12))))
      (list #\k char-fail eireader2 (lambda (val object)
                                      (tm:set-date-hour! object val)))
      (list #\m char-numeric? ireader2 (lambda (val object)
