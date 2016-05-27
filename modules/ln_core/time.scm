@@ -127,6 +127,7 @@ end-of-c-declare
 
 (define tm:locale-pm "PM")
 (define tm:locale-am "AM")
+(define tm:locale-ampm-vector (vector tm:locale-am tm:locale-pm))
 
 ;; See date->string
 (define tm:locale-date-time-format "~a ~b ~d ~H:~M:~S~z ~Y")
@@ -949,7 +950,8 @@ end-of-c-declare
 (define (tm:locale-long-month->index string)
   (tm:vector-find string tm:locale-long-month-vector string=?))
 
-
+(define (tm:locale-reader-ampm->index string)
+  (tm:vector-find string tm:locale-ampm-vector string-ci=?))
 
 ;; do nothing.
 ;; Your implementation might want to do something...
@@ -1370,6 +1372,8 @@ end-of-c-declare
 				      tm:locale-abbr-month->index))
 	 (locale-reader-long-month   (tm:make-locale-reader
 				      tm:locale-long-month->index))
+   (locale-reader-ampm (tm:make-locale-reader
+              tm:locale-reader-ampm->index))
 	 (char-fail (lambda (ch) #t))
 	 (do-nothing (lambda (val object) (values)))
 	 )
@@ -1394,6 +1398,8 @@ end-of-c-declare
              (tm:set-date-month! object val)))
      (list #\H char-numeric? ireader2 (lambda (val object)
                                         (tm:set-date-hour! object val)))
+     (list #\I char-numeric? ireader2 (lambda (val object)
+                                        (tm:set-date-hour! object val)))
      (list #\k char-fail eireader2 (lambda (val object)
                                      (tm:set-date-hour! object val)))
      (list #\m char-numeric? ireader2 (lambda (val object)
@@ -1403,6 +1409,8 @@ end-of-c-declare
                                          object val)))
      (list #\N char-numeric? fireader9 (lambda (val object)
 					 (tm:set-date-nanosecond! object val)))
+     (list #\p char-alphabetic? locale-reader-ampm (lambda (val object)
+           (if (fx= val 1) (tm:set-date-hour! object (+ (date-hour object) 12)))))
      (list #\S char-numeric? ireader2 (lambda (val object)
                                         (tm:set-date-second! object val)))
      (list #\y char-fail eireader2
