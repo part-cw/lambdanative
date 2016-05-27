@@ -1032,13 +1032,11 @@ end-of-c-declare
 			port)))
    (cons #\I (lambda (date pad-with port)
 	       (let ((hr (date-hour date)))
-		 (if (> hr 12)
-		     (display (tm:padding (- hr 12)
-					  pad-with 2)
-			      port)
-		     (display (tm:padding hr
-					  pad-with 2)
-			      port)))))
+		 (cond
+                   ((> hr 12) (display (tm:padding (- hr 12) pad-with 2) port))
+		   ((= hr 0) (display (tm:padding 12 pad-with 2) port))
+                   (else (display (tm:padding hr pad-with 2) port))
+                  ))))
    (cons #\j (lambda (date pad-with port)
 	       (display (tm:padding (date-year-day date)
 				    pad-with 3)
