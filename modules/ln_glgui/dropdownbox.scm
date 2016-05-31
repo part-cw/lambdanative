@@ -83,6 +83,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (let* ((bgcolor (glgui-widget-get g wgt 'bgcolor))
                    (bordercolor (glgui-widget-get g wgt 'bordercolor))
                    (scrollcolor (glgui-widget-get g wgt 'scrollcolor))
+                   (scrollw (glgui-widget-get g wgt 'scrollw))
+                   (scrollrounded (glgui-widget-get g wgt 'scrollrounded))
                    (modal (glgui-widget-get g wgt 'modal))
                    (lst (glgui-widget-get g wgt 'list))
                    (cur (glgui-widget-get g wgt 'current))
@@ -161,6 +163,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 (glgui-widget-set! g listw 'bgcol2 bgcolor)
                 (glgui-widget-set! g listw 'bordercolor bordercolor)
                 (glgui-widget-set! g listw 'scrollcolor scrollcolor)
+                (glgui-widget-set! g listw 'scrollw scrollw)
+                (glgui-widget-set! g listw 'scrollrounded scrollrounded)
                 ;; Scroll if necessary based on selected item
                 (if (> (* cur h) lh)
                   ;; Put selected item just off bottom
@@ -204,6 +208,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'bgcolor bgcolor
      'bordercolor bordercolor
      'scrollcolor DimGray
+     'scrollw 5.
+     'scrollrounded #f
      'draw-handle  glgui:dropdownbox-draw
      'input-handle glgui:dropdownbox-input
   ))
