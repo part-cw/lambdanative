@@ -62,6 +62,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (value (flo (glgui-widget-get g wgt 'value)))
          ;; Top down flips everything so that value increase downward (unit becomes negative)
          (topdown (glgui-widget-get g wgt 'topdown))
+         (scalearrows (glgui-widget-get g wgt 'scalearrows))
          (armtop (glgui-widget-get g wgt 'armtop))
          (armbottom (glgui-widget-get g wgt 'armbottom))
          (activitytime (glgui-widget-get g wgt 'activitytime))
@@ -76,17 +77,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      (if colorbg
        (glgui:draw-box x y w h colorbg))
 
-     (let* ((aw (flo (/ w 3)))
+     (let* ((aw (flo (/ w (if scalearrows 2 3))))
             (aw2 (fl/ aw 2.))
-            (ah 20.)
+            (ah (if scalearrows (flo (/ h 5)) 20.))
             (ah2 (fl/ ah 2.))
-            (ax1 (fl+ (flo x) aw))
+            (ax1 (fl+ (flo x) (if scalearrows aw2 aw)))
             (cx (fl+ ax1 aw2))
             (ax2 (fl+ ax1 aw))
-            (a1y1 (fl+ (flo y) 15.))
+            (a1y1 (fl+ (flo y) (if scalearrows (/ ah 3) 15.)))
             (c1y (fl+ a1y1 ah2))
             (a1y2 (fl+ a1y1 ah))
-            (a2y1 (- (flo (+ y h)) 15. ah))
+            (a2y1 (- (flo (+ y h)) (if scalearrows (/ ah 3) 15.) ah))
             (c2y (fl+ a2y1 ah2))
             (a2y2 (fl+ a2y1 ah)))
      
@@ -94,7 +95,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (if (or (not (= value valprv)) cycle) 
          (begin
             (if armbottom
-              (glgui:draw-box x y w (+ ah 25.) colorhighlight))
+                (glgui:draw-box x y w (if scalearrows (/ h 3) (+ ah 25.)) colorhighlight))
             (glCoreColor colorarrows)
             (glCoreTexturePolygonDraw cx c1y (list 
               (list ax1 a1y2 0. 1.)
@@ -106,7 +107,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (if (or cycle (not (= value valnxt))) 
           (begin
             (if armtop
-              (glgui:draw-box x (- a2y1 10.) w (+ ah 25.) colorhighlight))
+              (if scalearrows
+                  (glgui:draw-box x (+ y (* (/ h 3) 2)) w (/ h 3) colorhighlight)
+                  (glgui:draw-box x (- a2y1 10.) w (+ ah 25.) colorhighlight)))
             (glCoreColor colorarrows)
             (glCoreTexturePolygonDraw cx c2y (list
                (list ax1 a2y1 0. 0.)
@@ -166,14 +169,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (valmax (flo (glgui-widget-get g wgt 'valmax)))
          ;; Top down flips everything so that value increase downward (unit becomes negative)
          (topdown (glgui-widget-get g wgt 'topdown))
+         (scalearrows (glgui-widget-get g wgt 'scalearrows))
          (unit (if topdown (* -1 (glgui-widget-get g wgt 'unit)) (glgui-widget-get g wgt 'unit)))
          (armtop (glgui-widget-get g wgt 'armtop))
          (armbottom (glgui-widget-get g wgt 'armbottom))
          (activitytime (glgui-widget-get g wgt 'activitytime))
          (initialwait (glgui-widget-get g wgt 'initialwait))
          (inside (and (fx> (fix mx) x) (fx< (fix mx) (fx+ x w)) (fx> (fix my) y) (fx< (fix my) (fx+ y h))))
-         (loc_top (and inside (> my (- (+ y h) 60))))
-         (loc_bottom (and inside (< my (+ y 60)))))
+         (loc_top (and inside (> my (- (+ y h) (if scalearrows (/ h 3) 60)))))
+         (loc_bottom (and inside (< my (+ y (if scalearrows (/ h 3) 60))))))
      ;; If touch down
      (cond
        ((and inside (fx= type EVENT_BUTTON1DOWN))
@@ -252,6 +256,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        'initialwait #f
        ;; Topdown can be set to true to make the max value be displayed at the bottom instead of the top
        'topdown #f
+       'scalearrows #f
      )))
 
 ;; eof
