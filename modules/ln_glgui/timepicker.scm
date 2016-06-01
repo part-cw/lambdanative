@@ -136,7 +136,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       ((eqv? id 'colorbg)
         (glgui-widget-set! g hpicker id val)
         (glgui-widget-set! g mpicker id val)
-        (glgui-widget-set! g bg 'color val)
+        (glgui-widget-set! g bg 'color (if val val (color-fade White 0.)))
         (glgui-widget-set! g clabel 'bgcolor val))
      ;; Directly update the minute and hour pickers for some parameters
       ((or (eqv? id 'topdown) (eqv? id 'colorarrows) (eqv? id 'colorhighlight) (eqv? id 'scalearrows))
@@ -144,7 +144,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (glgui-widget-set! g mpicker id val))
       ;; Directly update the ampm button for some parameters
       ((and ampmbutton (eqv? id 'button-normal-color))
-        (glgui-widget-set! g ampmbutton id val))
+        (glgui-widget-set! g ampmbutton id (if val val (color-fade White 0.))))
       ;; Change in value - update pickers
       ((eqv? id 'value)
         (glgui-widget-set! g hpicker 'value (glgui:timepicker-get-hour (glgui-widget-get g hpicker 'vallist) val ampmbutton))
@@ -205,7 +205,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (glgui-widget-set! g wgt 'ampmbutton ampmbutton)
            (if ampmbutton
              (begin
-               (glgui:timepicker-color-ampm-button g wgt ampmbutton)
+               (glgui-widget-set! g ampmbutton 'button-normal-color (glgui-widget-get g wgt 'button-normal-color))
+               (glgui-widget-set! g ampmbutton 'color (glgui-widget-get g wgt 'colorvalue))
+               (glgui-widget-set! g ampmbutton 'button-selected-color (glgui-widget-get g wgt 'colorhighlight))
+               (glgui-widget-set! g ampmbutton 'solid-color #t)
                (glgui-widget-set! g ampmbutton 'callback (glgui:timepicker-callback wgt hpicker mpicker ampmbutton))))
            (glgui-widget-set! g hpicker 'callback (glgui:timepicker-callback wgt hpicker mpicker ampmbutton))
            (glgui-widget-set! g mpicker 'callback (glgui:timepicker-callback wgt hpicker mpicker ampmbutton))
@@ -213,31 +216,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ))
 )
 
-(define (glgui:timepicker-color-ampm-button g wgt ampmbutton)
-  (glgui-widget-set! g ampmbutton 'button-normal-color (glgui-widget-get g wgt 'button-normal-color))
-  (glgui-widget-set! g ampmbutton 'color (glgui-widget-get g wgt 'colorvalue))
-  (glgui-widget-set! g ampmbutton 'button-selected-color (glgui-widget-get g wgt 'colorhighlight))
-  (glgui-widget-set! g ampmbutton 'solid-color #t)
-)
-
 ;; Create this time widget
-(define (glgui-timepicker g x y w h colorarrows colorhighlight colorvalue colorbg font . ampmtime)
+(define (glgui-timepicker g x y w h colorarrows colorhighlight colorvalue colorbg font)
   (let* ((time ##now)
-         (ampm (if (fx= (length ampmtime) 1) (car ampmtime) #f))
-         (dx (if ampm (fix (/ (- w 3) 3)) (fix (/ (- w 2) 2))))
+         (dx (fix (/ (- w 2) 2)))
          ;; Create the two vertical pickers for hours and minutes and the colon in between
-         (bg (glgui-box g x y w h colorbg))
-         (hpicker (glgui-verticalvaluepicker g x y dx h #f #f colorarrows colorhighlight colorvalue colorbg font (if ampm glgui:timepicker_hours_ampm glgui:timepicker_hours)))
+         (bg (glgui-box g x y w h (if colorbg colorbg (color-fade White 0.))))
+         (hpicker (glgui-verticalvaluepicker g x y dx h #f #f colorarrows colorhighlight colorvalue colorbg font glgui:timepicker_hours))
          (mpicker (glgui-verticalvaluepicker g (+ x dx) y dx h #f #f colorarrows colorhighlight colorvalue colorbg font glgui:timepicker_minutes))
-         ;; Create AM/PM button if user specifies
-         (ampmbutton (if ampm (glgui-button-string g (+ x dx dx) (+ y (/ h 3)) dx (/ h 3) "AM" font #f) #f))
          (clabel (glgui-label g (- (+ x dx) 5) y 10 h ":" font colorvalue colorbg))
          (widget (glgui-widget-add g
           'x x
           'y y
           'w w
           'h h
-          'ampm ampm
+          'ampm #f
           'callback #f
           'update-handle glgui:timepicker-update
           'hidden #f
@@ -249,7 +242,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           'colorhighlight colorhighlight
           'colorvalue colorvalue
           'colorbg colorbg
-          'button-normal-color colorbg
+          'button-normal-color (if colorbg colorbg (color-fade White 0.))
           'font font
           ;; Topdown can be set to true to reverse the order of times (down arrow to get to later times instead of up arrow)
           'topdown #f
@@ -257,19 +250,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           ;; The pickers that make up this widget
           'hourpicker hpicker
           'minutepicker mpicker
-          'ampmbutton ampmbutton
+          'ampmbutton #f
           'bg bg
           'clabel clabel
           )))
-    ;; Set colours of AM/PM button
-    (if ampm (glgui:timepicker-color-ampm-button g widget ampmbutton))
     ;; The pickers can roll through from :23 or :59 over to :00
     (glgui-widget-set! g hpicker 'cycle #t)
     (glgui-widget-set! g mpicker 'cycle #t)
     ;; Hook into the callback of the pickers
-    (glgui-widget-set! g hpicker 'callback (glgui:timepicker-callback widget hpicker mpicker ampmbutton))
-    (glgui-widget-set! g mpicker 'callback (glgui:timepicker-callback widget hpicker mpicker ampmbutton))
-    (if ampm (glgui-widget-set! g ampmbutton 'callback (glgui:timepicker-callback widget hpicker mpicker ampmbutton)))
+    (glgui-widget-set! g hpicker 'callback (glgui:timepicker-callback widget hpicker mpicker #f))
+    (glgui-widget-set! g mpicker 'callback (glgui:timepicker-callback widget hpicker mpicker #f))
     ;; Set topdown and values for the pickers
     (glgui:timepicker-update g widget 'topdown #f)
     (glgui:timepicker-update g widget 'value time)
