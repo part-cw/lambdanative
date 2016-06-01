@@ -127,10 +127,20 @@ end-of-c-declare
   ((c-lambda () void "localnotification_renumber")))
 
 ;; Clear notifications
+(define (localnotification:cancel id)
+  ((c-lambda (int) int "___result=localnotification_cancel(___arg1);") id))
+(define (localnotification-cancel id)
+  (let ((ret (localnotification:cancel id)))
+    (if (fx> ret 0) (localnotification:renumber))
+    ret
+  ))
+(define (localnotification-cancel-batch ids)
+  (let ((ret (map (lambda (n) (localnotification:cancel n)) ids)))
+    (localnotification:renumber)
+    ret
+  ))
 (define (localnotification-cancelall)
   ((c-lambda () int "___result=localnotification_cancelall();")))
-(define (localnotification-cancel id)
-  ((c-lambda (int) int "___result=localnotification_cancel(___arg1);") id))
 
 ;; Retrieve local notification
 (define (localnotification-getalert)

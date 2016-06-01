@@ -77,8 +77,6 @@ extern int ios_localnotification_cancel(int id) {
     }
   }
   if (matched){
-    // Renumber remaining notifications
-    ios_localnotification_renumber();
     return id;
   }else{
     return 0;
@@ -91,13 +89,13 @@ extern void ios_localnotification_renumber() {
   int eventnum = [eventArray count];
   if (eventnum > 0){
     // Cancel all notifications
-    [[UIApplication sharedApplication] cancelAllLocalNotifications];
+    // [[UIApplication sharedApplication] cancelAllLocalNotifications];
     // Reschedule
     int newnum = 1;
     for (UILocalNotification *notification in eventArray){
       notification.applicationIconBadgeNumber = newnum++;
-      [[UIApplication sharedApplication] scheduleLocalNotification: notification];
     }
+    [[UIApplication sharedApplication] setScheduledLocalNotifications: eventArray];
   }
 }
 
