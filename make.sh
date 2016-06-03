@@ -751,7 +751,7 @@ make_sounds()
 ###################################
 # platform specific stuff
 
-# search itemname diretories for ITEMNAME to populate items
+# search itemname directories for ITEMNAME to populate items
 add_items()
 {
   for optnewi in `filter_entries $SYS_PLATFORM $@`; do
@@ -877,6 +877,10 @@ make_setup_profile()
     xlibs=`locatefile modules/$m/LIBRARIES silent`
     if [ ! "X$xlibs" = "X" ] && [ -f "$xlibs" ]; then
       libraries=$libraries" "`cat "$xlibs"`
+    fi
+    xplugs=`locatefile modules/$m/PLUGINS silent`
+    if [ ! "X$xplugs" = "X" ] && [ -f "$xplugs" ]; then
+      plugins=$plugins" "`cat "$xplugs"`
     fi
     appsrcdirs="$appsrcdirs modules/$m"
   done
