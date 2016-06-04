@@ -53,7 +53,7 @@
 <false/>
 <key>UIBackgroundModes</key>
 <array>
-@IOS_XML_PERMISSIONS@
+@IOS_XML_BACKGROUNDMODES@
 </array>
 @IOS_XML_ADDITIONS@
 ### allow files to be accessed from iTunes
