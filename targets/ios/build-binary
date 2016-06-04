@@ -57,6 +57,7 @@ ios_subst()
   ac_subst IOS_LAUNCHERAPPDELEGATE_DIDFINISHLAUNCHING "@$1/IOS_launcherappdelegate_didfinishlaunching"
   ac_subst IOS_XML_PERMISSIONS "@$1/IOS_xml_permissions"
   ac_subst IOS_XML_REQUIREDDEVICECAP "@$1/IOS_xml_requireddevicecap"
+  ac_subst IOS_XML_ADDITIONS "@$1/IOS_xml_additions"
 }
 ios_subst loaders/ios
 for m in $modules; do

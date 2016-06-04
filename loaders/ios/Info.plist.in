@@ -51,7 +51,11 @@
 <true/>
 <key>UIViewControllerBasedStatusBarAppearance</key>
 <false/>
+<key>UIBackgroundModes</key>
+<array>
 @IOS_XML_PERMISSIONS@
+</array>
+@IOS_XML_ADDITIONS@
 ### allow files to be accessed from iTunes
 <key>UIFileSharingEnabled</key>
 <true/>
