@@ -87,8 +87,7 @@ cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-60.png" "$cmakedir/Icon-60.png"
 cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-120.png" "$cmakedir/Icon-60@2x.png"
 cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-76.png" "$cmakedir/Icon-76.png"
 cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-152.png" "$cmakedir/Icon-76@2x.png"
-# go full screen on retina displays!
-cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/retina.png" "$cmakedir/Default-568h@2x.png"
+cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/"Default*.png "$cmakedir"
 
 make_soundfile_ios()
 {
