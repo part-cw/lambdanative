@@ -142,13 +142,8 @@ end-of-c-declare
            "___result=localnotification_schedule_batch(___CAST(char**,___BODY_AS(___arg1,___tSUBTYPED)),
             ___CAST(double*,___BODY_AS(___arg2,___tSUBTYPED)),___CAST(int*,___BODY_AS(___arg3,___tSUBTYPED)),
             ___arg4,___CAST(int*,___BODY_AS(___arg5,___tSUBTYPED)));") texts times repeats len ret)))
-    (if r
-      (begin
-        (localnotification:renumber)
-        (map (lambda (l) (if (fx> l 0) l #f)) (u32vector->list ret))
-      )
-      #f
-    )
+    (if r (localnotification:renumber))
+    (map (lambda (l) (if (fx> l 0) l #f)) (u32vector->list ret))
   ))
 
 ;; Renumber notifications
