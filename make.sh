@@ -1038,9 +1038,8 @@ make_clean()
 {
   echo "==> cleaning up build files.."
   rmifexists $SYS_PREFIX/lib/libpayload.a
-# these files are platform independent
-#  rmifexists $SYS_PREFIXROOT/build
   rmifexists $SYS_PREFIX/build
+  rmifexists $SYS_PREFIXROOT/$SYS_PLATFORM/*/build
 }
 
 make_scrub()
