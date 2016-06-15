@@ -1083,7 +1083,7 @@ make_embedfile()
   prefix=$2
   scmfile=$tgtdir/${prefix}.scm
   here=`pwd`
-  cd `locatedir apps/$SYS_APPNAME`
+  cd `locatedir $srcdir`
   $SYS_HOSTPREFIX/bin/packtool $scmfile
   if [ -f $scmfile ]; then
     if `test "$scmfile" -nt "${prefix}.scm"`; then
@@ -1102,12 +1102,12 @@ make_embeds()
   mkdir -p $tgtdir
   srcfile="$appsrcdir/EMBED"
   if [ -f $srcfile ]; then
-    make_embedfile "$appsrcdir" "main"
+    make_embedfile "apps/$SYS_APPNAME" "main"
   fi
   for m in $modules; do
-    srcdir=`locatefile modules/$m/EMBED silent`
-    if [ ! "X$srcdir" = "X" ]; then
-      make_embedfile "$srcdir" "${m}"
+    srcfile=`locatefile modules/$m/EMBED silent`
+    if [ ! "X$srcfile" = "X" ]; then
+      make_embedfile "modules/$m" "${m}"
     fi
   done
   setstate
