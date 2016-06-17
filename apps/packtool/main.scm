@@ -51,7 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        `(packtool-unpack ,file ',cdata ,overwrite))))
 
 (if (file-exists? srcfile)
-  (let* ((srcfiles (string-split (with-input-from-file srcfile (lambda () (read-line))) #\space))
+  (let* ((srcfiles (string-split (string-trim (with-input-from-file srcfile (lambda () (read-line)))) #\space))
          (tgttime (if (file-exists? tgtfile) (time->seconds (file-last-modification-time tgtfile)) 0.))
          (srcfile-updated? (> (time->seconds (file-last-modification-time srcfile)) tgttime))
          (dirty (let loop ((files srcfiles)(flag srcfile-updated?))
@@ -69,7 +69,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (if (file-exists? file) (begin
               (for-each display (list " => embedding " file " " (if overwrite "(overwrite)" "(write once)") "..\n"))
               (with-output-to-file (list path: tgtfile append: #t) (lambda ()
-                (write (packtool:pack file overwrite))))))
+                (write (packtool:pack file overwrite))(newline)))))
             (loop (cdr files))))))
      (display " => embedded data is up to date, nothing to do.\n")))
 )
