@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2016, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "raw.scm")
 (include "fifo.scm")
 (include "file.scm")
+(include "instance.scm")
 (include "ln_store-tests.scm")
 
 (define store:list (make-table))
@@ -68,6 +69,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (destroy-store! name) (table-set! store:list name))
 
+;; Export/import data functions
+(define (store-export-data)
+  (map (lambda (l)
+    (let ((name (car l))
+          (vec (cdr l)))
+      (list name (table-copy (vector-ref vec 0)) (table-copy (vector-ref vec 1)))
+    )) (table->list store:list)))
+
+(define (store-import-data data)
+  (for-each (lambda (d)
+    (let* ((name (make-store (car d)))
+           (t (table-ref store:list name)))
+      (vector-set! t 0 (cadr d))
+      (vector-set! t 1 (caddr d))
+    )) data))
+
+;; Internal structure references
 (define (store:datatable name)
   (let ((p (table-ref store:list name #f)))
     (if p (vector-ref p 0) #f)))

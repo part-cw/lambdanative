@@ -87,7 +87,7 @@
     ))
     ;; Make sure none are missed
     (set! part3 (let loop ((i 0))
-      (if (fx= i 10000) 
+      (if (fx= i 10000)
         (and (= i (length (store-event-listnew store 150)))
              (= 0 (length (store-event-listnew store ##now))))
         (begin
@@ -98,5 +98,64 @@
       )
     ))
     (and part1 part2 part3)
+  ))
+
+(unit-test "store-export" "Verify the store exports and imports data properly"
+  (lambda ()
+    (define erased (for-each destroy-store! (store-list)))
+    (define store1 (make-store "store1"))
+    (define store2 (make-store "store2"))
+    (define str "this is a string")
+    (define int 1234)
+    (define lst (list (list "a" "b" 1 2 3) (list "c" "d" 4 5 6)))
+    (define str2 "and a second one")
+    (define int2 6789)
+    (define lst2 (list (list "aa" "bb" 11 22 33) (list "cc" "dd" 44 55 66)))
+    (define inid "WAVEECG#PluginName")
+    (define inv "waveoutput")
+    ;; Set all variables
+    (store-set! store1 "str" str)
+    (store-set! store1 "int" int)
+    (store-set! store1 "lst" lst)
+    (store-set! store2 "str" str2)
+    (store-set! store2 "int" int2)
+    (store-set! store2 "lst" lst2)
+    ;; set some instance variables
+    (store:instance-set! store1 inid inv)
+    (store:instance-set! store2 inid inv)
+    ;; export the stores
+    (set! ts1 (store-timestamp store1 str))
+    (set! export (store-export-data))
+    (set! part1 (and
+      (equal? (store-list) (list store1 store2))
+      (equal? (map car export) (store-list))
+    ))
+    ;; destroy one store and clear the other one
+    (destroy-store! store1)
+    (store-clear! store2 '("str" "int" "lst"))
+    (set! part2 (and
+      (equal? (store-list) (list "store2"))
+      (not (store-ref store1 "int" #f))
+      (not (store-ref store2 "str" #f))
+    ))
+    ;; import store and see if variables are still there
+    ;; and that timestamps were preserved
+    (store-import-data export)
+    (set! part3 (and
+      (equal? (store-list) (list store1 store2))
+      (string=? (store-ref store1 "str" "") str)
+      (fx= (store-ref store1 "int" -1) int)
+      (equal? (store-ref store1 "lst" '()) lst)
+      (string=? (store-ref store2 "str" "") str2)
+      (fx= (store-ref store2 "int" -1) int2)
+      (equal? (store-ref store2 "lst" '()) lst2)
+      (fl= (store-timestamp store1 str) ts1)
+    ))
+    ;; verify we didn't overwrite instance variables
+    (set! part4 (and
+      (not (store:instance-ref store1 inid))
+      (string=? (store:instance-ref store2 inid "") inv)
+    ))
+    (and part1 part2 part3 part4)
   ))
 ;;eof
