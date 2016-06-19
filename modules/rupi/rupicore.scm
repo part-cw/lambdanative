@@ -185,6 +185,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define rupi-cmd rupi-cmd-wait)
 (define (rupi-cmd-wait . x) (apply rupi:cmd (append (list 1.) x)))
 (define (rupi-cmd-nowait . x) (apply rupi:cmd (append (list 0.001) x)) #t)
+(define (rupi-cmd-shortwait . x) (apply rupi:cmd (append (list 0.05) x)))
 
 ;; %%%%%%%%%%%%%%%%%%%%%%%%%%%
 ;; server
