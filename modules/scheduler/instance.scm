@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2016, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -37,11 +37,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
 ;; plug-in instance related
-
 (define (instance-setvar! store instance name val)
-  (store-set! store (string-append instance "#" name) val))
+  (store:instance-set! store (string-append instance "#" name) val))
 (define (instance-refvar store instance name . fback)
-  (apply store-ref (append (list store (string-append instance "#" name)) fback)))
+  (apply store:instance-ref (append (list store (string-append instance "#" name)) fback)))
 
 (define (instance:pluginname store instance)
   (instance-refvar store instance "PluginName" #f))
@@ -68,11 +67,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (apply instance:proc (append (list store instance plugin:end) x)))
 
 (define (make-instance store instance plugin . config)
-  (let ((is (store-ref store "InstanceList" '())))
+  (let ((is (store:instance-ref store "InstanceList" '())))
     (if (not (member instance is))
       (begin
         (log-system (string-append "instance: creating " instance))
-        (store-set! store "InstanceList" (append is (list instance)))
+        (store:instance-set! store "InstanceList" (append is (list instance)))
         (instance-setvar! store instance "PluginName" plugin)
         (instance-setvar! store instance "PluginType" (plugin:type plugin))
         (for-each (lambda (c) (instance-setvar! store instance (car c) (cadr c))) config)
@@ -80,6 +79,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (if (scheduler-initialized?) (begin
           (instance:init store instance)
           (if (store-ref store "CaseID" #f) (instance:caseinit store instance))
+          (store:instance-set! store "DispatchStart" (fl+ ##now (random-real)))
         ))
       )
       (log-warning (string-append "instance: " instance " already exists."))
@@ -87,12 +87,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ))
 
 (define (instance-delete store instance)
-  (let ((is (store-ref store "InstanceList" '())))
+  (let ((is (store:instance-ref store "InstanceList" '())))
     (if (and (member instance is) (not (store-ref store "CaseID" #f)))
       (let ((newlist (let loop ((l is)(res '()))
                        (if (fx= (length l) 0) res
                        (loop (cdr l) (append res (if (equal? instance (car l)) '() (list (car l)))))))))
-        (store-set! store "InstanceList" newlist)
+        (store:instance-set! store "InstanceList" newlist)
         (instance:end store instance)
         #t
       )
@@ -101,7 +101,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ))
 
 (define (instance:all store)
-  (store-ref store "InstanceList" '()))
+  (store:instance-ref store "InstanceList" '()))
 
 (define (instance:allspecific store itype)
   (let loop ((is (instance:all store))(os '()))
