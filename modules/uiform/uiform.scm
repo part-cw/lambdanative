@@ -447,6 +447,90 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (uiform-register 'textentry glgui:uiform-textentry-draw glgui:uiform-textentry-input)
 
 ;; -------------
+;; date entry
+
+(define (glgui:uiform-dateentry-draw x y w . args)
+  (let* ((h (uiget 'rowh))
+         (fnt (uiget 'fnt))
+         (label (glgui:uiform-arg args 'text ""))
+         (id (glgui:uiform-arg args 'id #f))
+         (loc (glgui:uiform-arg args 'location 'db))
+         (default "YYYY-MM-DD")
+         (units (glgui:uiform-arg args 'units #f))
+         (focusid  (uiget 'focusid))
+         (hasfocus (eq? focusid id))
+         (idvalue (if id (xxget loc id #f) #f))
+         (defcolor (uiget 'color-default))
+         (selcolor (uiget 'color-select))
+         (fgcolor White)
+         (idvaluestr (if (and (string? idvalue) (or hasfocus (fx> (string-length idvalue) 0)))
+                         idvalue
+                         (begin
+                           (set! fgcolor (uiget 'color-default))
+                           default)))
+         (indent (glgui:uiform-arg args 'indent
+            (if (string=? label "") 0.1 0.3)))
+         (indentright (glgui:uiform-arg args 'indentright 0.1))
+         (align (glgui:uiform-arg args 'align 'left))
+         (drawproc (case align
+                      ((left) glgui:draw-text-left)
+                      ((center) glgui:draw-text-center)
+                      ((right) glgui:draw-text-right)))
+         (txtw  (if (and focusid idvalue idvaluestr) (glgui:stringwidth idvaluestr fnt) 0))
+         (txth  (if focusid (glgui:fontheight fnt) 0)))
+     (if (uiget 'sanemap) (begin
+       (glgui:draw-text-right x y (- (* w indent) 10) h label fnt White)
+       (glgui:draw-box (+ x (* w indent)) y (* w (- 1. indent indentright)) h (if hasfocus selcolor defcolor))
+       (if idvaluestr (drawproc (+ x (* w indent) (if (eq? align 'left) 10 0)) y (- (* w (- 1. indent indentright)) 10) h idvaluestr fnt fgcolor))
+       (if (and (string? units) (string? idvalue)) (glgui:draw-text-left (+ x (* w (- 1. indentright))) y (* w indentright) h (string-append " " units) fnt fgcolor))
+       (if hasfocus
+          (let* ((cx (case align
+                       ((left) (+ x (* w indent) 10 txtw 2))
+                       ((center) (+ x (* w indent) (/ (+ (- (* w (- 1. indent indentright)) 10) txtw) 2.) 2))
+                       ((right) (- (+ x (* w (- 1. indentright))) 7))))
+                 (cy (+ y (/ (- h txth) 2.)))
+                 (cw 3)
+                 (ch txth)
+                 (cc (if (odd? (fix (* 2 ##now))) White selcolor)))
+             (glgui:draw-box cx cy cw ch cc)))
+       ))
+     h
+  ))
+
+(define (glgui:uiform-dateentry-input type mx my . args)
+  (let* ((id  (glgui:uiform-arg args 'id #f))
+         (loc (glgui:uiform-arg args 'location 'db))
+         (focusid (uiget 'focusid))
+         (keypad-on (uiget 'keypad-on))
+         (keypad-height (uiget 'keypad-height))
+         (y (uiget 'y))
+         (h (uiget 'h)))
+    (if (and id (fx= type EVENT_BUTTON1UP)) (begin
+      (uiset 'focusid id)
+      (uiset 'focuslocation loc)
+      (uiset 'focuskeycb (lambda (floc fid str)
+                           (let ((len (string-length str)))
+                             (cond
+                              ((and (fx= len 5) (not (char=? (string-ref str 4) #\-)))
+                               (xxset floc fid (string-append (substring str 0 4) "-" (substring str 4 5))))
+                              ((and (fx= len 8) (not (char=? (string-ref str 7) #\-)))
+                               (xxset floc fid (string-append (substring str 0 7) "-" (substring str 7 8))))
+                              ((fx= len 5)
+                               (xxset floc fid (substring str 0 4)))
+                              ((fx= len 8)
+                               (xxset floc fid (substring str 0 7)))
+                              ((fx> len 10)
+                               (xxset floc fid (substring str 0 10)))))))
+      (uiset 'keypad keypad:numeric)
+      (uiset 'toggle #f)
+      (uiset 'shift #f)
+      (glgui:uiform-keypad-up)
+      (if (and keypad-on id (eq? id focusid)) (glgui:uiform-keypad-down))
+   ))))
+
+(uiform-register 'dateentry glgui:uiform-dateentry-draw glgui:uiform-dateentry-input)
+
+;; -------------
 ;; time entry
 
 (define (glgui:uiform-timeentry-draw x y w . args)
