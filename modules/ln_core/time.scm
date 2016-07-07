@@ -196,7 +196,8 @@ end-of-c-declare
 ;; each entry is ( utc seconds since epoch . # seconds to add for tai )
 ;; note they go higher to lower, and end in 1972.
 (define tm:leap-second-table
- '((1435708800 . 36)
+ '((1483228800 . 37)
+  (1435708800 . 36)
   (1341100800 . 35)
   (1230768000 . 34)
   (1136073600 . 33)
