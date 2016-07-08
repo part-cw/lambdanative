@@ -125,11 +125,11 @@
     (lambda () (display (exception->string e))))
 		  (##repl-output-port))
   (##newline (##repl-output-port))
-  (##repl-debug))
+  (##repl-debug #f #t))
 
 (define (start-safe-ide-repl)
   (ln-repl-banner)
-  (with-exception-handler ln-repl-exception (lambda () (##repl-debug))))
+  (with-exception-handler ln-repl-exception (lambda () (##repl-debug #f #t))))
 
 (define (repl-server)
   (let ((server
