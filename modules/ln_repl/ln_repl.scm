@@ -4,7 +4,10 @@
 (##namespace ("ln_repl#"))
 (##include "~~lib/gambit#.scm")
 (##namespace ("" system-appname system-appversion exception->string 
-                 fix secondselapsed->string system-buildepoch system-builddatetime))
+                 fix secondselapsed->string system-buildepoch system-builddatetime
+                 read-all))
+
+(include "*all-global-macros*.scm")
 
 (define repl-server-address "*:7000")
 
@@ -129,6 +132,7 @@
   (with-exception-handler ln-repl-exception (lambda () (##repl-debug #f #t))))
 
 (define (repl-server)
+  (map eval global-macros)
   (let ((server
 	 (open-tcp-server
 	  (list server-address: repl-server-address
