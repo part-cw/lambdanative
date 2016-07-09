@@ -102,9 +102,6 @@
         (let ((repl-channel (##make-repl-channel-ports in-port out-port)))
         (table-set! repl-channel-table tgroup repl-channel))))
 
-(define (start-ide-repl)
-  (##repl-debug-main))
-
 (define (ln-repl-banner)
   (##write-string "----" (##repl-output-port))
   (##newline (##repl-output-port))
@@ -125,13 +122,11 @@
     (lambda () (display (exception->string e))))
 		  (##repl-output-port))
   (##newline (##repl-output-port))
-  #f)
+  (##repl-debug #f #t))
 
 (define (start-safe-ide-repl)
   (ln-repl-banner)
-  (let loop ()
-    (with-exception-catcher ln-repl-exception (lambda () (##repl-debug)))
-    (loop)))
+  (with-exception-handler ln-repl-exception (lambda () (##repl-debug #f #t))))
 
 (define (repl-server)
   (let ((server
