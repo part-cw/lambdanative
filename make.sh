@@ -358,6 +358,12 @@ compile_payload()
   if [ -f "$appsrcdir/global-macros.scm" ]; then
     cat "$appsrcdir/global-macros.scm" >> "$globalmacrofile"
   fi
+  # enable all global macros to be visible using ln_repl
+  (
+   echo "(define global-macros\n\`("
+   cat "$globalmacrofile"
+   echo "))"
+  ) > "${SYS_HOSTPREFIX}/lib/define-global-macros.scm"
   #--------
   # step 1: compile and assemble the payload objs
   for lng in $languages; do

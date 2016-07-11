@@ -6,6 +6,8 @@
 (##namespace ("" system-appname system-appversion exception->string 
                  fix secondselapsed->string system-buildepoch system-builddatetime))
 
+(##include "~~lib/define-global-macros.scm")
+
 (define repl-server-address "*:7000")
 
 (define (ide-repl-pump ide-repl-connection in-port out-port tgroup)
@@ -129,6 +131,7 @@
   (with-exception-handler ln-repl-exception (lambda () (##repl-debug #f #t))))
 
 (define (repl-server)
+  (map eval global-macros)
   (let ((server
 	 (open-tcp-server
 	  (list server-address: repl-server-address
