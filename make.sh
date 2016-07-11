@@ -358,6 +358,13 @@ compile_payload()
   if [ -f "$appsrcdir/global-macros.scm" ]; then
     cat "$appsrcdir/global-macros.scm" >> "$globalmacrofile"
   fi
+  # enable all global macros to be visible using ln_repl
+  defineglobalmacrofile="${SYS_HOSTPREFIX}/lib/define-global-macros.scm"
+  echo "(define global-macros \`(" > $defineglobalmacrofile
+  if [ -f "$globalmacrofile" ]; then
+    cat "$globalmacrofile" >> $defineglobalmacrofile
+  fi
+  echo "))" >> $defineglobalmacrofile
   #--------
   # step 1: compile and assemble the payload objs
   for lng in $languages; do
@@ -1537,6 +1544,7 @@ if [ ! "X$cfg_version" = "X$cur_version" ]; then
   make_scrub
   rmifexists $SYS_TMPDIR/config.cache
   echo " ** FRAMEWORK VERSION CHANGE - please rerun configure for the local host"
+  SYS_PATH="$SYS_PATH" ./configure $SYS_APPNAME > /dev/null
   exit 1
 fi
 

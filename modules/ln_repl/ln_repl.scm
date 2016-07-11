@@ -3,8 +3,9 @@
 
 (##namespace ("ln_repl#"))
 (##include "~~lib/gambit#.scm")
-(##namespace ("" system-appname system-appversion exception->string 
+(##namespace ("" system-appname system-appversion exception->string
                  fix secondselapsed->string system-buildepoch system-builddatetime))
+(##include "~~lib/define-global-macros.scm")
 
 (define repl-server-address "*:7000")
 
@@ -118,7 +119,7 @@
   )
 
 (define (ln-repl-exception e)
-  (##write-string (with-output-to-string "" 
+  (##write-string (with-output-to-string ""
     (lambda () (display (exception->string e))))
 		  (##repl-output-port))
   (##newline (##repl-output-port))
@@ -129,6 +130,7 @@
   (with-exception-handler ln-repl-exception (lambda () (##repl-debug #f #t))))
 
 (define (repl-server)
+  (map eval global-macros)
   (let ((server
 	 (open-tcp-server
 	  (list server-address: repl-server-address
