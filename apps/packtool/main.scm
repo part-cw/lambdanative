@@ -56,7 +56,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (srcfile-updated? (> (time->seconds (file-last-modification-time srcfile)) tgttime))
          (dirty (let loop ((files srcfiles)(flag srcfile-updated?))
            (if (= (length files) 0) flag
-             (let ((file (car files)))
+             (let* ((file0 (string-split (car files) #\!))
+                    (file (if (fx= (length file0) 2) (cadr file0) (car file0))))
                (loop (cdr files) (or flag (and (file-exists? file)
                  (> (time->seconds (file-last-modification-time file)) tgttime)))))))))
     (if dirty (begin
