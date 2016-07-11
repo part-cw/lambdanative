@@ -363,7 +363,7 @@ compile_payload()
    echo "(define global-macros\n\`("
    cat "$globalmacrofile"
    echo "))"
-  ) > "${SYS_HOSTPREFIX}/lib/define-global-macros.scm"
+  ) 1> "${SYS_HOSTPREFIX}/lib/define-global-macros.scm" 2> /dev/null
   #--------
   # step 1: compile and assemble the payload objs
   for lng in $languages; do
