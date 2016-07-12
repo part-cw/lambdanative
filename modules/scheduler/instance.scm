@@ -79,7 +79,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (if (scheduler-initialized?) (begin
           (instance:init store instance)
           (if (store-ref store "CaseID" #f) (instance:caseinit store instance))
-          (store:instance-set! store "DispatchStart" (fl+ ##now (random-real)))
+          (if (not (store:instance-ref store "DispatchStart"))
+            (store:instance-set! store "DispatchStart" (fl+ ##now (random-real)))
+          )
         ))
       )
       (log-warning (string-append "instance: " instance " already exists."))
