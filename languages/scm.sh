@@ -102,6 +102,10 @@ compile_payload_scm()
           if [ `newersourceindir "$scm_src" "$scm_otgt"` = "yes" ]; then
             scm_dirty=yes
           fi
+	  # ln_repl module special-case: always re-compile to make global macro changes available
+	  if [ "X$scm_topdir" = "Xln_repl" ]; then
+	     scm_dirty=yes
+	  fi
         fi
       fi
       if [ $scm_dirty = yes ]; then
