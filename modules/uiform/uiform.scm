@@ -920,43 +920,50 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                        ((small) 'smlfnt)
                        ((big) 'bigfnt))))
          (entries (glgui:uiform-arg args 'entries #f))
-         (curentry (xxget loc id #f)) 
+         (curentry (xxget loc id #f))
          (expanded (if expandid (uiget expandid) #f))
          (defcolor (uiget 'color-default))
-         (selcolor (uiget 'color-select)))
+         (selcolor (uiget 'color-select))
+         (label (glgui:uiform-arg args 'label ""))
+         (label-present (not (string=? label "")))
+         (indent (glgui:uiform-arg args 'indent
+                   (if label-present 0.3 0.))))
    (if expanded 
-     (let loop ((es (reverse entries))(dy 0))
-       (if (= (length es) 0) (begin
-           (if (uiget 'sanemap) (begin
-               (glgui:draw-box (+ x (* w 0.1)) (+ y dy 1) (* w 0.8) (- h 1) defcolor)
-               (if (> (glgui:stringwidth defaultstr fnt) limitw)
-                 (let ((lines (string-split-width defaultstr limitw fnt)))
-                   (glgui:draw-text-center x (+ y dy hh) w hh (car lines) fnt defcolor)
-                   (glgui:draw-text-center x (+ y dy) w hh (cadr lines) fnt defcolor))
-                 (glgui:draw-text-center x (+ y dy) w h defaultstr fnt defcolor))
-           ))
-           (+ dy h) 
-         ) (begin
-         (if (uiget 'sanemap)
-           (let ((text (car es)))
-             (glgui:draw-box (+ x (* w 0.1)) (+ y dy 1) (* w 0.8) (- h 2) defcolor)
-             (if (> (glgui:stringwidth text fnt) limitw)
-               (let ((lines (string-split-width text limitw fnt)))
-                 (glgui:draw-text-center x (+ y dy hh) w hh (car lines) fnt White)
-                 (glgui:draw-text-center x (+ y dy) w hh (cadr lines) fnt White))
-               (glgui:draw-text-center x (+ y dy) w h text fnt White))))
-         (loop (cdr es)(+ dy h)))))
+     (begin
+       (glgui:draw-text-right x (+ y (* (length entries) h)) (- (* w indent) 10) h label fnt White)
+       (let loop ((es (reverse entries))(dy 0))
+         (if (= (length es) 0) (begin
+             (if (uiget 'sanemap) (begin
+                 (glgui:draw-box (+ x (* w (if label-present indent 0.1))) (+ y dy 1) (* w (if label-present (- 1. indent 0.1) 0.8)) (- h 1) defcolor)
+                 (if (> (glgui:stringwidth defaultstr fnt) limitw)
+                   (let ((lines (string-split-width defaultstr limitw fnt)))
+                     (glgui:draw-text-center (+ x (* w indent)) (+ y dy hh) (* w (if label-present (- 1. indent 0.1) 1)) hh (car lines) fnt defcolor)
+                     (glgui:draw-text-center (+ x (* w indent)) (+ y dy) (* w (if label-present (- 1. indent 0.1) 1)) hh (cadr lines) fnt defcolor))
+                   (glgui:draw-text-center (+ x (* w indent)) (+ y dy) (* w (if label-present (- 1. indent 0.1) 1)) h defaultstr fnt defcolor))
+             ))
+             (+ dy h)
+           ) (begin
+           (if (uiget 'sanemap)
+             (let ((text (car es)))
+               (glgui:draw-box (+ x (* w (if label-present indent 0.1))) (+ y dy 1) (* w (if label-present (- 1. indent 0.1) 0.8)) (- h 2) defcolor)
+               (if (> (glgui:stringwidth text fnt) limitw)
+                 (let ((lines (string-split-width text limitw fnt)))
+                   (glgui:draw-text-center (+ x (* w indent)) (+ y dy hh) (* w (if label-present (- 1. indent 0.1) 1)) hh (car lines) fnt White)
+                   (glgui:draw-text-center (+ x (* w indent)) (+ y dy) (* w (if label-present (- 1. indent 0.1) 1)) hh (cadr lines) fnt White))
+                 (glgui:draw-text-center (+ x (* w indent)) (+ y dy) (* w (if label-present (- 1. indent 0.1) 1)) h text fnt White))))
+           (loop (cdr es)(+ dy h))))))
      (begin
        (if (uiget 'sanemap)
          (let ((text (if curentry curentry defaultstr))
                (col (if curentry White defcolor)))
-           (glgui:draw-box (+ x (* w 0.1)) y (* w 0.8) h defcolor)
-           (glgui:draw-box (+ x (* w 0.8)) y (* w 0.1) h selcolor)
+           (glgui:draw-text-right x y (- (* w indent) 10) h label fnt White)
+           (glgui:draw-box (+ x (* w (if label-present indent 0.1))) y (* w (if label-present (- 1. indent 0.1) 0.8)) h defcolor)
+           (glgui:draw-box (+ x (if label-present (+ (* w indent) (- (* w (- 1. indent 0.1)) (* w 0.1))) (* w 0.8))) y (* w 0.1) h selcolor)
            (if (> (glgui:stringwidth text fnt) limitw)
              (let ((lines (string-split-width text limitw fnt)))
-               (glgui:draw-text-center x (+ y hh) w hh (car lines) fnt col)
-               (glgui:draw-text-center x y w hh (cadr lines) fnt col))
-             (glgui:draw-text-center x y w h text fnt col))
+               (glgui:draw-text-center (+ x (* w indent)) (+ y hh) (* w (if label-present (- 1. indent 0.1) 1)) hh (car lines) fnt col)
+               (glgui:draw-text-center (+ x (* w indent)) y (* w (if label-present (- 1. indent 0.1) 1)) hh (cadr lines) fnt col))
+             (glgui:draw-text-center (+ x (* w indent)) y (* w (if label-present (- 1. indent 0.1) 1)) h text fnt col))
        ))
      h))
   ))
@@ -993,6 +1000,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (uiform-register 'dropdown glgui:uiform-dropdown-draw glgui:uiform-dropdown-input)
 
+
 ;; -------------
 ;; list
 
@@ -1023,13 +1031,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (node-y (uiget 'node-y))
          (node-height (uiget 'node-height))
          (n (length entries))
-         (idx (fix (* n (/ (- node-y y) node-height)))))
+         (idx (fix (* n (/ (- node-y y) node-height))))
+         (action (glgui:uiform-arg args 'action #f)))
    (if id (begin
      (if (and (>= idx 0) (< idx n)) (begin
        (uiset 'nodemap '())
        (xxset loc id (list-ref entries idx))
+       (if action (glgui:uiform-action action))
      ))
  ))))
+
+(define (uiform-list-get-selected entries)
+  (let* ((old-y (uiget 'oldy))
+         (node-y (uiget 'node-y))
+         (n (length entries))
+         (node-height (* n (uiget 'rowh)))
+         (idx (fix (* n (/ (- node-y old-y) node-height))))
+         (sel (list-ref entries idx)))
+    sel
+  ))
 
 (uiform-register 'list glgui:uiform-list-draw glgui:uiform-list-input)
 
