@@ -94,7 +94,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (logsig x)  (/ 1 (+ 1 (exp (- x)))))
 
 ;;; sign function
-(define (sign x) (if (>= x 0) +1 -1))
+(define (sign x)
+  (cond
+    ((positive? x)  1)
+    ((negative? x) -1)
+    (else 0)
+  ))
 
 ;;; inverse
 (define (inverse x)  (/ 1 x))
@@ -103,7 +108,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (square x)  (* x x))
 
 ;;;sinus cardinal
-(define (sinc x)    
+(define (sinc x)
   (if (= x 0.) 1.
       (/ (sin (* 3.1415927 x)) (* 3.1415927 x))))
 
@@ -126,15 +131,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;; fceiling = ffloor + y
 (define (fceiling x y) (* y (ceiling (/ x y))))
 
-(define (pos-lin x) 
+(define (pos-lin x)
   (cond ((> x 0) x)
-        (else   
+        (else
          (if (inexact? x) 0. 0))))
 
 ;;; lambda float modulo
 (define (lambda-fmodulo y)
   (lambda (x)
-    (* y 
+    (* y
        (- (/ x y)
           (floor (/ x y))))))
 
