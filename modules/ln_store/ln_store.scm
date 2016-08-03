@@ -92,4 +92,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((p (table-ref store:list name #f)))
     (if p (vector-ref p 5) #f)))
 
+;; Added store:instance functions for backwards compatibility
+(define store:instance-ref store-ref)
+(define store:instance-set! store-set!)
+(define store:instance-clear! store-clear!)
+
 ;; eof
