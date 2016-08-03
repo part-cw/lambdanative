@@ -37,6 +37,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 ;; list related extras
 
+;; Check for empty lists - this one is better than using pair? for it!
+(define (list-notempty? lst) (and (list? lst) (not (null? lst))))
+
 ;; Make a list of length n, where each element is set to elem
 (define (make-list n elem)
   (if (zero? n) '()
@@ -74,7 +77,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; do a continuous lookup
 (define (list-interpolate lst x0)
   (let* ((x (max (min x0 1.) 0.))
-        (n (- (length lst) 1))  
+        (n (- (length lst) 1))
         (idx1 (fix (floor (* x n))))
         (idx2 (fix (ceiling (* x n))))
         (v1 (list-ref lst idx1))
@@ -84,7 +87,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; resample a list by linear interpolation
 (define (list-resample lst n)
   (let loop ((x 0.)(i 0)(nlst '()))
-    (if (= i n) nlst               
+    (if (= i n) nlst
       (loop (+ x (/ 1. (- n 1.))) (+ i 1)
          (append nlst (list
            (list-interpolate lst x)))))))
