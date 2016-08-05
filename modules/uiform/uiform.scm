@@ -931,6 +931,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    (if expanded 
      (begin
        (glgui:draw-text-right x (+ y (* (length entries) h)) (- (* w indent) 10) h label fnt White)
+       (glgui:draw-pixmap-center (+ x (if label-present (+ (* w indent) (- (* w (- 1. indent 0.1)) (* w 0.1))) (* w 0.8))) (+ y (* (length entries) h)) (* w 0.1) h glgui_dropdownbox_downarrow.img selcolor)
        (let loop ((es (reverse entries))(dy 0))
          (if (= (length es) 0) (begin
              (if (uiget 'sanemap) (begin
@@ -958,7 +959,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                (col (if curentry White defcolor)))
            (glgui:draw-text-right x y (- (* w indent) 10) h label fnt White)
            (glgui:draw-box (+ x (* w (if label-present indent 0.1))) y (* w (if label-present (- 1. indent 0.1) 0.8)) h defcolor)
-           (glgui:draw-box (+ x (if label-present (+ (* w indent) (- (* w (- 1. indent 0.1)) (* w 0.1))) (* w 0.8))) y (* w 0.1) h selcolor)
+           (glgui:draw-pixmap-center (+ x (if label-present (+ (* w indent) (- (* w (- 1. indent 0.1)) (* w 0.1))) (* w 0.8))) y (* w 0.1) h glgui_dropdownbox_downarrow.img selcolor)
            (if (> (glgui:stringwidth text fnt) limitw)
              (let ((lines (string-split-width text limitw fnt)))
                (glgui:draw-text-center (+ x (* w indent)) (+ y hh) (* w (if label-present (- 1. indent 0.1) 1)) hh (car lines) fnt col)
