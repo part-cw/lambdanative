@@ -1239,7 +1239,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (uiform (uiget 'uiform))
          (nodes (table-ref uiform (uiget 'page) '()))
          (oldmap (uiget 'nodemap))
-         (title (car nodes))
+         (title (uiform:eval (car nodes)))
          (prv (uiform:eval (cadr nodes)))
          (nxt (uiform:eval (caddr nodes)))
          (nonodes (- (length nodes) 3))
