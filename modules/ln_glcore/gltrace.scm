@@ -48,7 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (if (and (fx>= addr 0) (fx< addr (u8vector-length data)))
      (u8vector-set! data addr alpha)))
 
-;; draw a antialiased line from x,y0 to x+1,y1 a la Xiaolin Wu 
+;; draw a antialiased line from x,y0 to x+1,y1 a la Xiaolin Wu
 (define (gltrace:wuline data w0 x y0 y1)
   (let* ((addr (fx+ (fx* y0 w0) x))
         (ymin (fxmin y0 y1))
@@ -99,7 +99,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((w0 (table-ref t 'w0))
         (h (table-ref t 'h0))   ;;; XXX
         (data (table-ref t 'data)))
-    (let loop ((y 0)) 
+    (let loop ((y 0))
       (if (fx< y h) (begin
         (u8vector-set! data (fx+ x (fx* w0 y)) #x00)
         (loop (fx+ y 1)))))))
@@ -113,7 +113,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (w (table-ref t 'w))
         (data (table-ref t 'data)))
    (let ((values (table-ref t 'values)))
-     (subf32vector-move! values 1 w values 0))    
+     (subf32vector-move! values 1 w values 0))
    (let loop ((y 0))
      (if (fx< y h) (let ((ofs (fx* w0 y)))
        (subu8vector-move! data (fx+ ofs 1) (fx+ ofs w) data ofs) ;; XXX -1
@@ -174,7 +174,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              (data (table-ref t 'data))
              (newy (min h (max 0 (inexact->exact (round (* h sval)))))))
         (if (not (or (fx= x 0) (nan? val1))) (gltrace:wuline data w0 x oldy newy))
-        (loop (fx+ x 1) newy)
+        (loop (fx+ x 1) (if (nan? val1) oldy newy))
       )
     ))
 )
