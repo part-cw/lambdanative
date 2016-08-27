@@ -3,10 +3,30 @@
 ;;; the main body of the scran so that the main body of the code
 ;;; doesn't need to be endlessly recompiled.
 
-(define-macro (define-component name args #!rest body)
-  `(define ,name (component! (lambda ,args ,@body) (symbol->string ',name))))
+;; (define-macro (define-component name args #!rest body)
+;;   `(define ,name (component! (lambda ,args ,@body) (symbol->string ',name))))
 
-(define-macro (define-system name args)
-  `(define ,name (system! ,@args)))
+;; (define-macro (define-system name args)
+;;   `(define ,name (system! ,@args)))
 
+(##define-syntax define-component
+  (lambda (stx)
+    (define (ensure-code o)
+      (if (##source? o) (##source-code o) o))
+    (let* ((code (cdr (ensure-code stx)))
+	   (name (car code))
+	   (args (car (cdr code)))
+	   (body (cdr (cdr code))))
+      (##sourcify
+       `(define ,name (component! (lambda ,args ,@body) (symbol->string ',name))) stx))))
+
+(##define-syntax define-system
+  (lambda (stx)
+    (define (ensure-code o)
+      (if (##source? o) (##source-code o) o))
+    (let* ((code (cdr (ensure-code stx)))
+	   (name (car code))
+	   (body (cdr code)))
+      (##sourcify
+       `(define ,name (system! ,@body)) stx))))
 
