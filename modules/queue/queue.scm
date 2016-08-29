@@ -52,6 +52,14 @@
 					(set! lst (cons el lst))))
 	(reverse lst)))
 
+(define (list->q l)
+  (define (loop l q)
+    (if (eq? l '())
+	q
+	(loop (cdr l)
+	      (q-push! (car l)))))
+  (loop l (make-q*)))
+
 (define (display-q q)
   (display "<queue (")
   (display (q-count q))
