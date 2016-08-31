@@ -42,6 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define GLTRACE_RESET 1)
 (define GLTRACE_OVERWRITE 2)
 (define GLTRACE_SHIFT 3)
+(define GLTRACE_OVERWRITE_FILL 4)
 
 ;; draw a pixel at the specified memory address
 (define (gltrace:pixel data addr alpha)
@@ -94,14 +95,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (table-set! t 'x (if (fx= (table-ref t 'mode) GLTRACE_SHIFT) (- (table-ref t 'w) 1) 0))
   (table-set! t 'y #f))
 
-;; erase vertical line at x
-(define (gltrace:zap t x)
+;; erase vertical line at x (if a newy specified, add shading under it)
+(define (gltrace:zap t x . newy)
   (let ((w0 (table-ref t 'w0))
+        (liney (if (and (list? newy) (fx= (length newy) 1)) (car newy) 0))
         (h (table-ref t 'h0))   ;;; XXX
         (data (table-ref t 'data)))
     (let loop ((y 0))
       (if (fx< y h) (begin
-        (u8vector-set! data (fx+ x (fx* w0 y)) #x00)
+        (u8vector-set! data (fx+ x (fx* w0 y)) (if (fx< y liney) #x10 #x00))
         (loop (fx+ y 1)))))))
 
 ;; shift trace left
@@ -121,7 +123,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    (gltrace:zap t (fx- w 1))))
 
 ;; preparation for new x pos
-(define (gltrace:advance-x t)
+(define (gltrace:advance-x t . newy)
   (let* ((m (table-ref t 'mode))
          (w (table-ref t 'w))
          (x (table-ref t 'x))
@@ -130,7 +132,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (cond
     ((fx= m GLTRACE_RESET) (if (fx= newx 0) (gltrace:clear t)))
     ((fx= m GLTRACE_OVERWRITE) (gltrace:zap t newx))
-    ((fx= m GLTRACE_SHIFT) (if (fx= x (- w 1)) (gltrace:shift t)))) ;; newx
+    ((fx= m GLTRACE_SHIFT) (if (fx= x (- w 1)) (gltrace:shift t))) ;; newx
+    ((fx= m GLTRACE_OVERWRITE_FILL) (gltrace:zap t newx (if (and (list? newy) (fx= (length newy) 1)) (car newy) 0))))
   (table-set! t 'y #f) (table-set! t 'x newx) newx))
 
 (define (gltrace-add t val)
@@ -145,14 +148,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (prvy (table-ref t 'y))
             (oldy (if prvy prvy newy))
             (data (table-ref t 'data))
-            (newx (gltrace:advance-x t)))
+            (newx (gltrace:advance-x t newy)))
        (if (and (fx> x 0) (fx>= newx x) oldy) (begin
           (gltrace:wuline data w0 (if (fx= x newx) (fx- x 1) x) oldy newy)
        ))
        (f32vector-set! (table-ref t 'values) x (flo val))
        (table-set! t 'y newy))
     (begin
-      (gltrace:advance-x t)
+      (gltrace:advance-x t (table-ref t 'y))
       (f32vector-set! (table-ref t 'values) (table-ref t 'x) +nan.0)
     )
   ))
