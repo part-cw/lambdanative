@@ -447,6 +447,110 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (uiform-register 'textentry glgui:uiform-textentry-draw glgui:uiform-textentry-input)
 
 ;; -------------
+;; multi line text entry
+
+(define (glgui:uiform-multilinetextentry-draw x y w . args)
+  (let* ((h (uiget 'rowh))
+         (lines (abs (exact-round (glgui:uiform-arg args 'lines 1))))
+         (fnt (uiget 'fnt))
+         (label (glgui:uiform-arg args 'text ""))
+         (id (glgui:uiform-arg args 'id #f))
+         (loc (glgui:uiform-arg args 'location 'db))
+         (default (glgui:uiform-arg args 'default #f))
+         (focusid  (uiget 'focusid))
+         (hasfocus (eq? focusid id))
+         (idvalue (if id (xxget loc id #f) #f))
+         (defcolor (uiget 'color-default))
+         (selcolor (uiget 'color-select))
+         (fgcolor White)
+         (idvaluestr (cond
+           ((and (string? idvalue) (or hasfocus (fx> (string-length idvalue) 0)))
+              idvalue)
+           ((number? idvalue)
+              (number->string idvalue))
+           (else
+             (set! fgcolor (uiget 'color-default))
+             default)))
+         (indent (glgui:uiform-arg args 'indent
+            (if (string=? label "") 0.1 0.3)))
+         (indentright (glgui:uiform-arg args 'indentright 0.1))
+         (wrappedstr0 (if (and idvaluestr (fx> (string-length idvaluestr) 0)) (string-split-width idvaluestr (fix (- (* w (- 1. indent indentright)) 13)) fnt) (list "")))
+         (wrappedstr (if (> (length wrappedstr0) lines)
+                       (if hasfocus
+                         (list-tail wrappedstr0 (- (length wrappedstr0) lines))
+                         (list-head wrappedstr0 lines))
+                       wrappedstr0))
+         (align (glgui:uiform-arg args 'align 'left))
+         (drawproc (case align
+                      ((left) glgui:draw-text-left)
+                      ((center) glgui:draw-text-center)
+                      ((right) glgui:draw-text-right)))
+         (txtw  (if (and focusid idvalue idvaluestr (fx> (length wrappedstr) 0)) (glgui:stringwidth (list-ref wrappedstr (- (length wrappedstr) 1)) fnt) 0))
+         (txth  (if focusid (glgui:fontheight fnt) 0))
+         (ypos (+ y (* h (- lines 1))))
+         (toth (* h lines)))
+    (if (uiget 'sanemap) (begin
+     (glgui:draw-text-right x (+ y (* h (- lines 1))) (- (* w indent) 10) h label fnt White)
+     (glgui:draw-box (+ x (* w indent)) y (* w (- 1. indent indentright)) toth (if hasfocus selcolor defcolor))
+     (let loop ((ss wrappedstr))
+       (if (> (length ss) 0)
+         (begin
+           (drawproc (+ x (* w indent) (if (eq? align 'left) 10 0)) ypos (- (* w (- 1. indent indentright)) 10) h (car ss) fnt fgcolor)
+           (set! ypos (- ypos h))
+           (loop (cdr ss)))))
+     (if hasfocus
+         (let* ((cx (case align
+                      ((left) (+ (* w indent) 10 txtw 2))
+                      ((center) (+ x (* w indent) (/ (+ (- (* w (- 1. indent indentright)) 10) txtw) 2.) 2))
+                      ((right) (- (+ x (* w (- 1. indentright))) 7))))
+                (cy (if idvalue
+                        (+ ypos h (/ (- h txth) 2.))
+                        (+ y (- toth h) (/ (- h txth) 2.))))
+                (cw 3)
+                (ch txth)
+                (cc (if (odd? (fix (* 2 ##now))) White selcolor)))
+           (glgui:draw-box cx cy cw ch cc)))
+    ))
+  toth
+  ))
+
+(define (glgui:uiform-multilinetextentry-input type mx my . args)
+  (let* ((id  (glgui:uiform-arg args 'id #f))
+         (loc (glgui:uiform-arg args 'location 'db))
+         (name (glgui:uiform-arg args 'name #f))
+         (keycb (glgui:uiform-arg args 'keycb #f))
+         (keypad-config (glgui:uiform-arg args 'keypad 'default))
+         (focusid (uiget 'focusid))
+         (keypad-on (uiget 'keypad-on))
+         (keypad-height (uiget 'keypad-height))
+         (y (uiget 'y))
+         (h (uiget 'h)))
+    (if (and id (fx= type EVENT_BUTTON1UP)) (begin
+      (uiset 'focusid id)
+      (uiset 'focuslocation loc)
+      (uiset 'focuskeycb keycb)
+      (uiset 'focuskeycb (if name glgui:uiform-keycb-name keycb))
+      (uiset 'keypad (case keypad-config
+          ((default) keypad:simplified)
+          ((numfloat) keypad:numfloat)
+          ((numint) keypad:numeric)
+          ((numcolon)  keypad:numcolon)
+          ((numdash)  keypad:numdash)
+          ((full) keypad:default)
+          (else      keypad:simplified)))
+      (uiset 'toggle #f)
+      (uiset 'shift (if (and name id)
+                      (let ((str (xxget loc id #f)))
+                        (or (not str) (and (string? str) (fx= (string-length str) 0))))
+                      #f))
+      (glgui:uiform-keypad-up)
+      (if (and keypad-on id (eq? id focusid)) (glgui:uiform-keypad-down))
+   ))))
+
+(uiform-register 'multilinetextentry glgui:uiform-multilinetextentry-draw glgui:uiform-multilinetextentry-input)
+
+
+;; -------------
 ;; date entry
 
 (define (glgui:uiform-dateentry-draw x y w . args)
@@ -455,7 +559,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (label (glgui:uiform-arg args 'text ""))
          (id (glgui:uiform-arg args 'id #f))
          (loc (glgui:uiform-arg args 'location 'db))
-         (default "YYYY-MM-DD")
+         (default (glgui:uiform-arg args 'default "YYYY-MM-DD"))
          (units (glgui:uiform-arg args 'units #f))
          (focusid  (uiget 'focusid))
          (hasfocus (eq? focusid id))
