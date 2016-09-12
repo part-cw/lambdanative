@@ -94,7 +94,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; email address
 (define (sanestring-email s)
-  (pregexp-match "([a-zA-Z0-9]+@[a-zA-Z0-9]+\\.[a-zA-Z0-9]+)" s))
+  (pregexp-match "^.+@[^\\.].*\\.[a-z]{2,}$" s))
 
 ;; human height in cm
 (define (sanestring-height-cm s)
