@@ -425,7 +425,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (and id (fx= type EVENT_BUTTON1UP)) (begin
       (uiset 'focusid id)
       (uiset 'focuslocation loc)
-      (uiset 'focuskeycb keycb)
       (uiset 'focuskeycb (if name glgui:uiform-keycb-name keycb))
       (uiset 'keypad (case keypad-config
           ((default) keypad:simplified)
@@ -434,6 +433,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           ((numcolon)  keypad:numcolon)
           ((numdash)  keypad:numdash)
           ((full) keypad:default)
+          ((email) keypad:email)
           (else      keypad:simplified)))
       (uiset 'toggle #f)
       (uiset 'shift (if (and name id)
@@ -528,7 +528,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (and id (fx= type EVENT_BUTTON1UP)) (begin
       (uiset 'focusid id)
       (uiset 'focuslocation loc)
-      (uiset 'focuskeycb keycb)
       (uiset 'focuskeycb (if name glgui:uiform-keycb-name keycb))
       (uiset 'keypad (case keypad-config
           ((default) keypad:simplified)

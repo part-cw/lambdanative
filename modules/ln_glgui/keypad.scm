@@ -120,6 +120,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
 ))
 
+;; An email keypad contain just those characters allowed in an email address and with the @ sign available on the first page
+(define keypad:email `(
+  ( (#\q #\w #\e #\r #\t #\y #\u #\i #\o #\p)
+    (#\a #\s #\d #\f #\g #\h #\j #\k #\l)
+ ((shift ,glgui_keypad_shift.img 1.5) #\z #\x #\c #\v #\b #\n #\m (,delchar ,glgui_keypad_delete.img 1.5))
+   ((toggle ,glgui_keypad_toggle.img 1.5)  #\@ (#\space " " 4.) #\. (,retchar ,glgui_keypad_return.img 1.5))
+  )
+  ( (#\Q #\W #\E #\R #\T #\Y #\U #\I #\O #\P)
+    (#\A #\S #\D #\F #\G #\H #\J #\K #\L)
+ ((shift ,glgui_keypad_shift_on.img 1.5) #\Z #\X #\C #\V #\B #\N #\M (,delchar ,glgui_keypad_delete.img 1.5))
+   ((toggle ,glgui_keypad_toggle.img 1.5)  #\@ (#\space " " 4.) #\. (,retchar ,glgui_keypad_return.img 1.5))
+  )
+  ( (#\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\0)
+    (#\! #\# #\$ #\% #\^ #\& #\* #\{ #\})
+    ( #\- #\_ #\= #\+ #\/ #\? #\' #\| #\~ (,delchar ,glgui_keypad_delete.img 1.0))
+   ((toggle ,glgui_keypad_toggleChar.img 1.5)  #\@ (#\space " " 4.) #\. (,retchar ,glgui_keypad_return.img 1.5))
+  )
+))
+
 (define (keypad:keycolor key btcolor)
   (if (and (list? key) (> (length key) 3)) (cadddr key) btcolor))
 
