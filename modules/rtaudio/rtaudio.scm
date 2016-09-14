@@ -50,7 +50,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #ifdef IOS
-#define USE_IOSAUDIO
+//#define USE_IOSAUDIO
+#define USE_NOVOCAINE
 #endif
 
 #ifdef ANDROID
@@ -101,6 +102,35 @@ int rtaudio_pa_chmap_out[16];
 
 int rtaudio_pa_map_input=0;
 int rtaudio_pa_chmap_in[2];
+
+// %%%%%%%%%%%%%%%%%%%%%%%%
+#ifdef USE_NOVOCAINE
+
+int novocaine_init(double);
+int novocaine_start(void (*)(float), void (*)(float*,float*));
+int novocaine_stop();
+void iphone_setvolume(double);
+void ln_setMicrophoneGain(float);
+
+static void rtaudio_start(int samplerate, double volume)
+{
+  static int needsinit=1;
+  if (needsinit) {
+    rtaudio_srate = samplerate;
+    if (rtaudio_initcb) rtaudio_initcb(samplerate);
+    novocaine_init((double)rtaudio_srate);
+    iphone_setvolume(volume);
+    needsinit=0;
+  }
+  novocaine_start(rtaudio_inputcb,rtaudio_outputcb);
+}
+
+static void rtaudio_stop(void) {
+  if (rtaudio_closecb) rtaudio_closecb();
+  novocaine_stop();
+}
+
+#endif // USE_NOVOCAINE
 
 // %%%%%%%%%%%%%%%%%%%%%%%%
 #ifdef USE_IOSAUDIO
