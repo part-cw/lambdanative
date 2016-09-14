@@ -47,6 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef MACOSX
 #define USE_PORTAUDIO
+//#define USE_NOVOCAINE
 #endif
 
 #ifdef IOS
@@ -109,8 +110,14 @@ int rtaudio_pa_chmap_in[2];
 int novocaine_init(double);
 int novocaine_start(void (*)(float), void (*)(float*,float*));
 int novocaine_stop();
+#ifdef IOS
 void iphone_setvolume(double);
 void ln_setMicrophoneGain(float);
+#endif
+
+#ifdef MACOSX
+void ln_setMicrophoneGain(float inputGain) {}
+#endif
 
 static void rtaudio_start(int samplerate, double volume)
 {
@@ -119,7 +126,9 @@ static void rtaudio_start(int samplerate, double volume)
     rtaudio_srate = samplerate;
     if (rtaudio_initcb) rtaudio_initcb(samplerate);
     novocaine_init((double)rtaudio_srate);
+#ifdef IOS
     iphone_setvolume(volume);
+#endif
     needsinit=0;
   }
   novocaine_start(rtaudio_inputcb,rtaudio_outputcb);
