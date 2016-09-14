@@ -50,7 +50,18 @@ float buffer;
 
 void my_realtime_init(int samplerate) { srate=(double)samplerate; buffer=0; }  
 
-void my_realtime_input(float v) { if (mode!=0) buffer=v; }  
+#define RINGSZE 10000
+static float ring[RINGSZE];
+int ring_in=0, ring_out=0;
+
+void my_realtime_input(float v) 
+{ 
+  if (mode!=0) {
+    buffer=v; 
+    ring[ring_in++]=v;
+    if (ring_in==RINGSZE) ring_in=0;
+  }
+}  
 
 void my_realtime_output(float *v1,float *v2) 
 { 
@@ -58,7 +69,10 @@ void my_realtime_output(float *v1,float *v2)
   if (mode==0) {
     buffer = 0.95*sin(2*M_PI*440.*t);
     *v1=*v2=(float)buffer;
-  } else *v1=*v2=buffer; 
+  } else {
+    *v1=*v2=ring[ring_out++];
+    if (ring_out==RINGSZE) ring_out=0;
+  }
   t+=1/srate;
 } 
 
