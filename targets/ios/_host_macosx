@@ -69,7 +69,10 @@ assertfile $SYS_RANLIB
 assertfile $SYS_STRIP
 SYS_NM="$ios_cross/nm"
 SYS_AS=$ios_cross"/as"
-SYS_LD=$ios_cross"/ld"
+SYS_LD="$ios_cross/ld"
+if [ ! -f $SYS_LD ]; then
+  SYS_LD=`xcrun -find -sdk iphoneos ld`" -arch $SYS_CPU"
+fi
 SYS_WINDRES=
 SYS_EXEFIX=
 SYS_APPFIX=".app"
