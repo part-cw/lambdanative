@@ -61,6 +61,7 @@ SYS_NM=nm
 SYS_WINDRES=
 SYS_EXEFIX=
 SYS_APPFIX=.app
+SYS_LD=ld
 
 SYS_CC="$SYS_CC $cflag_additions"
 
