@@ -99,6 +99,7 @@ end-of-c-declare
 (define app:runflag 1)
 (define app:width #f)
 (define app:height #f)
+(define app:forcefullscreen #f)
 
 (define app:screenwidth #f)
 (define app:screenheight #f)
@@ -192,6 +193,9 @@ end-of-c-declare
 (c-define (c-height) () int "scm_height" ""
   (if (number? app:height) app:height 0))
 
+(c-define (c-forcefullscreen) () int "scm_forcefullscreen" ""
+  (if app:forcefullscreen 1 0))
+
 (c-define (c-screenwidth) () int "scm_screenwidth" ""
    (if (number? app:screenwidth) app:screenwidth 0))
 
@@ -202,12 +206,15 @@ end-of-c-declare
   (if (number? app:runflag) app:runflag 0))
 
 ;; change default size (don't go full screen!)
-(define (make-window w h)
-  (let ((xscale (/ (flo w) (flo app:screenwidth)))
-        (yscale (/ (flo h) (flo app:screenheight))))
-  (set! app:width w)
-  (set! app:height h)
-  (if (or (string=? (system-platform) "ios")
+(define (make-window w h . force-fullscreen)
+  (set! app:forcefullscreen (if (= (length force-fullscreen) 1) (car force-fullscreen) #f))
+  (let* ((flip? (and app:forcefullscreen (> app:screenwidth app:screenheight)))
+        (xscale (/ (flo (if flip? h w)) (flo app:screenwidth)))
+        (yscale (/ (flo (if flip? w h)) (flo app:screenheight))))
+  (set! app:width (if flip? h w))
+  (set! app:height (if flip? w h))
+  (if (or app:forcefullscreen
+          (string=? (system-platform) "ios")
           (string=? (system-platform) "bb10")
           (string=? (system-platform) "playbook")
           (string=? (system-platform) "android")) (begin

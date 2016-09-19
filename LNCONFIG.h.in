@@ -100,6 +100,7 @@ int  scm_runflag();
 void scm_event(int,int,int);
 int  scm_width();
 int  scm_height(); 
+int  scm_forcefullscreen();
 int  scm_screenwidth();
 int  scm_screenheight(); 
 

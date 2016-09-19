@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 #ifndef USECONSOLE
 
   // open a window
-  if (w==scm_width()&&h==scm_height()) {
+  if ((w==scm_width()&&h==scm_height())||scm_forcefullscreen()) {
     microgl_fullscreen(w,h);
   } else {
     microgl_window(scm_width(),scm_height());
