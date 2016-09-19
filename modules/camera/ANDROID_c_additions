@@ -11,3 +11,14 @@ void android_camera_start(char* fnl_name, char *tmp_name)
   }
 }
 
+void android_videocamera_start(char* fnl_name, char *tmp_name, int *maxlength)
+{
+  JNIEnv *env = GetJNIEnv();
+  if (env&&globalObj){
+    jstring jfnl = (*env)->NewStringUTF(env,fnl_name);
+    jstring jtmp = (*env)->NewStringUTF(env,tmp_name);
+    jclass cls = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+    jmethodID method = (*env)->GetMethodID(env, cls, "startVidCamera", "(Ljava/lang/String;Ljava/lang/String;I)V");
+    (*env)->CallVoidMethod(env, globalObj, method, jfnl, jtmp, maxlength);
+  }
+}

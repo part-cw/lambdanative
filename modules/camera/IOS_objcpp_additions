@@ -1,5 +1,6 @@
 
 #import <UIKit/UIKit.h>
+#import <MobileCoreServices/MobileCoreServices.h>
 
 @interface PickerDelegate : UIViewController<UINavigationControllerDelegate, UIImagePickerControllerDelegate> {
   UIImagePickerController *imagePicker;
@@ -37,71 +38,81 @@
 
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
   DMSG("camera: image data ready [%s]",img_filename);
+  NSString *mediaType = [info objectForKey: UIImagePickerControllerMediaType];
   NSString* fileString = [NSString stringWithUTF8String: img_filename];
-  UIImage *img = [info objectForKey:UIImagePickerControllerOriginalImage];
 
-  CGAffineTransform transform = CGAffineTransformIdentity;
-  switch (img.imageOrientation) {
-    case UIImageOrientationDown:
-    case UIImageOrientationDownMirrored:
-        transform = CGAffineTransformTranslate(transform, img.size.width, img.size.height);
-        transform = CGAffineTransformRotate(transform, M_PI);
-        break;
-    case UIImageOrientationLeft:
-    case UIImageOrientationLeftMirrored:
-        transform = CGAffineTransformTranslate(transform, img.size.width, 0);
-        transform = CGAffineTransformRotate(transform, M_PI_2);
-        break;
-    case UIImageOrientationRight:
-    case UIImageOrientationRightMirrored:
-        transform = CGAffineTransformTranslate(transform, 0, img.size.height);
-        transform = CGAffineTransformRotate(transform, -M_PI_2);
-        break;
-    case UIImageOrientationUp:
-    case UIImageOrientationUpMirrored:
-        break;
-  }
-  switch (img.imageOrientation) {
-    case UIImageOrientationUpMirrored:
-    case UIImageOrientationDownMirrored:
-        transform = CGAffineTransformTranslate(transform, img.size.width, 0);
-        transform = CGAffineTransformScale(transform, -1, 1);
-        break;
-    case UIImageOrientationLeftMirrored:
-    case UIImageOrientationRightMirrored:
-        transform = CGAffineTransformTranslate(transform, img.size.height, 0);
-        transform = CGAffineTransformScale(transform, -1, 1);
-        break;
-    case UIImageOrientationUp:
-    case UIImageOrientationDown:
-    case UIImageOrientationLeft:
-    case UIImageOrientationRight:
-        break;
-  }
-  CGContextRef ctx = CGBitmapContextCreate(NULL, img.size.width, img.size.height,
-                                         CGImageGetBitsPerComponent(img.CGImage), 0,
-                                         CGImageGetColorSpace(img.CGImage),
-                                         CGImageGetBitmapInfo(img.CGImage));
-  CGContextConcatCTM(ctx, transform);
-  switch (img.imageOrientation) {
-    case UIImageOrientationLeft:
-    case UIImageOrientationLeftMirrored:
-    case UIImageOrientationRight:
-    case UIImageOrientationRightMirrored:
-        CGContextDrawImage(ctx, CGRectMake(0,0,img.size.height,img.size.width), img.CGImage);
-        break;
-    default:
-        CGContextDrawImage(ctx, CGRectMake(0,0,img.size.width,img.size.height), img.CGImage);
-        break;
-  }
-  CGImageRef cgimg = CGBitmapContextCreateImage(ctx);
-  UIImage *fixedimg = [UIImage imageWithCGImage:cgimg];
-  CGContextRelease(ctx);
-  CGImageRelease(cgimg);
+  if (CFStringCompare ((CFStringRef) mediaType, kUTTypeImage, 0) == kCFCompareEqualTo) {
+    UIImage *img = [info objectForKey:UIImagePickerControllerOriginalImage];
 
-  NSData* pickedData = UIImageJPEGRepresentation(fixedimg, 0.6);
+    CGAffineTransform transform = CGAffineTransformIdentity;
+    switch (img.imageOrientation) {
+      case UIImageOrientationDown:
+      case UIImageOrientationDownMirrored:
+          transform = CGAffineTransformTranslate(transform, img.size.width, img.size.height);
+          transform = CGAffineTransformRotate(transform, M_PI);
+          break;
+      case UIImageOrientationLeft:
+      case UIImageOrientationLeftMirrored:
+          transform = CGAffineTransformTranslate(transform, img.size.width, 0);
+          transform = CGAffineTransformRotate(transform, M_PI_2);
+          break;
+      case UIImageOrientationRight:
+      case UIImageOrientationRightMirrored:
+          transform = CGAffineTransformTranslate(transform, 0, img.size.height);
+          transform = CGAffineTransformRotate(transform, -M_PI_2);
+          break;
+      case UIImageOrientationUp:
+      case UIImageOrientationUpMirrored:
+          break;
+    }
+    switch (img.imageOrientation) {
+      case UIImageOrientationUpMirrored:
+      case UIImageOrientationDownMirrored:
+          transform = CGAffineTransformTranslate(transform, img.size.width, 0);
+          transform = CGAffineTransformScale(transform, -1, 1);
+          break;
+      case UIImageOrientationLeftMirrored:
+      case UIImageOrientationRightMirrored:
+          transform = CGAffineTransformTranslate(transform, img.size.height, 0);
+          transform = CGAffineTransformScale(transform, -1, 1);
+          break;
+      case UIImageOrientationUp:
+      case UIImageOrientationDown:
+      case UIImageOrientationLeft:
+      case UIImageOrientationRight:
+          break;
+    }
+    CGContextRef ctx = CGBitmapContextCreate(NULL, img.size.width, img.size.height,
+                                           CGImageGetBitsPerComponent(img.CGImage), 0,
+                                           CGImageGetColorSpace(img.CGImage),
+                                           CGImageGetBitmapInfo(img.CGImage));
+    CGContextConcatCTM(ctx, transform);
+    switch (img.imageOrientation) {
+      case UIImageOrientationLeft:
+      case UIImageOrientationLeftMirrored:
+      case UIImageOrientationRight:
+      case UIImageOrientationRightMirrored:
+          CGContextDrawImage(ctx, CGRectMake(0,0,img.size.height,img.size.width), img.CGImage);
+          break;
+      default:
+          CGContextDrawImage(ctx, CGRectMake(0,0,img.size.width,img.size.height), img.CGImage);
+          break;
+    }
+    CGImageRef cgimg = CGBitmapContextCreateImage(ctx);
+    UIImage *fixedimg = [UIImage imageWithCGImage:cgimg];
+    CGContextRelease(ctx);
+    CGImageRelease(cgimg);
 
-  [pickedData writeToFile:fileString atomically:YES];
+    NSData* pickedData = UIImageJPEGRepresentation(fixedimg, 0.6);
+
+    [pickedData writeToFile:fileString atomically:YES];
+  }
+
+  if (CFStringCompare ((CFStringRef) mediaType, kUTTypeMovie, 0) == kCFCompareEqualTo) {
+    NSURL *videoURL = [info objectForKey:UIImagePickerControllerMediaURL];
+    NSData *videoData = [NSData dataWithContentsOfURL:videoURL];
+    [videoData writeToFile:fileString atomically:YES];
+  }
 
   free(img_filename);
   [[UIApplication sharedApplication].keyWindow.rootViewController dismissViewControllerAnimated:NO completion:NULL];
@@ -129,6 +140,22 @@ extern "C" void ios_camera_start(char *img_filename)
   pickerDele.img_filename = strdup(img_filename);
   if([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera]) {
     pickerDele.imagePicker.sourceType = UIImagePickerControllerSourceTypeCamera;
+    pickerDele.imagePicker.mediaTypes = [[NSArray alloc] initWithObjects: (NSString *) kUTTypeImage, nil];
+    [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:pickerDele.imagePicker animated:NO completion:NULL];
+  }
+}
+
+extern "C" void ios_videocamera_start(char *img_filename, int max_length)
+{
+  DMSG("ios_videocamera_start");
+  if (pickerDele==NULL) pickerDele=[[PickerDelegate alloc] init];
+  pickerDele.img_filename = strdup(img_filename);
+  if([UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera]) {
+    pickerDele.imagePicker.sourceType = UIImagePickerControllerSourceTypeCamera;
+    pickerDele.imagePicker.mediaTypes = [[NSArray alloc] initWithObjects: (NSString *) kUTTypeMovie, nil];
+    if (max_length > 0) {
+      pickerDele.imagePicker.videoMaximumDuration = (double) max_length;
+    }
     [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:pickerDele.imagePicker animated:NO completion:NULL];
   }
 }
