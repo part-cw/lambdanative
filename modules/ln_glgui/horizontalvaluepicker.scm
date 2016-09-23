@@ -64,6 +64,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (rightleft (glgui-widget-get g wgt 'rightleft))
          (armright (glgui-widget-get g wgt 'armright))
          (armleft (glgui-widget-get g wgt 'armleft))
+         (arrowh (glgui-widget-get g wgt 'arrowhperc))
+         (arrowwspace (glgui-widget-get g wgt 'arrowwspace))
          (activitytime (glgui-widget-get g wgt 'activitytime))
          (initialwait (glgui-widget-get g wgt 'initialwait))
          (unit (if rightleft (- (glgui-widget-get g wgt 'unit)) (glgui-widget-get g wgt 'unit)))
@@ -76,17 +78,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      (if colorbg
        (glgui:draw-box x y w h colorbg))
 
-     (let* ((ah (flo (/ h 3)))
+     (let* ((ah (flo (* h arrowh)))
             (ah2 (fl/ ah 2.))
-            (aw 20.)
+            ;; Originally hardcoded at 20, if arrowwspace is default 15, this is 20.
+            (aw (- 35. arrowwspace))
             (aw2 (fl/ aw 2.))
-            (ay1 (fl+ (flo y) ah))
+            (ay1 (fl+ (flo y) (/ (- h ah) 2.)))
             (cy (fl+ ay1 ah2))
             (ay2 (fl+ ay1 ah))
-            (a1x1 (fl+ (flo x) 15.))
+            (a1x1 (fl+ (flo x) arrowwspace))
             (c1x (fl+ a1x1 aw2))
             (a1x2 (fl+ a1x1 aw))
-            (a2x1 (- (flo (+ x w)) 15. aw))
+            (a2x1 (- (flo (+ x w)) arrowwspace aw))
             (c2x (fl+ a2x1 aw2))
             (a2x2 (fl+ a2x1 aw)))
      
@@ -94,7 +97,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (if (or (not (= value valprv)) cycle) 
          (begin
             (if armleft
-              (glgui:draw-box x y (+ aw 25.) h colorhighlight))
+              (glgui:draw-box x y 45. h colorhighlight))
             (glCoreColor colorarrows)
             (glCoreTexturePolygonDraw cy c1x (list 
               (list a1x2 ay1 0. 1.)
@@ -106,7 +109,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (if (or cycle (not (= value valnxt))) 
           (begin
             (if armright
-              (glgui:draw-box (- a2x1 10.) y (+ aw 25.) h colorhighlight))
+              (glgui:draw-box (- a2x1 10.) y 45. h colorhighlight))
             (glCoreColor colorarrows)
             (glCoreTexturePolygonDraw cy c2x (list
                (list a2x1 ay1 0. 0.)
@@ -241,6 +244,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        'vallist vallist
        'cycle #f       ;; If set to true, then the wheel will allow cycling - going past highest value to start back at lowest
        'colorarrows colorarrows
+       'arrowhperc 0.33
+       'arrowwspace 15.
        'colorhighlight colorhighlight
        'colorvalue colorvalue
        'colorbg colorbg
