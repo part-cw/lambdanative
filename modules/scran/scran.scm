@@ -199,7 +199,7 @@
 	(if (not (nullcomp? cval))
 		cval
 		(error (string-append "Tried to get an entity component which did not exist. "
-				      (get-component-name e))))))
+				      (get-component-name c))))))
 
 ;; Returns #t when entity e BELONGS in system S, regardless of whether
 ;; it is actually in the linked list for that system.
