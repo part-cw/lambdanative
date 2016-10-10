@@ -101,6 +101,11 @@
 ;; also remove the entity from those systems, calling exit functions 
 ;; as needed.
 (define (remove-component! e c)
+  (if (not (entity-has-component? e c))
+      (error (string-append
+              "Tried to remove component "
+              (get-component-name c)
+              " but it does not exist on the entity.")))
   (if (not (nullcomp? (vector-ref (entity-components e) c)))
 	  (let ((entity-systems (list-systems e)))
 		(for-each 
@@ -194,7 +199,7 @@
 	(if (not (nullcomp? cval))
 		cval
 		(error (string-append "Tried to get an entity component which did not exist. "
-				      (get-component-name e))))))
+				      (get-component-name c))))))
 
 ;; Returns #t when entity e BELONGS in system S, regardless of whether
 ;; it is actually in the linked list for that system.
@@ -393,28 +398,26 @@
 	  (if (fx= i n)
 		  total
 		  (loop (+ total (system-count-entities i))
-				(+ i 1))))))
+                        (+ i 1))))))
+
+;; Reset the system by unlinking its first and last elements.
+(define (reset-system! system)
+  (system-first-set! system #f)
+  (system-last-set! system #f)
+  system)
 
 ;; This removes all entities from all systems.  Assuming that entities
 ;; are not captured by other contexts, this results in the garbage
 ;; collection of all entities.
 (define (reset-all-systems!)
-  (let ((n (vector-length systems))) 
-	(let outer-loop ((count (total-entity-count)))
-	  (cond 
-	   ((fx= count 0)
-		#t)
-	   (else 
-		(let loop ((i 0))
-		  (cond 
-		   ((fx= i n)
-			#t)
-		   (else
-			;; Save the trouble of all the backtracking logic implied in deleting during traversal.
-			(let ((entities (system-map-entities (lambda (e #!rest ignore) e) i)))
-			  (map delete! entities)
-			  (loop (fx+ i 1))))))
-		(outer-loop (total-entity-count)))))))
+  (let ((n (vector-length systems)))
+    (let loop ((i 0))
+      (cond
+       ((< i n)
+        (let ((system (vector-ref systems i)))
+          (reset-system! system)
+          (loop (+ i 1))))
+       (else #t)))))
 
 ;; ************************************************
 ;;
