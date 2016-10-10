@@ -101,6 +101,11 @@
 ;; also remove the entity from those systems, calling exit functions 
 ;; as needed.
 (define (remove-component! e c)
+  (if (not (entity-has-component? e c))
+      (error (string-append
+              "Tried to remove component "
+              (get-component-name c)
+              " but it does not exist on the entity.")))
   (if (not (nullcomp? (vector-ref (entity-components e) c)))
 	  (let ((entity-systems (list-systems e)))
 		(for-each 
