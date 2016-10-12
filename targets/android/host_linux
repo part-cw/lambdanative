@@ -61,6 +61,7 @@ android_customtoolchain=${SYS_PREFIX}/${android_ndkver}-${ANDROIDARCH}-${ANDROID
 if [ ! -d $android_customtoolchain ]; then
   $ANDROIDNDK/build/tools/make-standalone-toolchain.sh \
      --toolchain=${android_chain} \
+     --arch=$ANDROIDARCH \
      --platform=android-${ANDROIDAPI} \
      --install-dir=$android_customtoolchain \
      --ndk-dir=${ANDROIDNDK}
