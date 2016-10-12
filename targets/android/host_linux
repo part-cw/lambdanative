@@ -54,13 +54,14 @@ if [ ! "X$android_apichanged" = "X" ]; then
   echo "$android_apichanged"
 fi
 
-android_chainpath=`ls -1d $ANDROIDNDK/toolchains/${ANDROIDARCH}*-4.8 | head -n 1`
+android_chainpath=`ls -1d $ANDROIDNDK/toolchains/${ANDROIDARCH}*-4.* | head -n 1`
 android_chain=`basename "$android_chainpath"`
 android_ndkver=`basename "$ANDROIDNDK"`
 android_customtoolchain=${SYS_PREFIX}/${android_ndkver}-${ANDROIDARCH}-${ANDROIDAPI}-toolchain
 if [ ! -d $android_customtoolchain ]; then
   $ANDROIDNDK/build/tools/make-standalone-toolchain.sh \
      --toolchain=${android_chain} \
+     --arch=$ANDROIDARCH \
      --platform=android-${ANDROIDAPI} \
      --install-dir=$android_customtoolchain \
      --ndk-dir=${ANDROIDNDK}
