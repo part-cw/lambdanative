@@ -38,7 +38,10 @@
 echo "==> attempting to install $SYS_PLATFORM application $SYS_APPNAME to local desktop.."
 pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM).zip"
 assertfile $pkgfile
-desktop=`xdg-user-dir DESKTOP` 2> /dev/null
+if `hash xdg-user-dir 2>/dev/null`; then
+  desktop=`xdg-user-dir DESKTOP`
+fi
+
 if [ "x$desktop" = "x" ]; then
    desktop=$HOME/Desktop
 fi
