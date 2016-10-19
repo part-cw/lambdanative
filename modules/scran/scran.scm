@@ -94,7 +94,17 @@
 		   (begin 
 			 (add-to-system-raw! e anti-system))
 		   #f))
-	 anti-systems)))
+	 anti-systems))
+  e)
+
+;; Add multiple components to entity e. Each argument after the entity is a list
+;; of the form `component-id component-args ...`
+(define (add-components! e #!rest component-specifications)
+  (cond
+   ((eq? component-specifications (list)) e)
+   (else
+    (apply add-component! e (car component-specifications))
+    (apply add-components! e (cdr component-specifications)))))
 
 ;; Remove a component c from entity e
 ;; When such a remove implies a removal from associated systems,
@@ -116,6 +126,15 @@
 				 #f)))
 		 entity-systems)
 		(nullify-entity-component! e c))))
+
+;; As `remove-component!` except takes multiple components. 
+(define (remove-components! e #!rest components)
+  (cond
+   ((eq? components (list))
+    e)
+   (else
+    (remove-component! e (car components))
+    (apply remove-components! e (cdr components)))))
 
 ;; There is no independent tracking of entities in scran so deleting
 ;; an entity amounts to nothing more than removing all of its components
@@ -418,6 +437,16 @@
           (reset-system! system)
           (loop (+ i 1))))
        (else #t)))))
+
+;; Completely reset scran - this is likely to cause trouble unless you
+;; plan to completely reinitialize scran afterward, as it will destroy
+;; all system and all component definitions. Any and all entities you
+;; may have references to will become invalid.
+(define (!reset-scran!)
+  (set! *component-name-map* (make-table test: equal?))
+  (set! systems (make-vector 0 #f))
+  (set! components (make-vector 0 #f))
+  (set! entity-id-counter -1))
 
 ;; ************************************************
 ;;
