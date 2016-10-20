@@ -94,7 +94,17 @@
 		   (begin 
 			 (add-to-system-raw! e anti-system))
 		   #f))
-	 anti-systems)))
+	 anti-systems))
+  e)
+
+;; Add multiple components to entity e. Each argument after the entity is a list
+;; of the form `component-id component-args ...`
+(define (add-components! e #!rest component-specifications)
+  (cond
+   ((eq? component-specifications (list)) e)
+   (else
+    (apply add-component! e (car component-specifications))
+    (apply add-components! e (cdr component-specifications)))))
 
 ;; Remove a component c from entity e
 ;; When such a remove implies a removal from associated systems,
@@ -116,6 +126,15 @@
 				 #f)))
 		 entity-systems)
 		(nullify-entity-component! e c))))
+
+;; As `remove-component!` except takes multiple components. 
+(define (remove-components! e #!rest components)
+  (cond
+   ((eq? components (list))
+    e)
+   (else
+    (remove-component! e (car components))
+    (apply remove-components! e (cdr components)))))
 
 ;; There is no independent tracking of entities in scran so deleting
 ;; an entity amounts to nothing more than removing all of its components
@@ -419,6 +438,16 @@
           (loop (+ i 1))))
        (else #t)))))
 
+;; Completely reset scran - this is likely to cause trouble unless you
+;; plan to completely reinitialize scran afterward, as it will destroy
+;; all system and all component definitions. Any and all entities you
+;; may have references to will become invalid.
+(define (!reset-scran!)
+  (set! *component-name-map* (make-table test: equal?))
+  (set! systems (make-vector 0 #f))
+  (set! components (make-vector 0 #f))
+  (set! entity-id-counter -1))
+
 ;; ************************************************
 ;;
 ;; BEGIN SUPPORT CODE
@@ -678,4 +707,96 @@
 		(call-with-system-components exit e si)
 		#f)
 	(system-remove si e)))
+
+;; ********************************************************
+;;
+;; BEGIN TEST CODE
+;;
+;; Code in this section tests scran's basic functionality.
+;;
+;; ********************************************************
+
+(unit-test "scran-ecs-basic"
+           "Test whether basic entity creation works."
+           (lambda ()
+             (define height (component! (lambda (e h) h) "height"))
+             (define growth-rate (component! (lambda (e g) g) "growth-rate"))
+             (define growing-things
+               (system! (list height growth-rate)
+                        every: (lambda (e h g)
+                                 (entity-component-set! e
+                                                        height
+                                                        (+ h g)))))
+             (define pillar (entity! (list height 10)))
+             (define tree (entity! (list height 10)
+                                   (list growth-rate 1)))
+             (system-execute growing-things)
+             (let ((result (and (= (entity-component pillar height) 10)
+                                (= (entity-component tree height) 11))))
+               (!reset-scran!)
+               result)))
+
+(unit-test "scran-ecs-deletion"
+           "Test whether removing component removes entity from appropriate system"
+           (lambda ()
+             (define height (component! (lambda (e h) h) "height"))
+             (define growth-rate (component! (lambda (e g) g) "growth-rate"))
+             (define growing-things
+               (system! (list height growth-rate)
+                        every: (lambda (e h g)
+                                 (entity-component-set! e
+                                                        height
+                                                        (+ h g)))))
+             (define pillar (entity! (list height 10)))
+             (define tree (entity! (list height 10)
+                                   (list growth-rate 1)))
+             (system-execute growing-things)
+             (let ((result (and (= (entity-component pillar height) 10)
+                                (= (entity-component tree height) 11)
+                                (begin
+                                  ;; kill the tree, figuratively
+                                  (remove-component! tree growth-rate)
+                                  (system-execute growing-things)
+                                  #t)
+                                (= (entity-component pillar height) 10)
+                                ;; the tree should not have grown.
+                                (= (entity-component tree height) 11))))
+               (!reset-scran!)
+               result)))
+
+(unit-test "scran-ecs-deletion-and-readdition"
+           "Test whether removing and readding component removes and re-adds entity from/to appropriate system"
+           (lambda ()
+             (define height (component! (lambda (e h) h) "height"))
+             (define growth-rate (component! (lambda (e g) g) "growth-rate"))
+             (define growing-things
+               (system! (list height growth-rate)
+                        every: (lambda (e h g)
+                                 (entity-component-set! e
+                                                        height
+                                                        (+ h g)))))
+             (define pillar (entity! (list height 10)))
+             (define tree (entity! (list height 10)
+                                   (list growth-rate 1)))
+             (system-execute growing-things)
+             (let ((result (and (= (entity-component pillar height) 10)
+                                (= (entity-component tree height) 11)
+                                (begin
+                                  ;; kill the tree, figuratively
+                                  (remove-component! tree growth-rate)
+                                  (system-execute growing-things)
+                                  #t)
+                                (= (entity-component pillar height) 10)
+                                ;; the tree should not have grown.
+                                (= (entity-component tree height) 11)
+                                (begin
+                                  ;; revive the tree, figuratively
+                                  (add-component! tree growth-rate 5)
+                                  (system-execute growing-things)
+                                  #t)
+                                (= (entity-component pillar height) 10)
+                                ;; the tree should not have grown.
+                                (= (entity-component tree height) 16))))
+               (!reset-scran!)
+               result)))
 
