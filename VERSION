@@ -7,4 +7,5 @@
 # 1.0.5: Bump Gambit to 4.7.3, update libraries, cdb encryption
 # 1.0.6: Uiform module (for LNhealth), updated libraries, updated modules
 # 1.0.7: Bump Gambit to 4.7.9, trusted timestamps, label cursor support
-1.0.7
+# 1.0.8: iOS refactoring, new modules, localnotifications, various fixes
+1.0.8
