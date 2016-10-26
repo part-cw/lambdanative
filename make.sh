@@ -804,10 +804,11 @@ make_setup_profile()
     echo "=== configured to build $SYS_APPNAME version $SYS_APPVERSION for $SYS_PLATFORM on $SYS_HOSTPLATFORM in $SYS_MODE mode"
   fi
   if [ "$SYS_MODE" = "release" ]; then
-    SYS_IOSCERT=$SYS_IOSRELCERT
+    SYS_IOSCERT="iPhone Distribution"
   else
-    SYS_IOSCERT=$SYS_IOSDEVCERT
+    SYS_IOSCERT="iPhone Developer"
   fi
+  SYS_IOSTEAMID=`echo "$SYS_IOSRELCERT" | cut -f 2 -d "(" | cut -f 1 -d ")"`
   SYS_ROOT=`pwd`
   mkdir -p $SYS_TMPDIR
   SYS_PREFIXROOT=`pwd`"-cache"
@@ -901,7 +902,7 @@ make_setup_profile()
   libraries=`filter_entries $SYS_PLATFORM $libraries`
   tool_libraries=
   if [ "$SYS_HOSTPLATFORM" = "$SYS_PLATFORM" ]; then
-    tool_libraries="libgd libgambc"
+    tool_libraries="libgd"
   fi
   appsrcdirs="$appsrcdirs loaders/$SYS_PLATFORM"
 # compile_target_options $appsrcdirs
@@ -970,6 +971,7 @@ make_setup_target()
   ac_subst SYS_APPNAME
   ac_subst SYS_LOCASEAPPNAME
   ac_subst SYS_IOSCERT
+  ac_subst SYS_IOSTEAMID
   ac_subst SYS_IOSVERSION
   ac_subst SYS_IOSSDK
   ac_subst SYS_PLATFORM
