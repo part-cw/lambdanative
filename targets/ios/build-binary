@@ -103,7 +103,6 @@ if [ $SYS_MODE = release ]; then
   sed -i '' -e '/<key>UIFileSharingEnabled<\/key>/{' -e 'n;s/true/false/' -e '}' $SYS_TMPDIR/tmp.xml
 fi
 cat $SYS_TMPDIR/tmp.xml | sed '/^#/d' > "$SYS_PREFIXROOT/build/$SYS_APPNAME/Info.plist"
-cp "$IOSSDK/ResourceRules.plist" "$SYS_PREFIXROOT/build/$SYS_APPNAME/ResourceRules.plist"
 
 echo " => preparing custom config.."
 headersrc=loaders/ios/config_custom.h.in
