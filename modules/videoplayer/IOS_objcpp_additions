@@ -12,7 +12,7 @@
 
 -(id)init;
 -(void)dealloc;
--(void)moviePlayerControllerDidCancel:(MPMoviePlayerViewController *)player;
+-(void)playbackDidFinish:(NSNotification*)notification;
 
 @end
 
@@ -23,6 +23,13 @@
   NSString *moviePath = [NSString stringWithUTF8String: img_filename];
   NSURL *movieURL = [NSURL fileURLWithPath:moviePath];
   movieController = [[MPMoviePlayerViewController alloc] initWithContentURL:movieURL];
+  [[NSNotificationCenter defaultCenter] removeObserver:movieController
+                                        name:MPMoviePlayerPlaybackDidFinishNotification
+                                        object:movieController.moviePlayer];
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                        selector:@selector(playbackDidFinish:)
+                                        name:MPMoviePlayerPlaybackDidFinishNotification
+                                        object:movieController.moviePlayer];
   [self presentMoviePlayerViewControllerAnimated:movieController];
   [movieController.moviePlayer play];
   return [super init];
@@ -35,7 +42,9 @@
   [super dealloc];
 }
 
-- (void)moviePlayerControllerDidCancel:(MPMoviePlayerViewController *)player {
+-(void)playbackDidFinish:(NSNotification*)notification {
+  NSNumber *value = [NSNumber numberWithInt:UIInterfaceOrientationPortrait];
+  [[UIDevice currentDevice] setValue:value forKey:@"orientation"];
   [[UIApplication sharedApplication].keyWindow.rootViewController dismissViewControllerAnimated:NO completion:NULL];
 }
 

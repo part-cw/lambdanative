@@ -115,11 +115,15 @@
   }
 
   free(img_filename);
+  NSNumber *value = [NSNumber numberWithInt:UIInterfaceOrientationPortrait];
+  [[UIDevice currentDevice] setValue:value forKey:@"orientation"];
   [[UIApplication sharedApplication].keyWindow.rootViewController dismissViewControllerAnimated:NO completion:NULL];
 }
 
 - (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
   DMSG("camera: image cancelled");
+  NSNumber *value = [NSNumber numberWithInt:UIInterfaceOrientationPortrait];
+  [[UIDevice currentDevice] setValue:value forKey:@"orientation"];
   [[UIApplication sharedApplication].keyWindow.rootViewController dismissViewControllerAnimated:NO completion:NULL];
 }
 
