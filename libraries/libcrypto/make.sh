@@ -1,5 +1,5 @@
-PKGURL=https://www.openssl.org/source/openssl-1.0.2g.tar.gz
-PKGHASH=36af23887402a5ea4ebef91df8e61654906f58f2
+PKGURL=https://www.openssl.org/source/openssl-1.0.2j.tar.gz
+PKGHASH=bdfbdb416942f666865fa48fe13c2d0e588df54f
 
 package_download $PKGURL $PKGHASH
 

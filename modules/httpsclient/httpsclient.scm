@@ -233,4 +233,11 @@ end-of-c-declare
           (httpsclient-close))))))
 ;; ------
 
+;; Load the embedded certificate chain and activate it
+(let ((cafile (string-append (system-directory) (system-pathseparator) "cacert.pem")))
+  (if (not (httpsclient-set-chain cafile))
+    (log-error "httpsclient: couldn't load embedded certificate chain!")
+  )
+)
+
 ;; eof
