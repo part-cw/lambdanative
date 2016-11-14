@@ -220,17 +220,17 @@ package_configure()
   LD_LIBRARY_PATH=$SYS_PREFIX/lib \
   CPPFLAGS=-I$SYS_PREFIX/include \
   CC=\"$SYS_CC -I$SYS_PREFIX/include -L$SYS_PREFIX/lib\" \
-  AR=$SYS_AR \
-  RANLIB=$SYS_RANLIB \
-  NM=$SYS_NM \
-  LD=$SYS_LD \
-  AS=$SYS_AS \
-  CPP=$SYS_CPP \
-  OBJCOPY=$SYS_OBJCOPY \
-  STRIP=$SYS_STRIP \
-  GPROF=$SYS_GPROF \
-  READELF=$SYS_READELF \
-  OBJDUMP=$SYS_OBJDUMP \
+  AR=\"$SYS_AR\" \
+  RANLIB=\"$SYS_RANLIB\" \
+  NM=\"$SYS_NM\" \
+  LD=\"$SYS_LD\" \
+  AS=\"$SYS_AS\" \
+  CPP=\"$SYS_CPP\" \
+  OBJCOPY=\"$SYS_OBJCOPY\" \
+  STRIP=\"$SYS_STRIP\" \
+  GPROF=\"$SYS_GPROF\" \
+  READELF=\"$SYS_READELF\" \
+  OBJDUMP=\"$SYS_OBJDUMP\" \
   ./configure --prefix=$SYS_PREFIX $pkg_conf_opt "
   asserterror $? "configure failed"
 }
