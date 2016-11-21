@@ -43,6 +43,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (orientation-portrait?) (not (orientation-landscape?)))
 
+(define (orientation-inverted?)
+  (or (= orientation:state GUI_SEASCAPE) (= orientation:state GUI_UPSIDEDOWN)))
+
 (define (orientation-event t x y . opt)
   (if (and (= t EVENT_ORIENTATION) 
         (if (fx> (length opt) 0) (member x opt) #t)) (begin
