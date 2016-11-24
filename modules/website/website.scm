@@ -138,7 +138,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         ))
       (begin
         (website:log 0 "!! unknown source: " document)
-        (display "HTTP/1.0 200 OK\ncontent-type: text/plain\n\nInvalid Request\n" port))
+        (display "HTTP/1.0 400 OK\ncontent-type: text/plain\n\nInvalid Request\n" port))
    )))
 
 ;; ----------------
@@ -152,5 +152,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((t (make-table)))
     (website:scan-directory t path)
     t))
+
+(define make-website make-table)
 
 ;; eof 
