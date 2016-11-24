@@ -274,7 +274,7 @@ is_gui_app()
   if [ "$res" = "no" ]; then
     res=`has_module glcore`
     if [ "$res" = "no" ]; then
-      res=`has_module webview`
+      res=`has_module hybridapp`
     fi
   fi
   echo "$res"
@@ -284,7 +284,12 @@ is_standalone_app()
 {
   neg=`has_module eventloop`
   if [ $neg = no ]; then
-    neg=yes
+    neg=`has_module hybridapp`
+    if [ $neg = no ]; then
+      neg=yes
+    else
+      neg=no
+    fi
   else
     neg=no
   fi
@@ -411,15 +416,20 @@ explode_library()
   libname=$1
   libfile="$SYS_PREFIX/lib/$libname.a"
   libdir="$SYS_PREFIX/build/$libname"
-  assertfile $libfile
-  if [ `isnewer $libfile $libdir` = "yes" ]; then
-    rmifexists "$libdir"
-    echo " => exploding library $libname.."
-    mkdir -p "$libdir"
-    here=`pwd`
-    cd "$libdir"
-    $SYS_AR -x $libfile
-    cd "$here"
+  if [ -f $libfile ]; then
+    if [ `isnewer $libfile $libdir` = "yes" ]; then
+      rmifexists "$libdir"
+      echo " => exploding library $libname.."
+      mkdir -p "$libdir"
+      here=`pwd`
+      cd "$libdir"
+      $SYS_AR -x $libfile
+      cd "$here"
+    fi
+  else
+    if [ ! -d "$SYS_PREFIX/lib/$libname" ]; then
+      assert "could not find library $libname"
+    fi
   fi
   dmsg_make "leaving explode_library"
 }
