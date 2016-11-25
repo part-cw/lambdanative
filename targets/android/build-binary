@@ -217,6 +217,10 @@ cat > $tmpdir/res/layout/main.xml << __EOF
   android:layout_height="fill_parent">
 </org.xwalk.core.XWalkView>
 __EOF
+    # allow free rotation of hybrid apps
+    cp $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java tmp.java
+    cat tmp.java | sed '/SCREEN_ORIENTATION_PORTRAIT/d' > $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
+    rm tmp.java
   else
     assert "hybrid but crosswalk not found?" 
   fi

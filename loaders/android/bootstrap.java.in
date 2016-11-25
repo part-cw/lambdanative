@@ -108,7 +108,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     WindowManager.LayoutParams.FLAG_FULLSCREEN);
     // prevent sleep
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-    //  setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     mGLView = new xGLSurfaceView(this);
     setContentView(mGLView);
     mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
