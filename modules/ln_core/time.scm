@@ -46,13 +46,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <math.h>
 
-double timezone_hours() {
+double timezone_hours(unsigned long int t) {
   double tz=0;
   long dtime = 0;
   time_t tm1, tm2;
   struct tm *t1, *t2;
   tzset();
-  tm1 = time(NULL);
+  tm1 = (time_t) t;
   t2 = gmtime(&tm1);
   tm2 = mktime(t2);
   t1 = localtime(&tm1);
@@ -68,7 +68,7 @@ double timezone_hours() {
 end-of-c-declare
 )
 
-(define timezone-hours (c-lambda () double "timezone_hours"))
+(define timezone-hours (c-lambda (unsigned-long) double "timezone_hours"))
 
 ;; SRFI-19: Time Data Types and Procedures.
 ;;
@@ -1492,16 +1492,16 @@ end-of-c-declare
         (if (char=? (car cs) #\%) #\~ (car cs))))))))
 
 (define (string->seconds str fmt . tz0)
-  (let* ((tz (if (= (length tz0) 1) (car tz0) (timezone-hours)))
-         (date (string->date str (tm:tildify fmt)))
+  (let* ((date (string->date str (tm:tildify fmt)))
          (t (date->time-monotonic date))
          (s (srfi19:time-second t))
+         (tz (if (= (length tz0) 1) (car tz0) (timezone-hours (fix s))))
          (ns (srfi19:time-nanosecond t))
          (utc (+ 0.0 (* tz -3600.) s (* ns 1.0e-9))))
     (- utc (tm:leap-second-delta utc))))
 
 (define (seconds->string sec0 fmt . tz0)
-  (let* ((tz (if (= (length tz0) 1) (car tz0) (timezone-hours)))
+  (let* ((tz (if (= (length tz0) 1) (car tz0) (timezone-hours (fix sec0))))
          (sec (+ sec0 (* tz 3600.)))
          (s (inexact->exact (floor sec)))
          (ns (inexact->exact (floor (* 1.0e9 (- sec s)))))
