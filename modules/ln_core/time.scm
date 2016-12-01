@@ -1471,8 +1471,8 @@ end-of-c-declare
 	 (date-month date)
 	 (date-year date)
 	 (date-zone-offset date)))
-  (let (;;(newdate (make-date 0 0 0 0 #f #f #f 0; (tm:local-tz-offset)))
-          (newdate (make-date 0 0 0 0 1 1 0 0)))
+  (let* ((today (current-date))
+         (newdate (make-date 0 0 0 0 (date-day today) (date-month today) (date-year today) 0)))
     (tm:string->date newdate
 		     0
 		     template-string
