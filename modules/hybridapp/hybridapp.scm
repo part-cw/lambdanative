@@ -40,6 +40,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (c-declare  #<<end-of-c-declare
 
+#ifdef MACOSX
+void minimize_macosx();
+#endif
+
+void minimize() {
+  static int do_mini=1;
+#ifdef MACOSX
+  if (do_mini) minimize_macosx();
+#endif
+  do_mini=0;
+}
+
 #if defined(ANDROID) || defined(IOS) 
 int scm_width() { return 0; }
 int scm_height() { return 0; }
@@ -62,6 +74,7 @@ end-of-c-declare
         (set! gui ((eval 'make-glgui)))
       )
      (lambda (t x y)
+       ((c-lambda () void "minimize"))
        (if (= t (eval 'EVENT_KEYPRESS)) (begin
          (if (= x (eval 'EVENT_KEYESCAPE)) ((eval 'terminate)))))
        ((eval 'glgui-event) gui t x y))
