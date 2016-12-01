@@ -36,18 +36,40 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(c-define (c-width) () int "scm_width" "" 0)
+(c-define (c-heartbeat) () void "scm_heartbeat" "" (##thread-heartbeat!))
 
-(c-define (c-height) () int "scm_height" "" 0)
+(c-declare  #<<end-of-c-declare
 
-(c-define (c-forcefullscreen) () int "scm_forcefullscreen" "" 0)
+#if defined(ANDROID) || defined(IOS) 
+int scm_width() { return 0; }
+int scm_height() { return 0; }
+int scm_screenwidth() { return 0; }
+int scm_screenheight() { return 0; }
+void scm_event(int t, int x, int y) { scm_heartbeat(); }
+#endif
 
-(c-define (c-screenwidth) () int "scm_screenwidth" "" 0)
+end-of-c-declare
+)
 
-(c-define (c-screenheight) () int "scm_screenheight" "" 0)
-
-(c-define (c-event t x y) (int int int) void "scm_event" ""
-  (set! ##now (current-time-seconds))
-  (##thread-heartbeat!))   
+;; fall back to launching into the default host browser 
+(if (not (member (system-platform) '("android" "ios"))) (begin
+  (launch-url "http://127.0.0.1:8080")
+  (let ((gui #f))
+    (main
+      (lambda (w h)
+        ((eval 'make-window) 320 32)
+        ((eval 'glgui-orientation-set!) (eval 'GUI_PORTRAIT))
+        (set! gui ((eval 'make-glgui)))
+      )
+     (lambda (t x y)
+       (if (= t (eval 'EVENT_KEYPRESS)) (begin
+         (if (= x (eval 'EVENT_KEYESCAPE)) ((eval 'terminate)))))
+       ((eval 'glgui-event) gui t x y))
+     (lambda () #t)
+     (lambda () ((eval 'glgui-suspend)))
+     (lambda () ((eval 'glgui-resume)))
+    )
+  )
+))
 
 ;; eof
