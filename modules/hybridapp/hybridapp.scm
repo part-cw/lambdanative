@@ -36,6 +36,16 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
+(c-define (c-width) () int "scm_width" "" 0)
+
+(c-define (c-height) () int "scm_height" "" 0)
+
+(c-define (c-forcefullscreen) () int "scm_forcefullscreen" "" 0)
+
+(c-define (c-screenwidth) () int "scm_screenwidth" "" 0)
+
+(c-define (c-screenheight) () int "scm_screenheight" "" 0)
+
 (c-define (c-event t x y) (int int int) void "scm_event" ""
   (set! ##now (current-time-seconds))
   (##thread-heartbeat!))   
