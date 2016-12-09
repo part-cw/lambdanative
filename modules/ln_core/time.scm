@@ -46,7 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <math.h>
 
-double timezone_hours(unsigned long int t) {
+double timezone_hours(long int t) {
   double tz=0;
   long dtime = 0;
   time_t tm1, tm2;
@@ -68,7 +68,7 @@ double timezone_hours(unsigned long int t) {
 end-of-c-declare
 )
 
-(define timezone-hours (c-lambda (unsigned-long) double "timezone_hours"))
+(define timezone-hours (c-lambda (long) double "timezone_hours"))
 
 ;; SRFI-19: Time Data Types and Procedures.
 ;;
