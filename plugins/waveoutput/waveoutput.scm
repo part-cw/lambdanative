@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (casefile (instance-refvar store instance "FilePath")))
     (if (port? fh) (begin
       (close-output-port fh)
+      (if (fx= (file-info-size (file-info casefile)) 0) (delete-file casefile))
       (if (and casefile (function-exists? "timestamp-gettimestamp"))
         ((eval 'timestamp-gettimestamp) casefile)
       )
@@ -56,7 +57,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (waveoutput:start store instance)
   (let* ((casepath (instance-refvar store instance "CasePath" #f))
          (namesuffix (instance-refvar store instance "NameSuffix" #f))
-         (casefile (string-append casepath (system-pathseparator) 
+         (casefile (string-append casepath (system-pathseparator)
            (instance-refvar store instance "Source" #f) "_" (seconds->string ##now "%Y%m%d_%H%M%S")
            (if (string? namesuffix) namesuffix "") ".csv"))
          (fh (open-output-file casefile)))
@@ -83,7 +84,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         ))
 |#
       (if (and fh (fx> (length data) 0)) (begin
-        (for-each (lambda (s) (display s fh) (display "\n" fh)) (list-head data (fx- (length data) 1)))
+        (for-each (lambda (s) (display s fh) (display ",\n" fh)) (list-head data (fx- (length data) 1)))
         (for-each (lambda (s) (display s fh)) (list (car (list-tail data (fx- (length data) 1))) "," ##now "\n"))
         (force-output fh)
       ))
