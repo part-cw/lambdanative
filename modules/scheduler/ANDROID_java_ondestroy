@@ -1,2 +1,1 @@
-MediaScannerConnection.scanFile(this, new String[]{"/sdcard/@SYS_APPNAME@/results",
-  "/sdcard/@SYS_APPNAME@/log","/sdcard/@SYS_APPNAME@/config"}, null, null);
+  runMediaScanner();

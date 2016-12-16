@@ -93,6 +93,16 @@ void android_launch_url(char* urlstring){
   }
 }
 
+// MediaScanner for output files
+void ln_android_run_mediascanner(){
+  JNIEnv *env = GetJNIEnv();
+  if (env&&globalObj) {
+    jclass cls = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+    jmethodID method = (*env)->GetMethodID(env, cls, "runMediaScanner", "()V");
+    (*env)->CallVoidMethod(env, globalObj, method);
+  }
+}
+
 // Add code here if needed for modules, such as GPS.
 @ANDROID_C_ADDITIONS@
 

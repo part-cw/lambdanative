@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2016, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -41,11 +41,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "LNCONFIG.h"
 #ifdef ANDROID
   void ln_android_finish();
+  void ln_android_run_mediascanner();
 #endif
 
 void android_finish(){
 #ifdef ANDROID
   ln_android_finish();
+#endif
+}
+
+static void android_run_mediascanner(){
+#ifdef ANDROID
+  ln_android_run_mediascanner();
 #endif
 }
 
@@ -120,6 +127,7 @@ end-of-c-declare
 ;; Android specials
 (define app:android? (string=? (system-platform) "android"))
 (define android-finish (c-lambda () void "android_finish"))
+(define android-run-mediascanner (c-lambda () void "android_run_mediascanner"))
 
 (define event:fifo '())
 (define (event-push t x y)

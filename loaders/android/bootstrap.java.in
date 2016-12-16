@@ -64,6 +64,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.MediaScannerConnection;
 // Imports needed for modules, e.g. gps
 @ANDROID_JAVA_IMPORTS@
 
@@ -192,6 +193,12 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
      startActivity(browserIntent);
     }
   }
+  // MediaScanner call
+  void runMediaScanner(){
+    MediaScannerConnection.scanFile(this, new String[]{"/sdcard/@SYS_APPNAME@/results",
+      "/sdcard/@SYS_APPNAME@/log","/sdcard/@SYS_APPNAME@/config"}, null, null);
+  }
+
   native void nativeInstanceInit();
 }
 
