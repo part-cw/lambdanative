@@ -62,6 +62,9 @@ extern int ios_localnotification_schedule_batch(char* text[], double* time, int*
   }
   [userDefaults setInteger: localnotification_id forKey:@"LocalNotificationId"];
   [userDefaults synchronize];
+  // Add old notifications back in
+  NSArray *eventArrayOld = [[UIApplication sharedApplication] scheduledLocalNotifications];
+  [eventArray addObjects: eventArrayOld];
   // Schedule the notifications
   [[UIApplication sharedApplication] setScheduledLocalNotifications: eventArray];
   return len;
