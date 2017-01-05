@@ -84,9 +84,10 @@ if [ `is_standalone_app` = "yes" ]; then
   veval "$SYS_HOST_CC $cflag_additions $ldflag_additions -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload"
 else
   if [ `is_gui_app` = "yes" ]; then
+    rm $tmpdir/*.[mh] 2> /dev/null
     cp loaders/macosx/*.[mh] $tmpdir
     cd "$tmpdir"
-    veval "$SYS_HOST_CC $cflag_additions $ldflag_additions -framework OpenGL -framework Cocoa -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -x objective-c -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -o $apptgtdir/$SYS_APPNAME -lpayload main.m SimpleOpenGLView.m"
+    veval "$SYS_HOST_CC $cflag_additions $ldflag_additions -framework OpenGL -framework Cocoa -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -framework Accelerate -x objective-c -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -o $apptgtdir/$SYS_APPNAME -lpayload *.m"
   else
     cp loaders/common/main.c $tmpdir
     cd "$tmpdir"

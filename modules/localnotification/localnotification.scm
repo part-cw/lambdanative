@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   extern double localnotification_timestamp;
   extern int localnotification_gotmsg;
   int ios_localnotification_schedule(char*, double, int);
+  int ios_localnotification_schedule_batch(char*[], double*, int*, int, int*);
   int ios_localnotification_cancelall();
   int ios_localnotification_cancel(int id);
   void ios_localnotification_renumber();
@@ -61,6 +62,13 @@ void localnotification_renumber(){
 #ifdef IOS
   ios_localnotification_renumber();
 #endif
+}
+
+int localnotification_schedule_batch(char* text[], double* time, int* repeattime, int len, int* ret){
+#ifdef IOS
+  return ios_localnotification_schedule_batch(text,time,repeattime,len,ret);
+#endif
+  return 0;
 }
 
 int localnotification_schedule(char* text, double time, int repeatmin){
@@ -100,26 +108,42 @@ end-of-c-declare
 (define localnotification:timestamp 0.)
 
 ;; Create local notification
-(define (localnotification:schedule lst)
+(define (localnotification:validate lst)
   (let ((str (car lst))
-        (time (cadr lst))
-        (repeataftermin (if (fx= (length lst) 3) (caddr lst) '())))
+        (time (flo (cadr lst)))
+        (repeataftermin (if (fx= (length lst) 3) (caddr lst) 0)))
     (if (and (> time ##now) (string? str) (fx<= (string-length str) 100))
-      ((c-lambda (char-string double int) int "___result=localnotification_schedule(___arg1,___arg2,___arg3);")
-        str time (if (pair? repeataftermin) (fix (car repeataftermin)) 0))
+      (list str time (if (pair? repeataftermin) (fix (car repeataftermin)) 0))
+      (list "" 0 0)
+    )
+  ))
+
+(define (localnotification-schedule str time . repeataftermin)
+  (let ((nf (localnotification:validate (list str time repeataftermin))))
+    (if (fx> (cadr nf) 0)
+      (let ((ret ((c-lambda (char-string double int) int
+                   "___result=localnotification_schedule(___arg1,___arg2,___arg3);")
+                   (car nf) (cadr nf) (caddr nf))))
+        (if (fx> ret 0) (localnotification:renumber))
+        (if (fx> ret 0) ret #f)
+      )
       #f
     )
   ))
-(define (localnotification-schedule str time . repeataftermin)
-  (let ((ret (localnotification:schedule (list str time repeataftermin))))
-    (if (fx> ret 0) (localnotification:renumber))
-    ret
-  ))
 
-(define (localnotification-schedule-batch nfs)
-  (let ((ret (map (lambda (n) (localnotification:schedule n)) nfs)))
-    (localnotification:renumber)
-    ret
+(define (localnotification-schedule-batch nfs0)
+  (let* ((nfs (map localnotification:validate nfs0))
+         (len (length nfs))
+         (ret (make-u32vector len 0))
+         (texts (map car nfs))
+         (times (list->f64vector (map cadr nfs)))
+         (repeats (list->u32vector (map caddr nfs)))
+         (r ((c-lambda (nonnull-char-string-list scheme-object scheme-object int scheme-object) bool
+           "___result=localnotification_schedule_batch(___CAST(char**,___BODY_AS(___arg1,___tSUBTYPED)),
+            ___CAST(double*,___BODY_AS(___arg2,___tSUBTYPED)),___CAST(int*,___BODY_AS(___arg3,___tSUBTYPED)),
+            ___arg4,___CAST(int*,___BODY_AS(___arg5,___tSUBTYPED)));") texts times repeats len ret)))
+    (if r (localnotification:renumber))
+    (map (lambda (l) (if (fx> l 0) l #f)) (u32vector->list ret))
   ))
 
 ;; Renumber notifications
@@ -127,10 +151,20 @@ end-of-c-declare
   ((c-lambda () void "localnotification_renumber")))
 
 ;; Clear notifications
+(define (localnotification:cancel id)
+  ((c-lambda (int) int "___result=localnotification_cancel(___arg1);") id))
+(define (localnotification-cancel id)
+  (let ((ret (localnotification:cancel id)))
+    (if (fx> ret 0) (localnotification:renumber))
+    ret
+  ))
+(define (localnotification-cancel-batch ids)
+  (let ((ret (map (lambda (n) (localnotification:cancel n)) ids)))
+    (localnotification:renumber)
+    ret
+  ))
 (define (localnotification-cancelall)
   ((c-lambda () int "___result=localnotification_cancelall();")))
-(define (localnotification-cancel id)
-  ((c-lambda (int) int "___result=localnotification_cancel(___arg1);") id))
 
 ;; Retrieve local notification
 (define (localnotification-getalert)

@@ -43,9 +43,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (local-load fname)
   (let ((fullname (string-append (system-directory) (system-pathseparator) fname)))
     (if (file-exists? fullname)
-      (set! local:table (list->table
-                           ;; Remove quotes from each cell of the csv
-                           (map (lambda (line) (map (lambda (cell) (string-remove-quotes cell)) line)) (csv-read fullname))))
+      (table-merge! local:table (list->table
+        ;; Remove quotes from each cell of the csv
+        (map (lambda (line) (map (lambda (cell) (string-remove-quotes cell)) line)) (csv-read fullname))))
       (log-error "localization file " fullname " not found"))))
 
 (define (local-get-text key . altstr)

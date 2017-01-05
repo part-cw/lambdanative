@@ -8,12 +8,17 @@ package_patch
 case $SYS_PLATFORM in
 ios)
   EXTRACONF=--host=arm
+  cp configure configure.tmp
+  cat configure.tmp | sed 's/#define HAVE_CLOCK_GETTIME/\/\/#define HAVE_CLOCK_GETTIME/g' > configure
 ;;
 android|bb10|playbook)
   EXTRACONF=--host=arm-eabi
 ;;
 win32*)
   EXTRACONF=--host=i386-mingw32
+;;
+win64*)
+  EXTRACONF=--host=i686-w64-mingw32
 ;;
 linux*)
   EXTRACONF=--host=i386-linux

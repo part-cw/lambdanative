@@ -16,11 +16,37 @@
 sizes="57 114 72 144 29 58 50 100 60 120 76 152 1024"
 
 # create a dummy splash image to get full screen on retina displays
-tgt="$SYS_PREFIXROOT/build/$SYS_APPNAME/retina.png"
-if [ ! -f "$tgt" ]; then
-  echo " => generating retina default image.."
-  convert -size 640x1136 xc:black $tgt
+# a custom image can be provided (portrait)
+splash_src="$appsrcdir/splash.png"
+
+splash_update=no
+if [ ! -f "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default.png" ]; then
+  splash_update=yes
 fi
-assertfile $tgt
+if [ -f "$splash_src" ] && [ `isnewer "$splash_src" "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default.png"` = yes ]; then
+  splash_update=yes
+fi
+
+if [ $splash_update = yes ]; then
+  if [ -f "$splash_src" ]; then
+    echo " => generating splash images.."
+    convert $splash_src -resize 320x480\!   "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default.png"
+    convert $splash_src -resize 640x960\!   "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default@2x.png"
+    convert $splash_src -resize 640x1136\!  "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default-568h@2x.png"
+    convert $splash_src -resize 750x1334\!  "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default-667h@2x.png"
+    convert $splash_src -resize 1242x2208\! "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default-736h@2x.png"
+    convert $splash_src -resize 768x1024\!  "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default-Portrait.png"
+    convert $splash_src -resize 1536x2048\! "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default-Portrait@2x.png"
+  else
+    echo " => generating default splash images.."
+    convert -size 320x480   xc:black "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default.png"
+    convert -size 640x960   xc:black "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default@2x.png"
+    convert -size 640x1136  xc:black "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default-568h@2x.png"
+    convert -size 750x1334  xc:black "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default-667h@2x.png"
+    convert -size 1242x2208 xc:black "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default-736h@2x.png"
+    convert -size 768x1024  xc:black "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default-Portrait.png"
+    convert -size 1536x2048 xc:black "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default-Portrait@2x.png"
+  fi
+fi
 
 #eof

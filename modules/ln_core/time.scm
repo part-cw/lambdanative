@@ -46,19 +46,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <math.h>
 
-double timezone_hours() {
+double timezone_hours(long int t) {
   double tz=0;
   long dtime = 0;
   time_t tm1, tm2;
   struct tm *t1, *t2;
   tzset();
-  tm1 = time(NULL);
+  tm1 = (time_t) t;
   t2 = gmtime(&tm1);
   tm2 = mktime(t2);
   t1 = localtime(&tm1);
   dtime = (long)(tm1 - tm2);
   tz = (dtime>=0?1.:-1.)*abs(dtime)/3600.;
-  if ((abs(dtime) % 3600)==1800) tz+=0.5;
 #ifndef WIN32
   // adjust for daylight saving
   tz+=(t1->tm_isdst?1.:0.);
@@ -69,7 +68,7 @@ double timezone_hours() {
 end-of-c-declare
 )
 
-(define timezone-hours (c-lambda () double "timezone_hours"))
+(define timezone-hours (c-lambda (long) double "timezone_hours"))
 
 ;; SRFI-19: Time Data Types and Procedures.
 ;;
@@ -128,6 +127,7 @@ end-of-c-declare
 
 (define tm:locale-pm "PM")
 (define tm:locale-am "AM")
+(define tm:locale-ampm-vector (vector tm:locale-am tm:locale-pm))
 
 ;; See date->string
 (define tm:locale-date-time-format "~a ~b ~d ~H:~M:~S~z ~Y")
@@ -196,7 +196,8 @@ end-of-c-declare
 ;; each entry is ( utc seconds since epoch . # seconds to add for tai )
 ;; note they go higher to lower, and end in 1972.
 (define tm:leap-second-table
- '((1435708800 . 36)
+ '((1483228800 . 37)
+  (1435708800 . 36)
   (1341100800 . 35)
   (1230768000 . 34)
   (1136073600 . 33)
@@ -950,7 +951,8 @@ end-of-c-declare
 (define (tm:locale-long-month->index string)
   (tm:vector-find string tm:locale-long-month-vector string=?))
 
-
+(define (tm:locale-reader-ampm->index string)
+  (tm:vector-find string tm:locale-ampm-vector string-ci=?))
 
 ;; do nothing.
 ;; Your implementation might want to do something...
@@ -1031,13 +1033,11 @@ end-of-c-declare
 			port)))
    (cons #\I (lambda (date pad-with port)
 	       (let ((hr (date-hour date)))
-		 (if (> hr 12)
-		     (display (tm:padding (- hr 12)
-					  pad-with 2)
-			      port)
-		     (display (tm:padding hr
-					  pad-with 2)
-			      port)))))
+		 (cond
+                   ((> hr 12) (display (tm:padding (- hr 12) pad-with 2) port))
+		   ((= hr 0) (display (tm:padding 12 pad-with 2) port))
+                   (else (display (tm:padding hr pad-with 2) port))
+                  ))))
    (cons #\j (lambda (date pad-with port)
 	       (display (tm:padding (date-year-day date)
 				    pad-with 3)
@@ -1371,6 +1371,8 @@ end-of-c-declare
 				      tm:locale-abbr-month->index))
 	 (locale-reader-long-month   (tm:make-locale-reader
 				      tm:locale-long-month->index))
+   (locale-reader-ampm (tm:make-locale-reader
+              tm:locale-reader-ampm->index))
 	 (char-fail (lambda (ch) #t))
 	 (do-nothing (lambda (val object) (values)))
 	 )
@@ -1395,6 +1397,8 @@ end-of-c-declare
              (tm:set-date-month! object val)))
      (list #\H char-numeric? ireader2 (lambda (val object)
                                         (tm:set-date-hour! object val)))
+     (list #\I char-numeric? ireader2 (lambda (val object)
+                                        (tm:set-date-hour! object (modulo val 12))))
      (list #\k char-fail eireader2 (lambda (val object)
                                      (tm:set-date-hour! object val)))
      (list #\m char-numeric? ireader2 (lambda (val object)
@@ -1404,6 +1408,8 @@ end-of-c-declare
                                          object val)))
      (list #\N char-numeric? fireader9 (lambda (val object)
 					 (tm:set-date-nanosecond! object val)))
+     (list #\p char-alphabetic? locale-reader-ampm (lambda (val object)
+           (if (fx= val 1) (tm:set-date-hour! object (+ (date-hour object) 12)))))
      (list #\S char-numeric? ireader2 (lambda (val object)
                                         (tm:set-date-second! object val)))
      (list #\y char-fail eireader2
@@ -1465,8 +1471,8 @@ end-of-c-declare
 	 (date-month date)
 	 (date-year date)
 	 (date-zone-offset date)))
-  (let (;;(newdate (make-date 0 0 0 0 #f #f #f 0; (tm:local-tz-offset)))
-          (newdate (make-date 0 0 0 0 1 1 0 0)))
+  (let* ((today (current-date))
+         (newdate (make-date 0 0 0 0 (date-day today) (date-month today) (date-year today) 0)))
     (tm:string->date newdate
 		     0
 		     template-string
@@ -1486,16 +1492,22 @@ end-of-c-declare
         (if (char=? (car cs) #\%) #\~ (car cs))))))))
 
 (define (string->seconds str fmt . tz0)
-  (let* ((tz (if (= (length tz0) 1) (car tz0) (timezone-hours)))
-         (date (string->date str (tm:tildify fmt)))
+  (let* ((date (string->date str (tm:tildify fmt)))
          (t (date->time-monotonic date))
          (s (srfi19:time-second t))
          (ns (srfi19:time-nanosecond t))
-         (utc (+ 0.0 (* tz -3600.) s (* ns 1.0e-9))))
-    (- utc (tm:leap-second-delta utc))))
+         (t2 (- s (tm:leap-second-delta s)))
+         (tz (if (= (length tz0) 1) (car tz0) (timezone-hours (fix t2))))
+         (utc (+ 0.0 (* tz -3600.) t2 (* ns 1.0e-9)))
+         ;; timezone-hours assumes t is UTC, this causes issues if one is DST but not both
+         (tz2 (timezone-hours (fix utc)))
+         (tzdiff (- tz tz2))
+         (utc2 (if (= tzdiff 0) utc (+ utc (* tzdiff 3600.))))
+        )
+    utc2))
 
 (define (seconds->string sec0 fmt . tz0)
-  (let* ((tz (if (= (length tz0) 1) (car tz0) (timezone-hours)))
+  (let* ((tz (if (= (length tz0) 1) (car tz0) (timezone-hours (fix sec0))))
          (sec (+ sec0 (* tz 3600.)))
          (s (inexact->exact (floor sec)))
          (ns (inexact->exact (floor (* 1.0e9 (- sec s)))))

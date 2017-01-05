@@ -82,26 +82,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             ;; Dynamically create list for choosing items
             (let* ((bgcolor (glgui-widget-get g wgt 'bgcolor))
                    (bordercolor (glgui-widget-get g wgt 'bordercolor))
+                   (scrollcolor (glgui-widget-get g wgt 'scrollcolor))
+                   (scrollw (glgui-widget-get g wgt 'scrollw))
+                   (scrollrounded (glgui-widget-get g wgt 'scrollrounded))
                    (modal (glgui-widget-get g wgt 'modal))
                    (lst (glgui-widget-get g wgt 'list))
                    (cur (glgui-widget-get g wgt 'current))
                    (maxitems (glgui-widget-get g wgt 'maxitems))
-                   ;; If max items set to #f by app, then screen boundaries will cut it off instead
+                   (miny (glgui-widget-get g wgt 'miny))
+                   (maxy (glgui-widget-get g wgt 'maxy))
+                   ;; If max items set to #f by app, then maxy and miny (default to screen boundaries) will cut it off instead
                    (lh (* (if maxitems (min (length lst) maxitems) (length lst)) h))
                    (ly0 (- y lh))
-                   ;; Place list above box if it would go offscreen
-                   (ly (if (< ly0 0) (+ y h) ly0)))
+                   ;; Place list above box if it would go below miny (offscreen)
+                   (ly (if (< ly0 miny) (+ y h) ly0)))
               ;; Determine if list height and location still need to be adjusted - for a long list
-              (if (> (+ ly lh) (glgui-height-get))
+              (if (> (+ ly lh) maxy)
                 ;; Which direction has more space?
-                (let ((upper (- (glgui-height-get) (+ y h))))
-                  (if (>= y upper)
+                (let ((upper (- maxy (+ y h))))
+                  (if (>= (- y miny) upper)
                     ;; If more space below, put list below
                     (begin
-                      (set! ly (modulo y h))
+                      (set! ly (+ (modulo (- y miny) h) miny))
                       (if bidir
-                        (let ((vspace (- (glgui-height-get) ly)))
-                          ;; If bidirectional, fit just within the screen height
+                        (let ((vspace (- maxy ly)))
+                          ;; If bidirectional, fit within the miny to maxy space (screen height)
                           (if (> lh vspace)
                             (set! lh (* (floor (/ vspace h)) h))))
                         ;; Otherwise fit below the box
@@ -114,7 +119,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                           (if (> diff (+ y h))
                             ;; Not enough room for full height
                             (begin
-                              (set! ly (modulo y h))
+                              (set! ly (+ (modulo (- y miny) h) miny))
                               (set! lh (+ lh0 h (- y ly))))
                             ;; Full desired height
                             (set! ly (- (+ y h) diff))))
@@ -159,6 +164,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 (glgui-widget-set! g listw 'bgcol1 bgcolor)
                 (glgui-widget-set! g listw 'bgcol2 bgcolor)
                 (glgui-widget-set! g listw 'bordercolor bordercolor)
+                (glgui-widget-set! g listw 'scrollcolor scrollcolor)
+                (glgui-widget-set! g listw 'scrollw scrollw)
+                (glgui-widget-set! g listw 'scrollrounded scrollrounded)
                 ;; Scroll if necessary based on selected item
                 (if (> (* cur h) lh)
                   ;; Put selected item just off bottom
@@ -195,12 +203,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'hidden #f
      'list lst
      'maxitems 5    ;; Max number of items to make visible at once
+     'maxy (glgui-height-get)  ;; Upper limit for where the options should extend to
+     'miny 0  ;; Upper limit for where the options should extend to
      'bidir #f      ;; If set to true, may expand in both directions
      'current -1
      'focus #f
      'arrowcolor arrowcolor
      'bgcolor bgcolor
      'bordercolor bordercolor
+     'scrollcolor DimGray
+     'scrollw 5.
+     'scrollrounded #f
      'draw-handle  glgui:dropdownbox-draw
      'input-handle glgui:dropdownbox-input
   ))

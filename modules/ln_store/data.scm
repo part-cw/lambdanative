@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2016, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -65,7 +65,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (store:clearlocal! store ids)
   (let ((is (if (list? ids) ids (list ids))))
-    (for-each (lambda (id) 
+    (for-each (lambda (id)
       (let ((t (store:datatable store))
             (ct (store:categorytable store)))
         (if (and (table? t) (table-ref t id #f)) (begin
@@ -90,7 +90,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (is (if (list? ids) ids (list ids))))
     (for-each (lambda (id)
        (let ((tstamp (store-timestamp store id)))
-         (if (fl> (fl- ##now tstamp) (flo timeout)) (begin 
+         (if (fl> (fl- ##now tstamp) (flo timeout)) (begin
            (if (and cb (fl> tstamp 0.)) (cb store id))
            (store-clear! store id)))
        )) is)))
@@ -145,6 +145,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (loop (cdr cl) (append res (list (list (car cl) (car (table-ref t (car cl) '(#f)))))))
       ))))
 
+(define (store-getcat store)
+  (let ((ct (store:categorytable store)))
+    (map car (table->list ct))
+  )
+)
 
 ;;  store-ref uses the fallback ONLY when a parameter is not defined (not if the value is set to #f)
 (define (store-ref store id . fback)
@@ -206,7 +211,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         )
       )
       (begin
-        (log-error "store-timestamp: unknown store " store) 
+        (log-error "store-timestamp: unknown store " store)
         0.
       ))))
 

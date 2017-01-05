@@ -17,9 +17,12 @@ ___END_C_LINKAGE
 ___setup_params_struct setup_params;
 int debug_settings = ___DEBUG_SETTINGS_INITIAL;
 
-void lambdanative_payload_setup(char *path)
+void system_init();
+
+void lambdanative_payload_setup()
 {
   DMSG("lambdanative_payload_setup [scm]");
+  system_init();
   ___setup_params_reset (&setup_params);
   setup_params.version = ___VERSION;
   setup_params.linker = LINKER;

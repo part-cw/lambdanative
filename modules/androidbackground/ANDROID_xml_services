@@ -1,0 +1,1 @@
+<service android:name=".LambdaNativeBackgroundService" android:enabled="true" />

@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define dse:rule-conclusion car)
 (define dse:rule-condition cadr)
 (define dse:rule-priority caddr)
+(define dse:rule-delay cadddr)
 
 (define (dse:check-weak-fact store fact)
   (if (and (list? fact) (> (length fact) 2))
@@ -61,19 +62,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              ((eq? op '!=) (not (equal? v1 v2)))
              ((eq? op 'diff>) (and (number? v1) (number? v2) (number? v3) (> (- v2 v1) v3)))
              ((eq? op 'diff<) (and (number? v1) (number? v2) (number? v3) (< (- v2 v1) v3)))
-             ((eq? op '>deviation_perc) (and (number? v1) (f32vector? v2) (number? v3) (> (* (median (f32vector->list v2)) (/ (+ 100 v3) 100)) v1)))
-             ((eq? op '<deviation_perc) (and (number? v1) (f32vector? v2) (number? v3) (< (* (median (f32vector->list v2)) (/ (- 100 v3) 100)) v1)))                
+             ((eq? op '>deviation_perc) (and (number? v1) (f32vector? v2) (number? v3)
+                                             (> (* (median (f32vector->list v2)) (/ (+ 100 v3) 100)) v1)))
+             ((eq? op '<deviation_perc) (and (number? v1) (f32vector? v2) (number? v3)
+                                             (< (* (median (f32vector->list v2)) (/ (- 100 v3) 100)) v1)))
+             ((eq? op 'fcn) (v1 v2 v3))
              (else (log-error "dse: unknown rule operator " op) #f)
       )
     )
     (begin
-      (log-error "dse: syntax error in rule " fact) 
+      (log-error "dse: syntax error in rule " fact)
       #f
     )
   ))
 
 (define (dse:check-strong-fact store instance fact)
-  (member fact (instance-refvar store instance "FactList")))
+  (member fact (instance-refvar store instance "FactList" '())))
 
 (define (dse:check-fact store instance fact)
   (if (list? fact)
@@ -102,7 +106,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (dse:adopt-conclusion store instance rule)
   (let ((fact (dse:rule-conclusion rule))
-        (flist (instance-refvar store instance "FactList")))
+        (flist (instance-refvar store instance "FactList" '())))
      (instance-setvar! store instance "FactList" (append (list fact) flist))
   ))
 
@@ -117,8 +121,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (dse:run store instance)
   (define (dse:outerloop continue?)
-    (if continue? 
-      (dse:outerloop (dse:innerloop (instance-refvar store instance "Rules"))) 
+    (if continue?
+      (dse:outerloop (dse:innerloop (instance-refvar store instance "Rules")))
       #t
     ))
   (define (dse:innerloop rbase)
@@ -128,7 +132,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (if (not (dse:check-strong-fact store instance (dse:rule-conclusion rule)))
           (if (dse:check-condition store instance rule)
             (begin
-              (dse:adopt-conclusion store instance rule) 
+              (dse:adopt-conclusion store instance rule)
               (dse:outerloop #t)
             )
             (dse:innerloop (cdr rbase))
@@ -141,14 +145,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   ;; update repeating facts and trigger as needed
   ;; non-repeating stuff is dropped
-  (let ((flist (instance-refvar store instance "FactList"))
-        (rlist (instance-refvar store instance "RepeatFactList")))
+  (let ((flist (instance-refvar store instance "FactList" '()))
+        (rlist (instance-refvar store instance "RepeatFactList" '()))
+        (rules (instance-refvar store instance "Rules" '())))
     (let loop ((fs flist)(rs '()))
       (if (= (length fs) 0)
         (instance-setvar! store instance "RepeatFactList" rs)
         (let* ((entry (assoc (car fs) rlist))
                (oldv (if entry (cadr entry) 0))
-               (newv (if (>= oldv 10)
+               (rule (if entry (assoc (car entry) rules) '()))
+               (trigger-delay (if (and entry (fx= (length rule) 4)) (dse:rule-delay rule) 10))
+               (newv (if (>= oldv trigger-delay)
                  (begin (dse:trigger-alarm store instance (car fs)) 0)
                  (+ oldv 1))
                ))

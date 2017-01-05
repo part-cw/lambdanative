@@ -42,23 +42,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (event:log level . x) (if (fx>= event:debuglevel level) (apply log-system x)))
 
 (define event:grayperiod 60.)
+(define event:grayperiodL (* event:grayperiod 5))
 
 ;; ignore duplicate events for a period of time
 ;; NOTE: priority 0,1,4 event are passed without graylisting
-(define (event:graylisted? store estr now)
+(define (event:graylisted? store estr now grayperiod)
   ;; purge expired entries
   (let loop ((gl (store-ref store "EventGrayList" '()))(ngl '()))
     (if (fx= (length gl) 0)
       (store-set! store "EventGrayList" ngl)
-      (let* ((gentry (car gl)) (gtime (car gentry)) (gstr (cadr gentry)))
-        (loop (cdr gl) (append ngl (if (< (- now gtime) event:grayperiod) (list gentry) '())))
+      (let* ((gentry (car gl)) (gtime (car gentry)) (gstr (cadr gentry)) (gp (caddr gentry)))
+        (loop (cdr gl) (append ngl (if (< (- now gtime) gp) (list gentry) '())))
       )
     ))
   ;; scan current entries
   (let loop ((gl (store-ref store "EventGrayList" '()))(res #f))
     (if (fx= (length gl) 0)
       (let ((ogl (store-ref store "EventGrayList" '())))
-        (store-set! store "EventGrayList" (append ogl (if (not res) (list (list now estr)) '())))
+        (store-set! store "EventGrayList" (append ogl (if (not res) (list (list now estr grayperiod)) '())))
         res
       )
       (let* ((gentry (car gl)) (gtime (car gentry)) (gstr (cadr gentry)))
@@ -82,10 +83,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (if (= (length s) 0) r
              (loop (cdr s) (string-append r (payload->string (car s)) (if (fx= (length s) 1) "" ":")))
            ))))
-    (if (or (fx= priority 0) (fx= priority 1) (fx= priority 4) (not (event:graylisted? store estr ##now)))
+    (if (or (fx= priority 0) (fx= priority 1) (fx= priority 4)
+            (not (event:graylisted? store estr ##now (if (fx>= priority 10) event:grayperiodL event:grayperiod))))
        (begin
          (event:log 1 "store-event-add event accepted")
-         (store-set! store "EventList" (append (list (list ##now estr priority)) el) "event")
+         (store-set! store "EventList" (append (list (list ##now estr (modulo priority 10))) el) "event")
        )
       )))
 

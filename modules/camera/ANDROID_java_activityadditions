@@ -2,6 +2,12 @@
 private String camera_tmp;
 private String camera_fnl;
 
+private String vid_tmp;
+private String vid_fnl;
+
+static final int REQUEST_IMAGE_CAPTURE = 1;
+static final int REQUEST_VIDEO_CAPTURE = 2;
+
 private void startCamera(String fnl_name, String tmp_name) {
   camera_fnl = fnl_name;
   camera_tmp = tmp_name;
@@ -10,13 +16,27 @@ private void startCamera(String fnl_name, String tmp_name) {
   if (f != null) {
     intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f));
 //    intent.putExtra(android.provider.MediaStore.EXTRA_SCREEN_ORIENTATION,ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-    startActivityForResult(intent, 1);
+    startActivityForResult(intent, REQUEST_IMAGE_CAPTURE);
+  }
+}
+
+private void startVidCamera(String fnl_name, String tmp_name, int maxlength) {
+  vid_fnl = fnl_name;
+  vid_tmp = tmp_name;
+  Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+  File f = new File(vid_tmp);
+  if (f != null) {
+    intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f));
+    if (maxlength > 0) {
+      intent.putExtra(MediaStore.EXTRA_DURATION_LIMIT, maxlength);
+    }
+    startActivityForResult(intent, REQUEST_VIDEO_CAPTURE);
   }
 }
 
 @Override
 protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-  if (resultCode == Activity.RESULT_OK) {
+  if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
     int angle=0;
     Bitmap tgt_bitmap,src_bitmap = BitmapFactory.decodeFile(camera_tmp);
     ExifInterface ei;
@@ -50,6 +70,11 @@ protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     } catch (IOException e) { }
     File src = new File(camera_tmp);
     File tgt = new File(camera_fnl);
+    if (src.exists()) { src.renameTo(tgt); }
+  }
+  else if (requestCode == REQUEST_VIDEO_CAPTURE && resultCode == RESULT_OK) {
+    File src = new File(vid_tmp);
+    File tgt = new File(vid_fnl);
     if (src.exists()) { src.renameTo(tgt); }
   }
   return;

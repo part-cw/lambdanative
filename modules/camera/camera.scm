@@ -43,6 +43,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    (if (>= camera:debuglevel level) 
       (apply log-system (append (list "camera: ") x))))
 
+;; Maximum length of video in seconds
+;; Default is no maximum (represented as 0)
+(define camera:maxlength-video 0)
+
 (c-declare  #<<end-of-c-declare
 
 #include <stdio.h>
@@ -51,14 +55,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef QNX
   void qnx_camera_start(char *);
+  void qnx_videocamera_start(char *);
 #endif
 
 #ifdef IOS
   void ios_camera_start(char *);
+  void ios_videocamera_start(char *, int);
 #endif 
 
 #ifdef ANDROID
   void android_camera_start(char *, char *);
+  void android_camera_start_video(char *, char *, int);
 #endif
 
 static void camera_start(char *filename)
@@ -80,6 +87,25 @@ static void camera_start(char *filename)
 #endif
 }
 
+static void camera_start_video(char *filename, int maxlength)
+{
+#ifdef ANDROID
+  char tmp_name[1024];
+  int i,len=strlen(filename)-1;
+  for (i=len;i>0;i--) { if (filename[i]=='/') break; }
+  filename[i]=0;
+  sprintf(tmp_name,"%s/_videocamera_tmp.mp4",filename);
+  filename[i]='/';
+  android_videocamera_start(filename,tmp_name,maxlength);
+#endif
+#ifdef IOS
+  ios_videocamera_start(filename, maxlength);
+#endif
+#ifdef QNX
+  qnx_videocamera_start(filename);
+#endif
+}
+
 end-of-c-declare
 )
 
@@ -87,6 +113,16 @@ end-of-c-declare
   (camera:log 1 "camera-start " imagefile)
   (if (file-exists? imagefile) (delete-file imagefile))
   ((c-lambda (char-string) void "camera_start") imagefile)
+ )
+
+
+(define (camera-set-max-length-video l)
+  (set! camera:maxlength-video l))
+
+(define (camera-start-video videofile)
+  (camera:log 1 "camera-start-video " videofile)
+  (if (file-exists? videofile) (delete-file videofile))
+  ((c-lambda (char-string int) void "camera_start_video") videofile camera:maxlength-video)
  )
 
 ;;eof

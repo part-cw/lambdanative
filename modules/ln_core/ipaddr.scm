@@ -49,6 +49,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ))
 
 (define (ipaddr->string addr)
-  (if addr (string-mapconcat (u8vector->list addr) "." number->string) #f))
+  (if addr
+    (if (and (u8vector? addr) (fx= (u8vector-length addr) 4))
+      (string-mapconcat (u8vector->list addr) "." number->string)
+      (if (and (u16vector? addr) (fx= (u16vector-length addr) 8))
+        (string-replace-substring (string-replace-substring (string-replace-substring (string-replace-substring
+          (string-mapconcat (u16vector->list addr) ":" (lambda (l) (number->string l 16)))
+          ":0:0:" "::") "::0:" "::") "::0:" "::") ":::" "::")
+        #f
+      )
+    )
+    #f
+  ))
 
 ;; eof

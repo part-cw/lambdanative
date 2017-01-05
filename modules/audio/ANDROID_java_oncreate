@@ -1,0 +1,1 @@
+AudioHelper.getInstance().setContext(this, new MediaPlayer());

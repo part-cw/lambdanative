@@ -1,5 +1,5 @@
-PKGURL=http://www.fastcgi.com/dist/fcgi.tar.gz
-PKGHASH=c751f4947696e4589d6d736d5ceef1f00c69544e
+PKGURL=https://github.com/FastCGI-Archives/FastCGI.com/raw/master/original_snapshot/fcgi-2.4.1-SNAP-0910052249.tar.gz
+PKGHASH=4360b48782d757bdad301aa1769540e3f5d0d5c5
 package_download $PKGURL $PKGHASH
 
 EXTRACONF=

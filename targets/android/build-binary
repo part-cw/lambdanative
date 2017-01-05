@@ -53,6 +53,7 @@ android_subst()
   ac_subst ANDROID_XML_PERMISSIONS "@$d/ANDROID_xml_permissions"
   ac_subst ANDROID_INTENT_FILTERS "@$d/ANDROID_intent_filters"
   ac_subst ANDROID_XML_RECEIVERS "@$d/ANDROID_xml_receivers"
+  ac_subst ANDROID_XML_SERVICES "@$d/ANDROID_xml_services"
 }
 android_subst loaders/android
 
@@ -137,6 +138,20 @@ fi
 echo " => transferring java hook.."
 ac_output loaders/android/bootstrap.java.in $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
 
+echo " => transferring java public classes.."
+for m in $modules; do
+  modpath=`locatedir modules/$m silent`
+  pubclasses=`ls -1 $modpath/ANDROID_java_public_* 2> /dev/null`
+  for pubclass in $pubclasses; do
+    pubclassdir=`basename $pubclass | sed 's/ANDROID_java_public_//'`
+    pubclassfile="${pubclassdir}.java"
+    echo "    $pubclassfile.."
+    mkdir -p $tmpdir/src/$pubclassdir
+    echo "package $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME;" > $tmpdir/src/$pubclassdir/$pubclassfile
+    cat $pubclass >> $tmpdir/src/$pubclassdir/$pubclassfile
+  done
+done
+
 echo " => preparing manifest.."
 ac_output loaders/android/AndroidManifest.xml.in $SYS_TMPDIR/tmp.xml
 cat $SYS_TMPDIR/tmp.xml | sed '/^#/d' > "$tmpdir/AndroidManifest.xml"
@@ -181,6 +196,35 @@ for lib in $payload_libs; do
     cp $SYS_PREFIXROOT/android/lib/$lib.jar $tmpdir/libs/
   fi
 done
+
+# install crosswalk if hybrid
+if [ `has_module hybridapp` = yes ]; then
+  echo " => adding crosswalk library.."
+  if [ -d $SYS_PREFIX/lib/libxwalk ]; then
+    rmifexists "$SYS_TMPDIR/libxwalk"
+    cp -R -f $SYS_PREFIX/lib/libxwalk $SYS_TMPDIR/
+    if [ ! -d $SYS_TMPDIR/libxwalk/libs/armeabi ] && [ $APP_ABI = armeabi ]; then
+      mv $SYS_TMPDIR/libxwalk/libs/armeabi-v7a $SYS_TMPDIR/libxwalk/libs/armeabi
+    fi
+    xwalk_here=`pwd`
+    cd $tmpdir
+    $ANDROIDSDK/tools/android --silent update project --target $ANDROIDSDKTARGET --path $tmpdir --library ../libxwalk
+    cd "$xwalk_here"
+cat > $tmpdir/res/layout/main.xml << __EOF
+<org.xwalk.core.XWalkView android:id="@+id/xwalk_main"
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent">
+</org.xwalk.core.XWalkView>
+__EOF
+    # allow free rotation of hybrid apps
+    cp $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java tmp.java
+    cat tmp.java | sed '/SCREEN_ORIENTATION_PORTRAIT/d' > $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
+    rm tmp.java
+  else
+    assert "hybrid but crosswalk not found?" 
+  fi
+fi
 
 echo " => compiling application.."
 veval "ant release"

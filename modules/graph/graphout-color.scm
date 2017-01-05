@@ -38,10 +38,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; set color 
 (define (graphout:color g c)
-  (let ((red (/ (color-red c) 255.))
-        (green (/ (color-green c) 255.))
-        (blue (/ (color-blue c) 255.))
-        (alpha (/ (color-alpha c) 255.)))
-  (graphout:rgbcolor g red green blue alpha)))
+  (if (string? c) (graphout:strcolor g c)
+    (let ((red (/ (color-red c) 255.))
+          (green (/ (color-green c) 255.))
+          (blue (/ (color-blue c) 255.))
+          (alpha (/ (color-alpha c) 255.)))
+      (graphout:rgbcolor g red green blue alpha))))
 
 ;; eof

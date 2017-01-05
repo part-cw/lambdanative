@@ -134,8 +134,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (table-set! g 'output 'GRAPH_SVG)
   (let* ((w (table-ref g 'devxmax))
          (h (table-ref g 'devymax))
-         (svg `(svg (@ (width ,w) (height ,h) (xmlns "http://www.w3.org/2000/svg")) "")))
-    (table-set! g 'svg svg)
+         (gradients (table-ref g 'svggradients #f))
+         (svg (if filename
+           `(svg (@ (width ,w) (height ,h) (xmlns "http://www.w3.org/2000/svg")))
+           `(svg (@ (version "1.1")
+                    (viewBox ,(string-append "0 0 " (number->string (fix w)) " " (number->string (fix h))))
+                    (xmlns "http://www.w3.org/2000/svg") 
+              ))
+          )))
+    (table-set! g 'svg (append svg (if gradients (list (append '(defs) gradients)) '(""))))
     (graphout:dispatch g)
     (if filename
       (with-output-to-file filename (lambda ()

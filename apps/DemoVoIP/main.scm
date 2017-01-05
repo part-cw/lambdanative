@@ -79,7 +79,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (main
 ;; initialization
   (lambda (w h)
-    (make-window 320 480) 
+    (make-window 320 480)
     (glgui-orientation-set! GUI_PORTRAIT)
     (let ((w (glgui-width-get))
           (h (glgui-height-get)))
@@ -111,8 +111,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             ((phone-connected?) "CONNECTED")
             ((phone-dialing?) "DIALING..")
             (else ipstring)))
-    (let ((br ((c-lambda () int "___result=opusvoip_recvbytes();")))
-          (bs ((c-lambda () int "___result=opusvoip_sendbytes();"))))
+    (let ((br (opusvoip-getrecvbytes))
+          (bs (opusvoip-getsendbytes)))
       (glgui-widget-set! gui losslabel 'label (string-append
          "REVC: " (number->string br) "  SEND: " (number->string bs))))
     (if (fx= t EVENT_REDRAW) (thread-sleep! 0.05))

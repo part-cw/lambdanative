@@ -116,19 +116,19 @@ SYS_APPNAME=$with_app
 # determine host platform
 hostsys=`sh ./config.guess`
 case "$hostsys" in
-i686-pc-mingw32*|*-cygwin) 
+*-mingw32*|*-cygwin) 
   SYS_HOSTPLATFORM="win32"
 ;;
 *-linux-gnu*)
   SYS_HOSTPLATFORM="linux"
 ;;
-i386-apple-darwin*|x86_64-apple-darwin*)
+x86_64-apple-darwin*)
   SYS_HOSTPLATFORM="macosx"
 ;;
-i386-unknown-openbsd*)
+*-openbsd*)
   SYS_HOSTPLATFORM="openbsd"
 ;;
-i386-unknown-netbsd*)
+*-netbsd*)
   SYS_HOSTPLATFORM="netbsd"
 ;;
 *-freebsd*)

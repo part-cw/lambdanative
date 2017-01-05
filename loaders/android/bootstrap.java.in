@@ -38,8 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package @SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
-import java.util.ArrayList;
-import java.util.List;
 import android.app.Activity;
 import android.content.pm.ActivityInfo;
 import android.content.Context;
@@ -59,7 +57,6 @@ import android.view.Surface;
 import android.view.WindowManager;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.util.Log;
 import android.location.LocationListener;
@@ -67,13 +64,13 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.MediaScannerConnection;
 // Imports needed for modules, e.g. gps
 @ANDROID_JAVA_IMPORTS@
 
 @ANDROID_JAVA_ADDITIONS@
 
 public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@ SensorEventListener{
-  Thread openSLThread;  // OpenSL real-time sound
   private SensorManager mSensorManager;
   //Battery information variables
   private IntentFilter batteryLevelFilter;
@@ -112,10 +109,8 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     WindowManager.LayoutParams.FLAG_FULLSCREEN);
     // prevent sleep
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-    //  setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     mGLView = new xGLSurfaceView(this);
     setContentView(mGLView);
-    AudioHelper.getInstance().setContext(this, new MediaPlayer());
     mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONCREATE@
@@ -140,15 +135,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     this.registerReceiver(batteryLevelReceiver, batteryLevelFilter);
     isBatteryRegistered = true;
 
-    // openSL support
-    openSLThread = new Thread() {
-      public void run() {
-        setPriority(Thread.MAX_PRIORITY);
-        nativeStartOpenSL();
-      }
-    };
-    openSLThread.start();
-
     nativeInstanceInit();
   }
   @Override 
@@ -159,9 +145,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     if (isBatteryRegistered){
       try { unregisterReceiver(batteryLevelReceiver); } catch (Exception e) {}
     }
-    nativeStopOpenSL();
-    try { openSLThread.join(); } catch (InterruptedException e) { }
-    openSLThread = null;
     idleHandler.removeCallbacks(idleRunnable);
     super.onDestroy();
   }
@@ -175,7 +158,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONPAUSE@
     mGLView.onPause();
-    AudioHelper.getInstance().onPause();
   }
   @Override
   protected void onResume() {
@@ -183,7 +165,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONRESUME@
     mGLView.onResume();
-    AudioHelper.getInstance().onResume();
   }
   @Override
   public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -197,10 +178,8 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   // Extra functions calls needed by modules, e.g. gps
   @ANDROID_JAVA_ACTIVITYADDITIONS@
 
-  // OpenSL bindings
+  // Native event bindings
   GLSurfaceView mGLView;
-  native void nativeStartOpenSL();
-  native void nativeStopOpenSL();
   native void nativeEvent(int t, int x, int y);
   static { System.loadLibrary("payloadshared"); }
   // OpenURL code
@@ -214,171 +193,13 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
      startActivity(browserIntent);
     }
   }
+  // MediaScanner call
+  void runMediaScanner(){
+    MediaScannerConnection.scanFile(this, new String[]{"/sdcard/@SYS_APPNAME@/results",
+      "/sdcard/@SYS_APPNAME@/log","/sdcard/@SYS_APPNAME@/config"}, null, null);
+  }
+
   native void nativeInstanceInit();
-}
-
-class AudioHelper {
-    private static class MediaPlayerHelper {
-	private static enum PlayState {
-	    STOPPED, PLAYING, LOOPING, PAUSED;
-	}
-	private final MediaPlayer player;
-	private PlayState playState;
-	public MediaPlayerHelper(Context context, int resId){
-	    this.player = MediaPlayer.create(context, resId);
-	    this.playState = PlayState.STOPPED;
-	    MediaPlayer.OnCompletionListener listener = 
-		new MediaPlayer.OnCompletionListener(){
-		    @Override
-		    public void onCompletion(MediaPlayer mp){
-			if(playState == PlayState.PLAYING){
-			    playState = PlayState.STOPPED;
-			}
-		    }
-		};
-	    this.player.setOnCompletionListener(listener);
-	}
-	public void release(){
-	    this.player.release();
-	}
-	public void start(float lv, float rv, int loop){
-	    this.player.setVolume(lv, rv);
-	    this.player.seekTo(0);
-	    if(loop != 0){
-		this.player.setLooping(true);
-		this.playState = PlayState.LOOPING;
-	    } else {
-		this.player.setLooping(false);
-		this.playState = PlayState.PLAYING;
-	    }
-	    this.player.start();
-	}
-	public void pause(){
-	    if(this.playState == PlayState.PLAYING || this.playState == PlayState.LOOPING){
-		this.player.pause();
-		this.playState = PlayState.PAUSED;
-	    }
-	}
-	public void resume(){
-	    if(this.playState == PlayState.PAUSED){
-		this.player.start();
-		if(this.player.isLooping()){
-		    this.playState = PlayState.LOOPING;
-		} else {
-		    this.playState = PlayState.PLAYING;
-		}
-	    }
-	}
-    }
-  private static final int MAX_SOUND_STREAMS = 16;
-  private static String ResourceLocation = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@:raw/";
-  private Context context = null;
-  private static AudioHelper instance = null;
-  private AudioManager audioManager = null;
-  private MediaPlayer mediaPlayer = null;
-  private List<MediaPlayerHelper> mediaPlayers = null;
-  private AudioHelper()
-  {	
-  }
-  void Initialise()
-  {     	
-     final String TAG = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@";
-     mediaPlayers = new ArrayList<MediaPlayerHelper>();
-  }	
-  public void finalize()
-  {		
-      for(MediaPlayerHelper mp : mediaPlayers){
-	  if(mp!=null){
-	      mp.release();
-	  }
-      }
-  }
-  public void setContext(Context context, MediaPlayer mediaPlayer)
-  {
-    this.context = context;
-    this.audioManager = (AudioManager) context.getSystemService(Activity.AUDIO_SERVICE);
-    this.mediaPlayer = mediaPlayer; 
-  }
-  public static AudioHelper getInstance()
-  {
-    if (instance == null)
-    {
-       instance = new AudioHelper();
-       instance.Initialise();    		
-    }
-    return instance;
-  }
-  public int LoadSound(String filename, int Priority) {
-    final String TAG = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@";
-    int     SoundID;
-    String s = ResourceLocation + filename;
-    int resID = context.getResources().getIdentifier(s, null, null);
-    Log.d(TAG,"Entered load sound method.");
-    if (resID == 0) {
-      Log.e(TAG,"Failed to load sound resource=" + s);
-      return 0;
-    }
-    MediaPlayerHelper localMediaPlayer = new MediaPlayerHelper(context, resID);
-    mediaPlayers.add(localMediaPlayer);
-    return mediaPlayers.size();
-  } 
-  public int PlaySound(int SoundID, float lv, float rv, int priority, int loop, float rate) {
-      MediaPlayerHelper localMediaPlayer = mediaPlayers.get(SoundID-1);
-      if(localMediaPlayer!=null){
-	  localMediaPlayer.start(rv, lv, loop);
-      }
-      return SoundID;
-  }
-  public boolean UnloadSound(int SoundID) {
-      // We null out removed sounds - we have to null check sounds
-      // later but this simplifies the representation of sounds by
-      // their offset index.
-      MediaPlayerHelper toRemove = mediaPlayers.get(SoundID-1);
-      toRemove.release();
-      mediaPlayers.set(SoundID-1,null);
-      return true;
-  }
-  public boolean SetVolume(float volume)
-  {
-     int SYSTEM_MAX_VOLUME = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (int) (Math.ceil(SYSTEM_MAX_VOLUME*volume)),0);
-     float systemVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)/SYSTEM_MAX_VOLUME;
-     if (Math.abs(systemVolume-volume)*100 >= 1) {
-        float playerVolume = volume/systemVolume;
-        this.mediaPlayer.setVolume(playerVolume,playerVolume);
-     }
-     return true;
-  }
-    public void onPause(){
-	for(MediaPlayerHelper player : this.mediaPlayers){
-	    if(player!=null){
-		player.pause();
-	    }
-	}
-    }
-
-    public void onResume(){
-	for(MediaPlayerHelper player : this.mediaPlayers){
-	    if(player!=null){
-		player.resume();
-	    }
-	}
-    }
-   
-  public float GetVolume()
-  {
-     float SYSTEM_MAX_VOLUME = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-     float systemVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)/SYSTEM_MAX_VOLUME;
-     return systemVolume;
-  }
-  public boolean HeadphonePresent()
-  { 
-    // NOTE: this requires MODIFY_AUDIO_SETTINGS in manifest!
-    // final boolean res = AudioManager.isWiredHeadsetOn();
-    AudioManager tmp = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-    final boolean res = tmp.isWiredHeadsetOn();
-    return res;
-  }
 }
 
 class  xGLSurfaceView extends GLSurfaceView {

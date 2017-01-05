@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2016, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -68,7 +68,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; ---- MAIN PROCESSING
 
-;; this function runs all inputs 
+;; this function runs all inputs
 ;; returns false if one input returns false
 (define (scheduler:doinputs)
   (let loop ((sl (store-list))(ret #t))
@@ -128,8 +128,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((timedelta (/ 5.0 (if (fx> (length (store-list)) 0) (length (store-list)) 1.))))
     (let loop ((sl (store-list))(n 0))
       (if (> (length sl) 0) (begin
-        (store-set! (car sl) "DispatchStart" (flo (+ ##now (* timedelta n))))
-        (store-set! (car sl) "DispatchCount" 0.)
+        (store:instance-set! (car sl) "DispatchStart" (flo (+ ##now (* timedelta n))))
+        (store:instance-set! (car sl) "DispatchCount" 0.)
         (loop (cdr sl) (fx+ n 1))
       ))
     )
@@ -153,15 +153,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 )
 
 (define (scheduler-iterate . guiwaveproc)
+  (if (not (scheduler-initialized?)) (begin
+    (log-error "scheduler: (scheduler-init) was not called. Initializing with default timefunc.")
+    (scheduler-init)
+  ))
   (for-each (lambda (s) (store-set! s "Now" ##now)) (store-list))
   (scheduler:endoldcases)
   (scheduler:initnewcases ##now (seconds->string (fix ##now) "%T"))
   (if (scheduler:doinputs)
     (begin
       (for-each (lambda (s)
-        (if (fl>= (fl- ##now (store-ref s "DispatchStart" 0.)) (store-ref s "DispatchCount" 0.))  ;; run every 1 second
+        (if (fl>= (fl- ##now (store:instance-ref s "DispatchStart" 0.)) (store:instance-ref s "DispatchCount" 0.))
+          ;; run every 1 second
           (begin
-            (store-set! s "DispatchCount" (fl+ (store-ref s "DispatchCount" 0.) 1.))
+            (store:instance-set! s "DispatchCount" (fl+ (store:instance-ref s "DispatchCount" 0.) 1.))
             (store:waveform-dispatch s)
             (store:raw-dispatch s)
             ;; provide waveform access to gui here

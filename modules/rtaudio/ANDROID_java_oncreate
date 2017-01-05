@@ -1,0 +1,9 @@
+// openSL support
+  openSLThread = new Thread() {
+    public void run() {
+      setPriority(Thread.MAX_PRIORITY);
+      nativeStartOpenSL();
+    }
+  };
+  openSLThread.start();
+// eof OpenSL

@@ -1,0 +1,20 @@
+// Crosswalk webview
+
+setContentView(R.layout.main);
+mXWalkView = (XWalkView) findViewById(R.id.xwalk_main);
+//XWalkPreferences.setValue(XWalkPreferences.REMOTE_DEBUGGING, true);
+//mXWalkView.load("file:///android_asset/index.html", null);
+mXWalkView.load("http://127.0.0.1:8080/", null);
+
+Timer xwalk_tm = new Timer();
+TimerTask xwalk_task = new TimerTask() {
+  public void run() {
+    runOnUiThread(new Runnable() {
+      public void run() {	
+        nativeEvent(15,0,0);
+      }
+    });
+  }
+};
+xwalk_tm.scheduleAtFixedRate(xwalk_task, 0, 20);
+

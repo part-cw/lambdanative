@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef FREEBSD
+#if defined(FREEBSD) || defined(NETBSD)
 #include <sys/param.h>
 #endif
 

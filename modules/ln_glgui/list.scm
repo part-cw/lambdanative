@@ -42,6 +42,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (y (flo (glgui-widget-get-dyn g wgt 'y)))
          (w (flo (glgui-widget-get-dyn g wgt 'w)))
          (h (flo (glgui-widget-get-dyn g wgt 'h)))
+         (sw (flo (glgui-widget-get g wgt 'scrollw)))
+         (sr (glgui-widget-get g wgt 'scrollrounded))
          (lst (glgui-widget-get g wgt 'list))
          (bg1 (glgui-widget-get g wgt 'bgcol1))
          (bg2 (glgui-widget-get g wgt 'bgcol2))
@@ -77,7 +79,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 (entry (if filled? (list-ref lst idx) #f))
                 (bgcolor (if (fx= (modulo idx 2) 0) bg1 bg2))
                 (bx x) (by (fl+ y0 1.)) 
-                (bw (if showscroll? (fl- w 8.) w)) (bh (fl- dh 2.0))
+                (bw (if showscroll? (fl- w (+ sw 3.)) w)) (bh (fl- dh 2.0))
                 )
            ;; Only draw background rectangle for entry, if there is a background colour
            (if bgcolor (glgui:draw-box bx by bw bh bgcolor))
@@ -89,10 +91,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
    ;; Draw scrollbar if not auto-hidden or scrolling needed
    (if showscroll?
-     (let* ((sw 5.) (sx (fl+ x w -6.))
+     (let* ((scrollc (glgui-widget-get-dyn g wgt 'scrollcolor))
+            (sx (fl+ x w (- -1. sw)))
             (sh (if allvis h (fl* h (fl/ (flo n) (flo nlist)))))
             (sy (fl- (fl+ y h)  (if (fl= sh h) 0. (fl* (fl- h sh) (fl/ flofs (fl- (flo nlist) (flo n))))) sh)))
-       (glgui:draw-box sx sy sw sh DimGray)
+       ;; If a border color, draw background colour on top of it behind scroll bar
+       (if bdc
+         (glgui:draw-box (- sx 3.) (+ y 1) (+ sw 3.) (- h 2) bg1))
+       ;; May draw scroll bar rounded
+       (if sr
+         (if (< sh 25.)
+           (glgui:draw-rounded-box sx sy sw sh scrollc)
+           ;; If 25 or higher draw rounded box at either end to make rounding better
+           (begin
+             (glgui:draw-rounded-box sx sy sw 12 scrollc)
+             (glgui:draw-box sx (+ sy 8) sw (- sh 16) scrollc)
+             (glgui:draw-rounded-box sx (- (+ sy sh) 12) sw 12 scrollc)))
+         (glgui:draw-box sx sy sw sh scrollc))
    ))
 
    (glCoreClipPop)
@@ -198,6 +213,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'old  #f
      'drag #f
      'autohidebar #f    ;; Hide scrollbar when list not long enough to need scrolling
+     'scrollcolor DimGray
+     'scrollw 5.
+     'scrollrounded #f
      'oldy  0
      'fsty  0
      'bordercolor #f

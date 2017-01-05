@@ -47,7 +47,7 @@ compile_payload_scm()
     done
     scm_mainsrc=$appsrcdir/main.scm
     # note: textures, fonts and strings can't go before glcore!
-    scm_srcs="$scm_coresrcs $texture_srcs $font_srcs $string_srcs $scm_auxsrcs $scm_mainsrc"
+    scm_srcs="$scm_coresrcs $texture_srcs $font_srcs $string_srcs $embed_srcs $scm_auxsrcs $scm_mainsrc"
     dmsg_scm "scm_srcs=$scm_srcs"
     # -------
     # prep the compiler options
@@ -102,6 +102,10 @@ compile_payload_scm()
           if [ `newersourceindir "$scm_src" "$scm_otgt"` = "yes" ]; then
             scm_dirty=yes
           fi
+	  # ln_repl module special-case: always re-compile to make global macro changes available
+	  if [ "X$scm_topdir" = "Xln_repl" ]; then
+	     scm_dirty=yes
+	  fi
         fi
       fi
       if [ $scm_dirty = yes ]; then

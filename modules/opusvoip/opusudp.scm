@@ -53,7 +53,7 @@ void opusvoip_phone_hangup();
 #include <math.h>
 #ifdef WIN32
   #include <winsock2.h>
-#else 
+#else
   #include <netinet/in.h>
 #endif
 #include <sys/types.h>
@@ -119,7 +119,7 @@ int init_opus_settings(int Fs, int channels, int application){
   // Make buffer for sending and reserve first 3 bytes for header info.
   packet_out=malloc(MAX_PACKETLEN);
   packet_out+=3;
-  
+
   //Now make the Opus buffers
   frame_size=Fs*0.060; // Optimal size is 20msec, can be up to 60msec.
   int buf_len=frame_size*sizeof(float);
@@ -347,7 +347,7 @@ void opusvoip_receiver(){
   return;
   // Save the data len;
   recv_bytes+=packet_len;
-  
+
   // Check if it is a hangup.
   if (packet_len>=3 && packet_in[2]==PHONE_ONHOOK){
     opusvoip_phone_hangup();
@@ -432,6 +432,13 @@ end-of-c-declare
 (c-define (opusvoip:hangup) () void "opusvoip_phone_hangup" ""
   (phone-hangup)
   (rtaudio-stop)
+)
+
+(define (opusvoip-getrecvbytes)
+  ((c-lambda () int "___result=opusvoip_recvbytes();"))
+)
+(define (opusvoip-getsendbytes)
+  ((c-lambda () int "___result=opusvoip_sendbytes();"))
 )
 
 ;; register the opusvoip audio hooks

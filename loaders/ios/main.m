@@ -35,12 +35,17 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#import <UIKit/UIKit.h>
+
 #include <LNCONFIG.h>
 
+#import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 
+#ifdef USE_HYBRID
+#import "WKWebViewAppDelegate.h"
+#else
 #import "launcherAppDelegate.h"
+#endif // USE_HYBRID
 
 const char *iphone_directory;
 
@@ -71,11 +76,12 @@ void find_iphone_documents_directory() {
 int main(int argc, char *argv[]) {
   NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
   find_iphone_documents_directory();
-//  int retVal = UIApplicationMain(argc, argv, nil, nil);
-//  int retVal = UIApplicationMain(argc, argv, nil, @"launcherAppDelegate");
+#ifdef USE_HYBRID
+  int retVal = UIApplicationMain(argc, argv, nil, NSStringFromClass([WKWebViewAppDelegate class]));
+#else
   int retVal = UIApplicationMain(argc, argv, nil, NSStringFromClass([launcherAppDelegate class]));
-  // is this ever reached?
-  ffi_event(EVENT_TERMINATE,0,0);
+#endif // USE_HYBRID
+  ffi_event(EVENT_TERMINATE,0,0); // is this ever reached?
   [pool release];
   return retVal;
 }

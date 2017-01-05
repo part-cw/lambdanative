@@ -38,12 +38,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; manipulate association lists
 
-(define (alist-ref alist key . def)
-  (if (not (list? alist)) (if (fx= (length def) 1) (car def) #f)
-    (let* ((a (assoc key alist)))
-      (if (list? a) (cadr a) 
-        (if (pair? a) (cdr a)
-          (if (fx= (length def) 1) (car def) #f))))))
+(define (alist-ref alist key . def0)
+  (let ((def (if (fx= (length def0) 1) (car def0) #f)))
+    (if (not (list? alist)) def
+      (let* ((a (assoc key alist)))
+        (if (list? a) (if (= (length a) 1) def (cadr a)) 
+          (if (pair? a) (cdr a) def))))))
 
 (define (alist-refstr alist key defstr)
   (let ((res (alist-ref alist key defstr)))
@@ -78,5 +78,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (< (length kvs) 2) 
       (append (alist-delkeys res 'timestamp) (list (list 'timestamp (time->seconds (current-time)))))
       (loop (cddr kvs) (append (alist-delkeys res (car kvs)) (list (list (car kvs) (cadr kvs))))))))
+
+(define (write-alist-to-file filename alist)
+  (with-output-to-file filename
+    (lambda ()
+      (write alist))))
+
+(define (read-alist-from-file filename)
+  (with-input-from-file filename
+    (lambda ()
+      (read))))
 
 ;; eof

@@ -1,0 +1,3 @@
+// OpenSL bindings
+  native void nativeStartOpenSL();
+  native void nativeStopOpenSL();

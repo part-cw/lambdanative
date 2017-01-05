@@ -64,7 +64,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (else (graph:hook g o 'LINEWIDTH w))
     )))
 
-(define (graphout:svgflo n) (float->zeropaddedstring (flo n) 1))
+(define (graphout:svgflo n) (if n (float->zeropaddedstring (flo n) 1) #f))
 (define (graphout:svgfix n) (number->string (fix n)))
 
 (define (graphout:rgb->hex v)
@@ -85,9 +85,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      ((GRAPH_SVG)
        (table-set! g 'svg-color (string-append
          "#" (graphout:rgb->hex red) (graphout:rgb->hex green) (graphout:rgb->hex blue)))
-       (table-set! g 'svg-opacity alpha)
+       (table-set! g 'svg-opacity (if (= alpha 1) #f alpha))
      )
      (else (graph:hook g o 'RGBCOLOR red green blue alpha))
+   )))
+
+;; support gradients on SVG platforms
+(define (graphout:strcolor g str)
+  (graph:log 3 "graphout:strcolor " str)
+  (let ((o (table-ref g 'output)))
+    (case o
+      ((GRAPH_SVG)
+        (table-set! g 'svg-color str)
+        (table-set! g 'svg-opacity #f)
+      )
    )))
 
 ;; close a path
@@ -119,13 +130,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          )
        )
        ((GRAPH_SVG)
-          (let ((svg (table-ref g 'svg))
-                (stroke-color (table-ref g 'svg-color "#000000"))
-                (stroke-width (graphout:svgflo (table-ref g 'svg-stroke-width 1)))
-                (stroke-opacity (graphout:svgflo (table-ref g 'svg-opacity 1.)))
-                (path (table-ref g 'svg-path)))
-            (table-set! g 'svg (append svg (list `(path (@ (d ,path) (fill "none") (stroke ,stroke-color) 
-              (stroke-opacity ,stroke-opacity) (stroke-width ,stroke-width)) ""))))
+          (let* ((svg (table-ref g 'svg))
+                 (stroke-color (table-ref g 'svg-color "#000000"))
+                 (stroke-width (graphout:svgflo (table-ref g 'svg-stroke-width 1)))
+                 (stroke-opacity (graphout:svgflo (table-ref g 'svg-opacity 1.)))
+                 (path (table-ref g 'svg-path))
+                 (attrs (append `(@ (d ,path) (fill "none") (stroke ,stroke-color) (stroke-width ,stroke-width)) (if stroke-opacity `((stroke-opacity ,stroke-opacity)) '()))))
+            (table-set! g 'svg (append svg (list `(path ,attrs ""))))
             (table-set! g 'svg-path "")
           )
        )
@@ -143,13 +154,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          )
        )
        ((GRAPH_SVG)
-          (let ((svg (table-ref g 'svg))
-                (fill-color  (table-ref g 'svg-color "#000000"))
-                (fill-opacity (graphout:svgflo (table-ref g 'svg-opacity 1.)))
-                (path (table-ref g 'svg-path)))
-            (table-set! g 'svg (append svg (list `(path (@ (d ,path) 
-              (fill ,fill-color) (fill-opacity ,fill-opacity) (stroke "none")
-              ) ""))))
+          (let* ((svg (table-ref g 'svg))
+                 (fill-color  (table-ref g 'svg-color "#000000"))
+                 (fill-opacity (graphout:svgflo (table-ref g 'svg-opacity 1.)))
+                 (path (table-ref g 'svg-path))
+                 (attrs (append `(@ (d ,path) (fill ,fill-color) (stroke "none")) (if fill-opacity `((fill-opacity ,fill-opacity)) '()))))
+            (table-set! g 'svg (append svg (list `(path ,attrs ""))))
             (table-set! g 'svg-path "")
           )
        )
@@ -274,7 +284,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (table-set! g 'svg (append svg (list
             `(line (@ (x1 ,sx1) (y1 ,sy1) (x2 ,sx2) (y2 ,sy2)
                       (style ,(string-append "stroke: " stroke-color ";"
-                        "stroke-opacity: " stroke-opacity ";"
+                        (if stroke-opacity (string-append "stroke-opacity: " stroke-opacity ";") "")
                          "stroke-width: " stroke-width ";"))) ""))))
         )
       )
@@ -313,7 +323,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                   (style ,(string-append
                                     "stroke: " stroke-color ";"
                                     "stroke-width: " stroke-width ";"
-                                    "stroke-opacity: " stroke-opacity ";"
+                                   (if stroke-opacity (string-append "stroke-opacity: " stroke-opacity ";") "")
                                     "fill: none;"))) "")))
           (table-set! g 'svg (append svg (list element)))
         )
@@ -352,7 +362,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                   (style ,(string-append
                                     "stroke: none;"
                                     "fill: " fill-color ";"
-                                    "fill-opacity: " fill-opacity ";"))) "")))
+                                    (if fill-opacity (string-append "fill-opacity: " fill-opacity ";") "")
+                  ))) "")))
           (table-set! g 'svg (append svg (list element)))
         )
       )
@@ -394,7 +405,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                            (style ,(string-append
                              "stroke: " stroke-color ";"
                              "stroke-width: " stroke-width ";"
-                             "stroke-opacity: " stroke-opacity ";"
+                             (if stroke-opacity (string-append "stroke-opacity: " stroke-opacity ";") "")
                              "fill: none;"))) "")))
           (table-set! g 'svg (append svg (list element)))
         )
@@ -437,7 +448,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                            (style ,(string-append
                              "stroke: none;"
                              "fill: " fill-color ";"
-                             "fill-opacity: " fill-opacity ";"))) "")))
+                             (if fill-opacity (string-append "fill-opacity: " fill-opacity ";") "")
+                   ))) "")))
           (table-set! g 'svg (append svg (list element)))
         )
       )
@@ -465,8 +477,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                (stroke-color (table-ref g 'svg-color "#000000"))
                (stroke-width (graphout:svgflo (table-ref g 'svg-stroke-width 1)))
                (stroke-opacity (graphout:svgflo (table-ref g 'svg-opacity 1.)))
-               (element `(circle (@ (cx ,sx) (cy ,sy) (r ,sr)
-                           (stroke ,stroke-color) (stroke-width ,stroke-width) (stroke-opacity ,stroke-opacity) (fill "none")) "")))
+               (attrs (append `(@ (cx ,sx) (cy ,sy) (r ,sr) (stroke ,stroke-color) (stroke-width ,stroke-width) (fill "none"))
+                         (if stroke-opacity `((stroke-opacity ,stroke-opacity)) '())))
+               (element `(circle ,attrs "")))
           (table-set! g 'svg (append svg (list element)))
         )
       )
@@ -494,8 +507,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 (sr (graphout:svgflo devradius))
                 (fill-color (table-ref g 'svg-color "#000000"))
                 (fill-opacity (graphout:svgflo (table-ref g 'svg-opacity 1.)))
-                (element `(circle (@ (cx ,sx) (cy ,sy) (r ,sr)
-                           (stroke "none") (fill ,fill-color) (fill-opacity ,fill-opacity)) "")))
+                (attrs (append `(@ (cx ,sx) (cy ,sy) (r ,sr) (stroke "none") (fill ,fill-color)) 
+                         (if fill-opacity `((fill-opacity ,fill-opacity)) '())))
+                (element `(circle ,attrs "")))
           (table-set! g 'svg (append svg (list element)))
         )
       )
@@ -526,8 +540,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                (stroke-color (table-ref g 'svg-color "#000000"))
                (stroke-width (graphout:svgflo (table-ref g 'svg-stroke-width 1)))
                (stroke-opacity (graphout:svgflo (table-ref g 'svg-opacity 1.)))
-               (element `(circle (@ (cx ,sx) (cy ,sy) (r ,sr)
-                           (stroke ,stroke-color) (stroke-width ,stroke-width) (stroke-opacity ,stroke-opacity) (fill "none")) "")))
+               (attrs (append `(@ (cx ,sx) (cy ,sy) (r ,sr) (stroke ,stroke-color) (stroke-width ,stroke-width) (fill "none"))
+                        (if stroke-opacity `((stroke-opacity ,stroke-opacity)) '())))
+               (element `(circle ,attrs "")))
           (table-set! g 'svg (append svg (list element)))
         )
       )
@@ -555,8 +570,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 (sr (graphout:svgflo dw))
                 (fill-color (table-ref g 'svg-color "#000000"))
                 (fill-opacity (graphout:svgflo (table-ref g 'svg-opacity 1.)))
-                (element `(circle (@ (cx ,sx) (cy ,sy) (r ,sr)
-                           (stroke "none") (fill ,fill-color) (fill-opacity ,fill-opacity)) "")))
+                (attrs (append `(@ (cx ,sx) (cy ,sy) (r ,sr) (stroke "none") (fill ,fill-color))
+                          (if fill-opacity `((fill-opacity ,fill-opacity)) '())))
+                (element `(circle ,attrs "")))
           (table-set! g 'svg (append svg (list element)))
         )
       )
@@ -591,7 +607,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                   (style ,(string-append
                                     "stroke: " stroke-color ";"
                                     "stroke-width: " stroke-width ";"
-                                    "stroke-opacity: " stroke-opacity ";"
+                                    (if stroke-opacity (string-append "stroke-opacity: " stroke-opacity ";") "")
                                     "fill: none;"))) "")))
           (table-set! g 'svg (append svg (list element)))
         )
@@ -628,7 +644,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                   (style ,(string-append
                                     "stroke: none;"
                                     "fill: " fill-color ";"
-                                    "fill-opacity: " fill-opacity ";"))) "")))
+                                    (if fill-opacity (string-append "fill-opacity: " fill-opacity ";") "")))) "")))
           (table-set! g 'svg (append svg (list element)))
         )
       )
@@ -666,7 +682,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                            (style ,(string-append
                              "stroke: " stroke-color ";"
                              "stroke-width: " stroke-width ";"
-                             "stroke-opacity: " stroke-opacity ";"
+                             (if stroke-opacity (string-append "stroke-opacity: " stroke-opacity ";") "")
                              "fill: none;"))) "")))
           (table-set! g 'svg (append svg (list element)))
         )
@@ -705,7 +721,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                            (style ,(string-append
                              "stroke: none;"
                              "fill: " fill-color ";"
-                             "fill-opacity: " fill-opacity ";"))) "")))
+                             (if fill-opacity (string-append "fill-opacity: " fill-opacity ";") "")))) "")))
           (table-set! g 'svg (append svg (list element)))
         )
       )

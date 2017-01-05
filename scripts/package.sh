@@ -122,6 +122,7 @@ package_download_git()
     else
       echo " == "`git log | head -n 1`
     fi
+    git submodule init && git submodule update
     cd ..
     veval "tar -zcvf $pkg_git_file *"
     assertfile "$pkg_git_file"
@@ -209,25 +210,27 @@ package_configure()
 {
   echo " => configuring source.."
   pkg_conf_opt=$@
+  pkg_ccdir=`echo "$SYS_CC" | cut -f 1 -d " "`
+  pkg_ccdir=`dirname ${pkg_ccdir}`
   veval "\
   CHOST=$SYS_ARCH \
   PKG_CONFIG_PATH=$SYS_PREFIX/lib/pkgconfig \
-  PATH=\"$SYS_PREFIX/bin:$PATH\" \
+  PATH=\"$SYS_PREFIX/bin:${pkg_ccdir}:$PATH\" \
   LDFLAGS=-L$SYS_PREFIX/lib \
   LD_LIBRARY_PATH=$SYS_PREFIX/lib \
   CPPFLAGS=-I$SYS_PREFIX/include \
   CC=\"$SYS_CC -I$SYS_PREFIX/include -L$SYS_PREFIX/lib\" \
-  AR=$SYS_AR \
-  RANLIB=$SYS_RANLIB \
-  NM=$SYS_NM \
-  LD=$SYS_LD \
-  AS=$SYS_AS \
-  CPP=$SYS_CPP \
-  OBJCOPY=$SYS_OBJCOPY \
-  STRIP=$SYS_STRIP \
-  GPROF=$SYS_GPROF \
-  READELF=$SYS_READELF \
-  OBJDUMP=$SYS_OBJDUMP \
+  AR=\"$SYS_AR\" \
+  RANLIB=\"$SYS_RANLIB\" \
+  NM=\"$SYS_NM\" \
+  LD=\"$SYS_LD\" \
+  AS=\"$SYS_AS\" \
+  CPP=\"$SYS_CPP\" \
+  OBJCOPY=\"$SYS_OBJCOPY\" \
+  STRIP=\"$SYS_STRIP\" \
+  GPROF=\"$SYS_GPROF\" \
+  READELF=\"$SYS_READELF\" \
+  OBJDUMP=\"$SYS_OBJDUMP\" \
   ./configure --prefix=$SYS_PREFIX $pkg_conf_opt "
   asserterror $? "configure failed"
 }
@@ -240,11 +243,13 @@ package_make()
     pkg_make="gmake -j 9"
   fi
   pkg_make_opt=$@
+  pkg_ccdir=`echo "$SYS_CC" | cut -f 1 -d " "`
+  pkg_ccdir=`dirname ${pkg_ccdir}`
   echo " => compiling source.."
   veval "\
   CHOST=$SYS_ARCH \
   PKG_CONFIG_PATH=$SYS_PREFIX/lib/pkgconfig \
-  PATH=\"$SYS_PREFIX/bin:$PATH\" \
+  PATH=\"$SYS_PREFIX/bin:${pkg_ccdir}:$PATH\" \
   LDFLAGS=-L$SYS_PREFIX/lib \
   LD_LIBRARY_PATH=$SYS_PREFIX/lib \
   CPPFLAGS=-I$SYS_PREFIX/include \

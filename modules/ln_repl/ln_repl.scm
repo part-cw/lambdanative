@@ -3,8 +3,9 @@
 
 (##namespace ("ln_repl#"))
 (##include "~~lib/gambit#.scm")
-(##namespace ("" system-appname system-appversion exception->string 
+(##namespace ("" system-appname system-appversion exception->string
                  fix secondselapsed->string system-buildepoch system-builddatetime))
+(##include "~~lib/define-global-macros.scm")
 
 (define repl-server-address "*:7000")
 
@@ -102,9 +103,6 @@
         (let ((repl-channel (##make-repl-channel-ports in-port out-port)))
         (table-set! repl-channel-table tgroup repl-channel))))
 
-(define (start-ide-repl)
-  (##repl-debug-main))
-
 (define (ln-repl-banner)
   (##write-string "----" (##repl-output-port))
   (##newline (##repl-output-port))
@@ -121,19 +119,18 @@
   )
 
 (define (ln-repl-exception e)
-  (##write-string (with-output-to-string "" 
+  (##write-string (with-output-to-string ""
     (lambda () (display (exception->string e))))
 		  (##repl-output-port))
   (##newline (##repl-output-port))
-  #f)
+  (##repl-debug #f #t))
 
 (define (start-safe-ide-repl)
   (ln-repl-banner)
-  (let loop ()
-    (with-exception-catcher ln-repl-exception (lambda () (##repl-debug)))
-    (loop)))
+  (with-exception-handler ln-repl-exception (lambda () (##repl-debug #f #t))))
 
 (define (repl-server)
+  (map eval global-macros)
   (let ((server
 	 (open-tcp-server
 	  (list server-address: repl-server-address

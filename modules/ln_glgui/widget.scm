@@ -35,7 +35,7 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
-;; guis and widgets 
+;; guis and widgets
 
 (define make-gtable make-table)
 (define gtable-ref   table-ref)
@@ -59,12 +59,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (glgui-set! t 'isgui #t)
     t))
 
-;; WIDGET 
+;; WIDGET
 (define (glgui-widget-add g . args)
   (let* ((tmplist (let loop ((a args)(r '()))
-           (if (fx= (length a) 0) r
-             (loop (cdr (cdr a)) (append r 
-               (list (cons (car a) (cadr a))))))))
+           (cond
+             ((null? a) r)
+             ((null? (cdr a))
+               (error "glgui-widget-add: arguments must come in pairs: " args)
+             )
+             (else
+               (loop (cddr a) (cons (cons (car a) (cadr a)) r))
+             )
+           )))
          (entry (list->gtable tmplist)))
      (let ((widget-list (glgui-get g 'widget-list '())))
         (glgui-set! g 'widget-list (append widget-list (list entry))))
@@ -76,10 +82,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui-widget-delete g w)
   (let ((l (glgui-get g 'widget-list))
         (c (glgui-get g 'widget-count)))
-    (glgui-set! g 'widget-list 
-      (let loop ((ws l)(r '()))
-        (if (fx= (length ws) 0) r
-           (loop (cdr ws) (append r (if (equal? (car ws) w) '() (list (car ws))))))))
+    (glgui-set! g 'widget-list
+      (let loop ((ws l))   ;; remove w while maintaining list order
+        (cond
+          ((null? ws) ws)
+          ((equal? (car ws) w) (loop (cdr ws)))
+          (else (cons (car ws) (loop (cdr ws))))
+        )))
     (glgui-set! g 'widget-count (fx- c 1))
   ))
 

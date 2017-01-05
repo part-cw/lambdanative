@@ -50,7 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define log:path (string-append (system-directory) (system-pathseparator) "log"))
 
-(set! log:file (string-append log:path (system-pathseparator) "log_"  
+(set! log:file (string-append log:path (system-pathseparator) "log_"
     (time->string (current-time) "%Y%m%d_%H%M%S") ".txt"))
 
 ;; 20101007: don't log if the directory doesn't exist
@@ -83,7 +83,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (log-warning  s . x) (apply log:submit (append (list "WARNING" s) x)))
 
-(define (log-debug  s v . x) 
+(define (log-debug  s v . x)
   (if (fx>= v log:verbose) (apply log:submit (append (list "DEBUG" s) x))))
 
 (c-define  (log-c s) (char-string) void "log_c" "" (log:submit "C" s))
@@ -95,7 +95,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (let loop ((fs (sort (directory-files log:path) string>?))(n 0))
          (if (fx> (length fs) 0)
             (let* ((f (car fs))(match (string-contains f "log_")))
-               (if (and match (fx>= n (fx- maxfiles 1))) (delete-file 
+               (if (and match (fx>= n (fx- maxfiles 1))) (delete-file
                  (string-append log:path (system-pathseparator) f)))
                (loop (cdr fs) (if match (fx+ n 1) n))))))
     (log:release!)
@@ -107,21 +107,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((locat (##continuation-locat cont)))
     (if locat
         (let* ((container (##locat-container locat))
-               (file (##container->path container)))
-          (if file
-              (let* ((filepos (##position->filepos (##locat-position locat)))
-                     (line (##fixnum.+ (##filepos-line filepos) 1))
-                     (col (##fixnum.+ (##filepos-col filepos) 1)))
-                (log-error "trace: " file " line=" line " col=" col))
+               (path (##container->path container)))
+          (if path
+            (let* ((filepos (##position->filepos (##locat-position locat)))
+                     (line (fx+ (##filepos-line filepos) 1))
+                     (col (fx+ (##filepos-col filepos) 1)))
+                (log-error "trace: " path " line=" line " col=" col))
               #f))
         #f)))
 
 (define (log-trace thread)
   (let* ((capture (##thread-continuation-capture thread)))
-     (let cloop ((cont (##continuation-first-frame capture #f))(n 0))
-        (if cont (let ((locat (##continuation-locat cont)))
-        (if (and locat (> n 1)) (trace:identify cont))
-      (cloop (##continuation-next-frame cont #f)(fx+ n 1)))))
+    (let loop ((cont (##continuation-first-frame capture #f))(n 0))
+      (if cont (begin
+        (if (> n 1) (trace:identify cont))
+        (loop (##continuation-next-frame cont #f)(fx+ n 1))
+      ))
+    )
  ))
 
 (define (exception->string e)

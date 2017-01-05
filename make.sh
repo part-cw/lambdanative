@@ -80,9 +80,11 @@ getparam()
 
 rmifexists()
 {
-  if [ "$1" ]; then
+  if [ ! "X$1" = "X" ]; then
     if [ -e "$1" ]; then
-      vecho " => removing old $1.."
+      if [ ! "X$2" = "Xsilent" ]; then
+        vecho " => removing old $1.."
+      fi
       rm -rf "$1"
     fi
   fi
@@ -95,6 +97,16 @@ string_contains() {
     echo yes
   else
     echo no
+  fi
+}
+
+string_append_uniq() {
+  string="$1"
+  newstring="$2"
+  if test "${string#*$newstring}" != "$string"; then
+    echo "$string"
+  else
+    echo "$string $newstring"
   fi
 }
 
@@ -262,7 +274,7 @@ is_gui_app()
   if [ "$res" = "no" ]; then
     res=`has_module glcore`
     if [ "$res" = "no" ]; then
-      res=`has_module webview`
+      res=`has_module hybridapp`
     fi
   fi
   echo "$res"
@@ -272,7 +284,12 @@ is_standalone_app()
 {
   neg=`has_module eventloop`
   if [ $neg = no ]; then
-    neg=yes
+    neg=`has_module hybridapp`
+    if [ $neg = no ]; then
+      neg=yes
+    else
+      neg=no
+    fi
   else
     neg=no
   fi
@@ -334,28 +351,6 @@ compile_payload()
   payload_objs=
   payload_libs="$libraries"
   #--------
-  # register custom compiler/linker options
-  ldflag_additions=
-  cflag_additions=
-  payload_spcaps=`echo $SYS_PLATFORM | tr 'a-z' 'A-Z'`
-  for m in $modules; do
-    modpath=`locatedir modules/$m silent`
-    if [ -f $modpath/${payload_spcaps}_CFLAG_ADDITIONS ]; then
-      cflag_additions="$cflag_additions "`cat $modpath/${payload_spcaps}_CFLAG_ADDITIONS`
-    fi
-    if [ -f $modpath/${payload_spcaps}_LDFLAG_ADDITIONS ]; then
-      ldflag_additions="$ldflag_additions "`cat $modpath/${payload_spcaps}_LDFLAG_ADDITIONS`
-    fi
-  done
-  if [ -f $appsrcdir/${payload_spcaps}_CFLAG_ADDITIONS ]; then
-    cflag_additions="$cflag_additions "`cat $appsrcdir/${payload_spcaps}_CFLAG_ADDITIONS`
-  fi
-  if [ -f $appsrcdir/${payload_spcaps}_LDFLAG_ADDITIONS ]; then
-    ldflag_additions="$ldflag_additions "`cat $appsrcdir/${payload_spcaps}_LDFLAG_ADDITIONS`
-  fi
-  ac_subst CFLAG_ADDITIONS "$cflag_additions"
-  ac_subst LDFLAG_ADDITIONS "$ldflag_additions"
-  #--------
   # register global macros
   globalmacrofile="${SYS_HOSTPREFIX}/lib/global-macros.scm"
   rmifexists "$globalmacrofile"
@@ -368,6 +363,13 @@ compile_payload()
   if [ -f "$appsrcdir/global-macros.scm" ]; then
     cat "$appsrcdir/global-macros.scm" >> "$globalmacrofile"
   fi
+  # enable all global macros to be visible using ln_repl
+  defineglobalmacrofile="${SYS_HOSTPREFIX}/lib/define-global-macros.scm"
+  echo "(define global-macros \`(" > $defineglobalmacrofile
+  if [ -f "$globalmacrofile" ]; then
+    cat "$globalmacrofile" >> $defineglobalmacrofile
+  fi
+  echo "))" >> $defineglobalmacrofile
   #--------
   # step 1: compile and assemble the payload objs
   for lng in $languages; do
@@ -400,6 +402,7 @@ compile_payload()
   vecho "$SYS_RANLIB $tgtlib"
   $SYS_RANLIB $tgtlib 2> /dev/null
   assertfile "$tgtlib"
+  echo " == $tgtlib"
   dmsg_make "payload : $tgtlib"
   dmsg_make "leaving compile_payload"
 }
@@ -413,15 +416,20 @@ explode_library()
   libname=$1
   libfile="$SYS_PREFIX/lib/$libname.a"
   libdir="$SYS_PREFIX/build/$libname"
-  assertfile $libfile
-  if [ `isnewer $libfile $libdir` = "yes" ]; then
-    rmifexists "$libdir"
-    echo " => exploding library $libname.."
-    mkdir -p "$libdir"
-    here=`pwd`
-    cd "$libdir"
-    $SYS_AR -x $libfile
-    cd "$here"
+  if [ -f $libfile ]; then
+    if [ `isnewer $libfile $libdir` = "yes" ]; then
+      rmifexists "$libdir"
+      echo " => exploding library $libname.."
+      mkdir -p "$libdir"
+      here=`pwd`
+      cd "$libdir"
+      $SYS_AR -x $libfile
+      cd "$here"
+    fi
+  else
+    if [ ! -d "$SYS_PREFIX/lib/$libname" ]; then
+      assert "could not find library $libname"
+    fi
   fi
   dmsg_make "leaving explode_library"
 }
@@ -760,7 +768,7 @@ make_sounds()
 ###################################
 # platform specific stuff
 
-# search itemname diretories for ITEMNAME to populate items
+# search itemname directories for ITEMNAME to populate items
 add_items()
 {
   for optnewi in `filter_entries $SYS_PLATFORM $@`; do
@@ -806,10 +814,11 @@ make_setup_profile()
     echo "=== configured to build $SYS_APPNAME version $SYS_APPVERSION for $SYS_PLATFORM on $SYS_HOSTPLATFORM in $SYS_MODE mode"
   fi
   if [ "$SYS_MODE" = "release" ]; then
-    SYS_IOSCERT=$SYS_IOSRELCERT
+    SYS_IOSCERT="iPhone Distribution"
   else
-    SYS_IOSCERT=$SYS_IOSDEVCERT
+    SYS_IOSCERT="iPhone Developer"
   fi
+  SYS_IOSTEAMID=`echo "$SYS_IOSRELCERT" | cut -f 2 -d "(" | cut -f 1 -d ")"`
   SYS_ROOT=`pwd`
   mkdir -p $SYS_TMPDIR
   SYS_PREFIXROOT=`pwd`"-cache"
@@ -887,6 +896,10 @@ make_setup_profile()
     if [ ! "X$xlibs" = "X" ] && [ -f "$xlibs" ]; then
       libraries=$libraries" "`cat "$xlibs"`
     fi
+    xplugs=`locatefile modules/$m/PLUGINS silent`
+    if [ ! "X$xplugs" = "X" ] && [ -f "$xplugs" ]; then
+      plugins=$plugins" "`cat "$xplugs"`
+    fi
     appsrcdirs="$appsrcdirs modules/$m"
   done
   for p in $plugins; do
@@ -899,7 +912,7 @@ make_setup_profile()
   libraries=`filter_entries $SYS_PLATFORM $libraries`
   tool_libraries=
   if [ "$SYS_HOSTPLATFORM" = "$SYS_PLATFORM" ]; then
-    tool_libraries="libgd libgambc"
+    tool_libraries="libgd"
   fi
   appsrcdirs="$appsrcdirs loaders/$SYS_PLATFORM"
 # compile_target_options $appsrcdirs
@@ -911,7 +924,33 @@ make_setup_target()
   setstate SETUP
   setup_target=$1
   assertfile $setup_target "Don't know how to setup a build for $SYS_PLATFORM on a $SYS_HOSTPLATFORM host"
+  ac_reset
   SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM"
+  #--------
+  # register custom compiler/linker options
+  payload_spcaps=`echo $SYS_PLATFORM | tr 'a-z' 'A-Z'`
+  for m in $modules; do
+    modpath=`locatedir modules/$m silent`
+    if [ -f $modpath/${payload_spcaps}_CFLAG_ADDITIONS ]; then
+      cflag_new=`cat $modpath/${payload_spcaps}_CFLAG_ADDITIONS`
+      cflag_additions=`string_append_uniq "$cflag_additions" "$cflag_new"`
+    fi
+    if [ -f $modpath/${payload_spcaps}_LDFLAG_ADDITIONS ]; then
+      ldflag_new=`cat $modpath/${payload_spcaps}_LDFLAG_ADDITIONS`
+      ldflag_additions=`string_append_uniq "$ldflag_additions" "$ldflag_new"`
+    fi
+  done
+  if [ -f $appsrcdir/${payload_spcaps}_CFLAG_ADDITIONS ]; then
+    cflag_new=`cat $appsrcdir/${payload_spcaps}_CFLAG_ADDITIONS`
+    cflag_additions=`string_append_uniq "$cflag_additions" "$cflag_new"`
+  fi
+  if [ -f $appsrcdir/${payload_spcaps}_LDFLAG_ADDITIONS ]; then
+    ldflag_new=`cat $appsrcdir/${payload_spcaps}_LDFLAG_ADDITIONS`
+    ldflag_additions=`string_append_uniq "$ldflag_additions" "$ldflag_new"`
+  fi
+  ac_subst CFLAG_ADDITIONS "$cflag_additions"
+  ac_subst LDFLAG_ADDITIONS "$ldflag_additions"
+  #--------
   . $setup_target
   if [ ! "X$SYS_CPU" = "X" ]; then
     SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM/$SYS_CPU"
@@ -937,12 +976,12 @@ make_setup_target()
     # qcc does not support the dumpmachine option
     SYS_ARCH=arm-unknown-nto-qnx6.5.0eabi
   fi
-  ac_reset
   ac_subst SYS_ORGTLD
   ac_subst SYS_ORGSLD
   ac_subst SYS_APPNAME
   ac_subst SYS_LOCASEAPPNAME
   ac_subst SYS_IOSCERT
+  ac_subst SYS_IOSTEAMID
   ac_subst SYS_IOSVERSION
   ac_subst SYS_IOSSDK
   ac_subst SYS_PLATFORM
@@ -977,6 +1016,7 @@ make_setup_target()
   texture_srcs=
   string_srcs=
   font_srcs=
+  embed_srcs=
   setstate
 }
 
@@ -1017,9 +1057,8 @@ make_clean()
 {
   echo "==> cleaning up build files.."
   rmifexists $SYS_PREFIX/lib/libpayload.a
-# these files are platform independent
-#  rmifexists $SYS_PREFIXROOT/build
   rmifexists $SYS_PREFIX/build
+  rmifexists $SYS_PREFIXROOT/$SYS_PLATFORM/*/build
 }
 
 make_scrub()
@@ -1057,28 +1096,39 @@ make_install_tool()
   setstate
 }
 
-update_packfile()
+make_embedfile()
+{
+  srcdir=$1
+  prefix=$2
+  scmfile=$tgtdir/${prefix}.scm
+  here=`pwd`
+  cd `locatedir $srcdir`
+  $SYS_HOSTPREFIX/bin/packtool $scmfile
+  if [ -f $scmfile ]; then
+    if `test "$scmfile" -nt "${prefix}.scm"`; then
+      touch ${prefix}.scm
+    fi
+    embed_srcs="$embed_srcs $scmfile"
+  fi
+  cd $here
+}
+
+make_embeds()
 {
   setstate PACKTOOL
-  embedfile=`locatefile apps/$SYS_APPNAME/EMBED silent`
-  if [ ! "X$embedfile" = "X" ]; then
-    echo "==> Updating packfile for $SYS_APPNAME.."
-    here=`pwd`
-    cd `locatedir apps/$SYS_APPNAME`
-    $SYS_HOSTPREFIX/bin/packtool
-    if [ -f embed.scm ]; then
-      if `test "embed.scm" -nt "main.scm"`; then
-        touch main.scm
-      fi
-    fi
-    cd $here
-    mainfile=`locatefile apps/$SYS_APPNAME/main.scm`
-    if [ "X"`cat "$mainfile" | grep "(include \"embed.scm\")" | cut -c 1` = "X" ]; then
-      echo "ERROR: $SYS_APPNAME/main.scm is missing include for embed.scm" 
-      echo "Please add  (include \"embed.scm\")  to the top of it."
-      exit 1
-    fi
+  echo "==> Updating embeded files for $SYS_APPNAME.."
+  tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/embed
+  mkdir -p $tgtdir
+  srcfile="$appsrcdir/EMBED"
+  if [ -f $srcfile ]; then
+    make_embedfile "apps/$SYS_APPNAME" "main"
   fi
+  for m in $modules; do
+    srcfile=`locatefile modules/$m/EMBED silent`
+    if [ ! "X$srcfile" = "X" ]; then
+      make_embedfile "modules/$m" "${m}"
+    fi
+  done
   setstate
 }
 
@@ -1266,6 +1316,9 @@ make_lntoolcheck()
     mv $SYS_TMPDIR/tmp.config.cache $SYS_TMPDIR/config.cache
     . $SYS_TMPDIR/config.cache
     rmifexists $SYS_TMPDIR/tmp.subst
+    ldflag_additions=
+    cflag_additions=
+    make_clean
     make_setup
   fi
   vecho " => lambdanative tools complete"
@@ -1338,13 +1391,15 @@ smoke_one()
   make_setup silent
   make_libraries     
   if [ `is_gui_app` = "yes" ]; then
-    make_artwork
     make_textures
     make_fonts
     make_strings
   fi
-  update_packfile
+  make_embedfile
   make_payload
+  if [ `is_gui_app` = "yes" ]; then
+    make_artwork
+  fi
   make_executable
   result=$?
   if [ ! "X$result" = "X0" ]; then
@@ -1501,6 +1556,7 @@ if [ ! "X$cfg_version" = "X$cur_version" ]; then
   make_scrub
   rmifexists $SYS_TMPDIR/config.cache
   echo " ** FRAMEWORK VERSION CHANGE - please rerun configure for the local host"
+  SYS_PATH="$SYS_PATH" ./configure $SYS_APPNAME > /dev/null
   exit 1
 fi
 
@@ -1532,18 +1588,22 @@ explode)
   explode_library $2
 ;;
 payload)
+  cflag_additions="$cflag_additions -DPAYLOADONLY"
+  make_setup
   rm -rf $SYS_TMPDIR/tmp.?????? 2> /dev/null
   make_libraries
 if [ `is_gui_app` = "yes" ]; then
-  make_artwork
   make_textures
   make_fonts
   make_strings
 fi
-  update_packfile
+  make_embeds
   make_payload
 ;;
 executable)
+if [ `is_gui_app` = "yes" ]; then
+  make_artwork
+fi
   make_executable
 ;;
 all)
@@ -1558,7 +1618,7 @@ all)
       make_fonts
       make_strings
     fi
-    update_packfile
+    make_embeds
     make_payload
   done
   make_executable
@@ -1590,8 +1650,8 @@ smoke)
 ;;
 esac
 
-rmifexists $evallog
-rmifexists $ac_cache
+rmifexists $evallog silent
+rmifexists $ac_cache silent
 
 # all is well if we got here, so clear the state cache
 resetstate

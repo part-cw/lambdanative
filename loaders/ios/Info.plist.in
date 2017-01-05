@@ -14,8 +14,6 @@
 <string>@SYS_APPVERSION@</string>
 <key>CFBundlePackageType</key>
 <string>APPL</string>
-<key>CFBundleResourceSpecification</key>
-<string>ResourceRules.plist</string>
 <key>CFBundleSignature</key>
 <string>????</string>
 <key>CFBundleSupportedPlatforms</key>
@@ -30,6 +28,8 @@
 <key>CSResourcesFileMapped</key>
 <true/>
 <key>LSRequiresCarbon</key>
+<true/>
+<key>UIRequiresFullScreen</key>
 <true/>
 <key>MinimumOSVersion</key>
 <string>@SYS_IOSVERSION@</string>
@@ -51,7 +51,11 @@
 <true/>
 <key>UIViewControllerBasedStatusBarAppearance</key>
 <false/>
-@IOS_XML_PERMISSIONS@
+<key>UIBackgroundModes</key>
+<array>
+@IOS_XML_BACKGROUNDMODES@
+</array>
+@IOS_XML_ADDITIONS@
 ### allow files to be accessed from iTunes
 <key>UIFileSharingEnabled</key>
 <true/>

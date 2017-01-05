@@ -69,7 +69,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (graphout:setcoord g GRAPH_AXIS)
     (graphout:vtextcenter g
       (graphout:devx->axisx g (+ (- leastx (* tndirection
-         (if (or (eq? o 'GRAPH_SVG) (eq? o 'GRAPH_OGL)) 3. 0.4) fontnum)) devxorigo))
+         (if (or (eq? o 'GRAPH_SVG) (eq? o 'GRAPH_OGL)) 3. 
+           (if (and (eq? o 'GRAPH_PDF) (< tndirection 0)) 5. 0.4)) fontnum)) devxorigo))
       (graphout:devy->axisy g (+ (/ (* physysize phys2dev) 2.0) devyorigo))
       text (string-append xstring "X")
     )  ;; xstring is a phantom spacer

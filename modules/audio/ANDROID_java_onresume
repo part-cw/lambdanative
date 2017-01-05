@@ -1,0 +1,1 @@
+AudioHelper.getInstance().onResume();
