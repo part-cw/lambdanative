@@ -63,8 +63,7 @@ if [ ! -d $android_customtoolchain ]; then
      --toolchain=${android_chain} \
      --arch=$ANDROIDARCH \
      --platform=android-${ANDROIDAPI} \
-     --install-dir=$android_customtoolchain \
-     --ndk-dir=${ANDROIDNDK}
+     --install-dir=$android_customtoolchain
 fi
 assertfile $android_customtoolchain
 android_sysroot="$android_customtoolchain/sysroot"
