@@ -42,6 +42,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (log:grab!) (mutex-lock! log:mutex))
 (define (log:release!) (mutex-unlock! log:mutex))
 
+(define log:maxfiles 10)
+
 (define log:verbose 0)
 
 (define (log-verbose n) (set! log:verbose n))
@@ -56,11 +58,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define log:hook #f)
 
+;;adjusts the number of log files to keep. Default is 10
+(define (log-maxfiles n)  (set! log:maxfiles n))
+
+;; Fractional second resolution of log-timestamps
+(define log:fine-resolution #f)
+
+(define (log-time-resolution newres)
+  (cond ((string=? newres "nanosecond") (set! log:fine-resolution #t))
+        ((string=? newres "second") (set! log:fine-resolution #f)))
+)
+
+
 ;; general log submission
 (define log:submit (lambda (t . s)
   (if log:on (begin
   (log:grab!)
-  (let ((now (time->string (current-time) "%Y-%m-%d %T"))
+  (let ((now (time->string (current-time) (if log:fine-resolution "%Y-%m-%d %H:%M:%f" "%Y-%m-%d %T")))
         (str (with-output-to-string "" (lambda () (for-each display s)))))
     (with-exception-catcher (lambda () #f) (lambda ()
       (with-output-to-file (list path: log:file append: #t)
@@ -86,7 +100,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (log-folder-cleanup)
   (if log:on (begin
     (log:grab!)
-    (let ((maxfiles 10))
+    (let ((maxfiles log:maxfiles))
        (let loop ((fs (sort (directory-files log:path) string>?))(n 0))
          (if (fx> (length fs) 0)
             (let* ((f (car fs))(match (string-contains f "log_")))
@@ -146,5 +160,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; let's say hello to ourselves
 (log-system "Application " (system-appname) " built " (system-builddatetime))
 (log-system "Git hash " (system-buildhash))
+
+
+
 
 ;; eof
