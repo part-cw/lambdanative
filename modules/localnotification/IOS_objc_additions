@@ -64,7 +64,7 @@ extern int ios_localnotification_schedule_batch(char* text[], double* time, int*
   [userDefaults synchronize];
   // Add old notifications back in
   NSArray *eventArrayOld = [[UIApplication sharedApplication] scheduledLocalNotifications];
-  [eventArray addObjects: eventArrayOld];
+  [eventArray addObjectsFromArray: eventArrayOld];
   // Schedule the notifications
   [[UIApplication sharedApplication] setScheduledLocalNotifications: eventArray];
   return len;
