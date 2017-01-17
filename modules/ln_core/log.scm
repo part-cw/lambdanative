@@ -43,7 +43,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (log:release!) (mutex-unlock! log:mutex))
 
 (define log:maxfiles 10)
-
 (define log:verbose 0)
 
 (define (log-verbose n) (set! log:verbose n))
@@ -160,8 +159,5 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; let's say hello to ourselves
 (log-system "Application " (system-appname) " built " (system-builddatetime))
 (log-system "Git hash " (system-buildhash))
-
-
-
 
 ;; eof
