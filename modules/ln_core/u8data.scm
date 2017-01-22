@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2017, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -56,19 +56,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ))
 
 (define (u8vector->u8data v . l)
-  (let* ((len0 (u8vector-length v))
-         (len (if (fx= (length l) 1) (car l) len0)))
-    (set! u8data:vector v)
-    (set! u8data:length
-      (if (fx> len len0)
-        (begin
-          (log-error "u8vector->u8data: invalid length")
-          len0
+  (if (u8vector? v)
+    (let* ((len0 (u8vector-length v))
+           (len (if (fx= (length l) 1) (car l) len0)))
+      (set! u8data:vector v)
+      (set! u8data:length
+        (if (fx> len len0)
+          (begin
+            (log-error "u8vector->u8data: invalid length")
+            len0
+          )
+          len
         )
-        len
       )
+      (cons 0 u8data:length)
     )
-    (cons 0 u8data:length)
+    #f
   ))
 
 (define (subu8data data start end)
@@ -80,7 +83,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (if (and (fx<= nend u8data:length) (fx<= nend (cdr data)))
           (cons nstart nend)
           (begin
-            (log-warning "subu8data: invalid range: [" start " -> " end 
+            (log-warning "subu8data: invalid range: [" start " -> " end
               "] really ends " (cdr data) " (" u8data:length ")")
             (cons (min nstart u8data:length) (min nend   u8data:length))
           )
@@ -186,8 +189,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         )
       )
     )
-    (begin 
-      (log-error "u8data->u8vector: invalid data") 
+    (begin
+      (log-error "u8data->u8vector: invalid data")
       #f
     )
   ))
@@ -201,11 +204,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       "___result=*(double*)___CAST(void *,___BODY_AS(___arg1,___tSUBTYPED));"))
 
 (define (u8data-f32 u)
-  (let ((v (u8data->u8vector u)))
-    (u8data:u8vector->f32 v)))
+  (if (pair? u)
+    (let ((v (u8data->u8vector u)))
+      (u8data:u8vector->f32 v))
+    #f
+  ))
 
 (define (u8data-f64 u)
-  (let ((v (u8data->u8vector u)))
-    (u8data:u8vector->f64 v)))
+  (if (pair? u)
+    (let ((v (u8data->u8vector u)))
+      (u8data:u8vector->f64 v))
+  ))
 
 ;; eof
