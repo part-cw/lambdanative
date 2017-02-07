@@ -71,7 +71,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (valprv (min valmax (max valmin (- value unit))))
          (valnxt (max valmin (min valmax (+ value unit))))
          ;; Below strings may actually be textures if textures in vallist
-         (valstr (if vallist (list-ref vallist (fix value)) (val->str value))))
+         (valstr (if vallist (list-ref vallist (fix value)) (val->str value)))
+         (cbmid (glgui-widget-get g wgt 'callbackmid)))
 
      ;; Draw the background
      (if colorbg
@@ -118,7 +119,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             glgui:arrow 0.))))
         
     ;; Draw the selected value
-    (if (string? valstr) 
+    (if (string? valstr)
       (glgui:draw-text-center x y w h valstr fnt colorvalue)
       (glgui:draw-pixmap-center x y w h valstr colorvalue))
     
@@ -161,8 +162,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let* ((x (fix (glgui-widget-get-dyn g wgt 'x)))
          (y (fix (glgui-widget-get-dyn g wgt 'y)))
          (w (fix (glgui-widget-get-dyn g wgt 'w)))
-         (h (fix (glgui-widget-get-dyn g wgt 'h)))    
+         (h (fix (glgui-widget-get-dyn g wgt 'h)))
          (cb (glgui-widget-get g wgt 'callback))
+         (cbmid (glgui-widget-get g wgt 'callbackmid))
          (cycle (glgui-widget-get g wgt 'cycle))
          (value (flo (glgui-widget-get g wgt 'value)))
          (valmin (flo (glgui-widget-get g wgt 'valmin)))
@@ -206,6 +208,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                   (glgui-widget-set! g wgt 'value newval)
                   (if cb (cb g wgt 0 0 0))))
        
+            ;; touched value (between top and bottom buttons), now releasing
+            ((and inside (fx= type EVENT_BUTTON1UP) initialwait)
+              (if cbmid (cbmid g wgt 0 0 0)))
+
             ;; If a change was made to the value by holding down the button, call the callback
             ((and (or armbottom armtop) activitytime (not initialwait))
                (if cb (cb g wgt 0 0 0))))
@@ -235,6 +241,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        'w w
        'h h
        'callback #f
+       'callbackmid #f
        'draw-handle  glgui:verticalvaluepicker-draw
        'input-handle glgui:verticalvaluepicker-input
        'hidden #f
