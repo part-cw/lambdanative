@@ -136,19 +136,23 @@ if [ -d "$xmlfilesdir" ]; then
 fi
 
 echo " => transferring java hook.."
-ac_output loaders/android/bootstrap.java.in $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
+appdir=$tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME
+ac_output loaders/android/bootstrap.java.in $appdir/$SYS_APPNAME.java
 
 echo " => transferring java public classes.."
 for m in $modules; do
   modpath=`locatedir modules/$m silent`
   pubclasses=`ls -1 $modpath/ANDROID_java_public_* 2> /dev/null`
   for pubclass in $pubclasses; do
-    pubclassdir=`basename $pubclass | sed 's/ANDROID_java_public_//'`
-    pubclassfile="${pubclassdir}.java"
+    pubclassfile="`basename $pubclass | sed 's/ANDROID_java_public_//'`.java"
     echo "    $pubclassfile.."
-    mkdir -p $tmpdir/src/$pubclassdir
-    echo "package $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME;" > $tmpdir/src/$pubclassdir/$pubclassfile
-    cat $pubclass >> $tmpdir/src/$pubclassdir/$pubclassfile
+    if [ `echo $pubclass | cut -d . -f 2` == "in" ]; then
+      pubclassfile=`echo $pubclassfile | sed 's/.in//'`
+      ac_output $pubclass $appdir/$pubclassfile
+    else
+      echo "package $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME;" > $appdir/$pubclassfile
+      cat $pubclass >> $appdir/$pubclassfile
+    fi
   done
 done
 

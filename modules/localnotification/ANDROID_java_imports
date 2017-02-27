@@ -1,7 +1,4 @@
 import android.app.AlarmManager;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
-import android.support.v4.content.WakefulBroadcastReceiver;
-import android.support.v4.app.NotificationCompat;
 import android.os.Build;
+import android.app.PendingIntent;
