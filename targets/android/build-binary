@@ -85,6 +85,10 @@ $ANDROIDSDK/tools/android --silent create project \
 if [ -f $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar ]; then
   cp -r $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar $tmpdir/libs
 fi
+# Because Android SDKs cannot just leave things the way they were... last supported jar
+if [ -f $ANDROIDSDK/extras/android/m2repository/com/android/support/support-v4/19.1.0/support-v4-19.1.0.jar ]; then
+  cp $ANDROIDSDK/extras/android/m2repository/com/android/support/support-v4/19.1.0/support-v4-19.1.0.jar $tmpdir/libs
+fi
 
 if [ "$NEED_GCM" = "yes" ]; then
   cp -r $ANDROIDSDK/extras/google/google_play_services/libproject/google-play-services_lib $tmpdir
