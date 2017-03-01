@@ -7,6 +7,7 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.os.Bundle;
 import android.content.Context;
+import android.net.Uri;
 
 public class AlarmReceiver extends WakefulBroadcastReceiver {
   public void onReceive(Context context, Intent intent) {
@@ -14,6 +15,7 @@ public class AlarmReceiver extends WakefulBroadcastReceiver {
       Bundle bundle = intent.getExtras();
       String message = bundle.getString("alarm_message");
       Double timestamp = bundle.getDouble("alarm_timestamp");
+      String sound = bundle.getString("alarm_sound");
       
       Intent ni = new Intent(context, @SYS_APPNAME@.class);
       ni.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -32,6 +34,13 @@ public class AlarmReceiver extends WakefulBroadcastReceiver {
         .setDefaults(Notification.DEFAULT_LIGHTS| Notification.DEFAULT_SOUND)
 //        .setContentInfo("Info")
         .setContentIntent(pi);
+
+      if (sound != null && !sound.isEmpty()){
+        ncb.setDefaults(Notification.DEFAULT_LIGHTS);
+        sound = sound.toLowerCase();
+        sound = sound.substring(0, sound.lastIndexOf('.'));
+        ncb.setSound(Uri.parse("android.resource://" + context.getPackageName() + "/raw/" + sound));
+      }
 
       NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
       nm.notify((new Double(timestamp)).intValue(), ncb.build());

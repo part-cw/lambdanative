@@ -6,7 +6,7 @@ protected void onNewIntent(Intent intent) {
   super.onNewIntent(intent);
 } 
 
-private int scheduleNotification(String msg, double ts, int repeat) {
+private int scheduleNotification(String msg, double ts, int repeat, String sound) {
   // Update unique ids
   SharedPreferences preferences = this.getSharedPreferences("MyPreferences", Context.MODE_PRIVATE);
   int localnotification_id = preferences.getInt("LocalNotificationId", 0);
@@ -22,6 +22,7 @@ private int scheduleNotification(String msg, double ts, int repeat) {
   intent.addCategory("android.intent.category.DEFAULT");
   intent.putExtra("alarm_message", msg);
   intent.putExtra("alarm_timestamp", ts);
+  intent.putExtra("alarm_sound", sound);
   intent.putExtra("localnotification_id", localnotification_id);
   PendingIntent sender = PendingIntent.getBroadcast(this, localnotification_id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
   

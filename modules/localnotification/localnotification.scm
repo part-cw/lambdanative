@@ -51,7 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   extern char localnotification_msg[100];
   extern double localnotification_timestamp;
   extern int localnotification_gotmsg;
-  int android_localnotification_schedule(char*, double, int);
+  int android_localnotification_schedule(char*, double, int, char*);
   int android_localnotification_cancel(int id);
   int android_localnotification_cancelall();
 #else
@@ -77,7 +77,7 @@ int localnotification_schedule(char* text, double time, int repeatmin, char* sou
 #ifdef IOS
   return ios_localnotification_schedule(text, time, repeatmin, soundfile);
 #elif ANDROID
-  return android_localnotification_schedule(text, time, repeatmin);
+  return android_localnotification_schedule(text, time, repeatmin, soundfile);
 #endif
   return 0;
 }

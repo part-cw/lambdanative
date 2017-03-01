@@ -3,13 +3,14 @@ char localnotification_msg[100];
 int localnotification_gotmsg;
 double localnotification_timestamp;
 
-int android_localnotification_schedule(char* msg, double ts, int repeat){
+int android_localnotification_schedule(char* msg, double ts, int repeat, char* sound){
   JNIEnv *env = GetJNIEnv();
   jstring jmsg = (*env)->NewStringUTF(env,msg);
+  jstring jsound = (*env)->NewStringUTF(env,sound);
   jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
   if (env&&globalObj){
-    jmethodID method = (*env)->GetMethodID(env, main_class, "scheduleNotification", "(Ljava/lang/String;DI)I");
-    return (*env)->CallIntMethod(env, globalObj, method, jmsg, ts, repeat);
+    jmethodID method = (*env)->GetMethodID(env, main_class, "scheduleNotification", "(Ljava/lang/String;DILjava/lang/String;)I");
+    return (*env)->CallIntMethod(env, globalObj, method, jmsg, ts, repeat, jsound);
   }
 }
 
