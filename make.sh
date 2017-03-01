@@ -747,6 +747,13 @@ make_sounddir()
       $make_soundfile "$snd"
     fi
   done
+  snds=`ls -1 $snddir/*.caf 2> /dev/null`
+  for snd in $snds; do
+    if [ -f "$snd" ]; then
+      vecho " => $snd.."
+      $make_soundfile "$snd"
+    fi
+  done
 }
 
 make_sounds()

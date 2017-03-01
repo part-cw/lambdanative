@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   extern char localnotification_msg[100];
   extern double localnotification_timestamp;
   extern int localnotification_gotmsg;
-  int ios_localnotification_schedule(char*, double, int);
+  int ios_localnotification_schedule(char*, double, int, char*);
   int ios_localnotification_schedule_batch(char*[], double*, int*, int, int*);
   int ios_localnotification_cancelall();
   int ios_localnotification_cancel(int id);
@@ -73,9 +73,9 @@ int localnotification_schedule_batch(char* text[], double* time, int* repeattime
   return 0;
 }
 
-int localnotification_schedule(char* text, double time, int repeatmin){
+int localnotification_schedule(char* text, double time, int repeatmin, char* soundfile){
 #ifdef IOS
-  return ios_localnotification_schedule(text, time, repeatmin);
+  return ios_localnotification_schedule(text, time, repeatmin, soundfile);
 #elif ANDROID
   return android_localnotification_schedule(text, time, repeatmin);
 #endif
@@ -115,19 +115,19 @@ end-of-c-declare
 (define (localnotification:validate lst)
   (let ((str (car lst))
         (time (flo (cadr lst)))
-        (repeataftermin (if (fx= (length lst) 3) (caddr lst) 0)))
+        (extra (if (fx>= (length lst) 3) (caddr lst) 0)))
     (if (and (> time ##now) (string? str) (fx<= (string-length str) 100))
-      (list str time (if (pair? repeataftermin) (fix (car repeataftermin)) 0))
-      (list "" 0 0)
+      (list str time (if (pair? extra) (fix (car extra)) 0) (if (and (pair? extra) (fx= (length extra) 2)) (cadr extra) ""))
+      (list "" 0 0 "")
     )
   ))
 
-(define (localnotification-schedule str time . repeataftermin)
-  (let ((nf (localnotification:validate (list str time repeataftermin))))
-    (if (fx> (cadr nf) 0)
-      (let ((ret ((c-lambda (char-string double int) int
-                   "___result=localnotification_schedule(___arg1,___arg2,___arg3);")
-                   (car nf) (cadr nf) (caddr nf))))
+(define (localnotification-schedule str time . repeataftermin_customsound)
+  (let ((nf (localnotification:validate (list str time repeataftermin_customsound))))
+    (if (> (cadr nf) 0)
+      (let ((ret ((c-lambda (char-string double int char-string) int
+                   "___result=localnotification_schedule(___arg1,___arg2,___arg3,___arg4);")
+                   (car nf) (cadr nf) (caddr nf) (cadddr nf))))
         (if (fx> ret 0) (localnotification:renumber))
         (if (fx> ret 0) ret #f)
       )

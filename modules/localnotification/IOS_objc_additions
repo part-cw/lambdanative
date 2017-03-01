@@ -3,9 +3,9 @@ char localnotification_msg[100];
 int localnotification_gotmsg=0;
 double localnotification_timestamp;
 extern void ios_localnotification_renumber();
-UILocalNotification* ios_localnotification_create(char* text, double time, int repeatmin, int localnotification_id);
+UILocalNotification* ios_localnotification_create(char* text, double time, int repeatmin, int localnotification_id, char* soundfile);
 
-extern int ios_localnotification_schedule(char* text, double time, int repeatmin) {
+extern int ios_localnotification_schedule(char* text, double time, int repeatmin, char* soundfile) {
   // Update unique ids
   NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
   int localnotification_id = [userDefaults integerForKey:@"LocalNotificationId"];
@@ -13,7 +13,7 @@ extern int ios_localnotification_schedule(char* text, double time, int repeatmin
     localnotification_id++;
   }
   // Make event
-  UILocalNotification* localNotification = ios_localnotification_create(text, time, repeatmin, localnotification_id);
+  UILocalNotification* localNotification = ios_localnotification_create(text, time, repeatmin, localnotification_id, soundfile);
   // Update ids
   localnotification_id++;
   [userDefaults setInteger: localnotification_id forKey:@"LocalNotificationId"];
@@ -37,7 +37,7 @@ extern int ios_localnotification_schedule_batch(char* text[], double* time, int*
     if (time[i]==0){
       continue;
     }
-    UILocalNotification* localNotification = ios_localnotification_create(text[i], time[i], repeatmin[i], localnotification_id);
+    UILocalNotification* localNotification = ios_localnotification_create(text[i], time[i], repeatmin[i], localnotification_id,"");
     [eventArray addObject: localNotification];
 
     // Hack as Apple won't support sensible intervals
@@ -70,7 +70,7 @@ extern int ios_localnotification_schedule_batch(char* text[], double* time, int*
   return len;
 }
 
-UILocalNotification* ios_localnotification_create(char* text, double time, int repeatmin, int localnotification_id){
+UILocalNotification* ios_localnotification_create(char* text, double time, int repeatmin, int localnotification_id, char* soundfile){
   UILocalNotification* localNotification = [[UILocalNotification alloc] init];
   localNotification.timeZone = [NSTimeZone localTimeZone];
   localNotification.fireDate = [NSDate dateWithTimeIntervalSince1970: time];
@@ -83,7 +83,12 @@ UILocalNotification* ios_localnotification_create(char* text, double time, int r
   }else if (repeatmin == 1440){
     localNotification.repeatInterval =  NSDayCalendarUnit;
   }
-  localNotification.soundName = UILocalNotificationDefaultSoundName;
+ // Add custom sound if requested
+  if ((soundfile != NULL) && (soundfile[0] != '\0')){
+    localNotification.soundName = [NSString stringWithUTF8String: soundfile];
+  }else{
+    localNotification.soundName = UILocalNotificationDefaultSoundName;
+  }
   // No need to set localNotification.applicationIconBadgeNumber - rescheduler does it
   NSDictionary *infoDict = [NSDictionary dictionaryWithObject: [NSNumber numberWithInteger: localnotification_id]
     forKey: @"LocalNotificationId"];
