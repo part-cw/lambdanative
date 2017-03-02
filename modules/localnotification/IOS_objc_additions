@@ -23,7 +23,7 @@ extern int ios_localnotification_schedule(char* text, double time, int repeatmin
   return localnotification_id-1;
 }
 
-extern int ios_localnotification_schedule_batch(char* text[], double* time, int* repeatmin, int len, int* localnotification_ids){
+extern int ios_localnotification_schedule_batch(char* text[], double* time, int* repeatmin, char* sounds[], int len, int* localnotification_ids){
   NSMutableArray *eventArray = [[NSMutableArray alloc] init];
   // Update unique ids
   NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
@@ -37,7 +37,7 @@ extern int ios_localnotification_schedule_batch(char* text[], double* time, int*
     if (time[i]==0){
       continue;
     }
-    UILocalNotification* localNotification = ios_localnotification_create(text[i], time[i], repeatmin[i], localnotification_id,"");
+    UILocalNotification* localNotification = ios_localnotification_create(text[i], time[i], repeatmin[i], localnotification_id, sounds[i]);
     [eventArray addObject: localNotification];
 
     // Hack as Apple won't support sensible intervals

@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   extern double localnotification_timestamp;
   extern int localnotification_gotmsg;
   int ios_localnotification_schedule(char*, double, int, char*);
-  int ios_localnotification_schedule_batch(char*[], double*, int*, int, int*);
+  int ios_localnotification_schedule_batch(char*[], double*, int*, char*[], int, int*);
   int ios_localnotification_cancelall();
   int ios_localnotification_cancel(int id);
   void ios_localnotification_renumber();
@@ -52,6 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   extern double localnotification_timestamp;
   extern int localnotification_gotmsg;
   int android_localnotification_schedule(char*, double, int, char*);
+  int android_localnotification_schedule_batch(char*[], double*, int*, char*[], int, int*);
   int android_localnotification_cancel(int id);
   int android_localnotification_cancelall();
 #else
@@ -66,9 +67,11 @@ void localnotification_renumber(){
 #endif
 }
 
-int localnotification_schedule_batch(char* text[], double* time, int* repeattime, int len, int* ret){
+int localnotification_schedule_batch(char* text[], double* time, int* repeattime, char* sounds[], int len, int* ret){
 #ifdef IOS
-  return ios_localnotification_schedule_batch(text,time,repeattime,len,ret);
+  return ios_localnotification_schedule_batch(text,time,repeattime,sounds,len,ret);
+#elif ANDROID
+  return android_localnotification_schedule_batch(text,time,repeattime,sounds,len,ret);
 #endif
   return 0;
 }
@@ -142,10 +145,12 @@ end-of-c-declare
          (texts (map car nfs))
          (times (list->f64vector (map cadr nfs)))
          (repeats (list->u32vector (map caddr nfs)))
-         (r ((c-lambda (nonnull-char-string-list scheme-object scheme-object int scheme-object) bool
+         (sounds (map cadddr nfs))
+         (r ((c-lambda (nonnull-char-string-list scheme-object scheme-object nonnull-char-string-list int scheme-object) bool
            "___result=localnotification_schedule_batch(___CAST(char**,___BODY_AS(___arg1,___tSUBTYPED)),
             ___CAST(double*,___BODY_AS(___arg2,___tSUBTYPED)),___CAST(int*,___BODY_AS(___arg3,___tSUBTYPED)),
-            ___arg4,___CAST(int*,___BODY_AS(___arg5,___tSUBTYPED)));") texts times repeats len ret)))
+            ___CAST(char**,___BODY_AS(___arg4,___tSUBTYPED)),___arg5,___CAST(int*,___BODY_AS(___arg6,___tSUBTYPED)));")
+           texts times repeats sounds len ret)))
     (if r (localnotification:renumber))
     (map (lambda (l) (if (fx> l 0) l #f)) (u32vector->list ret))
   ))
