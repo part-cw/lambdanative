@@ -1,10 +1,14 @@
 @Override
 protected void onNewIntent(Intent intent) {
+  super.onNewIntent(intent);
   alarm_message = intent.getStringExtra("alarm_message");
   alarm_timestamp = intent.getDoubleExtra("alarm_timestamp",0);
   notification_store(alarm_message,alarm_timestamp);
-  super.onNewIntent(intent);
 } 
+
+public static boolean isActivityVisible() {
+  return isVisible;
+}
 
 private int scheduleNotification(String msg, double ts, int repeat, String sound) {
   // Update unique ids
