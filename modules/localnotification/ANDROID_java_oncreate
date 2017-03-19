@@ -1,0 +1,6 @@
+Bundle extras = getIntent().getExtras();
+if (extras!=null){
+  alarm_message = extras.getString("alarm_message");
+  alarm_timestamp = extras.getDouble("alarm_timestamp",0);
+  notification_store(alarm_message,alarm_timestamp);
+}
