@@ -178,12 +178,12 @@ end-of-c-declare
     (if f (subu8vector v 0 f) #f)
   ))
 
+(define (timestamp-tsq-generate-sha512sum sha)
+  (if (u8vector? sha) (timestamp:gettsq sha) #f))
+
 (define (timestamp-tsq-generate filename)
   (if (string? filename)
-    (timestamp:gettsq (sha512sum filename))
-    #f
-  )
-)
+    (timestamp-tsq-generate-sha512sum (sha512sum filename)) #f))
 
 (define (timestamp-tsq-save filename tsq)
   (if (and (string? filename) (u8vector? tsq))

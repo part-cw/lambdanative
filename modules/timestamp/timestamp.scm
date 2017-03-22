@@ -43,23 +43,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "submit.scm")
 (include "verify.scm")
 
-;; Function to get timestamp request signed
-(define (timestamp-gettimestamp filename)
+;; perform timestamp and return (shasum tsr) list
+(define (timestamp-data filename)
   (if (and (file-exists? filename) (eq? (file-type filename) 'regular)
            (fx> (file-info-size (file-info filename)) 0))
-    (let* ((tsq (timestamp-tsq-generate filename))
+    (let* ((csum (sha512sum filename))
+           (tsq (timestamp-tsq-generate-sha512sum csum))
            (tsr (timestamp-tsr-request tsq)))
       (if (and tsq tsr (timestamp-tsr-granted? tsr)
             (fx= (timestamp-tsq-getnonce tsq) (timestamp-tsr-getnonce tsr))
             (equal? (timestamp-tsq-getmessage tsq) (timestamp-tsr-getmessage tsr)))
-        (if (timestamp-tsr-save filename tsr)
-          tsr
-          #f
-        )
-        #f
-      )
-    )
-    #f
-  )
-)
+        (list csum tsr) #f)) #f))
+
+;; perform timestamp and save+return tsr
+(define (timestamp-gettimestamp filename)
+  (let ((res (timestamp-data filename)))
+    (if res (if (timestamp-tsr-save filename (cadr res)) (cadr res) #f) #f)))
+
 ;; eof
