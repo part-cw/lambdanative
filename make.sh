@@ -972,11 +972,13 @@ make_setup_target()
   SYS_BUILDHASH=
   # Add git path for overlay, additional paths, and the lambdanative path
   for p in $(echo "$SYS_PATH" | tr ":" "\n"); do
-    cd $p
-    if [ -d "$p/.git" ]; then
-      SYS_BUILDHASH="$SYS_BUILDHASH"`basename $p`": "`git log --pretty=format:"%h" -1`","
+    if [ -d "$p" ]; then
+      cd "$p"
+      if [ -d "$p/.git" ]; then
+        SYS_BUILDHASH="$SYS_BUILDHASH"`basename $p`": "`git log --pretty=format:"%h" -1`","
+      fi
+      cd $here
     fi
-    cd $here
   done
   SYS_ARCH=`$SYS_CC -dumpmachine 2> /dev/null`
   if [ "X$SYS_ARCH" = "X" ]; then
