@@ -1,0 +1,18 @@
+// FFI for getting battery data to scheme
+
+static int _battery_level;
+static int _battery_charging;
+
+void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_batteryEvent(JNIEnv* e, jobject o, jint level, jint charging) { 
+  _battery_level=(int)level;
+  _battery_charging=(int)charging;
+}
+
+int android_battery_level(){
+  return _battery_level;
+}
+
+int android_battery_charging(){
+  return _battery_charging;
+}
+

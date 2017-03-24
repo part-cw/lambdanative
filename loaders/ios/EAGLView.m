@@ -90,11 +90,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //	animationInterval = 1.0 / 60.0;
     animationInterval = 1.0 / 20.0;
   }
-   
-// 20100603: battery hack
-  batterydev=[UIDevice currentDevice];
-  [batterydev setBatteryMonitoringEnabled:YES];
-  batteryidx=0;
 
 #ifdef USE_MULTITOUCH
   [self setMultipleTouchEnabled:YES];
@@ -155,12 +150,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     glBindFramebufferOES(GL_FRAMEBUFFER_OES, viewFramebuffer);
     glViewport(0, 0, backingWidth, backingHeight);
   } 
-
-// 20100603: battery update
-  if (batteryidx==0) {
-    ffi_event(EVENT_BATTERY,(int)(100.*[batterydev batteryLevel]),0);
-  }
-  if (batteryidx++==100) batteryidx=0;
 
   ffi_event(EVENT_REDRAW,render,0);
 

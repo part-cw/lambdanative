@@ -1,6 +1,6 @@
-/*
+#|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2014, University of British Columbia
+Copyright (c) 2009-2017, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -34,37 +34,59 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+|#
 
-#import <UIKit/UIKit.h>
-#import <OpenGLES/EAGL.h>
-#import <OpenGLES/ES1/gl.h>
-#import <OpenGLES/ES1/glext.h>
+;; report battery level and charging state
 
-#import "GLViewController.h"
+(c-declare  #<<end-of-c-declare
 
-@class GLViewController;
+#ifdef IOS
+  int ios_battery_level(void);
+  int ios_battery_charging(void);
+#endif
 
-@interface EAGLView : UIView<UIAccelerometerDelegate> {
-	
-@private
-  GLint backingWidth;
-  GLint backingHeight;
-  EAGLContext *context;
-  GLuint viewRenderbuffer, viewFramebuffer;
-  GLuint depthRenderbuffer;
-  NSTimer *animationTimer;
-  NSTimeInterval animationInterval;
-  int render;
+#ifdef ANDROID
+  int android_battery_level(void);
+  int android_battery_charging(void);
+#endif
+
+static int battery_level(void) {
+#ifdef IOS
+  return ios_battery_level();
+#elif ANDROID
+  return android_battery_level();
+#else
+  return 0;
+#endif
 }
 
-@property (nonatomic) NSTimeInterval animationInterval;
-                              
-- (void)startRender;
-- (void)stopRender;
-- (void)startAnimation;
-- (void)stopAnimation;
-- (void)drawView;
+static int battery_charging(void) {
+#ifdef IOS
+  return ios_battery_charging();
+#elif ANDROID
+  return android_battery_charging();
+#else
+  return 0;
+#endif
+}
 
-@end
+end-of-c-declare
+)
 
+(define battery:debuglevel 0)
+(define (battery:log level . x)
+   (if (>= battery:debuglevel level) (apply log-system (append (list "battery: ") x))))
+
+(define battery-level (c-lambda () int "battery_level"))
+(define battery-charging (c-lambda () int "battery_charging"))
+
+;; inject battery events if appropriate
+(if (procedure? (with-exception-catcher (lambda (e) #f) (lambda () (eval 'event-push))))
+  (thread-start! (make-thread (lambda () 
+    (let loop () 
+      (battery:log 2 "level=" (battery-level) " charging=" (battery-charging))
+      ((eval 'event-push) (eval 'EVENT_BATTERY) (battery-level) (battery-charging))
+      (thread-sleep! 1.0)
+      (loop))))))
+
+;; eof

@@ -1,0 +1,22 @@
+
+
+batteryLevelFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+batteryLevelReceiver = new BroadcastReceiver() {
+  public void onReceive(Context context, Intent intent) {
+    int rawlevel = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+    int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+    int status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+    boolean charging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL;
+    batteryLevel = 0;
+    if (rawlevel >= 0 && scale > 0) {
+      batteryLevel = (rawlevel * 100) / scale;
+    }
+    batteryCharging=0;
+    if (charging) batteryCharging=1;
+    //nativeEvent(32,batteryLevel,0);  // EVENT_BATTERY
+    batteryEvent(batteryLevel,batteryCharging);
+  };
+};
+this.registerReceiver(batteryLevelReceiver, batteryLevelFilter);
+isBatteryRegistered = true;
+

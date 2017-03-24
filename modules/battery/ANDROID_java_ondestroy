@@ -1,0 +1,4 @@
+if (isBatteryRegistered){
+  try { unregisterReceiver(batteryLevelReceiver); } catch (Exception e) {}
+}
+

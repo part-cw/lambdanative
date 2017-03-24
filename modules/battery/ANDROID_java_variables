@@ -1,0 +1,5 @@
+private IntentFilter batteryLevelFilter;
+private BroadcastReceiver batteryLevelReceiver;
+boolean isBatteryRegistered = false;
+private static int batteryLevel = 0;
+private static int batteryCharging = 0;
