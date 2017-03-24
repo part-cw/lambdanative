@@ -45,7 +45,7 @@ void minimize_macosx();
 #endif
 
 void minimize() {
-  static int do_mini=1;
+  static int do_mini=0;
 #ifdef MACOSX
   if (do_mini) minimize_macosx();
 #endif
@@ -67,7 +67,7 @@ end-of-c-declare
 (if (not (member (system-platform) '("android" "ios"))) (begin
   (launch-url "http://127.0.0.1:8080")
   (let ((gui #f))
-    (main
+    ((eval 'main)
       (lambda (w h)
         ((eval 'make-window) 320 32)
         ((eval 'glgui-orientation-set!) (eval 'GUI_PORTRAIT))
