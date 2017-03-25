@@ -1,18 +1,20 @@
 class AudioHelper {
+  final static String TAG = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@";
   private static class MediaPlayerHelper {
     private static enum PlayState {
-      STOPPED, PLAYING, LOOPING, PAUSED;
+      STOPPED, PREPARED, PLAYING, LOOPING, PAUSED;
     }
     private final MediaPlayer player;
     private PlayState playState;
     public MediaPlayerHelper(Context context, int resId){
       this.player = MediaPlayer.create(context, resId);
-      this.playState = PlayState.STOPPED;
+      this.playState = PlayState.PREPARED;
       MediaPlayer.OnCompletionListener listener = new MediaPlayer.OnCompletionListener(){
         @Override
         public void onCompletion(MediaPlayer mp){
           if(playState == PlayState.PLAYING){
             playState = PlayState.STOPPED;
+            mp.stop();
           }
         }
       };
@@ -22,6 +24,14 @@ class AudioHelper {
       this.player.release();
     }
     public void start(float lv, float rv, int loop){
+      if(this.playState == PlayState.STOPPED){
+        try {
+          this.player.prepare();
+          this.playState = PlayState.PREPARED;
+        } catch (IOException e) {
+          Log.e(TAG,Log.getStackTraceString(e));
+        }
+      }
       this.player.setVolume(lv, rv);
       this.player.seekTo(0);
       if(loop != 0){
@@ -35,7 +45,6 @@ class AudioHelper {
     }
     public void stop(){
       this.playState = PlayState.STOPPED;
-      this.player.seekTo(0);
       this.player.stop();
     }
     public void pause(){
@@ -86,7 +95,6 @@ class AudioHelper {
     return instance;
   }
   public int LoadSound(String filename, int Priority) {
-    final String TAG = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@";
     String s = ResourceLocation + filename;
     int resID = context.getResources().getIdentifier(s, null, null);
     Log.d(TAG,"Entered load sound method.");
@@ -101,7 +109,7 @@ class AudioHelper {
   public int PlaySound(int SoundID, float lv, float rv, int priority, int loop, float rate) {
     MediaPlayerHelper localMediaPlayer = mediaPlayers.get(SoundID-1);
     if(localMediaPlayer!=null){
-      localMediaPlayer.start(rv, lv, loop);
+      localMediaPlayer.start(lv, rv, loop);
     }
     return SoundID;
   }
