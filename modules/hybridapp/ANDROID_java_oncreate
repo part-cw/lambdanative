@@ -1,4 +1,4 @@
-// Crosswalk webview
+// webview
 
 setContentView(R.layout.main);
 
@@ -13,22 +13,19 @@ mWebView.getSettings().setRenderPriority(RenderPriority.HIGH);
 
 mWebView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
 
-//mWebView.setWebViewClient(new MyWebViewClient());    
-//mWebView.setOnTouchListener( new OnTouchListener());
-
 mWebView.loadUrl("http://localhost:8080");
-//mWebView.loadUrl("http://192.168.37.213:8080");
 
 Timer webview_tm = new Timer();
 TimerTask webview_task = new TimerTask() {
   public void run() {
     runOnUiThread(new Runnable() {
       public void run() {	
-        nativeEvent(15,0,0);
+        nativeEvent(19,0,0);
+        //nativeEvent(15,0,0);
       }
     });
   }
 };
-webview_tm.scheduleAtFixedRate(webview_task, 0, 1); // 20
+webview_tm.scheduleAtFixedRate(webview_task, 0, 20);
 
 // eof
