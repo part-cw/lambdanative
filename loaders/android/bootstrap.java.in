@@ -58,6 +58,8 @@ import android.content.res.AssetFileDescriptor;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.util.Log;
+import java.util.Timer;
+import java.util.TimerTask;
 import android.location.LocationListener;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -74,12 +76,14 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   //Variable declarations needed for modules, e.g. gps
   @ANDROID_JAVA_VARIABLES@
 
-  Handler idleHandler = new Handler();
-  Runnable idleRunnable = new Runnable() {
-    @Override
+  Timer idle_tm = new Timer();
+  TimerTask idle_task = new TimerTask() {
     public void run() {
-      nativeEvent(19,0,0); // EVENT_IDLE
-      idleHandler.postDelayed(this, 250);
+      runOnUiThread(new Runnable() {
+        public void run() {
+          nativeEvent(19,0,0); // EVENT_IDLE
+        }
+      });
     }
   };
 
@@ -110,7 +114,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     @ANDROID_JAVA_ONCREATE@
 
     // start EVENT_IDLE 
-    idleHandler.postDelayed(idleRunnable, 1000);
+    idle_tm.scheduleAtFixedRate(idle_task, 0, 250);
 
     nativeInstanceInit();
   }
@@ -119,7 +123,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     @ANDROID_JAVA_ONDESTROY@
     nativeEvent(14,0,0); // EVENT_CLOSE
     nativeEvent(127,0,0); // EVENT_TERMINATE
-    idleHandler.removeCallbacks(idleRunnable);
     super.onDestroy();
   }
   @Override
