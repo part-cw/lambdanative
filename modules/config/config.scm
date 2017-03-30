@@ -39,6 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; init.scm
 ;; this is the glue between the native launcher and the portable code
 
+(if (string=? (system-platform) "android") (##heartbeat-interval-set! -1.))
+
 (c-declare  #<<end-of-c-declare
 
 #include "LNCONFIG.h"
