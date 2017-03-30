@@ -22,7 +22,7 @@ private int scheduleNotification(String msg, double ts, int repeat, String sound
   long ts_msec = (new Double(1000*ts)).longValue();
   
   // Build the PendingIntent
-  Intent intent = new Intent("android.media.action.DISPLAY_NOTIFICATION");
+  Intent intent = new Intent(this, AlarmReceiver.class);
   intent.addCategory("android.intent.category.DEFAULT");
   intent.putExtra("alarm_message", msg);
   intent.putExtra("alarm_timestamp", ts);
