@@ -344,13 +344,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                (loop (+ i 1) (string-append str "&fields%5B" (number->string i) "%5D=" (list-ref fields i)))
              ))
            ""))
+         (filter (redcap:arg 'filter xargs #f))
+         (filterstr (if (string? filter)
+                      (string-append "&filterLogic=" filter)
+                      ""))
          (request-str (string-append "POST " redcap:url " HTTP/1.0" "\n"
            "Host: " host "\n"
            "User-Agent: " redcap:user-agent  "\n"
            "Content-Type: " redcap:content-type  "\n"
-           "Content-Length: " (number->string (+ (string-length request) (string-length recordstr) (string-length eventstr) (string-length formstr) (string-length fieldstr))) "\n"
-           "\r\n" request eventstr formstr fieldstr recordstr "\n")))
-
+           "Content-Length: " (number->string (+ (string-length request) (string-length recordstr) (string-length eventstr) (string-length formstr) (string-length fieldstr) (string-length filterstr))) "\n"
+           "\r\n" request eventstr formstr fieldstr recordstr filterstr "\n")))
     ;; Check if we have a valid connection before proceeding
     (if (fx= (httpsclient-open host) 1)
       (begin
