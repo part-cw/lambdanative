@@ -53,7 +53,7 @@ private int scheduleNotification(String msg, double ts, int repeat, String sound
 
 private int notification_cancel(int localnotification_id){
   AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
-  Intent intent = new Intent("android.media.action.DISPLAY_NOTIFICATION");
+  Intent intent = new Intent(this, AlarmReceiver.class);
   intent.addCategory("android.intent.category.DEFAULT");
   PendingIntent sender = PendingIntent.getBroadcast(this, localnotification_id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
   am.cancel(sender);
