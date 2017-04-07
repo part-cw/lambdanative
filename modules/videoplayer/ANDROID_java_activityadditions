@@ -1,9 +1,19 @@
 
-private void startVideoPlayer(String mov_name) {
+private void startVideoPlayer(String mov_name, int orientation) {
   File f = new File(mov_name);
   if (f != null) { 
     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.fromFile(f));
     intent.setDataAndType(Uri.fromFile(f), "video/*");
+    if (orientation == 1) {
+      orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+    } else if (orientation == 2) {
+      orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+    } else if (orientation == 3) {
+      orientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+    } else if (orientation == 4) {
+      orientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+    }
+    intent.putExtra(android.provider.MediaStore.EXTRA_SCREEN_ORIENTATION,orientation);
     startActivity(intent);
   }
 }

@@ -51,29 +51,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 
 #ifdef IOS
-  void ios_videoplayer(char *);
+  void ios_videoplayer(char *, int orientation);
 #endif 
 
 #ifdef ANDROID
-  void android_videoplayer(char *);
+  void android_videoplayer(char *, int orientation);
 #endif
 
-static void videoplayer(char *filename)
+static void videoplayer(char *filename, int orientation)
 {
 #ifdef ANDROID
-  android_videoplayer(filename);
+  android_videoplayer(filename, orientation);
 #endif
 #ifdef IOS
-  ios_videoplayer(filename);
+  ios_videoplayer(filename, orientation);
 #endif
 }
 
 end-of-c-declare
 )
 
-(define (videoplayer videofile)
+(define (videoplayer videofile . orientation)
   (videoplayer:log 1 "videoplayer " videofile)
-  ((c-lambda (char-string) void "videoplayer") videofile)
+  (let ((orient (if (and (list? orientation) (fx= (length orientation) 1)) (car orientation) GUI_PORTRAIT)))
+    ((c-lambda (char-string int) void "videoplayer") videofile orient))
   #t
  )
 
