@@ -89,7 +89,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (mvallist (glgui-widget-get g mpicker 'vallist))
           (ampm (glgui-widget-get g widget 'ampmbutton))
           (inputlabel (glgui-widget-get g widget 'inputlabel))
-          (keypad (glgui-widget-get g widget 'keypad)))
+          (keypad (glgui-widget-get g widget 'keypad))
+          (keypadcb (glgui-widget-get g widget 'keypadcb)))
       (glgui-widget-set! g inputlabel 'hidden #f)
       (if ampm
         (glgui-widget-set! g ampm 'hidden #t))
@@ -103,6 +104,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (glgui-widget-set! g mpicker 'hidden #t)
       (glgui-widget-set! g (if (eqv? wgt hpicker) hinput minput) 'focus #t)
       (glgui-widget-set! g keypad 'hidden #f)
+      (if keypadcb (keypadcb g wgt))
     )
   )
 )
@@ -117,6 +119,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (mlabel (if (= (string-length mlabel0) 1) (string-append "0" mlabel0) mlabel0))
            (mvallist (glgui-widget-get g mpicker 'vallist))
            (keypad (glgui-widget-get g widget 'keypad))
+           (keypadcb (glgui-widget-get g widget 'keypadcb))
            (inputlabel (glgui-widget-get g widget 'inputlabel)))
       (if (list-pos hvallist hlabel)
           (glgui-widget-set! g hpicker 'value (list-pos hvallist hlabel)))
@@ -130,6 +133,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (glgui-widget-set! g mpicker 'hidden #f)
       (if ampmbutton
           (glgui-widget-set! g ampmbutton 'hidden #f))
+      (if keypadcb (keypadcb g wgt))
     )
     (glgui:timepicker-calculate g wgt widget hpicker mpicker ampmbutton)
   )
@@ -354,6 +358,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           'clabel clabel
           'hinput hinput
           'minput minput
+          'keypadcb #f
           'inputlabel inputlabel
           'keypad keypad
           )))
