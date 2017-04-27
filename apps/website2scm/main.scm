@@ -62,8 +62,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (if use-web (website-serve db 8080))
 
 (if use-scm (begin
+  (display ";; Automatically generated. Do not edit\n")
+  (display "(website-merge! #f (list->table '")
   (write (table->list db))
   (newline)
+  (display "))\n")
 ))
 
 (if (or use-repl use-web)
