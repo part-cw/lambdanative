@@ -229,15 +229,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; ----------------
 
+(define website:db (make-table))
+
 (define (website-serve db port) (thread-start! (make-safe-thread (lambda () 
   (current-exception-handler log:exception-handler)
-  (website:server db port)))))
+  (website:server (if db db website:db) port)))))
 
 (define (website-addhook db document proc)
-  (table-set! db document proc))
+  (table-set! (if db db website:db) document proc))
 
 (define (website-catchall db proc)
-  (table-set! db 'catchall proc))
+  (table-set! (if db db website:db) 'catchall proc))
 
 (define (website->table path)
   (let ((t (make-table)))
@@ -245,5 +247,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     t))
 
 (define make-website make-table)
+
+(define (website-merge! db t) (table-merge! (if db db website:db) t))
 
 ;; eof 
