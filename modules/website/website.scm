@@ -50,6 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   exception->string log:exception-handler 
   log-error log-system
   make-safe-thread
+  u8vector->base64-string
 ))
 
 (define (string-split-sane a b) (if (or (not (string? a)) (= (string-length a) 0)) '("") (string-split a b)))
@@ -226,6 +227,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (website:log 0 "!! unknown source: " document)
         (website:safecall display "HTTP/1.0 400 OK\ncontent-type: text/plain\n\nInvalid Request\n" port))
    )))
+
+;; ----------------
+
+(define (website-dataurl db0 document)
+  (let* ((db (if db0 db0 website:db))
+         (zdata (table-ref db (if (char=? (string-ref document 0) #\/) document (string-append "/" document)) #f))
+         (data (if (u8vector? zdata) (website:decompress zdata) #f))
+         (ext (car (reverse (string-split-sane document #\.))))
+         (mimetype (website:lookup-mimetype ext)))
+    (string-append "data:" mimetype ";base64,"  (u8vector->base64-string data))))
 
 ;; ----------------
 
