@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (usage)
   (for-each display (list
     "Website to Scheme converter\n"
-    "usage: website2scm [scm|web|repl] <website directory>\n"
+    "usage: webassettool [scm|web|repl] <website directory>\n"
     "  scm  : output scheme representation on stdout\n"
     "  web  : render website on port 8080\n"
     "  repl : launch repl after loading website\n"

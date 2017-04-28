@@ -1022,6 +1022,7 @@ make_setup_target()
   string_srcs=
   font_srcs=
   embed_srcs=
+  webasset_srcs=
   setstate
 }
 
@@ -1121,7 +1122,7 @@ make_embedfile()
 make_embeds()
 {
   setstate PACKTOOL
-  echo "==> Updating embeded files for $SYS_APPNAME.."
+  echo "==> updating embedded files for $SYS_APPNAME.."
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/embed
   mkdir -p $tgtdir
   srcfile="$appsrcdir/EMBED"
@@ -1132,6 +1133,45 @@ make_embeds()
     srcfile=`locatefile modules/$m/EMBED silent`
     if [ ! "X$srcfile" = "X" ]; then
       make_embedfile "modules/$m" "${m}"
+    fi
+  done
+  setstate
+}
+
+make_webasset()
+{
+  srcdir=$1
+  prefix=$2
+  scmfile=$tgtdir/${prefix}.scm
+  here=`pwd`
+  cd `locatedir $srcdir`
+  if [ -f "$scmfile" ]; then
+    rm "$scmfile"
+  fi
+  wassets=`cat WEBASSETS`
+  for wasset in $wassets; do
+    $SYS_HOSTPREFIX/bin/webassettool scm $wasset >> $scmfile
+  done
+  if [ -f $scmfile ]; then
+    webasset_srcs="$webasset_srcs $scmfile"
+  fi
+  cd $here
+}
+
+make_webassets()
+{
+  setstate WEBASSETTOOL
+  echo "==> updating web assets for $SYS_APPNAME.."
+  tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/webassets
+  mkdir -p $tgtdir
+  srcfile="$appsrcdir/WEBASSETS"
+  if [ -f $srcfile ]; then
+    make_webasset "apps/$SYS_APPNAME" "main"
+  fi
+  for m in $modules; do
+    srcfile=`locatefile modules/$m/WEBASSETS silent`
+    if [ ! "X$srcfile" = "X" ]; then
+      make_webasset "modules/$m" "${m}"
     fi
   done
   setstate
@@ -1293,7 +1333,7 @@ make_lntoolcheck()
 {
   echo "==> checking for lambdanative tools.."
   rmifexists $SYS_TMPDIR/tmp.config.cache
-  lntools="pngtool packtool ttftool lngtool"
+  lntools="pngtool packtool ttftool lngtool webassettool"
   for tool in $lntools; do
     if [ ! -x $SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX ] || [ `newerindir apps/$tool $SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX` = "yes" ]; then
       echo " => building lambdanative tool $tool.."
@@ -1603,6 +1643,7 @@ if [ `is_gui_app` = "yes" ]; then
   make_strings
 fi
   make_embeds
+  make_webassets
   make_payload
 ;;
 executable)
@@ -1624,6 +1665,7 @@ all)
       make_strings
     fi
     make_embeds
+    make_webassets
     make_payload
   done
   make_executable
