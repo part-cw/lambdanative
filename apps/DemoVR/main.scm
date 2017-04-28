@@ -40,8 +40,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; the 360 degree image is by Ansgar Koreng / CC BY-SA 4.0 (unchanged)
 
-(include "assets.scm")
-
 (define index.sxml
   `(html (head (script (@ (src "js/aframe.min.js")) ""))
      (body (a-scene 
