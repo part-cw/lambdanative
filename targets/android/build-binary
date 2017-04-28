@@ -216,7 +216,34 @@ cat > $tmpdir/res/layout/main.xml << __EOF
   android:layout_height="fill_parent"
 />
 __EOF
-  # allow free rotation of hybrid apps
+fi
+
+if [ `has_module hybridapp-xwalk` = yes ]; then
+  echo " => adding crosswalk.."
+  if [ -d $SYS_PREFIX/lib/libxwalk ]; then
+    rmifexists "$SYS_TMPDIR/libxwalk"
+    cp -R -f $SYS_PREFIX/lib/libxwalk $SYS_TMPDIR/
+    if [ ! -d $SYS_TMPDIR/libxwalk/libs/armeabi ] && [ $APP_ABI = armeabi ]; then
+      mv $SYS_TMPDIR/libxwalk/libs/armeabi-v7a $SYS_TMPDIR/libxwalk/libs/armeabi
+    fi
+    xwalk_here=`pwd`
+    cd $tmpdir
+    $ANDROIDSDK/tools/android --silent update project --target $ANDROIDSDKTARGET --path $tmpdir --library ../libxwalk
+    cd "$xwalk_here"
+cat > $tmpdir/res/layout/main.xml << __EOF
+<org.xwalk.core.XWalkView android:id="@+id/xwalk_main"
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent">
+</org.xwalk.core.XWalkView>
+__EOF
+  else
+    assert "crosswalk library not found?" 
+  fi
+fi
+
+# allow free rotation of hybrid apps
+if [ `has_module hybridapp hybridapp-xwalk` = yes ]; then
   cp $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java tmp.java
   cat tmp.java | sed '/SCREEN_ORIENTATION_PORTRAIT/d' > $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
   rm tmp.java

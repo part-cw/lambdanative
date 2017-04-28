@@ -260,31 +260,27 @@ ac_output()
 has_module()
 {
   res=no
-  for m in $modules; do
-    if [ $m = $1 ]; then
-      res=yes
-    fi
+  for a in $@; do
+    for m in $modules; do
+      if [ $m = $a ]; then
+        res=yes
+      fi
+    done
   done
   echo $res
 }
 
 is_gui_app()
 {
-  res=`has_module ln_glcore`
-  if [ "$res" = "no" ]; then
-    res=`has_module glcore`
-    if [ "$res" = "no" ]; then
-      res=`has_module hybridapp`
-    fi
-  fi
-  echo "$res"
+  res=`has_module ln_glcore glcore hybridapp hybridapp-xwalk`
+  echo $res
 }
 
 is_standalone_app()
 {
   neg=`has_module eventloop`
   if [ $neg = no ]; then
-    neg=`has_module hybridapp`
+    neg=`has_module hybridapp hybridapp-xwalk`
     if [ $neg = no ]; then
       neg=yes
     else
