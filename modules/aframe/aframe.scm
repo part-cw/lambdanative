@@ -1,3 +1,4 @@
+
 ;; this module packages the A-Frame VR framework: https://aframe.io/
 ;; will present in website module as js/aframe.min.js
 
@@ -26,7 +27,5 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 |#
-
-(include "assets.scm")
 
 ;; eof
