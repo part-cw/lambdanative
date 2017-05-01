@@ -539,6 +539,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                  "Content-Disposition: form-data; name=\"event\"" "\r\n" "\r\n"
                  event "\r\n")
              ""))
+         (repeat (redcap:arg 'repeat xargs #f))
+         (re (if repeat
+               (string-append "--" bd "\r\n"
+                 "Content-Disposition: form-data; name=\"repeat_instance\"" "\r\n" "\r\n"
+                 repeat "\r\n")
+             ""))
          (tk (string-append "--" bd "\r\n"
               "Content-Disposition: form-data; name=\"token\"" "\r\n" "\r\n"
               token "\r\n"))
@@ -551,10 +557,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            "Host: " host "\r\n"
            "User-Agent: " redcap:user-agent  "\r\n"
            "Content-Length: " (number->string (+ (string-length ct) (string-length at) (string-length rd)
-             (string-length fd) (string-length tk) (string-length fo) (string-length ev) (string-length dt)
+             (string-length fd) (string-length tk) (string-length fo) (string-length ev) (string-length re) (string-length dt)
              (if filesize filesize 0) (u8vector-length close-vector))) "\r\n"
            "Content-Type: " redcap:content-type-file "; boundary=" bd "\r\n" "\r\n"
-             ct at rd fo ev fd tk dt))))
+             ct at rd fo ev re fd tk dt))))
 
    ;; Check if we have a valid connection before proceeding
     (if (and filesize (fx= (httpsclient-open host) 1))
@@ -606,11 +612,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (redcap-export-file host token record field . xargs)
   (let* ((event (redcap:arg 'event xargs ""))
+         (repeat (redcap:arg 'repeat xargs ""))
          (form (redcap:arg 'form xargs #f))
          (request (string-append "content=file&action=export&token=" token
                                  "&record=" record
                                  (if event
                                    (string-append "&event=" event)
+                                   ""
+                                 )
+                                 (if repeat
+                                   (string-append "&repeat_instance=" repeat)
                                    ""
                                  )
                                  (if form
