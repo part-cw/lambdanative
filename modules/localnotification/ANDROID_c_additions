@@ -3,16 +3,42 @@ char localnotification_msg[100];
 int localnotification_gotmsg;
 double localnotification_timestamp;
 
-int android_localnotification_schedule(char* msg, double ts){
+int android_localnotification_schedule(char* msg, double ts, int repeat, char* sound){
   JNIEnv *env = GetJNIEnv();
   jstring jmsg = (*env)->NewStringUTF(env,msg);
+  jstring jsound = (*env)->NewStringUTF(env,sound);
   jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
   if (env&&globalObj){
-    jmethodID method = (*env)->GetMethodID(env, main_class, "scheduleNotification", "(Ljava/lang/String;D)I");
-    return (*env)->CallIntMethod(env, globalObj, method, jmsg, ts);
+    jmethodID method = (*env)->GetMethodID(env, main_class, "scheduleNotification", "(Ljava/lang/String;DILjava/lang/String;)I");
+    return (*env)->CallIntMethod(env, globalObj, method, jmsg, ts, repeat, jsound);
   }
 }
 
+int android_localnotification_schedule_batch(char* text[], double* time, int* repeatmin, char* sounds[], int len, int* localnotification_ids){
+  int i;
+  for (i=0;i<len;i++){
+    localnotification_ids[i]=android_localnotification_schedule(text[i], time[i], repeatmin[i], sounds[i]);
+  }
+  return len;
+}
+
+int android_localnotification_cancel(int id){
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "notification_cancel", "(I)I");
+    return (*env)->CallIntMethod(env, globalObj, method, id);
+  }
+}
+
+int android_localnotification_cancelall(){
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "notification_cancelall", "()I");
+    return (*env)->CallIntMethod(env, globalObj, method);
+  }
+}
 
 JNIEXPORT Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_storeAlarmMessage(JNIEnv *env, jobject obj, jstring msg, jdouble ts){
   const char *str= (*env)->GetStringUTFChars(env,msg,0);

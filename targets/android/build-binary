@@ -85,6 +85,10 @@ $ANDROIDSDK/tools/android --silent create project \
 if [ -f $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar ]; then
   cp -r $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar $tmpdir/libs
 fi
+# Because Android SDKs cannot just leave things the way they were... last supported jar
+if [ -f $ANDROIDSDK/extras/android/m2repository/com/android/support/support-v4/19.1.0/support-v4-19.1.0.jar ]; then
+  cp $ANDROIDSDK/extras/android/m2repository/com/android/support/support-v4/19.1.0/support-v4-19.1.0.jar $tmpdir/libs
+fi
 
 if [ "$NEED_GCM" = "yes" ]; then
   cp -r $ANDROIDSDK/extras/google/google_play_services/libproject/google-play-services_lib $tmpdir
@@ -136,19 +140,23 @@ if [ -d "$xmlfilesdir" ]; then
 fi
 
 echo " => transferring java hook.."
-ac_output loaders/android/bootstrap.java.in $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
+appdir=$tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME
+ac_output loaders/android/bootstrap.java.in $appdir/$SYS_APPNAME.java
 
 echo " => transferring java public classes.."
 for m in $modules; do
   modpath=`locatedir modules/$m silent`
   pubclasses=`ls -1 $modpath/ANDROID_java_public_* 2> /dev/null`
   for pubclass in $pubclasses; do
-    pubclassdir=`basename $pubclass | sed 's/ANDROID_java_public_//'`
-    pubclassfile="${pubclassdir}.java"
+    pubclassfile="`basename $pubclass | sed 's/ANDROID_java_public_//'`.java"
     echo "    $pubclassfile.."
-    mkdir -p $tmpdir/src/$pubclassdir
-    echo "package $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME;" > $tmpdir/src/$pubclassdir/$pubclassfile
-    cat $pubclass >> $tmpdir/src/$pubclassdir/$pubclassfile
+    if [ `echo $pubclass | cut -d . -f 2` == "in" ]; then
+      pubclassfile=`echo $pubclassfile | sed 's/.in//'`
+      ac_output $pubclass $appdir/$pubclassfile
+    else
+      echo "package $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME;" > $appdir/$pubclassfile
+      cat $pubclass >> $appdir/$pubclassfile
+    fi
   done
 done
 
@@ -197,9 +205,21 @@ for lib in $payload_libs; do
   fi
 done
 
-# install crosswalk if hybrid
+# manage hybrid apps
 if [ `has_module hybridapp` = yes ]; then
-  echo " => adding crosswalk library.."
+  echo " => adding webview.."
+cat > $tmpdir/res/layout/main.xml << __EOF
+<WebView
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/webview_main"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent"
+/>
+__EOF
+fi
+
+if [ `has_module hybridapp-xwalk` = yes ]; then
+  echo " => adding crosswalk.."
   if [ -d $SYS_PREFIX/lib/libxwalk ]; then
     rmifexists "$SYS_TMPDIR/libxwalk"
     cp -R -f $SYS_PREFIX/lib/libxwalk $SYS_TMPDIR/
@@ -217,13 +237,16 @@ cat > $tmpdir/res/layout/main.xml << __EOF
   android:layout_height="fill_parent">
 </org.xwalk.core.XWalkView>
 __EOF
-    # allow free rotation of hybrid apps
-    cp $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java tmp.java
-    cat tmp.java | sed '/SCREEN_ORIENTATION_PORTRAIT/d' > $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
-    rm tmp.java
   else
-    assert "hybrid but crosswalk not found?" 
+    assert "crosswalk library not found?" 
   fi
+fi
+
+# allow free rotation of hybrid apps
+if [ `has_module hybridapp hybridapp-xwalk` = yes ]; then
+  cp $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java tmp.java
+  cat tmp.java | sed '/SCREEN_ORIENTATION_PORTRAIT/d' > $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
+  rm tmp.java
 fi
 
 echo " => compiling application.."

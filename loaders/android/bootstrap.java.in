@@ -47,7 +47,6 @@ import android.content.BroadcastReceiver;
 import android.content.res.Configuration;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
-import android.os.BatteryManager;
 import android.os.PowerManager;
 import android.os.Handler;
 import android.view.MotionEvent;
@@ -59,6 +58,8 @@ import android.content.res.AssetFileDescriptor;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.util.Log;
+import java.util.Timer;
+import java.util.TimerTask;
 import android.location.LocationListener;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -72,20 +73,17 @@ import android.media.MediaScannerConnection;
 
 public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@ SensorEventListener{
   private SensorManager mSensorManager;
-  //Battery information variables
-  private IntentFilter batteryLevelFilter;
-  private BroadcastReceiver batteryLevelReceiver;
-  boolean isBatteryRegistered = false;
-  private static int batteryLevel = -1;
   //Variable declarations needed for modules, e.g. gps
   @ANDROID_JAVA_VARIABLES@
 
-  Handler idleHandler = new Handler();
-  Runnable idleRunnable = new Runnable() {
-    @Override
+  Timer idle_tm = new Timer();
+  TimerTask idle_task = new TimerTask() {
     public void run() {
-      nativeEvent(19,0,0); // EVENT_IDLE
-      idleHandler.postDelayed(this, 250);
+      runOnUiThread(new Runnable() {
+        public void run() {
+          nativeEvent(19,0,0); // EVENT_IDLE
+        }
+      });
     }
   };
 
@@ -116,24 +114,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     @ANDROID_JAVA_ONCREATE@
 
     // start EVENT_IDLE 
-    idleHandler.postDelayed(idleRunnable, 1000);
-
-    // Get battery level changes
-    // Added battery status change
-    batteryLevelFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-    batteryLevelReceiver = new BroadcastReceiver() {
-      public void onReceive(Context context, Intent intent) {
-        int rawlevel = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-        int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-        batteryLevel = -1;
-        if (rawlevel >= 0 && scale > 0) {
-          batteryLevel = (rawlevel * 100) / scale;
-        }
-        nativeEvent(32,batteryLevel,0);  // EVENT_BATTERY
-      };
-    };
-    this.registerReceiver(batteryLevelReceiver, batteryLevelFilter);
-    isBatteryRegistered = true;
+    idle_tm.scheduleAtFixedRate(idle_task, 0, 250);
 
     nativeInstanceInit();
   }
@@ -142,10 +123,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     @ANDROID_JAVA_ONDESTROY@
     nativeEvent(14,0,0); // EVENT_CLOSE
     nativeEvent(127,0,0); // EVENT_TERMINATE
-    if (isBatteryRegistered){
-      try { unregisterReceiver(batteryLevelReceiver); } catch (Exception e) {}
-    }
-    idleHandler.removeCallbacks(idleRunnable);
     super.onDestroy();
   }
   @Override

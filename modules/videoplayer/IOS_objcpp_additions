@@ -1,6 +1,7 @@
 
 #import <UIKit/UIKit.h>
 #import <MediaPlayer/MediaPlayer.h>
+#import <LNCONFIG.h>
 
 @interface PlayerDelegate : UIViewController<UINavigationControllerDelegate> {
   MPMoviePlayerViewController *moviePlayer;
@@ -58,8 +59,20 @@ static PlayerDelegate* playerDele = NULL;
 #import "EAGLView.h"
 #import "GLViewController.h"
 
-extern "C" void ios_videoplayer(char *img_filename)
+extern "C" void ios_videoplayer(char *img_filename, int orientation)
 {
+  if (orientation == GUI_PORTRAIT) {
+    orientation = UIInterfaceOrientationPortrait;
+  } else if (orientation == GUI_LANDSCAPE) {
+    orientation = UIInterfaceOrientationLandscapeRight;
+  } else if (orientation == GUI_SEASCAPE) {
+    orientation = UIInterfaceOrientationLandscapeLeft;
+  } else if (orientation == GUI_UPSIDEDOWN) {
+    orientation = UIInterfaceOrientationPortraitUpsideDown;
+  }
+  NSNumber *value = [NSNumber numberWithInt:orientation];
+  [[UIDevice currentDevice] setValue:value forKey:@"orientation"];
+  [[UIApplication sharedApplication].keyWindow.rootViewController dismissViewControllerAnimated:NO completion:NULL];
   if (playerDele==NULL) playerDele=[PlayerDelegate alloc];
   playerDele.img_filename = strdup(img_filename);
   [playerDele init];

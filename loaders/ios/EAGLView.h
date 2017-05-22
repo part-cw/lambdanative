@@ -56,9 +56,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   NSTimer *animationTimer;
   NSTimeInterval animationInterval;
   int render;
-// 20100603: added battery feed
-  UIDevice *batterydev;
-  int batteryidx;
 }
 
 @property (nonatomic) NSTimeInterval animationInterval;

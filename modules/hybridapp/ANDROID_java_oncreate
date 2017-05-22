@@ -1,20 +1,31 @@
-// Crosswalk webview
+// webview
 
 setContentView(R.layout.main);
-mXWalkView = (XWalkView) findViewById(R.id.xwalk_main);
-//XWalkPreferences.setValue(XWalkPreferences.REMOTE_DEBUGGING, true);
-//mXWalkView.load("file:///android_asset/index.html", null);
-mXWalkView.load("http://127.0.0.1:8080/", null);
 
-Timer xwalk_tm = new Timer();
-TimerTask xwalk_task = new TimerTask() {
+mWebView = (WebView) findViewById(R.id.webview_main);
+
+mWebView.getSettings().setJavaScriptEnabled(true);
+
+//mWebView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+
+mWebView.getSettings().setRenderPriority(RenderPriority.HIGH);
+
+mWebView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
+
+mWebView.loadUrl("http://localhost:8080");
+
+Timer webview_tm = new Timer();
+TimerTask webview_task = new TimerTask() {
   public void run() {
     runOnUiThread(new Runnable() {
       public void run() {	
-        nativeEvent(15,0,0);
+        nativeEvent(19,0,0);
+        //nativeEvent(15,0,0);
       }
     });
   }
 };
-xwalk_tm.scheduleAtFixedRate(xwalk_task, 0, 20);
+webview_tm.scheduleAtFixedRate(webview_task, 0, 20);
 
+// eof

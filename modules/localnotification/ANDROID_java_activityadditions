@@ -1,27 +1,71 @@
 @Override
 protected void onNewIntent(Intent intent) {
+  super.onNewIntent(intent);
   alarm_message = intent.getStringExtra("alarm_message");
   alarm_timestamp = intent.getDoubleExtra("alarm_timestamp",0);
   notification_store(alarm_message,alarm_timestamp);
-  super.onNewIntent(intent);
 } 
 
-private int scheduleNotification(String msg, double ts) {
+public static boolean isActivityVisible() {
+  return isVisible;
+}
+
+private int scheduleNotification(String msg, double ts, int repeat, String sound) {
+  // Update unique ids
+  SharedPreferences preferences = this.getSharedPreferences("MyPreferences", Context.MODE_PRIVATE);
+  int localnotification_id = preferences.getInt("LocalNotificationId", 0);
+  if (localnotification_id==0){
+    localnotification_id++;
+  }
+
   int ts_sec = (new Double(ts)).intValue();
   long ts_msec = (new Double(1000*ts)).longValue();
   
+  // Build the PendingIntent
+  Intent intent = new Intent(this, AlarmReceiver.class);
+  intent.addCategory("android.intent.category.DEFAULT");
+  intent.putExtra("alarm_message", msg);
+  intent.putExtra("alarm_timestamp", ts);
+  intent.putExtra("alarm_sound", sound);
+  intent.putExtra("localnotification_id", localnotification_id);
+  PendingIntent sender = PendingIntent.getBroadcast(this, localnotification_id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+  
   // Get the AlarmManager service
   AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
-  
-  Intent intent = new Intent(this, AlarmReceiver.class);
-  intent.putExtra("alarm_message", msg);
-  intent.putExtra("alarm_timestamp", ts_sec);
-  PendingIntent sender = PendingIntent.getBroadcast(this, ts_sec, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
   // setup the alarm - depending on version [Build.VERSION_CODES.KITKAT=19]
   if (Build.VERSION.SDK_INT < 19) {
-    am.set(am.RTC_WAKEUP, ts_msec, sender);
+    if (repeat>0){
+      am.setRepeating (am.RTC_WAKEUP, ts_msec, 60*1000*repeat , sender);
+    }else{
+      am.set(am.RTC_WAKEUP, ts_msec, sender);
+    }
   }else{
-    am.setExact (am.RTC_WAKEUP, ts_msec, sender);
+    am.setExact(am.RTC_WAKEUP, ts_msec, sender);
+  }
+
+  // Save the ids
+  SharedPreferences.Editor editor = preferences.edit();
+  editor.putInt("LocalNotificationId", localnotification_id+1);
+  editor.apply();
+  return localnotification_id;
+}
+
+private int notification_cancel(int localnotification_id){
+  AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
+  Intent intent = new Intent(this, AlarmReceiver.class);
+  intent.addCategory("android.intent.category.DEFAULT");
+  PendingIntent sender = PendingIntent.getBroadcast(this, localnotification_id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+  am.cancel(sender);
+  return 1;
+}
+
+private int notification_cancelall(){
+  AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
+  SharedPreferences preferences = this.getSharedPreferences("MyPreferences", Context.MODE_PRIVATE);
+  int localnotification_id = preferences.getInt("LocalNotificationId", 0);
+  for (int i=0;i<localnotification_id;i++){
+    notification_cancel(i);
   }
   return 1;
 }

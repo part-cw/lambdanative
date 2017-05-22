@@ -260,31 +260,27 @@ ac_output()
 has_module()
 {
   res=no
-  for m in $modules; do
-    if [ $m = $1 ]; then
-      res=yes
-    fi
+  for a in $@; do
+    for m in $modules; do
+      if [ $m = $a ]; then
+        res=yes
+      fi
+    done
   done
   echo $res
 }
 
 is_gui_app()
 {
-  res=`has_module ln_glcore`
-  if [ "$res" = "no" ]; then
-    res=`has_module glcore`
-    if [ "$res" = "no" ]; then
-      res=`has_module hybridapp`
-    fi
-  fi
-  echo "$res"
+  res=`has_module ln_glcore glcore hybridapp hybridapp-xwalk`
+  echo $res
 }
 
 is_standalone_app()
 {
   neg=`has_module eventloop`
   if [ $neg = no ]; then
-    neg=`has_module hybridapp`
+    neg=`has_module hybridapp hybridapp-xwalk`
     if [ $neg = no ]; then
       neg=yes
     else
@@ -747,6 +743,13 @@ make_sounddir()
       $make_soundfile "$snd"
     fi
   done
+  snds=`ls -1 $snddir/*.caf 2> /dev/null`
+  for snd in $snds; do
+    if [ -f "$snd" ]; then
+      vecho " => $snd.."
+      $make_soundfile "$snd"
+    fi
+  done
 }
 
 make_sounds()
@@ -965,11 +968,13 @@ make_setup_target()
   SYS_BUILDHASH=
   # Add git path for overlay, additional paths, and the lambdanative path
   for p in $(echo "$SYS_PATH" | tr ":" "\n"); do
-    cd $p
-    if [ -d "$p/.git" ]; then
-      SYS_BUILDHASH="$SYS_BUILDHASH"`basename $p`": "`git log --pretty=format:"%h" -1`","
+    if [ -d "$p" ]; then
+      cd "$p"
+      if [ -d "$p/.git" ]; then
+        SYS_BUILDHASH="$SYS_BUILDHASH"`basename $p`": "`git log --pretty=format:"%h" -1`","
+      fi
+      cd $here
     fi
-    cd $here
   done
   SYS_ARCH=`$SYS_CC -dumpmachine 2> /dev/null`
   if [ "X$SYS_ARCH" = "X" ]; then
@@ -1017,6 +1022,7 @@ make_setup_target()
   string_srcs=
   font_srcs=
   embed_srcs=
+  webasset_srcs=
   setstate
 }
 
@@ -1116,7 +1122,7 @@ make_embedfile()
 make_embeds()
 {
   setstate PACKTOOL
-  echo "==> Updating embeded files for $SYS_APPNAME.."
+  echo "==> updating embedded files for $SYS_APPNAME.."
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/embed
   mkdir -p $tgtdir
   srcfile="$appsrcdir/EMBED"
@@ -1127,6 +1133,45 @@ make_embeds()
     srcfile=`locatefile modules/$m/EMBED silent`
     if [ ! "X$srcfile" = "X" ]; then
       make_embedfile "modules/$m" "${m}"
+    fi
+  done
+  setstate
+}
+
+make_webasset()
+{
+  srcdir=$1
+  prefix=$2
+  scmfile=$tgtdir/${prefix}.scm
+  here=`pwd`
+  cd `locatedir $srcdir`
+  if [ -f "$scmfile" ]; then
+    rm "$scmfile"
+  fi
+  wassets=`cat WEBASSETS`
+  for wasset in $wassets; do
+    $SYS_HOSTPREFIX/bin/webassettool scm $wasset >> $scmfile
+  done
+  if [ -f $scmfile ]; then
+    webasset_srcs="$webasset_srcs $scmfile"
+  fi
+  cd $here
+}
+
+make_webassets()
+{
+  setstate WEBASSETTOOL
+  echo "==> updating web assets for $SYS_APPNAME.."
+  tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/webassets
+  mkdir -p $tgtdir
+  srcfile="$appsrcdir/WEBASSETS"
+  if [ -f $srcfile ]; then
+    make_webasset "apps/$SYS_APPNAME" "main"
+  fi
+  for m in $modules; do
+    srcfile=`locatefile modules/$m/WEBASSETS silent`
+    if [ ! "X$srcfile" = "X" ]; then
+      make_webasset "modules/$m" "${m}"
     fi
   done
   setstate
@@ -1288,7 +1333,7 @@ make_lntoolcheck()
 {
   echo "==> checking for lambdanative tools.."
   rmifexists $SYS_TMPDIR/tmp.config.cache
-  lntools="pngtool packtool ttftool lngtool"
+  lntools="pngtool packtool ttftool lngtool webassettool"
   for tool in $lntools; do
     if [ ! -x $SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX ] || [ `newerindir apps/$tool $SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX` = "yes" ]; then
       echo " => building lambdanative tool $tool.."
@@ -1598,6 +1643,7 @@ if [ `is_gui_app` = "yes" ]; then
   make_strings
 fi
   make_embeds
+  make_webassets
   make_payload
 ;;
 executable)
@@ -1619,6 +1665,7 @@ all)
       make_strings
     fi
     make_embeds
+    make_webassets
     make_payload
   done
   make_executable

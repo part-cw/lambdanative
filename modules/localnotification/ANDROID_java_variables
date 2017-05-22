@@ -1,2 +1,3 @@
 private String alarm_message;
 private Double alarm_timestamp;
+private static boolean isVisible;

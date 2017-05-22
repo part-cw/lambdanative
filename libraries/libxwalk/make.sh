@@ -1,9 +1,9 @@
 # support for crosswalk library 
 # Android only at the moment
 
-PKGURL=https://download.01.org/crosswalk/releases/crosswalk/android/stable/latest/crosswalk-22.52.561.4.zip
+PKGURL=https://download.01.org/crosswalk/releases/crosswalk/android/stable/latest/crosswalk-23.53.589.4.zip
+PKGHASH=be1514ccb6180624aa516f59b055bea3bb066ef1
 PKGFILE=$(basename $PKGURL)
-PKGHASH=637b61ddfa83a535d9dd239e1d060bb618769516
 
 package_download $PKGURL $PKGHASH
 

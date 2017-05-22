@@ -1,12 +1,12 @@
 
-void android_videoplayer(char* mov_name)
+void android_videoplayer(char* mov_name, int orientation)
 {
   JNIEnv *env = GetJNIEnv();
   jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
   if (env&&globalObj){
     jstring jmov = (*env)->NewStringUTF(env,mov_name);
-    jmethodID method = (*env)->GetMethodID(env, main_class, "startVideoPlayer", "(Ljava/lang/String;)V");
-    (*env)->CallVoidMethod(env, globalObj, method, jmov);
+    jmethodID method = (*env)->GetMethodID(env, main_class, "startVideoPlayer", "(Ljava/lang/String;I)V");
+    (*env)->CallVoidMethod(env, globalObj, method, jmov, orientation);
   }
 }
 

@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2016, University of British Columbia
+Copyright (c) 2009-2017, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -36,42 +36,20 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-;; tool to embed a conventional website into Scheme
+;; minimal example VR application
 
-(define (usage)
-  (for-each display (list
-    "Website to Scheme converter\n"
-    "usage: website2scm [scm|web|repl] <website directory>\n"
-    "  scm  : output scheme representation on stdout\n"
-    "  web  : render website on port 8080\n"
-    "  repl : launch repl after loading website\n"
-  ))
-  (exit))
+;; the 360 degree image is by Ansgar Koreng / CC BY-SA 4.0 (unchanged)
 
-(define args (let loop ((n 0)(res '()))
-  (if (= n (system-cmdargc)) res (loop (+ n 1) (append res (list (system-cmdargv n)))))))
+(define index.sxml
+  `(html (head (script (@ (src "js/aframe.min.js")) ""))
+     (body (a-scene 
+       (a-camera (@ (position "0 2 4")) "")
+       (a-sky (@ (src "img/scene.jpg")) "")))))
 
-(if (< (length args) 3) (usage))
+(website-addhook #f "/index.html" (lambda (cgi-env)
+  (string->u8vector (string-append "<!DOCTYPE html>"
+    (with-output-to-string "" (lambda () (sxml->xml index.sxml)))))))
 
-(define use-repl (member "repl" args))
-(define use-web (member "web" args))
-(define use-scm (member "scm" args))
+(website-serve #f 8080)
 
-(define db (website->table (list-ref args 2)))
-  
-(if use-web (website-serve db 8080))
-
-(if use-scm (begin
-  (write (table->list db))
-  (newline)
-))
-
-(if (or use-repl use-web)
-  (let loop () 
-    (with-exception-catcher (lambda (e) 
-      (for-each display (list (exception->string e) "\n")) #f) 
-        (lambda () (##repl-debug)))
-    (loop))
-)
-
-;; eof  
+;; eof

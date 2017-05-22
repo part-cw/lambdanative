@@ -46,7 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (timestamp-url-set! url) (set! timestamp:url url))
 
 ;; Make query to TTS server
-(define (timestamp-tsr-request tsq)
+(define (timestamp-tsr-request-raw tsq)
   (let* ((request-str (string-append "POST " timestamp:url " HTTP/1.0\r\n"
            "Host: " timestamp:host "\r\n"
            "User-Agent: " (system-appname) "/" (system-appversion) "\r\n"
@@ -69,30 +69,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                ))
              )
            ))))
-    (if res
-      (let* ((u8v (list->u8vector (map char->integer res)))
-             (u8v-len (u8vector-length u8v))
-             (str (string-split (u8vector->string u8v) #\linefeed)))
-        (let ((len-str (let loop ((i 0) (lst str))
-               (if (or (fx= (length lst) 0) (string-contains-ci (car lst) "Content-Length:"))
-                 (if (fx= (length lst) 0) #f (car lst))
-                 (loop (fx+ i 1) (cdr lst))
-               ))))
-          (if len-str
-            (let* ((ls (string-split len-str #\space))
-                   (ls2 (if (and (list? ls) (fx> (length ls) 1)) (cadr ls) #f))
-                   (ls3 (if ls2 (string-remove-char ls2 #\return) #f))
-                   (datalen (if ls3 (string->number ls3) #f)))
-              (if datalen
-                (subu8vector u8v (fx- u8v-len datalen) u8v-len)
-                #f
-              )
-            )
-            #f
-          )
-        )
-      )
-      #f
-    )
-  ))
+    (if res (list->u8vector (map char->integer res)) #f)))
+
+(define-macro (V= idx match) `(fx= (u8vector-ref u8v ,idx) ,match))
+
+;; seek to 0d-0a-0d-0a and trim
+(define (timestamp-tsr-request-parse u8v)
+  (if u8v (let ((len (u8vector-length u8v)))
+    (if (> len 4) (let loop ((i 3))
+      (if (= i len) #f 
+        (if (and (V= (- i 3) 13) (V= (- i 2) 10) (V= (- i 1) 13) (V= i 10))  
+          (subu8vector u8v (+ i 1) (u8vector-length u8v))
+            (loop (+ i 1))))) #f)) #f))
+
+(define  (timestamp-tsr-request tsq)
+  (let ((res (timestamp-tsr-request-raw tsq)))
+    (if res (timestamp-tsr-request-parse res))))
+
 ;; eof

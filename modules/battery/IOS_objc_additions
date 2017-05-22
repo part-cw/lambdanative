@@ -1,0 +1,20 @@
+
+static UIDevice *batterydev=0;
+
+extern int ios_battery_level() {
+  if (!batterydev) {
+    batterydev=[UIDevice currentDevice];
+    [batterydev setBatteryMonitoringEnabled:YES];
+  }
+  return (int)(100.*[batterydev batteryLevel]);
+}
+
+extern int ios_battery_charging() {
+  if (!batterydev) {
+    batterydev=[UIDevice currentDevice];
+    [batterydev setBatteryMonitoringEnabled:YES];
+  }
+  return ((([batterydev batteryState] != UIDeviceBatteryStateUnplugged)||
+      ([batterydev batteryState] == UIDeviceBatteryStateCharging))?1:0);
+}
+

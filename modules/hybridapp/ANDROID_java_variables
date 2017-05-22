@@ -1,1 +1,2 @@
-private XWalkView mXWalkView;
+//private XWalkView mXWalkView;
+private WebView mWebView;
