@@ -110,7 +110,7 @@ struct MoAudioUnitInfo
 class MoAudio
 {
 public:
-    static bool init( Float64 srate, UInt32 frameSize, UInt32 numChannels );
+    static bool init( Float64 srate, UInt32 frameSize, UInt32 numChannels, bool activateInput );
     static bool start( MoCallback callback, void * bindle );
     static void stop();
     static void shutdown();

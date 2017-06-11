@@ -95,7 +95,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define AF_FRAMESIZE 1024
 
 // prototypes
-int iphone_realtime_audio_init(double,unsigned int);
+int iphone_realtime_audio_init(double,unsigned int,int);
 int iphone_realtime_audio_start(void (*)(float*,unsigned int, void*));
 int iphone_realtime_audio_stop();
 extern void iphone_setvolume(double);
@@ -121,8 +121,8 @@ static void iphone_realtime_callback( float *buffer, unsigned int framesize, voi
   }
 }
 
-int iphone_realtime_init() {
-  int res = iphone_realtime_audio_init(AF_SRATE,AF_FRAMESIZE);
+int iphone_realtime_init(int activateInput) {
+  int res = iphone_realtime_audio_init(AF_SRATE,AF_FRAMESIZE,activateInput);
   if (res) res = iphone_realtime_audio_start(iphone_realtime_callback);
 //  iphone_setvolume(1.0);
   return res;
@@ -282,7 +282,7 @@ void audiofile_init(void) {
   portaudio_init();
 #endif
 #ifdef USE_IOS_REALTIME
-  iphone_realtime_init();
+  iphone_realtime_init(0);
 #endif
 }
 

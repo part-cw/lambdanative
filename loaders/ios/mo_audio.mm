@@ -358,7 +358,7 @@ bool setupRemoteIO( AudioUnit & inRemoteIOUnit, AURenderCallbackStruct inRenderP
         return false;
     }
 
-    UInt32 enableInput = 0;
+    UInt32 enableInput = MoAudio::m_handleInput;
     // enable input
     err = AudioUnitSetProperty( inRemoteIOUnit, kAudioOutputUnitProperty_EnableIO, 
                                 kAudioUnitScope_Input, 1, &enableInput, sizeof(enableInput) );
@@ -450,7 +450,7 @@ bool setupRemoteIO( AudioUnit & inRemoteIOUnit, AURenderCallbackStruct inRenderP
 // name: init()
 // desc: initialize the MoAudio
 //-----------------------------------------------------------------------------
-bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels )
+bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels, bool activateInput )
 {
     // sanity check
     if( m_hasInit )
@@ -458,7 +458,9 @@ bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels )
         NSLog(@"MO_AUDIO: m_hasInit is already initialized (init)");
         return false;
     }
-    
+    // set the input activation state
+    m_handleInput = activateInput;
+ 
     // TODO: fix this
     assert( numChannels == 2 );
     
@@ -513,6 +515,8 @@ bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels )
     }
 
     UInt32 category = kAudioSessionCategory_MediaPlayback;
+    if ( m_handleInput )
+        category = kAudioSessionCategory_PlayAndRecord;
 
     // set audio category
     err = AudioSessionSetProperty( kAudioSessionProperty_AudioCategory, sizeof(category), &category );
@@ -563,15 +567,17 @@ bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels )
                 override = kAudioSessionOverrideAudioRoute_Speaker;
             }
         }
-/*
-        // set speaker override
-        err = AudioSessionSetProperty( kAudioSessionProperty_OverrideAudioRoute, sizeof(override), &override );
-        if( err )
+
+        if ( m_handleInput )
         {
-            NSLog(@"MO_AUDIO: couldn't set new audio route (speaker)");
-            return false;
+            // set peaker override
+            err = AudioSessionSetProperty( kAudioSessionProperty_OverrideAudioRoute, sizeof(override), &override );
+            if( err )
+            {
+                NSLog(@"MO_AUDIO: couldn't set new audio route (speaker)");
+                return false;
+            }
         }
-*/
     }
     
     // compute durations
@@ -690,7 +696,7 @@ void MoAudio::stop()
    if( !m_isRunning )
     {
         NSLog(@"MO_AUDIO: m_isRunning is already stopped (stop)");
-        return false;
+        return;
     } 
     
     // status code
@@ -742,9 +748,6 @@ void MoAudio::shutdown()
 //-----------------------------------------------------------------------------
 void MoAudio::checkInput()
 {
-    // handle input in callback
-    m_handleInput = false;
-
     UInt32 has_input;
     UInt32 size = sizeof(has_input);
     // get property
