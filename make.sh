@@ -818,6 +818,7 @@ make_setup_profile()
   fi
   if [ "$SYS_MODE" = "release" ]; then
     SYS_IOSCERT="iPhone Distribution"
+    SYS_IOSPROVISIONING="Distribution"
   else
     SYS_IOSCERT="iPhone Developer"
   fi
@@ -989,6 +990,7 @@ make_setup_target()
   ac_subst SYS_IOSTEAMID
   ac_subst SYS_IOSVERSION
   ac_subst SYS_IOSSDK
+  ac_subst SYS_IOSPROVISIONING
   ac_subst SYS_PLATFORM
   ac_subst SYS_HOSTPLATFORM
   ac_subst SYS_ROOT

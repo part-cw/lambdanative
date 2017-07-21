@@ -146,7 +146,7 @@ static void rtaudio_stop(void) {
 
 #define RT_FRAMESIZE 128
 
-int iphone_realtime_audio_init(double,unsigned int);
+int iphone_realtime_audio_init(double,unsigned int,int);
 int iphone_realtime_audio_start(void (*)(float*,unsigned int, void*));
 int iphone_realtime_audio_stop();
 void iphone_setvolume(double);
@@ -173,7 +173,7 @@ static void rtaudio_start(int samplerate, double volume)
   if (needsinit) {
     rtaudio_srate = samplerate;
     if (rtaudio_initcb) rtaudio_initcb(samplerate);
-    iphone_realtime_audio_init(rtaudio_srate,RT_FRAMESIZE);
+    iphone_realtime_audio_init(rtaudio_srate,RT_FRAMESIZE,1);
     iphone_setvolume(volume);
     needsinit=0;
   }

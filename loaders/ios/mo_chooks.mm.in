@@ -48,9 +48,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int iphone_audioroute = 0;
 
-extern "C" int iphone_realtime_audio_init(double srate, unsigned int framesize){
+extern "C" int iphone_realtime_audio_init(double srate, unsigned int framesize, int activateInput){
   bool result;
-  result = MoAudio::init(srate, framesize, 2);
+  result = MoAudio::init(srate, framesize, 2, activateInput);
   return (!result?0:1);
 }
 

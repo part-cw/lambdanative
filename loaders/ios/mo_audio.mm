@@ -199,7 +199,7 @@ static OSStatus SMALLRenderProc(
         if( err )
         {
             // print error
-            printf( "MoAudio: render procedure encountered error %d\n", (int)err );
+            NSLog(@"MO_AUDIO: render procedure encountered error %d", (int)err );
             return err;
         }
     }
@@ -271,7 +271,7 @@ static void propListener( void * inClientData, AudioSessionPropertyID inID,
         err = AudioComponentInstanceDispose( MoAudio::m_au );
         if( err )
         {
-            // TODO: "couldn't dispose remote i/o unit"
+            NSLog(@"MO_AUDIO: couldn't dispose remote i/o unit");
             return;
         }
         
@@ -284,7 +284,7 @@ static void propListener( void * inClientData, AudioSessionPropertyID inID,
                                        &size, &MoAudio::m_hwSampleRate );
         if( err )
         {
-            // TODO: "couldn't get new sample rate"
+            NSLog(@"MO_AUDIO: couldn't get new sample rate");
             return;
         }
         
@@ -295,7 +295,7 @@ static void propListener( void * inClientData, AudioSessionPropertyID inID,
         err = AudioOutputUnitStart( MoAudio::m_au );
         if( err )
         {
-            // TODO: "couldn't start unit"
+            NSLog(@"MO_AUDIO: couldn't start unit");
             return;
         }
             
@@ -305,7 +305,7 @@ static void propListener( void * inClientData, AudioSessionPropertyID inID,
         err = AudioSessionGetProperty( kAudioSessionProperty_AudioRoute, &size, &newRoute );
         if( err )
         {
-            // TODO: "couldn't get new audio route"
+            NSLog(@"MO_AUDIO: couldn't get new audio route");
             return;
         }
         
@@ -354,17 +354,17 @@ bool setupRemoteIO( AudioUnit & inRemoteIOUnit, AURenderCallbackStruct inRenderP
     err = AudioComponentInstanceNew( comp, &inRemoteIOUnit );
     if( err )
     {
-        // TODO: "couldn't open the remote I/O unit"
+        NSLog(@"MO_AUDIO: couldn't open the remote I/O unit");
         return false;
     }
 
-    UInt32 one = 1;
+    UInt32 enableInput = MoAudio::m_handleInput;
     // enable input
     err = AudioUnitSetProperty( inRemoteIOUnit, kAudioOutputUnitProperty_EnableIO, 
-                                kAudioUnitScope_Input, 1, &one, sizeof(one) );
+                                kAudioUnitScope_Input, 1, &enableInput, sizeof(enableInput) );
     if( err )
     {
-        // TODO: "couldn't enable input on the remote I/O unit"
+        NSLog(@"MO_AUDIO: couldn't enable input on the remote I/O unit");
         return false;
     }
 
@@ -373,7 +373,7 @@ bool setupRemoteIO( AudioUnit & inRemoteIOUnit, AURenderCallbackStruct inRenderP
                                 kAudioUnitScope_Input, 0, &inRenderProc, sizeof(inRenderProc) );
     if( err )
     {
-        // TODO: "couldn't set remote i/o render callback"
+        NSLog(@"MO_AUDIO: couldn't set remote i/o render callback");
         return false;
     }
         
@@ -383,7 +383,7 @@ bool setupRemoteIO( AudioUnit & inRemoteIOUnit, AURenderCallbackStruct inRenderP
                                 kAudioUnitScope_Input, 0, &localFormat, &size );
     if( err )
     {
-        // TODO: "couldn't get the remote I/O unit's output client format"
+        NSLog(@"MO_AUDIO: couldn't get the remote I/O unit's output client format");
         return false;
     }
 
@@ -407,7 +407,7 @@ bool setupRemoteIO( AudioUnit & inRemoteIOUnit, AURenderCallbackStruct inRenderP
                                 kAudioUnitScope_Input, 0, &localFormat, sizeof(localFormat) );
     if( err )
     {
-        // TODO: "couldn't set the remote I/O unit's input client format"
+        NSLog(@"MO_AUDIO: couldn't set the remote I/O unit's input client format");
         return false;
     }
     
@@ -417,14 +417,14 @@ bool setupRemoteIO( AudioUnit & inRemoteIOUnit, AURenderCallbackStruct inRenderP
                                 kAudioUnitScope_Input, 0, &outFormat, &size );
     if( err )
     {
-        // TODO: "couldn't get the remote I/O unit's output client format"
+        NSLog(@"MO_AUDIO: couldn't get the remote I/O unit's output client format");
         return false;
     }
     err = AudioUnitSetProperty( inRemoteIOUnit, kAudioUnitProperty_StreamFormat,
                                 kAudioUnitScope_Output, 1, &outFormat, sizeof(outFormat) );
     if( err )
     {
-        // TODO: "couldn't set the remote I/O unit's input client format"
+        NSLog(@"MO_AUDIO: couldn't set the remote I/O unit's input client format");
         return false;
     }
 
@@ -436,10 +436,10 @@ bool setupRemoteIO( AudioUnit & inRemoteIOUnit, AURenderCallbackStruct inRenderP
     err = AudioUnitInitialize( inRemoteIOUnit );
     if( err )
     {
-        // TODO: "couldn't initialize the remote I/O unit"
+        NSLog(@"MO_AUDIO: couldn't initialize the remote I/O unit");
         return false;
     }
-
+    NSLog(@"MO_AUDIO: setup Audio Unit Remote I/O success");
     return true;
 }
 
@@ -450,15 +450,17 @@ bool setupRemoteIO( AudioUnit & inRemoteIOUnit, AURenderCallbackStruct inRenderP
 // name: init()
 // desc: initialize the MoAudio
 //-----------------------------------------------------------------------------
-bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels )
+bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels, bool activateInput )
 {
     // sanity check
     if( m_hasInit )
     {
-        // TODO: error message
+        NSLog(@"MO_AUDIO: m_hasInit is already initialized (init)");
         return false;
     }
-    
+    // set the input activation state
+    m_handleInput = activateInput;
+ 
     // TODO: fix this
     assert( numChannels == 2 );
     
@@ -500,7 +502,7 @@ bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels )
     err = AudioSessionInitialize( NULL, NULL, rioInterruptionListener, m_au );
     if( err )
     {
-        // TODO: "couldn't initialize audio session"
+        NSLog(@"MO_AUDIO: couldn't initialize audio session");
         return false;
     }
     
@@ -508,16 +510,19 @@ bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels )
     err = AudioSessionSetActive( true );
     if( err )
     {
-        // TODO: "couldn't set audio session active\n"
+        NSLog(@"MO_AUDIO: couldn't set audio session active");
         return false;
     }
 
-    UInt32 category = kAudioSessionCategory_PlayAndRecord;
+    UInt32 category = kAudioSessionCategory_MediaPlayback;
+    if ( m_handleInput )
+        category = kAudioSessionCategory_PlayAndRecord;
+
     // set audio category
     err = AudioSessionSetProperty( kAudioSessionProperty_AudioCategory, sizeof(category), &category );
     if( err )
     {
-        // TODO: "couldn't set audio category"
+        NSLog(@"MO_AUDIO: couldn't set audio category");
         return false;
     }
 
@@ -525,7 +530,7 @@ bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels )
     err = AudioSessionAddPropertyListener( kAudioSessionProperty_AudioRouteChange, propListener, NULL );
     if( err )
     {
-        // TODO: "couldn't set property listener"
+        NSLog(@"MO_AUDIO: couldn't set property listener");
         return false;
     }
     
@@ -540,7 +545,7 @@ bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels )
         err = AudioSessionGetProperty( kAudioSessionProperty_AudioRoute, &size, &route );
         if( err )
         {
-            // TODO: "couldn't get new audio route\n"
+            NSLog(@"MO_AUDIO: couldn't get new audio route");
         }
         
         UInt32 override;
@@ -562,14 +567,17 @@ bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels )
                 override = kAudioSessionOverrideAudioRoute_Speaker;
             }
         }
-        
-        // set speaker override
-        err = AudioSessionSetProperty( kAudioSessionProperty_OverrideAudioRoute, sizeof(override), &override );
-        if( err )
+
+        if ( m_handleInput )
         {
-            // TODO: "couldn't get new audio route\n"
-            return false;
-        }        
+            // set peaker override
+            err = AudioSessionSetProperty( kAudioSessionProperty_OverrideAudioRoute, sizeof(override), &override );
+            if( err )
+            {
+                NSLog(@"MO_AUDIO: couldn't set new audio route (speaker)");
+                return false;
+            }
+        }
     }
     
     // compute durations
@@ -579,7 +587,7 @@ bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels )
                              sizeof(preferredBufferSize), &preferredBufferSize );
     if( err )
     {
-        // TODO: "couldn't set i/o buffer duration"
+        NSLog(@"MO_AUDIO: couldn't set i/o buffer duration");
         return false;
     }
 
@@ -589,7 +597,7 @@ bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels )
                              sizeof(preferredSampleRate), &preferredSampleRate );
     if( err )
     {
-        // TODO: "couldn't set preferred sample rate"
+        NSLog(@"MO_AUDIO: couldn't set preferred sample rate");
         return false;
     }
     
@@ -598,14 +606,14 @@ bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels )
     err = AudioSessionGetProperty( kAudioSessionProperty_CurrentHardwareSampleRate, &size, &MoAudio::m_hwSampleRate );
     if ( err )
     {
-        // TODO: "couldn't get hw sample rate"
+        NSLog(@"MO_AUDIO: couldn't get hw sample rate");
         return false;
     }
     
     // set up remote I/O
     if( !setupRemoteIO( m_au, m_renderProc, m_info->m_dataFormat ) )
     {
-        // TODO: "couldn't setup remote i/o unit"
+        NSLog(@"MO_AUDIO: couldn't setup remote i/o unit");
         return false;
     }
     
@@ -614,7 +622,7 @@ bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels )
     // make sure
     if( !m_info->m_ioBuffer )
     {
-        // TODO: "couldn't allocate memory for I/O buffer"
+        NSLog(@"MO_AUDIO: couldn't allocate memory for I/O buffer");
         return false;
     }
     
@@ -623,7 +631,7 @@ bool MoAudio::init( Float64 srate, UInt32 frameSize, UInt32 numChannels )
 
     // done with initialization
     m_hasInit = true;
-
+    NSLog(@"MO_AUDIO: initialize the MoAudio success");
     return true;
 }
 
@@ -642,14 +650,14 @@ bool MoAudio::start( MoCallback callback, void * bindle )
     // sanity check
     if( !m_hasInit )
     {
-        // TODO: error message
+        NSLog(@"MO_AUDIO: m_hasInit is not initialized (start)");
         return false;
     }
     
     // sanity check 2
     if( m_isRunning )
     {
-        // TODO: warning message
+        NSLog(@"MO_AUDIO: m_isRunning is already running (start)");
         return false;
     }
     
@@ -665,13 +673,13 @@ bool MoAudio::start( MoCallback callback, void * bindle )
     err = AudioOutputUnitStart( m_au );
     if( err )
     {
-        // TODO: "couldn't start audio unit...\n" );
+        NSLog(@"MO_AUDIO: couldn't start audio unit...");
         return false;
     }
 
     // started
     m_isRunning = true;
-
+    NSLog(@"MO_AUDIO: start success");
     return true;
 }
 
@@ -685,8 +693,11 @@ bool MoAudio::start( MoCallback callback, void * bindle )
 void MoAudio::stop()
 {
     // sanity check
-    if( !m_isRunning )
+   if( !m_isRunning )
+    {
+        NSLog(@"MO_AUDIO: m_isRunning is already stopped (stop)");
         return;
+    } 
     
     // status code
     OSStatus err;
@@ -696,6 +707,7 @@ void MoAudio::stop()
 
     // flag
     m_isRunning = false;
+    NSLog(@"MO_AUDIO: stop success");
 }
 
 
@@ -709,7 +721,10 @@ void MoAudio::shutdown()
 {
     // sanity check
     if( !m_hasInit )
+    {
+        NSLog(@"MO_AUDIO: m_hasInit is not initialized (shutdown)");
         return;
+    }
 
     // stop
     stop();
@@ -733,20 +748,17 @@ void MoAudio::shutdown()
 //-----------------------------------------------------------------------------
 void MoAudio::checkInput()
 {
-    // handle input in callback
-    m_handleInput = true;
-
     UInt32 has_input;
     UInt32 size = sizeof(has_input);
     // get property
     OSStatus err = AudioSessionGetProperty( kAudioSessionProperty_AudioInputAvailable, &size, &has_input );        
     if( err )
     {
-        // TODO: "warning: unable to determine availability of audio input"
+        NSLog(@"MO_AUDIO: warning: unable to determine availability of audio input");
     }
     else if( !has_input  )
     {
-        // TODO: "warning: full duplex enabled without available input"
+        NSLog(@"MO_AUDIO: warning: full duplex enabled without available input");
         m_handleInput = false;
     }
 }
