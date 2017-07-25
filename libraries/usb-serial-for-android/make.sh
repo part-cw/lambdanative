@@ -1,5 +1,5 @@
 PKGURL=https://github.com/mik3y/usb-serial-for-android.git
-PKGHASH=228c793
+PKGHASH=b96f9ca
 
 package_download $PKGURL $PKGHASH
 package_patch

@@ -1,0 +1,11 @@
+--- usbSerialForAndroid/src/main/java/com/hoho/android/usbserial/driver/FtdiSerialDriver.java	2017-07-25 10:35:28.000000000 -0700
++++ usbSerialForAndroid/src/main/java/com/hoho/android/usbserial/driver/FtdiSerialDriver.java	2017-07-25 10:38:28.000000000 -0700
+@@ -372,7 +372,7 @@
+                     totalBytesRead = mConnection.bulkTransfer(endpoint, mReadBuffer,
+                             readAmt, timeoutMillis);
+ 
+-                    if (totalBytesRead < MODEM_STATUS_HEADER_LENGTH) {
++                    if (totalBytesRead < MODEM_STATUS_HEADER_LENGTH&&totalBytesRead>=0) {
+                         throw new IOException("Expected at least " + MODEM_STATUS_HEADER_LENGTH + " bytes");
+                     }
+ 
