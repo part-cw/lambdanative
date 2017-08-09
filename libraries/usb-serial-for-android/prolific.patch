@@ -1,0 +1,101 @@
+--- usbSerialForAndroid/src/main/java/com/hoho/android/usbserial/driver/ProlificSerialDriver.java	2017-07-26 11:23:13.000000000 -0700
++++ usbSerialForAndroid/src/main/java/com/hoho/android/usbserial/driver/ProlificSerialDriver.java	2017-08-04 10:33:28.000000000 -0700
+@@ -136,12 +136,15 @@
+         private final byte[] inControlTransfer(int requestType, int request,
+                 int value, int index, int length) throws IOException {
+             byte[] buffer = new byte[length];
+-            int result = mConnection.controlTransfer(requestType, request, value,
++            int result = -1;
++            if (mConnection!=null) { 
++              result = mConnection.controlTransfer(requestType, request, value,
+                     index, buffer, length, USB_READ_TIMEOUT_MILLIS);
+-            if (result != length) {
+-                throw new IOException(
+-                        String.format("ControlTransfer with value 0x%x failed: %d",
+-                                value, result));
++              if (result != length) {
++                throw new IOException( String.format("ControlTransfer with value 0x%x failed: %d", value, result));
++              }
++            } else {
++               Log.w(TAG,"inControlTransfer failed");
+             }
+             return buffer;
+         }
+@@ -149,12 +152,15 @@
+         private final void outControlTransfer(int requestType, int request,
+                 int value, int index, byte[] data) throws IOException {
+             int length = (data == null) ? 0 : data.length;
+-            int result = mConnection.controlTransfer(requestType, request, value,
++            int result = -1; 
++            if (mConnection!=null) {
++              result = mConnection.controlTransfer(requestType, request, value,
+                     index, data, length, USB_WRITE_TIMEOUT_MILLIS);
+-            if (result != length) {
+-                throw new IOException(
+-                        String.format("ControlTransfer with value 0x%x failed: %d",
+-                                value, result));
++              if (result != length) {
++                throw new IOException( String.format("ControlTransfer with value 0x%x failed: %d", value, result));
++               }
++            } else {
++               Log.w(TAG,"outControlTransfer failed");
+             }
+         }
+ 
+@@ -203,7 +209,8 @@
+             try {
+                 while (!mStopReadStatusThread) {
+                     byte[] buffer = new byte[STATUS_BUFFER_SIZE];
+-                    int readBytesCount = mConnection.bulkTransfer(mInterruptEndpoint,
++                    int readBytesCount = 0;
++                    if (mConnection!=null) readBytesCount = mConnection.bulkTransfer(mInterruptEndpoint,
+                             buffer,
+                             STATUS_BUFFER_SIZE,
+                             500);
+@@ -228,7 +235,8 @@
+                 synchronized (mReadStatusThreadLock) {
+                     if (mReadStatusThread == null) {
+                         byte[] buffer = new byte[STATUS_BUFFER_SIZE];
+-                        int readBytes = mConnection.bulkTransfer(mInterruptEndpoint,
++                        int readBytes = 0;
++                        if (mConnection!=null) readBytes = mConnection.bulkTransfer(mInterruptEndpoint,
+                                 buffer,
+                                 STATUS_BUFFER_SIZE,
+                                 100);
+@@ -282,6 +290,7 @@
+                 for (int i = 0; i < usbInterface.getEndpointCount(); ++i) {
+                     UsbEndpoint currentEndpoint = usbInterface.getEndpoint(i);
+ 
++                    if (currentEndpoint!=null) {
+                     switch (currentEndpoint.getAddress()) {
+                     case READ_ENDPOINT:
+                         mReadEndpoint = currentEndpoint;
+@@ -295,6 +304,7 @@
+                         mInterruptEndpoint = currentEndpoint;
+                         break;
+                     }
++                  }
+                 }
+ 
+                 if (mDevice.getDeviceClass() == 0x02) {
+@@ -370,7 +380,8 @@
+         public int read(byte[] dest, int timeoutMillis) throws IOException {
+             synchronized (mReadBufferLock) {
+                 int readAmt = Math.min(dest.length, mReadBuffer.length);
+-                int numBytesRead = mConnection.bulkTransfer(mReadEndpoint, mReadBuffer,
++                int numBytesRead = 0;
++                if (mConnection!=null) numBytesRead = mConnection.bulkTransfer(mReadEndpoint, mReadBuffer,
+                         readAmt, timeoutMillis);
+                 if (numBytesRead < 0) {
+                     return 0;
+@@ -400,8 +411,8 @@
+                         writeBuffer = mWriteBuffer;
+                     }
+ 
+-                    amtWritten = mConnection.bulkTransfer(mWriteEndpoint,
+-                            writeBuffer, writeLength, timeoutMillis);
++                    if (mConnection!=null) amtWritten = mConnection.bulkTransfer(mWriteEndpoint,
++                            writeBuffer, writeLength, timeoutMillis); else amtWritten=0;
+                 }
+ 
+                 if (amtWritten <= 0) {
