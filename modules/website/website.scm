@@ -212,7 +212,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (headers (string-append "HTTP/1.0 200 OK\n"
                                 "Content-Type: " (website:lookup-mimetype ext) "\n"
                                 (if (procedure? zdata) "Cache-Control: no-cache, no-store\n" "")
-                              ;;  "Access-Control-Allow-Origin: *\n"
+                                "Access-Control-Allow-Origin: *\n"
                               ;;  "Access-Control-Allow-Methods: GET,POST,PUT\n"
                                 "\n"))
          (catchall (table-ref db 'catchall #f)))
