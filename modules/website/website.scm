@@ -42,12 +42,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (##include "~~lib/gambit#.scm")
 (##include "website#.scm")
 
-(##namespace ("" 
-  file->u8vector 
+(##namespace (""
+  file->u8vector
   u8vector-compress u8vector-decompress
   pregexp-replace* sxml->xml
   string-mapconcat string-split string-downcase
-  exception->string log:exception-handler 
+  exception->string log:exception-handler
   log-error log-system
   make-safe-thread
   u8vector->base64-string
@@ -102,6 +102,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     ((sxml html htm) "text/html")
     ((txt) "text/plain")
     ((css) "text/css")
+    ((css-dyn) "text/css")
     ((xml) "text/xml")
     ((png) "image/png")
     ((jpg) "image/jpeg")
@@ -116,7 +117,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((accept-port (open-tcp-server (list server-address: "*" port-number: port reuse-address: #t))))
     (let loop () (let ((connection (read accept-port)))
         (if (not (eof-object? connection))
-            (begin (thread-start! (make-safe-thread (lambda () 
+            (begin (thread-start! (make-safe-thread (lambda ()
               (current-exception-handler log:exception-handler)
               (website:serve db connection) )))
      (loop)))))))
@@ -127,7 +128,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (cond
         ((= len 0) s)
         ((char=? (string-ref s 0) #\space) (website:trim-string (substring s 1 len)))
-        ((or (char=? (string-ref s (- len 1)) #\space) 
+        ((or (char=? (string-ref s (- len 1)) #\space)
              (char=? (string-ref s (- len 1)) #\return))
            (website:trim-string (substring s 0 (- len 1))))
         (else s))) s))
@@ -136,7 +137,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((len (string-length line)))
     (let loop ((i 0))
       (if (= i len) (list line "")
-        (if (char=? (string-ref line i) #\:)  
+        (if (char=? (string-ref line i) #\:)
           (list (string-downcase (website:trim-string (substring line 0 i))) (website:trim-string (substring line (+ i 1) len)))
             (loop (+ i 1)))))))
 
@@ -182,7 +183,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (website:serve db port)
   (with-exception-catcher (lambda (e) (website:safecall close-port port) #f)
-   (lambda () 
+   (lambda ()
      (let* ((request (website:trim-string (website:safecall read-line port)))
             (headers  (website:read-header port))
             (cgi-env (website:build-cgi-environment request headers)))
@@ -206,7 +207,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (zdata (table-ref db document #f))
          (catchall (table-ref db 'catchall #f))
          (data (if (u8vector? zdata) (website:decompress zdata)
-                 (if (procedure? zdata) (with-input-from-port port (lambda () (zdata cgi-env))) 
+                 (if (procedure? zdata) (with-input-from-port port (lambda () (zdata cgi-env)))
                    (if (procedure? catchall) (with-input-from-port port (lambda () (catchall document cgi-env))) #f))))
          (ext (car (reverse (string-split-sane document #\.))))
          (headers (string-append "HTTP/1.0 200 OK\n"
@@ -242,7 +243,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define website:db (make-table))
 
-(define (website-serve db port) (thread-start! (make-safe-thread (lambda () 
+(define (website-serve db port) (thread-start! (make-safe-thread (lambda ()
   (current-exception-handler log:exception-handler)
   (website:server (if db db website:db) port)))))
 
@@ -261,4 +262,4 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (website-merge! db t) (table-merge! (if db db website:db) t))
 
-;; eof 
+;; eof
