@@ -215,6 +215,7 @@ static Novocaine *audioManager = nil;
 #endif
     
     [self freeBuffers];
+    [super dealloc];
 }
 
 - (void)freeBuffers
