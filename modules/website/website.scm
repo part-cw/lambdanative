@@ -250,6 +250,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; ----------------
 
 (define website:db (make-table))
+(define (website-getdb) website:db)
 
 (define (website-serve db port) (thread-start! (make-safe-thread (lambda ()
   (current-exception-handler log:exception-handler)
