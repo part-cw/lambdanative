@@ -51,6 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   log-error log-system
   make-safe-thread
   u8vector->base64-string
+  system-directory system-pathseparator string-contains
 ))
 
 (define (string-split-sane a b) (if (or (not (string? a)) (= (string-length a) 0)) '("") (string-split a b)))
@@ -71,28 +72,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; recursively load a website
 
 ;; scan and load directory recursively
-(define (website:scan-directory db path)
-  (if (file-exists? path)
-    (let* ((i (file-info path))
-           (t (file-info-type i)))
-     (cond
-       ((eq? t 'directory)
-         (website:log 2 "=> scanning " path "..")
-         (let loop ((fs (directory-files path)))
-           (if (fx= (length fs) 0) #f (begin
-             (website:scan-directory db (string-append path "/" (car fs)))
-             (loop (cdr fs))))))
-       ((eq? t 'regular)
-         (let ((trimpath (string-append "/" (string-mapconcat (cdr (string-split-sane (pregexp-replace* "//" path "/") #\/)) "/"))))
-           (website:log 2 "==> adding " path " [" trimpath "]..")
-           (table-set! db trimpath (website:compress (file->u8vector path)))
+(define (website:scan-directory db path0 . fullpath0)
+  (let* ((has-fullpath? (fx> (length fullpath0) 0))
+         (path (if (or has-fullpath? (string-contains path0 (system-pathseparator)))
+           path0
+           (string-append (system-directory) (system-pathseparator) path0)))
+         (fullpath (if has-fullpath? (car fullpath0) path)))
+    (if (file-exists? path)
+      (let* ((i (file-info path))
+             (t (file-info-type i)))
+       (cond
+         ((eq? t 'directory)
+           (website:log 2 "=> scanning " path "..")
+           (let loop ((fs (directory-files path)))
+             (if (fx= (length fs) 0) #f (begin
+               (website:scan-directory db (string-append path "/" (car fs)) fullpath)
+               (loop (cdr fs))))))
+         ((eq? t 'regular)
+           (let ((trimpath (string-append "/" (string-mapconcat (cdr (string-split-sane
+                   (pregexp-replace* fullpath (pregexp-replace* "//" path "/") "") #\/)) "/"))))
+             (website:log 2 "==> adding " path " [" trimpath "]..")
+             (table-set! db trimpath (website:compress (file->u8vector path)))
+           )
+         )
+         (else
+           (website:log 0 "** unsupported file type: " path "\n")
          )
        )
-       (else
-         (website:log 0 "** unsupported file type: " path "\n")
-       )
-     )
-  )))
+    ))
+  ))
 
 ;; ------------------
 ;; render the website
