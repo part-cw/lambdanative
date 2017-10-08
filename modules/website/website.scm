@@ -42,15 +42,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (##include "~~lib/gambit#.scm")
 (##include "website#.scm")
 
-(##namespace ("" 
-  file->u8vector 
+(##namespace (""
+  file->u8vector
   u8vector-compress u8vector-decompress
   pregexp-replace* sxml->xml
   string-mapconcat string-split string-downcase
-  exception->string log:exception-handler 
+  exception->string log:exception-handler
   log-error log-system
   make-safe-thread
   u8vector->base64-string
+  system-directory system-pathseparator string-contains
 ))
 
 (define (string-split-sane a b) (if (or (not (string? a)) (= (string-length a) 0)) '("") (string-split a b)))
@@ -71,28 +72,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; recursively load a website
 
 ;; scan and load directory recursively
-(define (website:scan-directory db path)
-  (if (file-exists? path)
-    (let* ((i (file-info path))
-           (t (file-info-type i)))
-     (cond
-       ((eq? t 'directory)
-         (website:log 2 "=> scanning " path "..")
-         (let loop ((fs (directory-files path)))
-           (if (fx= (length fs) 0) #f (begin
-             (website:scan-directory db (string-append path "/" (car fs)))
-             (loop (cdr fs))))))
-       ((eq? t 'regular)
-         (let ((trimpath (string-append "/" (string-mapconcat (cdr (string-split-sane (pregexp-replace* "//" path "/") #\/)) "/"))))
-           (website:log 2 "==> adding " path " [" trimpath "]..")
-           (table-set! db trimpath (website:compress (file->u8vector path)))
+(define (website:scan-directory db path0 . fullpath0)
+  (let* ((has-fullpath? (fx> (length fullpath0) 0))
+         (path (if (or has-fullpath? (string-contains path0 (system-pathseparator)))
+           path0
+           (string-append (system-directory) (system-pathseparator) path0)))
+         (fullpath (if has-fullpath? (car fullpath0) path)))
+    (if (file-exists? path)
+      (let* ((i (file-info path))
+             (t (file-info-type i)))
+       (cond
+         ((eq? t 'directory)
+           (website:log 2 "=> scanning " path "..")
+           (let loop ((fs (directory-files path)))
+             (if (fx= (length fs) 0) #f (begin
+               (website:scan-directory db (string-append path "/" (car fs)) fullpath)
+               (loop (cdr fs))))))
+         ((eq? t 'regular)
+           (let ((trimpath (string-append "/" (string-mapconcat (cdr (string-split-sane
+                   (pregexp-replace* fullpath (pregexp-replace* "//" path "/") "") #\/)) "/"))))
+             (website:log 2 "==> adding " path " [" trimpath "]..")
+             (table-set! db trimpath (website:compress (file->u8vector path)))
+           )
+         )
+         (else
+           (website:log 0 "** unsupported file type: " path "\n")
          )
        )
-       (else
-         (website:log 0 "** unsupported file type: " path "\n")
-       )
-     )
-  )))
+    ))
+  ))
 
 ;; ------------------
 ;; render the website
@@ -102,6 +110,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     ((sxml html htm) "text/html")
     ((txt) "text/plain")
     ((css) "text/css")
+    ((css-dyn) "text/css")
     ((xml) "text/xml")
     ((png) "image/png")
     ((jpg) "image/jpeg")
@@ -116,7 +125,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((accept-port (open-tcp-server (list server-address: "*" port-number: port reuse-address: #t))))
     (let loop () (let ((connection (read accept-port)))
         (if (not (eof-object? connection))
-            (begin (thread-start! (make-safe-thread (lambda () 
+            (begin (thread-start! (make-safe-thread (lambda ()
               (current-exception-handler log:exception-handler)
               (website:serve db connection) )))
      (loop)))))))
@@ -127,7 +136,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (cond
         ((= len 0) s)
         ((char=? (string-ref s 0) #\space) (website:trim-string (substring s 1 len)))
-        ((or (char=? (string-ref s (- len 1)) #\space) 
+        ((or (char=? (string-ref s (- len 1)) #\space)
              (char=? (string-ref s (- len 1)) #\return))
            (website:trim-string (substring s 0 (- len 1))))
         (else s))) s))
@@ -136,7 +145,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((len (string-length line)))
     (let loop ((i 0))
       (if (= i len) (list line "")
-        (if (char=? (string-ref line i) #\:)  
+        (if (char=? (string-ref line i) #\:)
           (list (string-downcase (website:trim-string (substring line 0 i))) (website:trim-string (substring line (+ i 1) len)))
             (loop (+ i 1)))))))
 
@@ -182,7 +191,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (website:serve db port)
   (with-exception-catcher (lambda (e) (website:safecall close-port port) #f)
-   (lambda () 
+   (lambda ()
      (let* ((request (website:trim-string (website:safecall read-line port)))
             (headers  (website:read-header port))
             (cgi-env (website:build-cgi-environment request headers)))
@@ -206,13 +215,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (zdata (table-ref db document #f))
          (catchall (table-ref db 'catchall #f))
          (data (if (u8vector? zdata) (website:decompress zdata)
-                 (if (procedure? zdata) (with-input-from-port port (lambda () (zdata cgi-env))) 
+                 (if (procedure? zdata) (with-input-from-port port (lambda () (zdata cgi-env)))
                    (if (procedure? catchall) (with-input-from-port port (lambda () (catchall document cgi-env))) #f))))
          (ext (car (reverse (string-split-sane document #\.))))
          (headers (string-append "HTTP/1.0 200 OK\n"
                                 "Content-Type: " (website:lookup-mimetype ext) "\n"
                                 (if (procedure? zdata) "Cache-Control: no-cache, no-store\n" "")
-                              ;;  "Access-Control-Allow-Origin: *\n"
+                                "Access-Control-Allow-Origin: *\n"
                               ;;  "Access-Control-Allow-Methods: GET,POST,PUT\n"
                                 "\n"))
          (catchall (table-ref db 'catchall #f)))
@@ -241,8 +250,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; ----------------
 
 (define website:db (make-table))
+(define (website-getdb) website:db)
 
-(define (website-serve db port) (thread-start! (make-safe-thread (lambda () 
+(define (website-serve db port) (thread-start! (make-safe-thread (lambda ()
   (current-exception-handler log:exception-handler)
   (website:server (if db db website:db) port)))))
 
@@ -261,4 +271,4 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (website-merge! db t) (table-merge! (if db db website:db) t))
 
-;; eof 
+;; eof

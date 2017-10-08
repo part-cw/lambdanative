@@ -81,7 +81,7 @@ package_unpack()
 package_patch()
 {
   echo " => patching source..."
-  pkg_patches=`ls -1 ../*.patch 2> /dev/null`
+  pkg_patches=`ls -1 ../*.patch *.patch 2> /dev/null`
   for p in $pkg_patches; do
     if [ ! "X$p" = "X" ] && [ -f $p ]; then
       echo " => applying patches from $p"

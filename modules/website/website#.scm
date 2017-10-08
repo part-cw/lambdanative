@@ -7,6 +7,7 @@
   website-merge!
   website-dataurl
   make-website
+  website-getdb
 ))
 
 ;; eof

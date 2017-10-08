@@ -69,18 +69,65 @@ for m in $modules; do
 done
 android_subst `locatedir apps/$SYS_APPNAME`
 
+use_android_tool=yes
+
+if [ -x "$ANDROIDSDK/tools/bin/avdmanager" ]; then
+  echo " == this SDK is gradle based, adjusting for ant build.."
+  touch $ANDROIDSDK/testwr
+  assertfile $ANDROIDSDK/testwr "Unsupported sdk tools, and sdk not writable. Giving up."
+  rm $ANDROIDSDK/testwr
+  if [ ! -d $ANDROIDSDK/tools.gradle ]; then
+    mv $ANDROIDSDK/tools $ANDROIDSDK/tools.gradle
+  fi
+  if [ -e $ANDROIDSDK/tools ]; then
+    rm $ANDROIDSDK/tools
+  fi
+  # get the latest supported ant build version
+  if [ ! -d $ANDROIDSDK/tools.ant ]; then
+    echo " == downloading tools for ant build.."
+    dir_antbuild=`pwd`
+    cd $ANDROIDSDK
+    if [ -f ant_tools.zip ]; then
+      rm ant_tools.zip
+    fi
+    wget http://dl.google.com/android/repository/tools_r25.2.5-$SYS_HOSTPLATFORM.zip -O ant_tools.zip
+    asserterror $? "download failed"
+    unzip -q ./ant_tools.zip
+    rm ant_tools.zip
+    mv tools tools.ant
+    cd "$dir_antbuild"
+  fi
+  # point us to the ant tools
+  ln -s $ANDROIDSDK/tools.ant $ANDROIDSDK/tools
+fi
+
 echo " => creating android project.."
-tmpdir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
-ANDROIDSDKTARGET=`$ANDROIDSDK/tools/android list targets | grep "^id:" | grep "android-$ANDROIDAPI" | cut -f 2 -d " "`
+#tmpdir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
+tmpdir="$SYS_TMPDIR/tmp_build"
+if [ -d "$tmpdir" ]; then
+  rm -rf "$tmpdir"
+fi
+mkdir -p "$tmpdir"
+
+if [ $use_android_tool = no ]; then
+  ANDROIDSDKTARGET=`$ANDROIDSDK/tools/bin/avdmanager list target | grep "^id:" | grep "android-$ANDROIDAPI" | cut -f 2 -d " "`
+else
+  ANDROIDSDKTARGET=`$ANDROIDSDK/tools/android list targets | grep "^id:" | grep "android-$ANDROIDAPI" | cut -f 2 -d " "`
+fi
 if [ "X$ANDROIDSDKTARGET" = "X" ]; then
   echo "ERROR: API $ANDROIDAPI not a target."
   exit
 else
   echo " => using target $ANDROIDSDKTARGET [API $ANDROIDAPI]"
 fi
+
+if [ $use_android_tool = yes ]; then
 $ANDROIDSDK/tools/android --silent create project \
   --target $ANDROIDSDKTARGET --name $SYS_APPNAME --path $tmpdir \
   --activity $SYS_APPNAME --package $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME
+else
+assert "### Gradle is not supported"
+fi
 
 if [ -f $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar ]; then
   cp -r $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar $tmpdir/libs
@@ -96,9 +143,14 @@ if [ "$NEED_GCM" = "yes" ]; then
   cp $tmpdir/build.xml $tmpdir/google-play-services_lib
   cp $tmpdir/local.properties $tmpdir/google-play-services_lib
 
-  $ANDROIDSDK/tools/android --silent update project \
-    --target $ANDROIDSDKTARGET --path $tmpdir \
-    --library ./google-play-services_lib
+  if [ $use_android_tool = yes ]; then
+    $ANDROIDSDK/tools/android --silent update project \
+      --target $ANDROIDSDKTARGET --path $tmpdir \
+      --library ./google-play-services_lib
+  else
+    assert "### gradle is not supported"
+  fi
+
 fi
 
 echo " => preparing icons.."
@@ -228,7 +280,11 @@ if [ `has_module hybridapp-xwalk` = yes ]; then
     fi
     xwalk_here=`pwd`
     cd $tmpdir
-    $ANDROIDSDK/tools/android --silent update project --target $ANDROIDSDKTARGET --path $tmpdir --library ../libxwalk
+    if [ $use_android_tool = yes ]; then
+      $ANDROIDSDK/tools/android --silent update project --target $ANDROIDSDKTARGET --path $tmpdir --library ../libxwalk
+    else 
+      assert "## gradle is not supported"
+    fi
     cd "$xwalk_here"
 cat > $tmpdir/res/layout/main.xml << __EOF
 <org.xwalk.core.XWalkView android:id="@+id/xwalk_main"
@@ -292,6 +348,12 @@ if [ $SYS_MODE = "debug" ]; then
   echo "DEBUG: android build is in $tmpdir"
 else
   rm -rf $tmpdir
+fi
+
+if [ -d  $ANDROIDSDK/tools.gradle ]; then
+  echo " == restoring gradle build."
+  rm $ANDROIDSDK/tools
+  ln -s $ANDROIDSDK/tools.gradle $ANDROIDSDK/tools
 fi
 
 #eof

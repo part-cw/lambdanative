@@ -136,6 +136,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     "</records>")
 )
 
+;; Helper function to build the http request string
+(define (redcap:make-request-str host request . bd)
+  (string-append "POST " redcap:url " HTTP/1.0" "\r\n"
+    "Host: " host "\r\n"
+    "User-Agent: " redcap:user-agent  "\r\n"
+    "Content-Length: " (number->string (string-length request)) "\r\n"
+    "Content-Type: " (if (null? bd) redcap:content-type (string-append redcap:content-type-file "; boundary=" (car bd))) "\r\n"
+    "\r\n" request "\n"))
+
 ;; Checks for an error message in header, logs the message and returns false. If there is no error (ie. code is 200 or 201), just return true
 (define (redcap:error-check msg)
    (if (and (string? (car msg)) (fx> (string-length (car msg)) 12) (or (string=? (substring (car msg) 9 12) "201")
@@ -149,12 +158,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          ;; See if format was specified in xargs, use json by default
   (let* ((format (redcap:arg 'format xargs "json"))
          (request (string-append "format=" format "&content=metadata&token=" token))
-         (request-str (string-append "POST " redcap:url " HTTP/1.0" "\n"
-           "Host: " host "\n"
-           "User-Agent: " redcap:user-agent  "\n"
-           "Content-Type: " redcap:content-type  "\n"
-           "Content-Length: " (number->string (string-length request)) "\n"
-           "\r\n" request "\n")))
+         (request-str (redcap:make-request-str host request)))
     ;; Check if we have a valid connection before proceeding
     (if (fx= (httpsclient-open host) 1)
       (begin
@@ -218,13 +222,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              "Content-Type: application/xml; charset=utf-8" "\r\n" "\r\n"
              (redcap:list->xmlstr record event data) "\r\n"))
         (cl (string-append "--" bd "--"))
-        (request-str (string-append "POST " redcap:url " HTTP/1.0" "\r\n"
-          "Host: " host "\r\n"
-          "User-Agent: " redcap:user-agent  "\r\n"
-          "Content-Length: " (number->string (+ (string-length ct) (string-length ft) (string-length tp)
-            (string-length ob) (string-length tk) (string-length dt) (string-length cl))) "\r\n"
-          "Content-Type: " redcap:content-type-file "; boundary=" bd "\r\n" "\r\n"
-          ct ft tp ob tk dt cl "\r\n")))
+        (request (string-append ct ft tp ob tk dt cl))
+        (request-str (redcap:make-request-str host request bd)))
     ;; Check if we have a valid connection before proceeding
     (if (fx= (httpsclient-open host) 1)
       (begin
@@ -277,13 +276,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              "Content-Type: text/csv" "\r\n" "\r\n"
              str "\r\n"))
         (cl (string-append "--" bd "--"))
-        (request-str (string-append "POST " redcap:url " HTTP/1.0" "\r\n"
-          "Host: " host "\r\n"
-          "User-Agent: " redcap:user-agent  "\r\n"
-          "Content-Length: " (number->string (+ (string-length ct) (string-length ft) (string-length tp)
-            (string-length ob) (string-length tk) (string-length dt) (string-length cl))) "\r\n"
-          "Content-Type: " redcap:content-type-file "; boundary=" bd "\r\n" "\r\n"
-          ct ft tp ob tk dt cl "\r\n")))
+        (request (string-append ct ft tp ob tk dt cl))
+        (request-str (redcap:make-request-str host request bd)))
     ;; Check if we have a valid connection before proceeding
     (if (fx= (httpsclient-open host) 1)
       (begin
@@ -348,12 +342,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (filterstr (if (string? filter)
                       (string-append "&filterLogic=" filter)
                       ""))
-         (request-str (string-append "POST " redcap:url " HTTP/1.0" "\n"
-           "Host: " host "\n"
-           "User-Agent: " redcap:user-agent  "\n"
-           "Content-Type: " redcap:content-type  "\n"
-           "Content-Length: " (number->string (+ (string-length request) (string-length recordstr) (string-length eventstr) (string-length formstr) (string-length fieldstr) (string-length filterstr))) "\n"
-           "\r\n" request eventstr formstr fieldstr recordstr filterstr "\n")))
+         (request-all (string-append request eventstr formstr fieldstr recordstr filterstr))
+         (request-str (redcap:make-request-str host request-all)))
     ;; Check if we have a valid connection before proceeding
     (if (fx= (httpsclient-open host) 1)
       (begin
@@ -402,12 +392,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (redcap-export-fieldnames host token)
   (let* ((request (string-append "token=" token "&content=exportFieldNames&format=json"))
-         (request-str (string-append "POST " redcap:url " HTTP/1.0" "\n"
-           "Host: " host "\n"
-           "User-Agent: " redcap:user-agent  "\n"
-           "Content-Type: " redcap:content-type  "\n"
-           "Content-Length: " (number->string (+ (string-length request))) "\n"
-           "\r\n" request "\n")))
+         (request-str (redcap:make-request-str host request)))
     ;; Check if we have a valid connection before proceeding
     (if (fx= (httpsclient-open host) 1)
       (begin
@@ -456,12 +441,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              (id (if (list? fieldnames) (car fieldnames) #f))
              (request (string-append "token=" token "&content=record&" (if event (string-append "events=" event "&") "")
                                      "format=json&fields=" id "&type=flat"))
-             (request-str (string-append "POST " redcap:url " HTTP/1.0" "\n"
-                                         "Host: " host "\n"
-                                         "User-Agent: " redcap:user-agent  "\n"
-                                         "Content-Type: " redcap:content-type  "\n"
-                                         "Content-Length: " (number->string (+ (string-length request))) "\n"
-                                         "\r\n" request "\n")))
+             (request-str (redcap:make-request-str host request)))
         ;; Check if we have a valid connection before proceeding
         (if (and (fx= (httpsclient-open host) 1) id)
           (begin
@@ -629,12 +609,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                    ""
                                  )
                                  "&field=" field))
-         (request-str (string-append "POST " redcap:url " HTTP/1.0" "\n"
-           "Host: " host "\n"
-           "User-Agent: " redcap:user-agent  "\n"
-           "Content-Type: " redcap:content-type  "\n"
-           "Content-Length: " (number->string (string-length request)) "\n"
-           "\r\n" request "\n")))
+         (request-str (redcap:make-request-str host request)))
     ;; Check if we have a valid connection before proceeding
     (if (fx= (httpsclient-open host) 1)
       (begin
@@ -686,12 +661,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                    ""
                                  )
                                  "&field=" field))
-         (request-str (string-append "POST " redcap:url " HTTP/1.0" "\n"
-           "Host: " host "\n"
-           "User-Agent: " redcap:user-agent  "\n"
-           "Content-Type: " redcap:content-type  "\n"
-           "Content-Length: " (number->string (string-length request)) "\n"
-           "\r\n" request "\n")))
+         (request-str (redcap:make-request-str host request)))
     ;; Check if we have a valid connection before proceeding
     (if (fx= (httpsclient-open host) 1)
       (begin
