@@ -204,6 +204,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (graph-ylog g a b c d)			(graph:cmd g '@ylog a b c d))
 (define (graph-mesh g)				(graph:cmd g '@mesh))
 (define (graph-font g fn fs)			(graph:cmd g '@font fn fs))
+(define (graph-tictime g t)			(graph:cmd g '@tictime t))
 (define (graph-xlinear g a b c d e f) 		(graph:cmd g '@xlinear a b c d e f))
 (define (graph-ylinear g a b c d e f) 		(graph:cmd g '@ylinear a b c d e f))
 (define (graph-xaxis g) 			(graph:cmd g '@xaxis)) 
