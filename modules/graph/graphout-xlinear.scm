@@ -53,6 +53,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (table-set! g 'coord GRAPH_AXIS)
 ))
 
+;; switch rendering of tic labels to time format t
+(define (graphout:tictime g t)
+  (if (string? t)
+    (table-set! g 'tictime t)
+  )
+)
+
 ;; draw the x axis
 (define (graphout:xlinaxis g)
   (let* ((phys2dev (table-ref g 'phys2dev))
@@ -67,6 +74,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (numsep (table-ref g 'xnumsep))
          (physxsize (table-ref g 'physxsize))
          (physxoffset (table-ref g 'physxoffset))
+         (tictime (table-ref g 'tictime #f))
          (xtix (table-ref g 'xticks))
          (xmin (table-ref g 'axisxmin))
          (xmax (table-ref g 'axisxmax))
@@ -97,7 +105,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              (* xrang 1.01) numsep xticks precision linnumoff)))
          (let loop ((x (* linnumoff xticks)))
             (if (<= x (* xrang 1.01)) 
-               (let ((line (graphaux:formaxnum (+ x xmi) sigdec precision)))
+               (let ((line (if tictime (localseconds->string x tictime) (graphaux:formaxnum (+ x xmi) sigdec precision))))
                   (if (and (> lintnposition 0) (< lintnposition 4))
                      (graphout:htextcenter g (+ x xmin)
                        (graphout:devy->axisy g (+ (* physxoffset phys2dev) tb (- numdist) devyorigo)) 

@@ -74,6 +74,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           ((eq? cmdname '@solidtriangle) (apply graphout:solidtriangle (append (list g) cmdargs)))
           ((eq? cmdname '@stroke) (apply graphout:stroke (append (list g) cmdargs)))
           ((eq? cmdname '@fill) (apply graphout:fill (append (list g) cmdargs)))
+          ((eq? cmdname '@tictime) (apply graphout:tictime (append (list g) cmdargs)))
           ((eq? cmdname '@triangle) (apply graphout:triangle (append (list g) cmdargs)))
           ((eq? cmdname '@vtextbottom) (apply graphout:vtextbottom (append (list g) cmdargs)))
           ((eq? cmdname '@vtextcenter) (apply graphout:vtextcenter (append (list g) cmdargs)))

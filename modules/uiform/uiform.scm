@@ -231,13 +231,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((evalaction (if (procedure? action) (uiform:evalarg 'action action) action)))
     (glgui:uiform-keypad-down)
     (uiset 'nodemap '())
-    (uiset 'offset 0)
     (uiset 'nxt-action #f)
     (uiset 'prv-action #f)
     (if evalaction 
       (if (list? evalaction)
         (glgui:uiform-modal-up evalaction)
-        (uiset 'page evalaction)
+        (begin
+          (if (not (equal? (uiget 'page) evalaction))
+            (uiset 'offset 0))
+          (uiset 'page evalaction))
     ))
 ))
 
