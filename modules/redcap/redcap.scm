@@ -120,20 +120,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 )
 
 ;; Helper function which makes REDCap EAV XML given a record identifier and list of values
-(define (redcap:list->xmlstr record event data)
-  (string-append "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" "\r\n"
+(define (redcap:list->xmlstr record event data . xargs)
+  (let* ((instance (redcap:arg 'instance xargs #f))
+        (instrument (redcap:arg 'instrument xargs #f))
+        (repeat (if (and instance instrument) ;;add repeat information if provided
+                     (string-append     "<redcap_repeat_instrument>" instrument "</redcap_repeat_instrument>"
+                                        "<redcap_repeat_instance>" instance "</redcap_repeat_instance>") "")))
+  	(string-append "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" "\r\n"
     "<records>" "\r\n"
     (let loop ((i 0) (str ""))
       (if (= i (length data)) str
-  (loop (+ i 1) (string-append str "<item>"
-    "<record>" record "</record>"
-          "<redcap_event_name>" event "</redcap_event_name>"
-    "<field_name>" (car (list-ref data i)) "</field_name>"
-    "<value>" (cadr (list-ref data i))"</value>"
-    "</item>" "\r\n"))
-      )
-    )
-    "</records>")
+  	(loop (+ i 1) 
+         (let* ((lpair (list-ref data i))
+                (field (car lpair))
+                (fieldname (if (string? field) field (symbol->string field)))
+                (val (if (list? lpair) (cadr lpair) (cdr lpair)))
+                (value (if (number? val) (number->string val) val))) 
+               (string-append str "<item>"
+		    "<record>" record "</record>" 
+		      repeat                                                     
+		    "<redcap_event_name>" event "</redcap_event_name>"
+		    "<field_name>" fieldname "</field_name>"
+		    "<value>" value "</value>"
+		    "</item>" "\r\n")))
+		      )
+		    )
+		    "</records>"))
 )
 
 ;; Helper function to build the http request string
@@ -149,7 +161,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (redcap:error-check msg)
    (if (and (string? (car msg)) (fx> (string-length (car msg)) 12) (or (string=? (substring (car msg) 9 12) "201")
                                                                        (string=? (substring (car msg) 9 12) "200")))
-     #t
+     (begin  (log-warning "REDCap: submission success. response" msg) #t)
      (let ((ret (cadr msg)))
        (log-error "REDCap:" (if (and (list? ret) (fx= (length ret) 0)) " Nothing returned" (cadr msg))) #f))
 )
@@ -158,7 +170,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          ;; See if format was specified in xargs, use json by default
   (let* ((format (redcap:arg 'format xargs "json"))
          (forms (redcap:arg 'forms xargs #f))
-         (request (string-append "format=" format "&content=metadata&token=" token (if forms (string-append "&forms[0]=" forms ))))
+         (fields (redcap:arg 'fields xargs #f))
+         (request (string-append "format=" format "&content=metadata&token=" token (if forms (string-append "&forms[0]=" forms ) "") (if fields (string-append "&fields[0]=" fields ) "") ))  ;;TODO expand to multiple fields and forms
          (request-str (redcap:make-request-str host request)))
     ;; Check if we have a valid connection before proceeding
     (if (fx= (httpsclient-open host) 1)
@@ -177,7 +190,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                      (cond
                        ((not (list? datalist))
                          ;; If no list returned, json not properly formatted
-                         (log-error "REDCap error: Incomplete json")
+                         (log-error "REDCap error: Incomplete json " datalist)
                          #f)
                        ((and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
                          ;; If the first entry is an error, then log it and return false
@@ -247,30 +260,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 )
 
 (define (redcap-import-record host token record data . xargs)
- (let*  ((bd redcap:boundary)
-        (ct (string-append "--" bd "\r\n"
-             "Content-Disposition: form-data; name=\"content\"" "\r\n" "\r\n"
-             "record" "\r\n"))
-        (ft (string-append "--" bd "\r\n"
-             "Content-Disposition: form-data; name=\"format\"" "\r\n" "\r\n"
-             "xml" "\r\n"))
-        (tp (string-append "--" bd "\r\n"
-             "Content-Disposition: form-data; name=\"type\"" "\r\n" "\r\n"
-             "eav" "\r\n"))
-        (ob (string-append "--" bd "\r\n"
-             "Content-Disposition: form-data; name=\"overwriteBehavior\"" "\r\n" "\r\n"
-             "overwrite" "\r\n"))
-        (tk (string-append "--" bd "\r\n"
-             "Content-Disposition: form-data; name=\"token\"" "\r\n" "\r\n"
-             token "\r\n"))
-        (event (redcap:arg 'event xargs ""))
-        (dt (string-append "--" bd "\r\n"
-             "Content-Disposition: form-data; name=\"data\"" "\r\n"
-             "Content-Type: application/xml; charset=utf-8" "\r\n" "\r\n"
-             (redcap:list->xmlstr record event data) "\r\n"))
-        (cl (string-append "--" bd "--"))
-        (request (string-append ct ft tp ob tk dt cl))
-        (request-str (redcap:make-request-str host request bd)))
+ (let*  ((event (redcap:arg 'event xargs ""))
+        (instance (redcap:arg 'instance xargs #f))
+        (instrument (redcap:arg 'instrument xargs #f))
+        (type (redcap:arg 'type xargs "eav"))
+        (over (redcap:arg 'overwrite xargs "overwrite"))
+        (message   (string-append  "token=" token "&content=record&format=xml&type=" type "&overwriteBehavior=" over "&data=" (redcap:list->xmlstr record event data 'instance instance 'instrument instrument) " &returnContent=count&returnFormat=json")) 
+        (request-str (redcap:make-request-str host message)))
     ;; Check if we have a valid connection before proceeding
     (if (fx= (httpsclient-open host) 1)
       (begin
@@ -354,9 +350,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 )
 
 (define (redcap-export-records host token . xargs)
-  ;; See if format was specified in xargs, use json by default
-  (let* ((format (redcap:arg 'format xargs "json"))
-         (request (string-append "token=" token "&content=record&format=" format "&type=flat"))
+  (let* ((format (redcap:arg 'format xargs "json"));; See if format was specified in xargs, use json by default
+         (type (redcap:arg 'type xargs "flat"))
+         (request (string-append "token=" token "&content=record&format=" format "&type=" type))
          (records (redcap:arg 'records xargs #f))
          (recordstr (if (pair? records)
            (let loop ((i 0) (str ""))
@@ -411,7 +407,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                           (cond
                             ((not (list? datalist))
                               ;; If no list returned, json not properly formatted
-                              (log-error "REDCap error: Incomplete json")
+                              (log-error "REDCap error: Incomplete json" msg)
                               #f)
                             ((and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
                               ;; If the first entry is an error, then log it and return false
@@ -436,6 +432,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     )
   )
 )
+
+;returns the index for instance in
+(define (redcap-get-next-instance host token record form)
+  (let* ((forms (if (pair? form) form (list form)))
+       (records (if (pair? record) record (list record)))
+       (maxinstance 0)
+       (response (redcap-export-records host token 'forms forms 'records records 'type "eav"))  ;;currently redcap8.0 flat does not return instances
+       (len (if response (length response) 0))
+       )
+    (if response
+       (if (fx> len 0)
+           (begin (let loop ((entries response))
+            (if (fx> (length entries) 0)
+              	(let* ((row (car entries))
+                       (val (alist-ref row "redcap_repeat_instance" 0))
+                       (instrument (alist-ref row "redcap_repeat_instrument" #f))
+                       (instance  (if (string? val) (string->number (string-remove-quotes val)) val)))
+                      (if (not instrument) (log-warning "Exported REDcap instrument " (car forms) " is not repeatable"))
+                      (if (fx> instance maxinstance) (set! maxinstance instance))
+                      (loop (cdr entries))))) (fx+ maxinstance 1))
+           (begin (log-warning "Exported REDcap record has no repeated entry") 0))
+       (begin (log-warning "Cannot retrieve instance number from REDCap") #f)))
+)
+
 
 (define (redcap-export-fieldnames host token)
   (let* ((request (string-append "token=" token "&content=exportFieldNames&format=json"))
@@ -538,6 +558,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     )
   )
 )
+
 
 (define (redcap-import-file host token record field filename . xargs)
   (let* ((filesize (if (file-exists? filename) (file-info-size (file-info filename)) #f))
