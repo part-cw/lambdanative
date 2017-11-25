@@ -126,8 +126,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ))
 
 ;; new list filled with n elements containing s, s+1, s+2, ... s+n-1
-(define (make-list-natural n s)
-  (if (zero? n) '()
-      (cons s (make-list (- n 1) (+ s 1)))))
+(define (make-list-natural s n)
+  (if (zero? n)
+    '()
+    (cons s (make-list-natural (+ s 1) (- n 1)))
+  ))
 
 ;; eof
