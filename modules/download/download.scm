@@ -93,11 +93,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (let* ((request (string-append "GET " folder "?F=0 HTTP/1.0\r\nHost: " host "\r\n\r\n"))
              (status  (httpsclient-send (string->u8vector request))))
         (let loop ((n 1) (output (u8vector)))
-          (if (fx<= n 0) 
-           (begin 
+          (if (fx<= n 0)
+           (begin
              (httpsclient-close)
              (let ((res (download:split-headerbody (u8vector->string output))))
-                (if (and (string? (car res)) (fx> (string-length (car res)) 12) 
+                (if (and (string? (car res)) (fx> (string-length (car res)) 12)
                          (or (string=? (substring (car res) 9 12) "201")
                              (string=? (substring (car res) 9 12) "200")))
                   (let* ((s (cadr res))
@@ -134,7 +134,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 (if (and (string? (car fileout)) (fx> (string-length (car fileout)) 12)
                          (or (string=? (substring (car fileout) 9 12) "201")
                              (string=? (substring (car fileout) 9 12) "200")))
-                  (let ((fh (open-output-file (string-append (system-directory) (system-pathseparator) filename))))
+                  (let ((fh (open-output-file (string-append (system-appdirectory) (system-pathseparator) filename))))
                     (write-subu8vector (cadr fileout) 0 (u8vector-length (cadr fileout)) fh)
                     (close-output-port fh)
                     #t
@@ -165,4 +165,4 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     )
   ))
 
-;; eof  
+;; eof
