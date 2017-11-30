@@ -79,6 +79,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (append (alist-delkeys res 'timestamp) (list (list 'timestamp (time->seconds (current-time)))))
       (loop (cddr kvs) (append (alist-delkeys res (car kvs)) (list (list (car kvs) (cadr kvs))))))))
 
+(define (alist-set-notime alist . keyvals)
+  (let loop ((kvs keyvals)(res (if alist alist '())))
+    (if (< (length kvs) 2) 
+      res
+      (loop (cddr kvs) (append (alist-delkeys res (car kvs)) (list (list (car kvs) (cadr kvs))))))))
+
+
 (define (write-alist-to-file filename alist)
   (with-output-to-file filename
     (lambda ()
