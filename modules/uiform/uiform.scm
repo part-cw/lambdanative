@@ -426,6 +426,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (txtw  (if (and focusid idvalue idvaluestr) (glgui:stringwidth idvaluestr fnt) 0))
          (txth  (if focusid (glgui:fontheight fnt) 0)))
      (if (uiget 'sanemap) (begin
+       (if req  (uiform-required-set id  (abs (- (abs y) (uiget 'offset 0) h )) ))
        (glgui:draw-text-right x y (- (* w indent) 10) h label fnt White)
        (glgui:draw-box (+ x (* w indent)) y (* w (- 1. indent indentright)) h (if hasfocus selcolor defcolor))
        (if idvaluestr (drawproc (+ x (* w indent) (if (eq? align 'left) 10 0)) y (- (* w (- 1. indent indentright)) 10) h idvaluestr fnt fgcolor))
@@ -524,6 +525,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (ypos (+ y (* h (- lines 1))))
          (toth (* h lines)))
     (if (uiget 'sanemap) (begin
+     (if req  (uiform-required-set id  (abs (- (abs y) (uiget 'offset 0) h )) ))
      (glgui:draw-text-right x (+ y (* h (- lines 1))) (- (* w indent) 10) h label fnt White)
      (glgui:draw-box (+ x (* w indent)) y (* w (- 1. indent indentright)) toth (if hasfocus selcolor defcolor))
      (let loop ((ss wrappedstr))
@@ -617,6 +619,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (txtw  (if (and focusid idvalue idvaluestr) (glgui:stringwidth idvaluestr fnt) 0))
          (txth  (if focusid (glgui:fontheight fnt) 0)))
      (if (uiget 'sanemap) (begin
+        (if req  (uiform-required-set id  (abs (- (abs y) (uiget 'offset 0) h )) ))
        (glgui:draw-text-right x y (- (* w indent) 10) h label fnt White)
        (glgui:draw-box (+ x (* w indent)) y (* w (- 1. indent indentright)) h (if hasfocus selcolor defcolor))
        (if idvaluestr (drawproc (+ x (* w indent) (if (eq? align 'left) 10 0)) y (- (* w (- 1. indent indentright)) 10) h idvaluestr fnt fgcolor))
@@ -708,6 +711,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (ampmw (* w 0.2)))
     
      (if (uiget 'sanemap) (begin
+       (if req  (uiform-required-set id  (abs (- (abs y) (uiget 'offset 0) h )) ))
        (glgui:draw-text-right x y (- (* w indent) 10) h label fnt White)
        (glgui:draw-box (+ x (* w indent)) y (- (* w (- 1. indent)) ampmw 4) h (if hasfocus selcolor defcolor))
        (glgui:draw-box (+ x (- w ampmw 2)) y ampmw h defcolor)
@@ -965,6 +969,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (rightvalue (cadr right))
          (rightsel (equal? rightvalue curvalue)))
      (if (uiget 'sanemap) (begin
+       (if req  (uiform-required-set id  (abs (- (abs y) (uiget 'offset 0) h )) ))
        (if text (glgui:draw-text-right x y (- leftx 10) h text fnt color))
        (glgui:draw-pixmap-center leftx lefty leftw lefth circle.img boxcolor)
        (if leftsel (glgui:draw-pixmap-stretch (+ leftx shift) (+ shift lefty) (* leftw  scale) (* lefth scale) circle.img White))
@@ -1026,6 +1031,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (bh (* 0.8 h))
          (bw (* 0.8 h)))
     (if (uiget 'sanemap) (begin
+      (if req  (uiform-required-set id  (abs (- (abs y) (uiget 'offset 0) h )) ))
       (glgui:draw-box bx by bw bh boxcolor)
       (if curvalue (glgui:draw-pixmap-center bx by bw bh check.img White))
       (glgui:draw-text-left (+ bx bw 10) (+  y (/ (- h fnth) 2.)) (- w bx bw 10 10) fnth text fnt color) 
@@ -1099,6 +1105,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (loop (cdr es)(+ dy h))))))
      (begin
        (if (uiget 'sanemap)
+         (if req  (uiform-required-set id  (abs (- (abs y) (uiget 'offset 0) h )) ))
          (let ((text (if curentry curentry defaultstr))
                (col (if curentry White defcolor)))
            (glgui:draw-text-right x y (- (* w indent) 10) h label fnt White)
@@ -1223,6 +1230,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (noentries (length mergedentries))
          (boxcolor (uiget 'color-default)))
      (uiset idmerged mergedentries)
+     (if req  (uiform-required-set id  (abs (- (abs y) (uiget 'offset 0) h )) ))
      (let loop ((es (reverse mergedentries))(ss (reverse mergedselections))(dy 0))
        (if (= (length es) 0) dy (begin
          (if (uiget 'sanemap)
