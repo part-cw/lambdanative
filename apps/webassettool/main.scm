@@ -57,8 +57,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define use-web (member "web" args))
 (define use-scm (member "scm" args))
 
-(define db (website->table (list-ref args 2)))
-  
+(define db (website->table (string-append "." (system-pathseparator) (list-ref args 2))))
+
 (if use-web (website-serve db 8080))
 
 (if use-scm (begin
@@ -70,11 +70,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ))
 
 (if (or use-repl use-web)
-  (let loop () 
-    (with-exception-catcher (lambda (e) 
-      (for-each display (list (exception->string e) "\n")) #f) 
+  (let loop ()
+    (with-exception-catcher (lambda (e)
+      (for-each display (list (exception->string e) "\n")) #f)
         (lambda () (##repl-debug)))
     (loop))
 )
 
-;; eof  
+;; eof
