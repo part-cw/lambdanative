@@ -279,6 +279,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (list 'nop (uiform:evalarg key (cadr entry-noeval))) entry-noeval)))
     (if entry (cadr entry) defval)))
 
+;; extracts labels form label list (values v) for a selected (actual) element in another list of same length
+(define (glgui:uiform-values-get e v a)
+  (if (fx= (length e) (length v)) 
+	  (let loop ((ee e)
+	             (vv v)
+	             (res '()))
+	     	(if (= (length ee) 0)  res
+	       (loop  (cdr ee) (cdr vv)  (append res (if (member (car vv) a) (list (car ee)) '())) )))
+      #f)
+)
+
+
 ;; -------------
 ;; widget element registration
 (define uiform:elements (make-table))
@@ -1228,13 +1240,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let* ((h (uiget 'rowh))
          (id (glgui:uiform-arg args 'id #f))
          (radio (glgui:uiform-arg args 'radio #f))
-         (idmerged (string-append (if (string? id) id (symbol->string id)) ":merged"))
-         (loc (glgui:uiform-arg args 'location 'db))
+         (raw (if (glgui:uiform-arg args 'values #f) (glgui:uiform-arg args 'raw #f) #f))  ;;make sure that when raw is defined value is too!
+      	 (idmerged (string-append (if (string? id) id (symbol->string id)) ":merged"))
+         (idvalues (string-append (if (string? id) id (symbol->string id)) ":values"))
+  	 (loc (glgui:uiform-arg args 'location 'db))
          (align (glgui:uiform-arg args 'align 'center))
          (fnt (uiget 'fnt))
          (req (glgui:uiform-arg args 'required #f))
          (defaultentries (glgui:uiform-arg args 'default '()))
-         (actualentries (xxget loc id '()))
+         (defaultvalues (glgui:uiform-arg args 'values  (make-list-natural  0 (length defaultentries))))
+         (actualvalue (xxget loc id '()))
+         (actualentries  (if raw  (glgui:uiform-values-get defaultentries defaultvalues actualvalue) actualvalue)) ;;f pos (if raw  (sublist defaultentries pos pos) actualvalue) '()))
          (mergedentries (let loop ((es (append defaultentries actualentries))(res '()))
            (if (= (length es) 0) res (loop (cdr es) (append res (if (member (car es) res) '() (list (car es))))))))
          (mergedselections (let loop ((es mergedentries)(res '()))
@@ -1242,6 +1258,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (noentries (length mergedentries))
          (boxcolor (uiget 'color-default)))
      (uiset idmerged mergedentries)
+     (uiset idvalues defaultvalues)
      (if req  (uiform-required-set id  (abs (- (abs y) (uiget 'offset 0) h )) ))
      (let loop ((es (reverse mergedentries))(ss (reverse mergedselections))(dy 0))
        (if (= (length es) 0) dy (begin
@@ -1270,10 +1287,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui:uiform-checklist-input type x y . args)
   (let* ((id (glgui:uiform-arg args 'id #f))
          (radio (glgui:uiform-arg args 'radio #f))
-         (idmerged (string-append (if (string? id) id (symbol->string id)) ":merged"))
+         (raw (if (glgui:uiform-arg args 'values #f) (glgui:uiform-arg args 'raw #f) #f))  ;;make sure that when raw is defined value is too! ;; store raw (value) instead of label (entry)
+     	 (idmerged (string-append (if (string? id) id (symbol->string id)) ":merged"))
+         (idvalues (string-append (if (string? id) id (symbol->string id)) ":values"))
          (loc (glgui:uiform-arg args 'location 'db))
          (entries (uiget idmerged))  ;; identifier in widget holds all entries
          (actual (xxget loc id '()))  ;; identifier in database holds actual entries
+         (values (uiget idvalues))
          (node-y (uiget 'node-y))
          (node-height (uiget 'node-height))
          (n (length entries))
@@ -1281,8 +1301,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    (if  id (begin
      (if radio (begin (xxset loc id '()) (set! actual '())))
      (if (and (>= idx 0) (< idx n)) 
-       (let ((element (list-ref entries idx)))
-         (if (member element actual)
+    	 (let ((element (if raw (list-ref values idx) (list-ref entries idx))))
+          (if (member element actual)
            (begin (uiset 'nodemap '()) (xxset loc id (list-delete-item actual element))) ;; (uiform-db-listremove! id element)
            (begin (uiset 'nodemap '()) (xxset loc id (list-insert-item actual element))) ;; (uiform-db-listinsert! id element)
          )
