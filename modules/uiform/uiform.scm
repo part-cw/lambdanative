@@ -923,7 +923,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (loc (glgui:uiform-arg args 'location 'db))
          (curimg (xxget loc filename #f))
          (archive (glgui:uiform-arg args 'archive #f))
-         (newimg (if (and tmpimagepath (file-exists? tmpimagepath))
+         (display (glgui:uiform-arg args 'display  #t))
+         (newimg (if (and display tmpimagepath (file-exists? tmpimagepath))
             (let* ((fd (gdFileOpen tmpimagepath "r"))
                    (gd (gdImageCreateFromJpeg fd))
                    (w0 (gdImageSX gd))
@@ -946,8 +947,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (if img (glgui:draw-pixmap-center x y w h img White)
        (begin
          (glgui:draw-box (+ x (* w 0.1)) y (* w 0.8) h (uiget 'color-default))
-         (glgui:draw-text-center x y w h (glgui:uiform-arg args 'default "Take photo") fnt White)
-       ))
+        (if (and (not display) archive) (glgui:draw-text-center x y w h (glgui:uiform-arg args 'defaultcomplete "Photo taken.\n Tap here to take a different photo") fnt White) (glgui:draw-text-center x y w h (glgui:uiform-arg args 'default "Tap to take photo") fnt White))))
      ))
    h
   ))
