@@ -329,6 +329,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (uiform-register 'spacer glgui:uiform-spacer-draw #f)
 
 ;; -------------
+;; separator
+
+(define (glgui:uiform-separator-draw x y w . args)
+  (let ((h (glgui:uiform-arg args 'height 2))
+        (color (glgui:uiform-arg args 'color White)))
+    (glgui:draw-box x y w h color)  
+ h))
+
+(uiform-register 'separator glgui:uiform-separator-draw #f)
+
+
+;; -------------
 ;; image
 
 (define glgui:uiform-images (make-table))
