@@ -916,11 +916,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; camera support
 
 (define (glgui:uiform-camera-draw x y w . args)
-  (let* ((filename (glgui:uiform-arg args 'filename #f))
-         (imagepath (if filename (string-append (system-directory) (system-pathseparator) filename) #f))
-         (curimg (uiget filename #f))
-         (newimg (if (file-exists? imagepath)
-            (let* ((fd (gdFileOpen imagepath "r"))
+  (let* ((id (glgui:uiform-arg args 'id #f))
+         (idname (string-append (if (string? id) id (symbol->string id)) ":filename"))
+         (filename (glgui:uiform-arg args 'filename (uiget idname #f)))
+      	 (tmpimagepath (if filename (string-append (system-directory) (system-pathseparator) "tmp_" filename) #f))
+         (loc (glgui:uiform-arg args 'location 'db))
+         (curimg (xxget loc filename #f))
+         (archive (glgui:uiform-arg args 'archive #f))
+         (newimg (if (and tmpimagepath (file-exists? tmpimagepath))
+            (let* ((fd (gdFileOpen tmpimagepath "r"))
                    (gd (gdImageCreateFromJpeg fd))
                    (w0 (gdImageSX gd))
                    (h0 (gdImageSY gd))
@@ -936,8 +940,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (img (if newimg newimg (if curimg curimg #f)))
          (h (if img (cadr img) (fix (* w 0.8))))
          (fnt (uiget 'fnt)))
-     (if newimg (uiset filename newimg))
-     (if (file-exists? imagepath) (delete-file imagepath))
+     (if newimg (xxset loc filename newimg))
+     (if (and tmpimagepath (file-exists? tmpimagepath)) (begin (if archive (let ((newfilepath (string-append (system-directory) (system-pathseparator) filename))) (copy-file tmpimagepath newfilepath) (xxset loc id newfilepath))) (delete-file tmpimagepath)))
      (if (uiget 'sanemap) (begin
        (if img (glgui:draw-pixmap-center x y w h img White)
        (begin
@@ -949,12 +953,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ))
 
 (define (glgui:uiform-camera-input type x y . args)
-  (let* ((filename (glgui:uiform-arg args 'filename #f))
-         (imagepath (if filename (string-append (system-directory) (system-pathseparator) filename) #f)))
+  (let* ((id (glgui:uiform-arg args 'id #f))
+         (loc (glgui:uiform-arg args 'location 'db))
+         (filename (glgui:uiform-arg args 'filename (string-append (if (string? id) id (symbol->string id)) "_" (seconds->string ##now "%Y%d%m_%H%M%S")  ".jpg")))
+         (idname (string-append (if (string? id) id (symbol->string id)) ":filename"))
+         (imagepath (if filename (string-append (system-directory) (system-pathseparator) "tmp_" filename) #f)))
     (if imagepath (begin
+      (uiset idname filename)
       (if (file-exists? imagepath) (delete-file imagepath))
       (camera-start imagepath)
       (uiset 'nodemap '())
+      (if (file-exists? imagepath)(xxset loc id imagepath))
     ))
  ))
 
