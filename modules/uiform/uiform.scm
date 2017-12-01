@@ -917,9 +917,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (glgui:uiform-camera-draw x y w . args)
   (let* ((id (glgui:uiform-arg args 'id #f))
-         (idname (string-append (if (string? id) id (symbol->string id)) ":filename"))
+         (idname (string-append (if (string? id) id (if (symbol? id) (symbol->string id) "")) ":filename"))
          (filename (glgui:uiform-arg args 'filename (uiget idname #f)))
-      	 (tmpimagepath (if filename (string-append (system-directory) (system-pathseparator) "tmp_" filename) #f))
+         (tmpimagepath (if filename (string-append (system-directory) (system-pathseparator) "tmp_" filename) #f))
          (loc (glgui:uiform-arg args 'location 'db))
          (curimg (xxget loc filename #f))
          (archive (glgui:uiform-arg args 'archive #f))
@@ -955,8 +955,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui:uiform-camera-input type x y . args)
   (let* ((id (glgui:uiform-arg args 'id #f))
          (loc (glgui:uiform-arg args 'location 'db))
-         (filename (glgui:uiform-arg args 'filename (string-append (if (string? id) id (symbol->string id)) "_" (seconds->string ##now "%Y%d%m_%H%M%S")  ".jpg")))
-         (idname (string-append (if (string? id) id (symbol->string id)) ":filename"))
+         (filename (glgui:uiform-arg args 'filename (string-append (if (string? id) id (if (symbol? id) (symbol->string id) "")) "_" (seconds->string ##now "%Y%d%m_%H%M%S")  ".jpg")))
+         (idname (string-append (if (string? id) id (if (symbol? id) (symbol->string id) "")) ":filename"))
          (imagepath (if filename (string-append (system-directory) (system-pathseparator) "tmp_" filename) #f)))
     (if imagepath (begin
       (uiset idname filename)
