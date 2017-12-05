@@ -729,4 +729,42 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     )
   ))
 
+(define (graphout:markersolidudtriangle g x y dw)
+  (let ((o (table-ref g 'output))
+        (dx (graphout:curx->devx g x))
+        (dy (graphout:cury->devy g y)))
+    (case o
+      ((GRAPH_PDF)
+        (let ((page (table-ref g 'hpage)))
+          (HPDF_Page_MoveTo page (flo dx)  (- dy (* dw 0.333)))
+          (HPDF_Page_LineTo page (+ dx (/ dw 1.7321)) (+ dy (* dw 0.667)))
+          (HPDF_Page_LineTo page (- dx (/ dw 1.7321)) (+ dy (* dw 0.667)))
+          (HPDF_Page_ClosePath page)
+          (HPDF_Page_Fill page)
+        )
+      )
+      ((GRAPH_SVG)
+        (let* ((svg (table-ref g 'svg))
+               (h (table-ref g 'devymax))
+               (sx1 (graphout:svgflo dx))
+               (sy1 (graphout:svgflo (- h (- dy (* dw 0.333)))))
+               (sx2 (graphout:svgflo (+ dx (/ dw 1.7321))))
+               (sy2 (graphout:svgflo (- h (+ dy (* dw 0.667)))))
+               (sx3 (graphout:svgflo (- dx (/ dw 1.7321))))
+               (sy3 (graphout:svgflo (- h (+ dy (* dw 0.667)))))
+               (fill-color (table-ref g 'svg-color "#000000"))
+               (fill-opacity (graphout:svgflo (table-ref g 'svg-opacity 1.)))
+               (element `(polygon (@ (points ,(string-append
+                           sx1 "," sy1 " " sx2 "," sy2 " " sx3 "," sy3))
+                           (style ,(string-append
+                             "stroke: none;"
+                             "fill: " fill-color ";"
+                             (if fill-opacity (string-append "fill-opacity: " fill-opacity ";") "")))) "")))
+          (table-set! g 'svg (append svg (list element)))
+        )
+      )
+      (else (graph:hook g o 'MARKERSOLIDUDTRIANGLE x y dw))
+    )
+  ))
+
 ;; eof

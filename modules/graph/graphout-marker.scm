@@ -54,6 +54,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (graphout:markertriangle g x y size))
     ((= type GRAPH_SOLIDTRIANGLE)
       (graphout:markersolidtriangle g x y size))
+    ((= type GRAPH_SOLIDUDTRIANGLE)
+      (graphout:markersolidudtriangle g x y size))
   )
 ))
 
