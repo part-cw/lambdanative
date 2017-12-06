@@ -73,14 +73,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (armed (glgui-widget-get g wgt 'armed))
           (cb (glgui-widget-get g wgt 'callback))
           (bidir (glgui-widget-get g wgt 'bidir))
+          (closing (glgui-widget-get g wgt 'closing))
           (inside (and (> mx x) (< mx (+ x w)) (> my y) (< my (+ y h)))))
      (cond
        ((and (= type EVENT_BUTTON1DOWN) inside)
           (glgui-widget-set! g wgt 'armed #t))
        ((= type EVENT_BUTTON1UP)
           (if (and armed inside)
-            ;; Dynamically create list for choosing items
-            (let* ((bgcolor (glgui-widget-get g wgt 'bgcolor))
+            (if closing
+             (let ((callcb? (glgui-widget-get g wgt 'cboncancel)))
+               (glgui-widget-set! g wgt 'closing #f)
+               (if (and callcb? (procedure? cb)) (cb g wgt type mx my)))
+             ;; Dynamically create list for choosing items
+             (let* ((bgcolor (glgui-widget-get g wgt 'bgcolor))
                    (bordercolor (glgui-widget-get g wgt 'bordercolor))
                    (scrollcolor (glgui-widget-get g wgt 'scrollcolor))
                    (scrollw (glgui-widget-get g wgt 'scrollw))
@@ -143,16 +148,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                      (listw (glgui-list g x ly w lh h lst listcb))
                      ;; screen-covering box input handle - delete box and list,
                      ;; return false so that actions taken on other components
-                     (boxinput (lambda (g w type mx my)
-                         (if (= type EVENT_BUTTON1DOWN)
-                            (glgui-widget-set! g w 'armed #t)
-                            (if (and (glgui-widget-get g w 'armed) (= type EVENT_BUTTON1UP))
+                     (boxinput (lambda (g2 w2 type2 mx2 my2)
+                         (if (= type2 EVENT_BUTTON1DOWN)
+                            (glgui-widget-set! g2 w2 'armed #t)
+                            (if (and (glgui-widget-get g2 w2 'armed) (= type2 EVENT_BUTTON1UP))
                               (begin
-                                (glgui-widget-delete g listw)
-                                (glgui-widget-delete g w)
+                                (glgui-widget-delete g2 listw)
+                                (glgui-widget-delete g2 w2)
                                 (set! glgui:dropdownbox:box #f)
                                 (set! glgui:dropdownbox:list #f)
-                                (set! glgui:dropdownbox:gui #f))))
+                                (set! glgui:dropdownbox:gui #f)
+                                (if (and (> mx2 x) (< mx2 (+ x w)) (> my2 y) (< my2 (+ y h)))
+                                  ;; If inside dropdown box again, stop it from reopening
+                                  (glgui-widget-set! g wgt 'closing #t)))))
                          #f)))
                 ;; Set box callback and modal mode
                 (glgui-widget-set! g boxw 'input-handle boxinput)
@@ -174,7 +182,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 ;; Remember the popped up components, so apps have access to them
                 (set! glgui:dropdownbox:box boxw)
                 (set! glgui:dropdownbox:list listw)
-                (set! glgui:dropdownbox:gui g))))
+                (set! glgui:dropdownbox:gui g)))))
           (glgui-widget-set! g wgt 'armed #f))
      )
   inside
@@ -200,6 +208,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'rounded #f
      'callback #f
      'armed #f
+     'closing #f ;; True when just clicked again to close popup
+     'cboncancel #f ;; Whether to call the callback when someone clicks it again to close (no change to value, may be false)
      'hidden #f
      'list lst
      'maxitems 5    ;; Max number of items to make visible at once
