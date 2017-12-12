@@ -1,2 +1,10 @@
 //private XWalkView mXWalkView;
 private WebView mWebView;
+
+Handler delayHandler = new Handler();
+Runnable delayRunnable = new Runnable() {
+  @Override
+  public void run() {
+    mWebView.loadUrl("http://localhost:8080");
+  }
+};

@@ -13,7 +13,7 @@ mWebView.getSettings().setRenderPriority(RenderPriority.HIGH);
 
 mWebView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
 
-mWebView.loadUrl("http://localhost:8080");
+delayHandler.postDelayed(delayRunnable, 50);
 
 Timer webview_tm = new Timer();
 TimerTask webview_task = new TimerTask() {
