@@ -36,6 +36,8 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
+(include "redcap-unittest.scm")
+
 ;; REDCap module - Allows data export-/import to an Research Electronic Data Capture server
 
 ;; intermediate data handling
@@ -161,7 +163,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (redcap:error-check msg)
    (if (and (string? (car msg)) (fx> (string-length (car msg)) 12) (or (string=? (substring (car msg) 9 12) "201")
                                                                        (string=? (substring (car msg) 9 12) "200")))
-     (begin  (log-warning "REDCap: submission success. response" msg) #t)
+     #t
      (let ((ret (cadr msg)))
        (log-error "REDCap:" (if (and (list? ret) (fx= (length ret) 0)) " Nothing returned" (cadr msg))) #f))
 )
