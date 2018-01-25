@@ -8,6 +8,7 @@
   <application android:label="@string/app_name"
                android:icon="@drawable/icon">
     <activity android:name="@SYS_APPNAME@"
+              @ANDROID_ACTIVITY_ATTRIBUTES@
               android:label="@string/app_name"
               android:launchMode="standard">
       <intent-filter>
