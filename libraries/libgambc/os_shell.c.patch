@@ -1,0 +1,36 @@
+--- lib/os_shell.c	2015-09-01 22:39:00.000000000 -0700
++++ lib/os_shell.c.new	2018-01-27 13:54:34.000000000 -0800
+@@ -828,7 +828,9 @@
+ 
+       ___disable_os_interrupts ();
+ 
++#ifndef IOS
+       code = system (ccmd);
++#endif
+ 
+       if (code == -1)
+         e = err_code_from_errno ();
+@@ -901,7 +903,9 @@
+                 {
+                   ___disable_os_interrupts ();
+ 
++#ifndef IOS
+                   code = system (ccmd);
++#endif
+ 
+                   if (code == -1)
+                     e = err_code_from_errno ();
+@@ -1013,11 +1017,13 @@
+ 
+                   int code;
+ 
++#ifndef IOS
+ #ifdef _UNICODE
+                   code = _wsystem (___CAST(___STRING_TYPE(___SHELL_COMMAND_CE_SELECT),ccmd));
+ #else
+                   code = system (___CAST(___STRING_TYPE(___SHELL_COMMAND_CE_SELECT),ccmd));
+ #endif
++#endif
+ 
+                   if (code == -1)
+                     e = err_code_from_errno ();
