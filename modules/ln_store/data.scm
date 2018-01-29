@@ -139,11 +139,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (store-listcat store category)
   (let ((t (store:datatable store))
         (ct (store:categorytable store)))
-    (let loop ((cl (table-ref ct category '()))(res '()))
-      (if (fx= (length cl) 0)
-        res
-        (loop (cdr cl) (append res (list (list (car cl) (car (table-ref t (car cl) '(#f)))))))
-      ))))
+    (map (lambda (v) (cons v (car (table-ref t v '(#f))))) (table-ref ct category '()))
+  ))
 
 (define (store-getcat store)
   (let ((ct (store:categorytable store)))
