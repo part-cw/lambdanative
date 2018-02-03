@@ -1,5 +1,5 @@
-PKGURL=https://prdownloads.sourceforge.net/libpng/libpng-1.6.16.tar.gz
-PKGHASH=50f3b31d013a31e2cac70db177094f6a7618b8be
+PKGURL=https://prdownloads.sourceforge.net/libpng/libpng-1.6.34.tar.gz
+PKGHASH=5c4f8984ff4dd8a150effa32dc9166b32abe0622
 
 package_download $PKGURL $PKGHASH
 
