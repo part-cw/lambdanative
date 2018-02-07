@@ -88,6 +88,15 @@ int hash_tsr_verify(unsigned char *hash, int hash_len, unsigned char *tsr, int t
   // If this isn't here verification fails ... OpenSSL_add_all_algorithms(); works too
   OpenSSL_add_all_digests();
   ret = TS_RESP_verify_response(ctx, ts_resp);
+  if (!ret) {
+    BIO *bio = BIO_new(BIO_s_mem());
+    ERR_print_errors(bio);
+    char *err = (char *) malloc(bio->num_write + 1);
+    memset(err, 0, bio->num_write + 1);
+    BIO_read(bio, err, bio->num_write);
+    BIO_free (bio);
+    log_c(err);
+  }
   TS_RESP_free(ts_resp);
   EVP_cleanup();
   return ret;

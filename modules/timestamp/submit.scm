@@ -59,7 +59,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              (let* ((port 80)
                     (p (open-tcp-client (list server-address: timestamp:host port-number: port))))
                (if (port? p) (begin
-                 (input-port-timeout-set! p 1. (lambda () #f))
+                 (input-port-timeout-set! p 2. (lambda () #f))
                  (output-port-timeout-set! p 1. (lambda () #f))
                  (write-subu8vector request-u8vec 0 request-len p)
                  (write-subu8vector tsq 0 (u8vector-length tsq) p)
@@ -77,8 +77,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (timestamp-tsr-request-parse u8v)
   (if u8v (let ((len (u8vector-length u8v)))
     (if (> len 4) (let loop ((i 3))
-      (if (= i len) #f 
-        (if (and (V= (- i 3) 13) (V= (- i 2) 10) (V= (- i 1) 13) (V= i 10))  
+      (if (= i len) #f
+        (if (and (V= (- i 3) 13) (V= (- i 2) 10) (V= (- i 1) 13) (V= i 10))
           (subu8vector u8v (+ i 1) (u8vector-length u8v))
             (loop (+ i 1))))) #f)) #f))
 
