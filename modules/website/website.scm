@@ -194,6 +194,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    (lambda ()
      (let* ((request (website:trim-string (website:safecall read-line port)))
             (headers  (website:read-header port))
+            (content (website:read-content port headers))
             (cgi-env (website:build-cgi-environment request headers)))
        (if (string? request)
          (let* ((r (string-split-sane request #\space))
@@ -201,9 +202,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (website:log 3 "website:serve request: " request)
             (website:log 3 "website:serve header: " headers)
             (website:log 3 "website:serve cgi env: " cgi-env)
+            (website:log 3 "website:serve content: " content)
             (if (or (string-ci=? m "GET") (string-ci=? m "POST"))
-              (website:servefile db port
-                (if (string=? (cadr r) "/") "/index.html" (cadr r)) cgi-env))
+              (begin
+                (if content (set! cgi-env (append cgi-env (list (list "CONTENT" content)))))
+                (website:servefile db port
+                  (if (string=? (cadr r) "/") "/index.html" (cadr r)) cgi-env)))
             (website:safecall force-output port)
             (website:safecall close-port port)
     ))))))
@@ -223,8 +227,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                 (if (procedure? zdata) "Cache-Control: no-cache, no-store\n" "")
                                 "Access-Control-Allow-Origin: *\n"
                               ;;  "Access-Control-Allow-Methods: GET,POST,PUT\n"
-                                "\n"))
-         (catchall (table-ref db 'catchall #f)))
+                                "\n")))
     (if data
       (begin
         (website:safecall display headers port)
