@@ -1,5 +1,4 @@
-
-PKGURL=git://git.code.sf.net/p/zint/code
+PKGURL=git@github.com:woo-j/zint.git
 PKGHASH=2e5fe31ebfba09e07c934434c3885dc40224a5bf
 
 package_download $PKGURL $PKGHASH
