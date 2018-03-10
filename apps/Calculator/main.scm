@@ -73,9 +73,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (calculator-evaluate)
   (let* ((e (glgui-widget-get gui calculator-display 'label))
          (evalstr (string-append "\\" e ";"))
-         (res (with-input-from-string evalstr (lambda () 
+         (res (with-input-from-string evalstr (lambda ()
            (with-exception-catcher (lambda (e) #f) (lambda () (eval (read))))))))
-    (set! Ans res)
+    (set! Ans (if (eq? res (void)) #f res))
     (glgui-widget-set! gui calculator-display 'label (if Ans (number->neatstring Ans) ""))
     (glgui-widget-set! gui calculator-display 'bgcolor (if Ans #f Red))
     (calculator-updatesub)))
@@ -84,11 +84,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (calculator-AC) (calculator-C) (set! Ans #f) (set! Mem 0) (calculator-updatesub))
 (define (calculator-MC) (set! Mem 0) (calculator-updatesub))
 
-(define (calculator-Mem) 
+(define (calculator-Mem)
   (let ((curstr (glgui-widget-get gui calculator-display 'label)))
     (glgui-widget-set! gui calculator-display 'label (string-append curstr "Mem"))))
 
-(define (calculator-Ans) 
+(define (calculator-Ans)
   (let ((curstr (glgui-widget-get gui calculator-display 'label)))
     (glgui-widget-set! gui calculator-display 'label (string-append curstr "Ans"))))
 
@@ -120,7 +120,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (calculator-updatesub)
     ))
 ;; events
-  (lambda (t x y) 
+  (lambda (t x y)
     (let ((skipevent #f))
       (if (= t EVENT_KEYRELEASE)
         (cond
