@@ -1,5 +1,4 @@
-
-PKGURL=git://libdmtx.git.sourceforge.net/gitroot/libdmtx/libdmtx
+PKGURL=https://github.com/dmtx/libdmtx.git
 PKGHASH=a3e539a3e1c1076c7b96ad306f0883f9b363eb60
 
 package_download $PKGURL $PKGHASH
