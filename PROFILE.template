@@ -6,7 +6,9 @@ SYS_ORGSLD="yourdomainhere"
 # iOS release (SYS_IOSRELCERT) and development (SYS_IOSDEVCERT) names:
 SYS_IOSRELCERT="iPhone Distribution: Your iOS identifier here"
 SYS_IOSDEVCERT="iPhone Developer: Your iOS identifier here (XXXXXXXXX)"
-# android keystore password
+# android keystore password (used for both keypass and storepass) with
+# the android.keystore file (same folder as this PROFLE) used as keystore
+# Note: $SYS_ORGTLD.$SYS_ORGSLD is used as the key alias
 SYS_ANDROIDPW="yoursecrethere"
 # BB10 developer password
 SYS_BB10PW="yoursecrethere"
