@@ -115,7 +115,7 @@ cd $xcodedir
 veval "cmake -GXcode $cmakedir"
 asserterror $?
 #  xcodebuild -configuration Release | grep -A 2 error
-veval "xcodebuild -configuration Release"
+veval "xcodebuild -scheme $SYS_APPNAME -configuration Release"
 asserterror $?
 cd $here
 tmpappdir=$xcodedir/Release-iphoneos/$SYS_APPNAME$SYS_APPFIX
@@ -125,7 +125,6 @@ fi
 assertfile $tmpappdir
 
 echo " => verifying application.."
-
 osxver=`sw_vers -productVersion`
 if [ `echo "10.9.5\n$osxver" | sed 's/^10\.//' | sort -g | head -1` == "9.5" ]; then
   checkfail=`codesign --verify --no-strict $tmpappdir 2>&1`
@@ -140,6 +139,20 @@ fi
 echo " => relocating application.."
 rmifexists "$tgtdir"
 cp -R $tmpappdir $tgtdir
+
+echo " => archiving application.."
+configsrc=loaders/ios/App.xcscheme.in
+ac_output $configsrc $SYS_TMPDIR/tmp.xcscheme
+assertfile $SYS_TMPDIR/tmp.xcscheme
+xcodedirbase=`basename $xcodedir`
+sed -i '' "s/XPATH/$xcodedirbase/g" $SYS_TMPDIR/tmp.xcscheme
+mkdir "$xcodedir/$SYS_APPNAME.xcodeproj/xcshareddata"
+mkdir "$xcodedir/$SYS_APPNAME.xcodeproj/xcshareddata/xcschemes"
+cat $SYS_TMPDIR/tmp.xcscheme | sed '/^#/d' > "$xcodedir/$SYS_APPNAME.xcodeproj/xcshareddata/xcschemes/$SYS_APPNAME.xcscheme"
+cd $xcodedir
+veval "xcodebuild -scheme $SYS_APPNAME archive -archivePath $SYS_PREFIX/$SYS_APPNAME-$SYS_APPVERSION.xcarchive"
+cd $here
+assertfile $SYS_PREFIX/$SYS_APPNAME-$SYS_APPVERSION.xcarchive
 
 echo " => cleaning up.."
 rm -rf "$xcodedir" 2> /dev/null

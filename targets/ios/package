@@ -46,22 +46,27 @@ cd $here
 assertfile $pkgfile
 echo "=== $pkgfile"
 
-ipafile=$SYS_PREFIXROOT/packages/$SYS_APPNAME-$SYS_APPVERSION-$SYS_PLATFORM.ipa
-ipascript=`xcrun -sdk iphoneos -f PackageApplication`
-assertfile $ipascript
-# NOTE: codesign will fail on OSX 10.9.5+ for lack of --no-strict parameter
-if [ `echo "10.9.5\n$osxver" | sed 's/^10\.//' | sort -g | head -1` == "9.5" ]; then
-  check=`grep "no-strict" $ipascript | head -n 1 | cut -c 1`
-  if [ "X$check" = "X" ]; then
-    assert "You must edit $ipascript to codesign with --no-strict\nLike this (two occurrences):\n runCmd(\"/usr/bin/codesign\", \"--verify\", \"--no-strict\", \"-vvvv\", , \$plugin );"
-  fi
+echo " => preparing exportArchive plist.."
+configsrc=loaders/ios/exportOptions.plist.in
+ac_output $configsrc $SYS_TMPDIR/tmp.xml
+assertfile $SYS_TMPDIR/tmp.xml
+if [ $SYS_MODE = release ]; then
+  sed -i '' "s/development/app-store/g" $SYS_TMPDIR/tmp.xml
 fi
+cat $SYS_TMPDIR/tmp.xml | sed '/^#/d' > "$SYS_PREFIXROOT/build/$SYS_APPNAME/exportOptions.plist"
+
+ipapath=$SYS_PREFIXROOT/packages
+ipafile=$ipapath/$SYS_APPNAME-$SYS_APPVERSION-$SYS_PLATFORM.ipa
+eopfile=$SYS_PREFIXROOT/build/$SYS_APPNAME/exportOptions.plist
+expath=$SYS_PREFIXROOT/build/$SYS_APPNAME/export
 
 echo " => making $SYS_PLATFORM ipa.."
 if [ -f $ipafile ]; then
   rm $ipafile
 fi
-veval "xcrun -sdk iphoneos PackageApplication -v $SYS_PREFIX/${SYS_APPNAME}.app -o $ipafile"
+rmifexists "$expath"
+veval "xcodebuild -exportArchive -archivePath $SYS_PREFIX/$SYS_APPNAME-$SYS_APPVERSION.xcarchive -exportPath $expath -exportOptionsPlist $eopfile"
+cp $expath/$SYS_APPNAME.ipa $ipafile
 assertfile $ipafile
 echo "=== $ipafile"
 
