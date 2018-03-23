@@ -61,6 +61,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (fnt (glgui-widget-get g wgt 'font))
          (bg1 (glgui-widget-get g wgt 'bgcol1))
          (bg2 (glgui-widget-get g wgt 'bgcol2))
+         (txtcol (glgui-widget-get g wgt 'txtcol))
+         (tscol (glgui-widget-get g wgt 'tscol))
          (ofs (fix (floor (glgui-widget-get g wgt 'offset))))
          (deltat (glgui-widget-get g wgt 'deltatime)))
     ;; Update the strlst
@@ -88,20 +90,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (let loop ((k 0))
               (if (= k (length strings)) #t
                 (begin 
-                  (glgui:draw-text-left dx (- dy (* k dh)) dw dh (list-ref strings k) fnt White)
+                  (glgui:draw-text-left dx (- dy (* k dh) 1) dw dh (list-ref strings k) fnt txtcol)
                   (loop (+ k 1))
                 )
               )
-            ) 
+            )
             ;; Add timestamps in between messages 
             (if (fx< i (- n 1))
-              (begin 
+              (begin
                 ;; if older time difference larger than threshold
                 (if (> (- (car msg) (car (list-ref lst (fx+ i 1)))) deltat)
                   (begin
                     (if (< (+ y0 (* dh (length strings)) dh) (+ y h))
                       (glgui:draw-text-center x (+ y0 dhline) w dh (seconds->string (car msg) 
-                        (if (= (floor (/ ##now 86400)) (floor (/ (car msg) 86400))) "%H:%M:%S" "%Y-%m-%d %H:%M:%S")) fnt White)
+                        (if (= (floor (/ ##now 86400)) (floor (/ (car msg) 86400))) "%H:%M:%S" "%Y-%m-%d %H:%M:%S")) fnt tscol)
                     )
                     (set! y0 (+ y0 dh))
                   )
@@ -115,7 +117,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (if (< (+ y0 (* dh (length strings)) dh) (+ y h)) 
                 (begin
                   (glgui:draw-text-center x (+ y0 dhline) w dh (seconds->string (car msg) 
-                    (if (= (floor (/ ##now 86400)) (floor (/ (car msg) 86400))) "%H:%M:%S" "%Y-%m-%d %H:%M:%S")) fnt White)
+                    (if (= (floor (/ ##now 86400)) (floor (/ (car msg) 86400))) "%H:%M:%S" "%Y-%m-%d %H:%M:%S")) fnt tscol)
                   (glgui-widget-set! g wgt 'valmax ofs) 
                 )
               )
@@ -208,6 +210,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'fsty  0
      'bgcol1 (color-shade White 0.2)
      'bgcol2 (color:shuffle #x021c4dff)
+     'txtcol White
+     'tscol White
      'deltatime 300 ;; 5min
    ))
 ;; eof
