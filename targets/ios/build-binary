@@ -88,6 +88,7 @@ cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-120.png" "$cmakedir/Icon-60@2x.pn
 cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-76.png" "$cmakedir/Icon-76.png"
 cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-152.png" "$cmakedir/Icon-76@2x.png"
 cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/"Default*.png "$cmakedir"
+cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-1024.png" "$cmakedir/AppIcon.png"
 
 make_soundfile_ios()
 {
@@ -115,7 +116,7 @@ cd $xcodedir
 veval "cmake -GXcode $cmakedir"
 asserterror $?
 #  xcodebuild -configuration Release | grep -A 2 error
-veval "xcodebuild -scheme $SYS_APPNAME -configuration Release"
+veval "xcodebuild -configuration Release"
 asserterror $?
 cd $here
 tmpappdir=$xcodedir/Release-iphoneos/$SYS_APPNAME$SYS_APPFIX

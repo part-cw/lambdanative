@@ -45,7 +45,10 @@
 <string>Icon-60@2x.png</string>
 <string>Icon-76.png</string>
 <string>Icon-76@2x.png</string>
+<string>AppIcon.png</string>
 </array>
+<key>CFBundleIconName</key>
+<string>AppIcon</string>
 ### hide top status bar
 <key>UIStatusBarHidden</key>
 <true/>
