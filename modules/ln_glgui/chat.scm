@@ -37,13 +37,51 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 ;; Chat widget
 
+(define glgui:chat-group-colors
+  (list DarkGreen DarkOrange DarkBlue DarkRed DarkViolet)
+)
+
+;; Get color associated with given name
+(define (glgui:chat-color-name g wgt name)
+  (let* ((namecolors (glgui-widget-get g wgt 'namecolors))
+         (colorpos (glgui-widget-get g wgt 'colorpos))
+         (colorref (assoc (if (list? name) (car name) name) namecolors)))
+    ;; If color already assigned to name, return assigned color
+    (if (list? colorref)
+      (cadr colorref)
+      (if (list? name)
+        ;; If user provided a color for name, assign that color to name
+        (begin
+          (glgui-widget-set! g wgt 'namecolors (cons name namecolors))
+          (cadr name)
+        )
+        ;; Else, assign a color to name using default color list
+        (if (fx>= colorpos (length glgui:chat-group-colors))
+          (begin
+            (glgui-widget-set! g wgt 'namecolors (cons (list name (list-ref glgui:chat-group-colors 0)) namecolors))
+            (glgui-widget-set! g wgt 'colorpos 1)
+            (list-ref glgui:chat-group-colors 0)
+          )
+          (begin
+            (glgui-widget-set! g wgt 'namecolors (cons (list name (list-ref glgui:chat-group-colors colorpos)) namecolors))
+            (glgui-widget-set! g wgt 'colorpos (fx+ colorpos 1))
+            (list-ref glgui:chat-group-colors colorpos)
+          )
+        )
+      )
+    )
+  )
+)
+
 (define (glgui:chat-split-allstrings g wgt)
   (let ((lst (glgui-widget-get g wgt 'list))
         (w (glgui-widget-get-dyn g wgt 'w))
         (fnt (glgui-widget-get g wgt 'font)))
     (let loop ((i 0) (strlst (list)))
       (if (= i (length lst)) strlst
-        (loop (+ i 1) (append strlst (list (string-split-width (caddr (list-ref lst i)) (* w 0.8) fnt))))
+        (let ((msg (list-ref lst i)))
+          (loop (+ i 1) (append strlst (list (string-split-width (caddr msg) (if (fx= (cadddr msg) 2) w (* w 0.8)) fnt))))
+        )
       )
     )
   )
@@ -61,8 +99,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (fnt (glgui-widget-get g wgt 'font))
          (bg1 (glgui-widget-get g wgt 'bgcol1))
          (bg2 (glgui-widget-get g wgt 'bgcol2))
+         (bg3 (glgui-widget-get g wgt 'bgcol3))
          (txtcol (glgui-widget-get g wgt 'txtcol))
          (tscol (glgui-widget-get g wgt 'tscol))
+         (group (glgui-widget-get g wgt 'group))
          (ofs (fix (floor (glgui-widget-get g wgt 'offset))))
          (deltat (glgui-widget-get g wgt 'deltatime)))
     ;; Update the strlst
@@ -80,12 +120,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (let loop ((i ofs) (y0 y) (strings (list-ref strlst ofs)) (msg (list-ref lst ofs)))
         (if (and (< i n) (< (+ y0 (* dh (length strings))) (+ y h)))
           (let* ((dhline (* dh (length strings)))
-                 (dx (if (fx= (cadddr msg) 1) (+ x (* w 0.2)) x))
+                 (sender (cadddr msg))
+                 (dx (if (fx= sender 1) (+ x (* w 0.2)) x))
                  (dy (+ y0 dhline (- dh) 1))
-                 (dw (* w 0.8))
-                 (bgcolor (if (fx= (cadddr msg) 1) bg1 bg2)))
+                 (dw (if (fx= sender 2) w (* w 0.8)))
+                 (bgcolor (cond ((fx= sender 1) bg1) ((fx= sender 0) bg2) (else bg3)))
+                 (name (cadr msg)))
             ;; Draw background color box
-            (glgui:draw-box dx y0 (- dw 7) (- dhline 1) bgcolor)
+            (glgui:draw-box dx y0 (- dw 7) (- (+ 0 (if (and group
+                                                          (or (and (fx< i (- n 1))
+                                                                   (not (equal? name (cadr (list-ref lst (fx+ i 1))))))
+                                                              (fx= i (- n 1)))
+                                                          (not (fx= sender 1))) dh 0) dhline) 1) bgcolor)
             ;; Add the complete message text
             (let loop ((k 0))
               (if (= k (length strings)) #t
@@ -98,27 +144,45 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             ;; Add timestamps in between messages 
             (if (fx< i (- n 1))
               (begin
+                ;; Add name if receiving user changes
+                (if (and group
+                         (not (equal? name (cadr (list-ref lst (fx+ i 1)))))
+                         (not (fx= sender 1)))
+                  (begin
+                    (if (< (+ y0 (* dh (length strings)) dh) (+ y h))
+                      (glgui:draw-text-left x (+ y0 (* (length strings) dh)) w dh (if (list? name) (car name) name) fnt (glgui:chat-color-name g wgt name))
+                    )
+                    (set! y0 (+ y0 dh))
+                  )
+                )
                 ;; if older time difference larger than threshold
                 (if (> (- (car msg) (car (list-ref lst (fx+ i 1)))) deltat)
                   (begin
                     (if (< (+ y0 (* dh (length strings)) dh) (+ y h))
-                      (glgui:draw-text-center x (+ y0 dhline) w dh (seconds->string (car msg) 
+                      (glgui:draw-text-center x (+ y0 dhline) w dh (seconds->string (car msg)
                         (if (= (floor (/ ##now 86400)) (floor (/ (car msg) 86400))) "%H:%M:%S" "%Y-%m-%d %H:%M:%S")) fnt tscol)
                     )
                     (set! y0 (+ y0 dh))
                   )
                 )
                 ;; Extra space if person changes
-                (if (not (fx= (cadddr msg) (cadddr (list-ref lst (fx+ i 1)))))
-                  (set! y0 (+ y0 2))
+                (if (or (not (fx= sender (cadddr (list-ref lst (fx+ i 1)))))
+                        (not (equal? name (cadr (list-ref lst (fx+ i 1))))))
+                  (set! y0 (+ y0 5))
                 )
               )
               ;; and also if it is the first line
-              (if (< (+ y0 (* dh (length strings)) dh) (+ y h)) 
+              (if (< (+ y0 (* dh (length strings)) dh) (+ y h))
                 (begin
-                  (glgui:draw-text-center x (+ y0 dhline) w dh (seconds->string (car msg) 
+                  (if (and group (not (fx= sender 1)))
+                    (begin
+                      (glgui:draw-text-left x (+ y0 dhline) w dh (if (list? name) (car name) name) fnt (glgui:chat-color-name g wgt name))
+                      (set! y0 (+ y0 dh))
+                    )
+                  )
+                  (glgui:draw-text-center x (+ y0 dhline) w dh (seconds->string (car msg)
                     (if (= (floor (/ ##now 86400)) (floor (/ (car msg) 86400))) "%H:%M:%S" "%Y-%m-%d %H:%M:%S")) fnt tscol)
-                  (glgui-widget-set! g wgt 'valmax ofs) 
+                  (glgui-widget-set! g wgt 'valmax ofs)
                 )
               )
             )
@@ -197,7 +261,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'h h
      'callback cb
      'draw-handle  glgui:chat-draw
-     'input-handle glgui:chat-input 
+     'input-handle glgui:chat-input
      'hidden #f
      'list lst
      'font fnt
@@ -210,8 +274,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'fsty  0
      'bgcol1 (color-shade White 0.2)
      'bgcol2 (color:shuffle #x021c4dff)
+     'bgcol3 (color:shuffle #xb8860bff)
      'txtcol White
      'tscol White
      'deltatime 300 ;; 5min
+     'group #f
+     'colorpos 0
+     'namecolors '()
    ))
 ;; eof
