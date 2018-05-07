@@ -331,6 +331,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (table-set! uiform:elements name (list newdraw newinput))
   ))
 
+;; ------------
+;; redirect (action done on every draw - can be used to redirect to another page)
+
+(define (glgui:uiform-redirect-draw x y w . args)
+  (let ((action (glgui:uiform-arg args 'action #f)))
+    (if action (begin
+      (uiset 'nodemap '())
+      (glgui:uiform-action action)))
+    0)
+)
+
+(uiform-register 'redirect glgui:uiform-redirect-draw #f)
+
 ;; -------------
 ;; spacer 
 
