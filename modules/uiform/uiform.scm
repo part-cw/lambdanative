@@ -334,11 +334,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; ------------
 ;; redirect (action done on every draw - can be used to redirect to another page)
 
+(define glgui:uiform:remakenodemap #f)
+
 (define (glgui:uiform-redirect-draw x y w . args)
   (let ((action (glgui:uiform-arg args 'action #f)))
     (if action (begin
-      (uiset 'nodemap '())
-      (glgui:uiform-action action)))
+      (glgui:uiform-action action)
+      (set! glgui:uiform:remakenodemap #t)))
     0)
 )
 
@@ -1579,6 +1581,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
    (if modal-on (glgui:uiform-modal-draw g wgt))
 
+   ;; If page changed mid draw (due to redirect), clear it now
+   (if glgui:uiform:remakenodemap
+     (begin
+       (uiset 'nodemap '())
+       (set! glgui:uiform:remakenodemap #f)))
 ))
 
 (define (glgui:uiform-input g wgt type mx my)
