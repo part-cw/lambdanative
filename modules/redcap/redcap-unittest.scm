@@ -4,6 +4,23 @@
 (define redcap:testhost "<add here>")
 (define redcap:testtoken "<add here>")
 
+;; Test equality with given function; print both arguments if they are not equal
+(define (test-success eqfn? result expectation)
+  (let ((success (eqfn? result expectation)))
+    (if (not success) (begin (display "Result obtained:\n") (display result) (display "\nis not equal to expected value:\n") (display expectation) (newline)))
+    success))
+
+;; Unit test template
+;; f takes no arguments and returns a boolean
+(define (add-unit-test name f)
+  (unit-test "REDCap" name
+    (lambda ()
+      (display (string-append "TEST - " name "\n"))
+      (redcap-url-set! redcap:testurl)
+      (let ((success (f)))
+        (display (if success "PASS\n\n" "FAIL\n\n"))
+        success))))
+
 (unit-test "REDCap" "Metadata"
   (lambda ()
     (redcap-url-set! redcap:testurl)
@@ -75,7 +92,7 @@
       (redcap-import-record redcap:testhost redcap:testtoken "1" redcap:testchange1a 'event "event_a_arm_1")
       ;; Import with overwrite turned off does not set an existing value to blank
       (redcap-import-record redcap:testhost redcap:testtoken "1" redcap:testchange1a 'event "event_b_arm_1" 'overwrite "normal")
-      ;; Import csv
+      ;; Import csv with repeated events and instruments
       (redcap-import-record-csv redcap:testhost redcap:testtoken redcap:testrecord2)
       ;; Export full data as json (default)
       (set! success (equal? (redcap-export-records redcap:testhost redcap:testtoken) redcap:testfullexport))
@@ -84,6 +101,12 @@
       ;; Export specific field values as csv, specify name of set of checkboxes - only includes unique ID field + redcap_event_name if the unique ID is included
       (if success (set! success (string=? (redcap-export-records redcap:testhost redcap:testtoken 'fields (list "study_no" "num" "radio" "checks") 'format "csv") redcap:testfieldsexp1)))
       (if success (set! success (string=? (redcap-export-records redcap:testhost redcap:testtoken 'fields (list "num" "radio" "checks") 'format "csv") redcap:testfieldsexp2)))
+      ;; Export from a specific event
+      (if success (set! success (equal? (redcap-export-records redcap:testhost redcap:testtoken 'events (list "event_b_arm_1")) redcap:testeventsexp)))
+      ;; Export with filter
+      (if success (set! success (equal? (redcap-export-records redcap:testhost redcap:testtoken 'filter "[num] = 42") redcap:testfilterexp)))
+      ;; Export ids
+      (if success (set! success (equal? (redcap-export-ids redcap:testhost redcap:testtoken) '("1" "1" "1" "1" "2"))))
       success)))
 
 (define redcap:testrecord1a '(("yesno" "1") ("num" "9") ("form_1_complete" "1")))
@@ -91,34 +114,81 @@
                               ("drop" "1") ("radio" "2") ("checks___1" "0") ("checks___2" "0") ("checks___3" "1") ("checks___4" "1") ("firstrow" "1") ("secondrow" "2") ("form_2_complete" "0")))
 (define redcap:testchange1a '(("yesno" "")))
 (define redcap:testchange1b '(("drop" "")))
-(define redcap:testrecord2 "study_no,redcap_event_name,yesno,num,form_1_complete\n2,event_a_arm_1,1,42,2")
+(define redcap:testrecord2 (string-append "study_no,redcap_event_name,redcap_repeat_instrument,redcap_repeat_instance,yesno,num,form_1_complete,firstrow,form_2_complete\n"
+                                          "1,event_d_arm_1,,,,,0,,\n"
+                                          "1,event_c_arm_1,,1,1,,1,,0\n"
+                                          "1,event_c_arm_1,,2,,,0,2,2\n"
+                                          "1,event_d_arm_1,form_2,1,,,,2,1\n"
+                                          "1,event_d_arm_1,form_2,2,,,,2,2\n"
+                                          "2,event_a_arm_1,,,1,42,2,,"))
 
-(define redcap:testfullexport '((("study_no" . "1") ("redcap_event_name" . "event_a_arm_1") ("yesno" . "") ("num" . "9") ("form_1_complete" . "1")
+(define redcap:testfullexport '((("study_no" . "1") ("redcap_event_name" . "event_a_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . "") ("yesno" . "") ("num" . "9") ("form_1_complete" . "1")
                                  ("drop" . "") ("radio" . "") ("checks___1" . "") ("checks___2" . "") ("checks___3" . "") ("checks___4" . "") ("firstrow" . "") ("secondrow" . "") ("file" . "") ("form_2_complete" . ""))
-                                (("study_no" . "1") ("redcap_event_name" . "event_b_arm_1") ("yesno" . "0") ("num" . "8") ("form_1_complete" . "2")
+                                (("study_no" . "1") ("redcap_event_name" . "event_b_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . "") ("yesno" . "0") ("num" . "8") ("form_1_complete" . "2")
                                  ("drop" . "1") ("radio" . "2") ("checks___1" . "0") ("checks___2" . "0") ("checks___3" . "1") ("checks___4" . "1") ("firstrow" . "1") ("secondrow" . "2") ("file" . "") ("form_2_complete" . "0"))
-                                (("study_no" . "2") ("redcap_event_name" . "event_a_arm_1") ("yesno" . "1") ("num" . "42") ("form_1_complete" . "2")
+                                (("study_no" . "1") ("redcap_event_name" . "event_d_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . "") ("yesno" . "") ("num" . "") ("form_1_complete" . "0")
+                                 ("drop" . "") ("radio" . "") ("checks___1" . "") ("checks___2" . "") ("checks___3" . "") ("checks___4" . "") ("firstrow" . "") ("secondrow" . "") ("file" . "") ("form_2_complete" . ""))
+                                (("study_no" . "1") ("redcap_event_name" . "event_c_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . 1) ("yesno" . "1") ("num" . "") ("form_1_complete" . "1")
+                                 ("drop" . "") ("radio" . "") ("checks___1" . "0") ("checks___2" . "0") ("checks___3" . "0") ("checks___4" . "0") ("firstrow" . "") ("secondrow" . "") ("file" . "") ("form_2_complete" . "0"))
+                                (("study_no" . "1") ("redcap_event_name" . "event_c_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . 2) ("yesno" . "") ("num" . "") ("form_1_complete" . "0")
+                                 ("drop" . "") ("radio" . "") ("checks___1" . "0") ("checks___2" . "0") ("checks___3" . "0") ("checks___4" . "0") ("firstrow" . "2") ("secondrow" . "") ("file" . "") ("form_2_complete" . "2"))
+                                (("study_no" . "1") ("redcap_event_name" . "event_d_arm_1") ("redcap_repeat_instrument" . "form_2") ("redcap_repeat_instance" . 1) ("yesno" . "") ("num" . "") ("form_1_complete" . "")
+                                 ("drop" . "") ("radio" . "") ("checks___1" . "0") ("checks___2" . "0") ("checks___3" . "0") ("checks___4" . "0") ("firstrow" . "2") ("secondrow" . "") ("file" . "") ("form_2_complete" . "1"))
+                                (("study_no" . "1") ("redcap_event_name" . "event_d_arm_1") ("redcap_repeat_instrument" . "form_2") ("redcap_repeat_instance" . 2) ("yesno" . "") ("num" . "") ("form_1_complete" . "")
+                                 ("drop" . "") ("radio" . "") ("checks___1" . "0") ("checks___2" . "0") ("checks___3" . "0") ("checks___4" . "0") ("firstrow" . "2") ("secondrow" . "") ("file" . "") ("form_2_complete" . "2"))
+                                (("study_no" . "2") ("redcap_event_name" . "event_a_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . "") ("yesno" . "1") ("num" . "42") ("form_1_complete" . "2")
                                  ("drop" . "") ("radio" . "") ("checks___1" . "") ("checks___2" . "") ("checks___3" . "") ("checks___4" . "") ("firstrow" . "") ("secondrow" . "") ("file" . "") ("form_2_complete" . ""))))
 
 (define redcap:testrecord1exp (string-append "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<records>\n"
-                                          "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_a_arm_1]]></redcap_event_name><yesno><![CDATA[]]></yesno>"
-                                          "<num><![CDATA[9]]></num><form_1_complete><![CDATA[1]]></form_1_complete><drop><![CDATA[]]></drop><radio><![CDATA[]]></radio>"
-                                          "<checks___1><![CDATA[]]></checks___1><checks___2><![CDATA[]]></checks___2><checks___3><![CDATA[]]></checks___3><checks___4><![CDATA[]]></checks___4>"
+                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_a_arm_1]]></redcap_event_name><redcap_repeat_instrument><![CDATA[]]></redcap_repeat_instrument>"
+                                             "<redcap_repeat_instance><![CDATA[]]></redcap_repeat_instance><yesno><![CDATA[]]></yesno><num><![CDATA[9]]></num><form_1_complete><![CDATA[1]]></form_1_complete><drop><![CDATA[]]>"
+                                             "</drop><radio><![CDATA[]]></radio><checks___1><![CDATA[]]></checks___1><checks___2><![CDATA[]]></checks___2><checks___3><![CDATA[]]></checks___3><checks___4><![CDATA[]]></checks___4>"
+                                             "<firstrow><![CDATA[]]></firstrow><secondrow><![CDATA[]]></secondrow><file><![CDATA[]]></file><form_2_complete><![CDATA[]]></form_2_complete></item>\n"
+                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_b_arm_1]]></redcap_event_name><redcap_repeat_instrument><![CDATA[]]></redcap_repeat_instrument>"
+                                             "<redcap_repeat_instance><![CDATA[]]></redcap_repeat_instance><yesno><![CDATA[0]]></yesno><num><![CDATA[8]]></num><form_1_complete><![CDATA[2]]></form_1_complete><drop><![CDATA[1]]>"
+                                             "</drop><radio><![CDATA[2]]></radio><checks___1><![CDATA[0]]></checks___1><checks___2><![CDATA[0]]></checks___2><checks___3><![CDATA[1]]></checks___3><checks___4><![CDATA[1]]></checks___4>"
+                                             "<firstrow><![CDATA[1]]></firstrow><secondrow><![CDATA[2]]></secondrow><file><![CDATA[]]></file><form_2_complete><![CDATA[0]]></form_2_complete></item>\n"
+                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_d_arm_1]]></redcap_event_name><redcap_repeat_instrument><![CDATA[]]></redcap_repeat_instrument>"
+                                             "<redcap_repeat_instance><![CDATA[]]></redcap_repeat_instance><yesno><![CDATA[]]></yesno><num><![CDATA[]]></num><form_1_complete><![CDATA[0]]></form_1_complete><drop><![CDATA[]]>"
+                                             "</drop><radio><![CDATA[]]></radio><checks___1><![CDATA[]]></checks___1><checks___2><![CDATA[]]></checks___2><checks___3><![CDATA[]]></checks___3><checks___4><![CDATA[]]></checks___4>"
                                           "<firstrow><![CDATA[]]></firstrow><secondrow><![CDATA[]]></secondrow><file><![CDATA[]]></file><form_2_complete><![CDATA[]]></form_2_complete></item>\n"
-                                          "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_b_arm_1]]></redcap_event_name><yesno><![CDATA[0]]></yesno>"
-                                          "<num><![CDATA[8]]></num><form_1_complete><![CDATA[2]]></form_1_complete><drop><![CDATA[1]]></drop><radio><![CDATA[2]]></radio>"
-                                          "<checks___1><![CDATA[0]]></checks___1><checks___2><![CDATA[0]]></checks___2><checks___3><![CDATA[1]]></checks___3><checks___4><![CDATA[1]]></checks___4>"
-                                          "<firstrow><![CDATA[1]]></firstrow><secondrow><![CDATA[2]]></secondrow><file><![CDATA[]]></file><form_2_complete><![CDATA[0]]></form_2_complete></item>\n</records>"))
+                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_c_arm_1]]></redcap_event_name><redcap_repeat_instrument><![CDATA[]]></redcap_repeat_instrument>"
+                                             "<redcap_repeat_instance><![CDATA[1]]></redcap_repeat_instance><yesno><![CDATA[1]]></yesno><num><![CDATA[]]></num><form_1_complete><![CDATA[1]]></form_1_complete><drop><![CDATA[]]>"
+                                             "</drop><radio><![CDATA[]]></radio><checks___1><![CDATA[0]]></checks___1><checks___2><![CDATA[0]]></checks___2><checks___3><![CDATA[0]]></checks___3><checks___4><![CDATA[0]]></checks___4>"
+                                             "<firstrow><![CDATA[]]></firstrow><secondrow><![CDATA[]]></secondrow><file><![CDATA[]]></file><form_2_complete><![CDATA[0]]></form_2_complete></item>\n"
+                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_c_arm_1]]></redcap_event_name><redcap_repeat_instrument><![CDATA[]]></redcap_repeat_instrument>"
+                                             "<redcap_repeat_instance><![CDATA[2]]></redcap_repeat_instance><yesno><![CDATA[]]></yesno><num><![CDATA[]]></num><form_1_complete><![CDATA[0]]></form_1_complete><drop><![CDATA[]]>"
+                                             "</drop><radio><![CDATA[]]></radio><checks___1><![CDATA[0]]></checks___1><checks___2><![CDATA[0]]></checks___2><checks___3><![CDATA[0]]></checks___3><checks___4><![CDATA[0]]></checks___4>"
+                                             "<firstrow><![CDATA[2]]></firstrow><secondrow><![CDATA[]]></secondrow><file><![CDATA[]]></file><form_2_complete><![CDATA[2]]></form_2_complete></item>\n"
+                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_d_arm_1]]></redcap_event_name><redcap_repeat_instrument><![CDATA[form_2]]></redcap_repeat_instrument>"
+                                             "<redcap_repeat_instance><![CDATA[1]]></redcap_repeat_instance><yesno><![CDATA[]]></yesno><num><![CDATA[]]></num><form_1_complete><![CDATA[]]></form_1_complete><drop><![CDATA[]]>"
+                                             "</drop><radio><![CDATA[]]></radio><checks___1><![CDATA[0]]></checks___1><checks___2><![CDATA[0]]></checks___2><checks___3><![CDATA[0]]></checks___3><checks___4><![CDATA[0]]></checks___4>"
+                                             "<firstrow><![CDATA[2]]></firstrow><secondrow><![CDATA[]]></secondrow><file><![CDATA[]]></file><form_2_complete><![CDATA[1]]></form_2_complete></item>\n"
+                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_d_arm_1]]></redcap_event_name><redcap_repeat_instrument><![CDATA[form_2]]></redcap_repeat_instrument>"
+                                             "<redcap_repeat_instance><![CDATA[2]]></redcap_repeat_instance><yesno><![CDATA[]]></yesno><num><![CDATA[]]></num><form_1_complete><![CDATA[]]></form_1_complete><drop><![CDATA[]]>"
+                                             "</drop><radio><![CDATA[]]></radio><checks___1><![CDATA[0]]></checks___1><checks___2><![CDATA[0]]></checks___2><checks___3><![CDATA[0]]></checks___3><checks___4><![CDATA[0]]></checks___4>"
+                                             "<firstrow><![CDATA[2]]></firstrow><secondrow><![CDATA[]]></secondrow><file><![CDATA[]]></file><form_2_complete><![CDATA[2]]></form_2_complete></item>\n"
+                                             "</records>"))
 
-(define redcap:testfieldsexp1 (string-append "study_no,redcap_event_name,num,radio,checks___1,checks___2,checks___3,checks___4\n"
-                                            "1,event_a_arm_1,9,,,,,\n"
-                                            "1,event_b_arm_1,8,2,0,0,1,1\n"
-                                            "2,event_a_arm_1,42,,,,,\n"))
+(define redcap:testfieldsexp1 (string-append "study_no,redcap_event_name,redcap_repeat_instrument,redcap_repeat_instance,num,radio,checks___1,checks___2,checks___3,checks___4\n"
+                                             "1,event_a_arm_1,,,9,,,,,\n"
+                                             "1,event_b_arm_1,,,8,2,0,0,1,1\n"
+                                             "1,event_d_arm_1,,,,,,,,\n"
+                                             "1,event_c_arm_1,,1,,,0,0,0,0\n"
+                                             "2,event_a_arm_1,,,42,,,,,\n"))
 
 (define redcap:testfieldsexp2 (string-append "num,radio,checks___1,checks___2,checks___3,checks___4\n"
                                             "9,,,,,\n"
                                             "8,2,0,0,1,1\n"
+                                             ",,,,,\n"
+                                             ",,0,0,0,0\n"
                                             "42,,,,,\n"))
+
+(define redcap:testeventsexp '((("study_no" . "1") ("redcap_event_name" . "event_b_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . "") ("yesno" . "0") ("num" . "8") ("form_1_complete" . "2")
+                                ("drop" . "1") ("radio" . "2") ("checks___1" . "0") ("checks___2" . "0") ("checks___3" . "1") ("checks___4" . "1") ("firstrow" . "1") ("secondrow" . "2") ("file" . "") ("form_2_complete" . "0"))))
+
+(define redcap:testfilterexp '((("study_no" . "2") ("redcap_event_name" . "event_a_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . "") ("yesno" . "1") ("num" . "42") ("form_1_complete" . "2")
+                                ("drop" . "") ("radio" . "") ("checks___1" . "") ("checks___2" . "") ("checks___3" . "") ("checks___4" . "") ("firstrow" . "") ("secondrow" . "") ("file" . "") ("form_2_complete" . ""))))
 
 (unit-test "REDCap" "Files"
   (lambda ()
