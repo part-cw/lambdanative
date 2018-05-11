@@ -1,0 +1,22 @@
+private String getClipboardContent(){
+  if (!(mClipboardManager.hasPrimaryClip())) {
+    return "";
+  } else if (mClipboardManager.getPrimaryClipDescription().hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN)) {
+    ClipData.Item item = mClipboardManager.getPrimaryClip().getItemAt(0);
+    return item.getText().toString(); 
+  }
+  return "";
+}
+
+private int setClipboardContent(String str){
+  ClipData clip = ClipData.newPlainText("LNclipboard",str);
+  mClipboardManager.setPrimaryClip(clip);
+  return 1;
+}
+
+private int checkClipboardContent(){
+  if (mClipboardManager.hasPrimaryClip()){
+    return 1;
+  }
+  return 0;
+}

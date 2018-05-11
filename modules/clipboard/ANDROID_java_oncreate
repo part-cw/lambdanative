@@ -1,0 +1,1 @@
+  mClipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);

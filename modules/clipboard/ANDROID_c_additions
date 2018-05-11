@@ -1,0 +1,37 @@
+int android_clipboard_copy(char *str){
+  JNIEnv *env = GetJNIEnv();
+  jstring jstr = (*env)->NewStringUTF(env,str);
+  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "setClipboardContent", "(Ljava/lang/String;)I");
+    return (*env)->CallIntMethod(env, globalObj, method, jstr);
+  }
+  return 0;
+}
+
+char *android_clipboard_paste(){
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "getClipboardContent", "()Ljava/lang/String;");
+    jstring jstr = (jstring) (*env)->CallObjectMethod(env, globalObj, method, jstr);
+    const char *str = (*env)->GetStringUTFChars(env, jstr, 0);
+    (*env)->ReleaseStringUTFChars(env, jstr, str);
+    return str;
+  }
+  return "";
+}
+
+int android_clipboard_clear(){
+  return 0;
+}
+
+int android_clipboard_hascontent(){
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "checkClipboardContent", "()I");
+    return (*env)->CallIntMethod(env, globalObj, method);
+  }
+  return 0;
+}

@@ -1,0 +1,15 @@
+int ios_clipboard_copy(char* str){
+  UIPasteboard *gpBoard = [UIPasteboard generalPasteboard];
+  gpBoard.string = [NSString stringWithUTF8String: str];
+  return 1;
+}
+
+int ios_clipboard_hascontent(){
+  UIPasteboard *gpBoard = [UIPasteboard generalPasteboard];
+  return gpBoard.hasStrings;
+}
+
+char *ios_clipboard_paste(){
+  UIPasteboard *gpBoard = [UIPasteboard generalPasteboard];
+  return [gpBoard.string UTF8String];
+}

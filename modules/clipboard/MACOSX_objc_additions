@@ -1,0 +1,23 @@
+int macosx_clipboard_copy(char* str){
+  NSString *nsstr = [NSString stringWithUTF8String: str];
+  [[NSPasteboard generalPasteboard] clearContents];
+  [[NSPasteboard generalPasteboard] setString:nsstr forType:NSPasteboardTypeString];
+  return 1;
+}
+
+int macosx_clipboard_hascontent(){
+  NSPasteboard *npBoard = [NSPasteboard generalPasteboard];
+  NSArray *classArray = [NSArray arrayWithObject:[NSString class]];
+  NSDictionary *options = [NSDictionary dictionary];
+  return [npBoard canReadObjectForClasses:classArray options:options];
+}
+
+int macosx_clipboard_clear(){
+  [[NSPasteboard generalPasteboard] clearContents];
+  return 1;
+}
+
+char *macosx_clipboard_paste(){
+  NSString *str=[[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString];
+  return [str UTF8String];
+}
