@@ -37,6 +37,20 @@
 
 rmifexists "$apptgtdir"
 mkdir "$apptgtdir"
+
+macosx_subst()
+{
+  ac_subst MACOSX_OBJC_ADDITIONS "@$1/MACOSX_objc_additions"
+  ac_subst MACOSX_OBJC_DEFINES "@$1/MACOSX_objc_defines"
+}
+macosx_subst loaders/macosx
+for m in $modules; do
+  modpath=`locatedir modules/$m silent`
+  macosx_subst $modpath
+done
+macosx_subst `locatedir apps/$SYS_APPNAME`
+
+# Prepare icons
 if [ `is_gui_app` = "yes" ]; then
   tiffs=
   dirty=no
@@ -77,19 +91,22 @@ make_soundfile_macosx()
 }
 make_sounds make_soundfile_macosx
 
-tmpdir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 echo " => compiling application.."
+srcdir=loaders/macosx
+tmpdir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 if [ `is_standalone_app` = "yes" ]; then
   cd "$tmpdir"
   veval "$SYS_HOST_CC $cflag_additions $ldflag_additions -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload"
 else
   if [ `is_gui_app` = "yes" ]; then
     rm $tmpdir/*.[mh] 2> /dev/null
-    cp loaders/macosx/*.[mh] $tmpdir
+    cp $srcdir/*.[mh] $tmpdir
+    ac_output $srcdir/objc_additions.m $tmpdir/objc_additions.m
+    ac_output $srcdir/config_custom.h.in "$tmpdir/config_custom.h"
     cd "$tmpdir"
     veval "$SYS_HOST_CC $cflag_additions $ldflag_additions -framework OpenGL -framework Cocoa -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -framework Accelerate -x objective-c -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -o $apptgtdir/$SYS_APPNAME -lpayload *.m"
   else
-    cp loaders/common/main.c $tmpdir
+    cp $srcdir/main.c $tmpdir
     cd "$tmpdir"
     veval "$SYS_HOST_CC $cflag_additions $ldflag_additions -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload main.c"
   fi

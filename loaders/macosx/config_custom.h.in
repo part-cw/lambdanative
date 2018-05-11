@@ -1,0 +1,3 @@
+// custom defines go here
+@MACOSX_OBJC_DEFINES@
+

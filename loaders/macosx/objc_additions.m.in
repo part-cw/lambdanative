@@ -1,0 +1,5 @@
+#import <AppKit/AppKit.h>
+#import "config_custom.h"
+
+@MACOSX_OBJC_ADDITIONS@
+
