@@ -40,6 +40,7 @@
 ;;  - redcap-export-metadata
 ;;    - forms
 ;;    - format
+;;    - fields
 ;;  - redcap-export-instrument
 ;;  - redcap-export-fieldnames
 (unit-test "REDCap" "Metadata"
@@ -112,7 +113,7 @@
                                ("text_validation_type_or_show_slider_number" . "") ("text_validation_min" . "") ("text_validation_max" . "") ("identifier" . "") ("branching_logic" . "") ("required_field" . "")
                                ("custom_alignment" . "RH") ("question_number" . "") ("matrix_group_name" . "") ("matrix_ranking" . "") ("field_annotation" . ""))))
 
-(define redcap:testnum (string-append "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<records>\n" 
+(define redcap:testnum (string-append "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<records>\n"
 "<item><field_name><![CDATA[num]]></field_name><form_name><![CDATA[form_1]]></form_name><section_header></section_header><field_type><![CDATA[text]]></field_type>"
 "<field_label><![CDATA[This is an integer]]></field_label><select_choices_or_calculations></select_choices_or_calculations><field_note></field_note>"
 "<text_validation_type_or_show_slider_number><![CDATA[integer]]></text_validation_type_or_show_slider_number><text_validation_min><![CDATA[0]]></text_validation_min><text_validation_max><![CDATA[10]]></text_validation_max>"
@@ -129,12 +130,16 @@
 ;;  - redcap-import-record
 ;;    - event
 ;;    - overwrite
+;;    - instrument
+;;    - instance
 ;;  - redcap-export-record
 ;;    - records
 ;;    - fields
 ;;    - events
 ;;    - filter
+;;    - forms
 ;;  - redcap-export-ids
+;;    - event
 (unit-test "REDCap" "Records"
   (lambda ()
     (redcap-url-set! redcap:testurl)
@@ -149,6 +154,8 @@
       (redcap-import-record redcap:testhost redcap:testtoken "1" redcap:testchange1a 'event "event_b_arm_1" 'overwrite "normal")
       ;; Import csv with repeated events and instruments
       (redcap-import-record-csv redcap:testhost redcap:testtoken redcap:testrecord2)
+      ;; Import to specific repeated instrument
+      (redcap-import-record redcap:testhost redcap:testtoken "1" redcap:testrepeatable 'event "event_d_arm_1" 'instrument "form_2" 'instance "2")
       ;; Export full data as json (default)
       (set! success (test-success equal? (redcap-export-records redcap:testhost redcap:testtoken) redcap:testfullexport))
       ;; Export xml from a specific record
@@ -160,8 +167,14 @@
       (if success (set! success (test-success equal? (redcap-export-records redcap:testhost redcap:testtoken 'events (list "event_b_arm_1")) redcap:testeventsexp)))
       ;; Export with filter
       (if success (set! success (test-success equal? (redcap-export-records redcap:testhost redcap:testtoken 'filter "[num] = 42") redcap:testfilterexp)))
+      ;; Export from a specific form
+      (if success (set! success (test-success equal? (redcap-export-records redcap:testhost redcap:testtoken 'records (list "2") 'forms (list "2")) redcap:testformsexp)))
       ;; Export ids
       (if success (set! success (test-success equal? (redcap-export-ids redcap:testhost redcap:testtoken) '("1" "1" "1" "1" "2"))))
+      ;; Export ids given event
+      (if success (set! success (test-success equal? (redcap-export-ids redcap:testhost redcap:testtoken 'event "event_a_arm_1") '("1" "2"))))
+      ;; Get next available instance index
+      (if success (set! success (test-success eq? (redcap-get-next-instance redcap:testhost redcap:testtoken "1" "2") 3)))
       success)))
 
 (define redcap:testrecord1a '(("yesno" "1") ("num" "9") ("form_1_complete" "1")))
@@ -171,12 +184,13 @@
 (define redcap:testrecord1c '(("date_dec" "96-06-16") ("date_inc_sec" "96-06-16 09:09:09") ("email" "test@mailinator.com") ("crawling" "0") ("postal_code" "v5v 5v5") ("slider" "80") ("truefalse" "1") ("form_3_complete" "2")))
 (define redcap:testchange1a '(("yesno" "")))
 (define redcap:testchange1b '(("drop" "")))
+(define redcap:testrepeatable '(("firstrow" "2")))
 (define redcap:testrecord2 (string-append "study_no,redcap_event_name,redcap_repeat_instrument,redcap_repeat_instance,yesno,num,form_1_complete,firstrow,form_2_complete\n"
                                           "1,event_d_arm_1,,,,,0,,\n"
                                           "1,event_c_arm_1,,1,1,,1,,0\n"
                                           "1,event_c_arm_1,,2,,,0,2,2\n"
                                           "1,event_d_arm_1,form_2,1,,,,2,1\n"
-                                          "1,event_d_arm_1,form_2,2,,,,2,2\n"
+                                          "1,event_d_arm_1,form_2,2,,,,1,2\n"
                                           "2,event_a_arm_1,,,1,42,2,,"))
 
 (define redcap:testfullexport '((("study_no" . "1") ("redcap_event_name" . "event_a_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . "") ("yesno" . "") ("num" . "9") ("form_1_complete" . "1")
@@ -269,6 +283,10 @@
                                              ",,0,0,0,0\n"
                                             "42,,,,,\n"))
 
+(define redcap:testformsexp '((("study_no" . "2") ("redcap_event_name" . "event_a_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . "") ("yesno" . "1") ("num" . "42") ("form_1_complete" . "2")
+                               ("drop" . "") ("radio" . "") ("checks___1" . "") ("checks___2" . "") ("checks___3" . "") ("checks___4" . "") ("firstrow" . "") ("secondrow" . "") ("file" . "") ("form_2_complete" . "")
+                               ("date_dec" . "") ("date_inc_sec" . "") ("crawling" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . "0"))))
+
 (define redcap:testeventsexp '((("study_no" . "1") ("redcap_event_name" . "event_b_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . "") ("yesno" . "0") ("num" . "8") ("form_1_complete" . "2")
                                 ("drop" . "1") ("radio" . "2") ("checks___1" . "0") ("checks___2" . "0") ("checks___3" . "1") ("checks___4" . "1") ("firstrow" . "1") ("secondrow" . "2") ("file" . "") ("form_2_complete" . "0")
                                 ("date_dec" . "") ("date_inc_sec" . "") ("crawling" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . ""))))
@@ -278,12 +296,16 @@
                                 ("date_dec" . "") ("date_inc_sec" . "") ("crawling" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . "0"))))
 
 ;; Importing and exporting files functions
+;; Note that we can't test the `repeat` field in import and export because delete doesn't have that field
 ;;  - redcap-import-file
 ;;    - event
+;;    - form
 ;; - redcap-export-file
 ;;    - event
+;;    - form
 ;; - redcap-delete-file
 ;;    - event
+;;    - form
 (unit-test "REDCap" "Files"
   (lambda ()
     (redcap-url-set! redcap:testurl)
@@ -295,9 +317,9 @@
       ;; Create a small csv file
       (csv-write testfile csvcontent)
       ;; Import the file
-      (redcap-import-file redcap:testhost redcap:testtoken "1" "file" testfile 'event "event_b_arm_1")
+      (redcap-import-file redcap:testhost redcap:testtoken "1" "file" testfile 'event "event_b_arm_1" 'form "2")
       ;; Export the file
-      (let ((f (redcap-export-file redcap:testhost redcap:testtoken "1" "file" testfile 'event "event_b_arm_1")))
+      (let ((f (redcap-export-file redcap:testhost redcap:testtoken "1" "file" testfile 'event "event_b_arm_1" 'form "2")))
         (if (list? f)
           (let* ((filepath (string-append (system-directory) (system-pathseparator) "export.csv"))
                  (fh (open-output-file filepath))
@@ -315,8 +337,7 @@
       ;; Check the a regular export shows a file
       (if success (set! success (test-success string=? (redcap-export-records redcap:testhost redcap:testtoken 'records (list "1") 'events (list "event_b_arm_1") 'fields (list "file") 'format "csv") "file\n[document]\n")))
       ;; Delete file to prepare for next time
-      (redcap-delete-file redcap:testhost redcap:testtoken "1" "file" 'event "event_b_arm_1")
+      (redcap-delete-file redcap:testhost redcap:testtoken "1" "file" 'event "event_b_arm_1" 'form "2")
       ;; Check that the file is gone
       (if success (set! success (test-success string=? (redcap-export-records redcap:testhost redcap:testtoken 'records (list "1") 'events (list "event_b_arm_1") 'fields (list "file") 'format "csv") "file\n\n")))
       success)))
-                               
