@@ -25,7 +25,7 @@ if [ ! -f $IOSROOT/usr/bin/ar ]; then
   IOSROOT=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain
 fi
 # minimum version to support
-IOSVERSION=5.1.1
+IOSVERSION=6.0
 # ------------------------------------
 ## Blackberry BB10 cross compiler (linux or mac)
 BB10SDK=/Applications/Momentics.app
