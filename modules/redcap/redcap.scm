@@ -132,15 +132,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     "<records>" "\r\n"
     (let loop ((i 0) (str ""))
       (if (= i (length data)) str
-  	(loop (+ i 1) 
+  	(loop (+ i 1)
          (let* ((lpair (list-ref data i))
                 (field (car lpair))
                 (fieldname (if (string? field) field (symbol->string field)))
                 (val (if (list? lpair) (cadr lpair) (cdr lpair)))
-                (value (if (number? val) (number->string val) val))) 
+                (value (if (number? val) (number->string val) val)))
                (string-append str "<item>"
-		    "<record>" record "</record>" 
-		      repeat                                                     
+		    "<record>" record "</record>"
+		      repeat
 		    "<redcap_event_name>" event "</redcap_event_name>"
 		    "<field_name>" fieldname "</field_name>"
 		    "<value>" value "</value>"
@@ -267,7 +267,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (instrument (redcap:arg 'instrument xargs #f))
         (type (redcap:arg 'type xargs "eav"))
         (over (redcap:arg 'overwrite xargs "overwrite"))
-        (message   (string-append  "token=" token "&content=record&format=xml&type=" type "&overwriteBehavior=" over "&data=" (redcap:list->xmlstr record event data 'instance instance 'instrument instrument) " &returnContent=count&returnFormat=json")) 
+        (message   (string-append  "token=" token "&content=record&format=xml&type=" type "&overwriteBehavior=" over "&data=" (redcap:list->xmlstr record event data 'instance instance 'instrument instrument) " &returnContent=count&returnFormat=json"))
         (request-str (redcap:make-request-str host message)))
     ;; Check if we have a valid connection before proceeding
     (if (fx= (httpsclient-open host) 1)
@@ -455,7 +455,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                       (if (fx> instance maxinstance) (set! maxinstance instance))
                       (loop (cdr entries))))) (fx+ maxinstance 1))
            (begin (log-warning "Exported REDcap record has no repeated entry") 0))
-       (begin (log-warning "Cannot retrieve instance number from REDCap") #f)))
+       (begin (log-warning "Cannot retrieve instance number from REDCap. I assume this is the first entry.") 1)))
+
 )
 
 
