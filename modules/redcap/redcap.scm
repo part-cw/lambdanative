@@ -132,21 +132,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     "<records>" "\r\n"
     (let loop ((i 0) (str ""))
       (if (= i (length data)) str
-  	(loop (+ i 1)
-         (let* ((lpair (list-ref data i))
-                (field (car lpair))
-                (fieldname (if (string? field) field (symbol->string field)))
-                (val (if (list? lpair) (cadr lpair) (cdr lpair)))
-                (value (if (number? val) (number->string val) val)))
-               (string-append str "<item>"
-		    "<record>" record "</record>"
-		      repeat
-		    "<redcap_event_name>" event "</redcap_event_name>"
-		    "<field_name>" fieldname "</field_name>"
-		    "<value>" value "</value>"
-		    "</item>" "\r\n")))
-		      )
-		    )
+  	    (loop (+ i 1)
+          (let* ((lpair (list-ref data i))
+                 (field (car lpair))
+                 (fieldname (if (string? field) field (symbol->string field))))
+            (let loop2 ((p (cdr lpair)) (st str))
+              (let* ((val (if (list? p) (car p) p))
+                     (value (if (number? val) (number->string val) val))
+                     (s (string-append st "<item>"
+                       "<record>" record "</record>"
+                       repeat
+                       "<redcap_event_name>" event "</redcap_event_name>"
+                       "<field_name>" fieldname "</field_name>"
+                       "<value>" value "</value>"
+                       "</item>" "\r\n")))
+                (if (and (list? p) (> (length p) 1))
+                  (loop2 (cdr p) s)
+                  s
+                )))))))
 		    "</records>"))
 )
 
