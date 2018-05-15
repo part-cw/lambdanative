@@ -123,29 +123,36 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Helper function which makes REDCap EAV XML given a record identifier and list of values
 (define (redcap:list->xmlstr record event data . xargs)
-  (let* ((instance (redcap:arg 'instance xargs #f))
-        (instrument (redcap:arg 'instrument xargs #f))
-        (repeat (if (and instance instrument) ;;add repeat information if provided
-                     (string-append     "<redcap_repeat_instrument>" instrument "</redcap_repeat_instrument>"
-                                        "<redcap_repeat_instance>" instance "</redcap_repeat_instance>") "")))
-  	(string-append "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" "\r\n"
-    "<records>" "\r\n"
-    (let loop ((i 0) (str ""))
-      (if (= i (length data)) str
-  	    (loop (+ i 1)
-          (let* ((lpair (list-ref data i))
-                 (field (car lpair))
-                 (fieldname (if (string? field) field (symbol->string field)))
-                 (val (if (list? lpair) (cadr lpair) (cdr lpair)))
-                 (value (if (number? val) (number->string val) val)))
-            (string-append str "<item>"
-		          "<record>" record "</record>"
-		          repeat
-		          "<redcap_event_name>" event "</redcap_event_name>"
-		          "<field_name>" fieldname "</field_name>"
-		          "<value>" value "</value>"
-		          "</item>" "\r\n")))))
-		"</records>"))
+  (let* ((instance   (redcap:arg 'instance   xargs #f))
+         (instrument (redcap:arg 'instrument xargs #f))
+         (repeat (if (and instance instrument) ;;add repeat information if provided
+                     (string-append "<redcap_repeat_instrument>" instrument "</redcap_repeat_instrument>"
+                                    "<redcap_repeat_instance>" instance "</redcap_repeat_instance>") "")))
+    (string-append
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" "\r\n"
+      "<records>" "\r\n"
+      (let loop ((i 0) (str ""))
+        (if (= i (length data)) str
+            (loop (+ i 1)
+              (string-append str
+                (let* ((lpair     (list-ref data i))
+                       (field     (car lpair))
+                       (fieldname (if (string? field) field (symbol->string field)))
+                       (values    (cdr lpair))
+                       (itemize   (lambda (v)
+                                    (let ((value (if (number? v) (number->string v) v)))
+                                      (string-append
+                                        "<item>"
+                                        "<record>" record "</record>"
+                                        repeat
+                                        "<redcap_event_name>" event "</redcap_event_name>"
+                                        "<field_name>" fieldname "</field_name>"
+                                        "<value>" value "</value>"
+                                        "</item>" "\r\n")))))
+                  (if (list? values)
+                    (string-mapconcat values "" itemize)
+                    (itemize values)))))))
+      "</records>"))
 )
 
 ;; Helper function to build the http request string

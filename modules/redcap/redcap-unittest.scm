@@ -147,7 +147,8 @@
       ;; Import json format
       (redcap-import-record redcap:testhost redcap:testtoken "1" redcap:testrecord1a 'event "event_a_arm_1")
       (redcap-import-record redcap:testhost redcap:testtoken "1" redcap:testrecord1b 'event "event_b_arm_1")
-      (redcap-import-record redcap:testhost redcap:testtoken "1" redcap:testrecord1c 'event "event_a_arm_1")
+      (redcap-import-record redcap:testhost redcap:testtoken "1" redcap:testrecord1c 'event "event_b_arm_1")
+      (redcap-import-record redcap:testhost redcap:testtoken "1" redcap:testrecord1d 'event "event_a_arm_1")
       ;; Import with overwrite turned on (by default), sets an existing value to blank
       (redcap-import-record redcap:testhost redcap:testtoken "1" redcap:testchange1a 'event "event_a_arm_1")
       ;; Import with overwrite turned off does not set an existing value to blank
@@ -177,11 +178,12 @@
       (if success (set! success (test-success eq? (redcap-get-next-instance redcap:testhost redcap:testtoken "1" "2") 3)))
       success)))
 
-(define redcap:testrecord1a '(("yesno" "1") ("num" "9") ("form_1_complete" "1")))
-(define redcap:testrecord1b '(("yesno" "0") ("num" "8") ("form_1_complete" "2")
-                              ("drop" "1") ("radio" "2") ("checks___1" "0") ("checks___2" "0") ("checks___3" "1") ("checks___4" "1") ("firstrow" "1") ("secondrow" "2") ("form_2_complete" "0")))
+(define redcap:testrecord1a '(("yesno" . "1") ("num" . "9") ("form_1_complete" . "1")))
+(define redcap:testrecord1b '((checks 1 3)))
+(define redcap:testrecord1c '(("yesno" "0") ("num" "8") ("form_1_complete" "2")
+                              ("drop" "1") ("radio" "2") ("checks___1" "0") ("checks___2" "0") ("checks___4" "1") ("firstrow" "1") ("secondrow" "2") ("form_2_complete" "0")))
 ;; Date must be in YY-MM-DD format; date + time must be in YY-MM-DD HH:MM[:SS]; crawling must be integer; slider 0-100 by default; email, postal code have format restrictions
-(define redcap:testrecord1c '(("date_dec" "96-06-16") ("date_inc_sec" "96-06-16 09:09:09") ("email" "test@mailinator.com") ("crawling" "0") ("postal_code" "v5v 5v5") ("slider" "80") ("truefalse" "1") ("form_3_complete" "2")))
+(define redcap:testrecord1d '(("date_dec" "96-06-16") ("date_inc_sec" "96-06-16 09:09:09") ("email" "test@mailinator.com") ("crawling" "0") ("postal_code" "v5v 5v5") ("slider" "80") ("truefalse" "1") ("form_3_complete" "2")))
 (define redcap:testchange1a '(("yesno" "")))
 (define redcap:testchange1b '(("drop" "")))
 (define redcap:testrepeatable '(("firstrow" "2")))
