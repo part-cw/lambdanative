@@ -634,18 +634,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (httpsclient-send close-vector)
         (redcap:data-clear!)
         (let loop ((n #f))
-          (if (and n (fx<= n 0))
-            (begin
-              (httpsclient-close)
-              (let ((msg (redcap:split-headerbody (redcap:data->string))))
-                (redcap:error-check msg)
-              )
-            ) (begin
-            (if (and n (> n 0))
+          (if (and n (> n 0))
               (redcap:data-append! (subu8vector redcap:buf 0 n)))
-            (loop (httpsclient-recv redcap:buf))
-          ))
-        )
+          ;; If the buffer isn't full, then there will be no more data to get
+          (if (and n (fx< n (u8vector-length redcap:buf)))
+              (begin
+                (httpsclient-close)
+                (let ((msg (redcap:split-headerbody (redcap:data->string))))
+                  (redcap:error-check msg)))
+              (loop (httpsclient-recv redcap:buf))))
       )
       (begin
         (if (not filesize)
