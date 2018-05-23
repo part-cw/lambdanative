@@ -459,7 +459,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                       (if (not instrument) (log-warning "Exported REDcap instrument " (car forms) " is not repeatable"))
                       (if (fx> instance maxinstance) (set! maxinstance instance))
                       (loop (cdr entries))))) (fx+ maxinstance 1))
-           (begin (log-warning "Exported REDcap record has no repeated entry") 0))
+           (begin (log-warning "Exported REDcap record has no repeated entry") 1))
        (begin (log-warning "Cannot retrieve instance number from REDCap. I assume this is the first entry.") 1)))
 
 )
@@ -761,6 +761,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     )
   )
 )
+
+;; Returns #t if the project has repeatable events/instruments enabled
+;; Unfortunately, if anything has been set to be repeatable,
+;;  any record export will have both redcap_repeat_instrument and _instance
+;;  regardless of which events are repeatable and if only entire events are
+;;  so we can only check if there exists some sort of repeatable enabled
+;; There is currently (v8.1.9) no API to query this directly,
+;;  but it might appear in https://rc.bcchr.ca/redcap_demo/api/help/?content=exp_proj
+;;  in the future alongside other similarly-set project-wide customizations
+;;  such as the existing returned attributes `is_longitudinal`, `randomization_enabled`, etc.
+(define (redcap-repeatable? host token)
+  (let* ((record (car (redcap-export-records host token)))
+         (repeat-instrument-pair (caddr  record))
+         (repeat-instance-pair   (cadddr record)))
+    (and (string=? "redcap_repeat_instrument" (car repeat-instrument-pair))
+         (string=? "redcap_repeat_instance"   (car repeat-instance-pair)))))
 
 (define (redcap-get-filename header)
          ;; Get index of name=" which occurs before file name in the header
