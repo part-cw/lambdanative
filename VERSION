@@ -8,4 +8,6 @@
 # 1.0.6: Uiform module (for LNhealth), updated libraries, updated modules
 # 1.0.7: Bump Gambit to 4.7.9, trusted timestamps, label cursor support
 # 1.0.8: iOS refactoring, new modules, localnotifications, various fixes
-1.0.8
+# 1.0.9: framework7 web-app support, core module performance improvement
+# 1.0.10: iOS refactoring, clipboard support, uiform widget tweaks
+1.0.10

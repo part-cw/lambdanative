@@ -232,7 +232,7 @@ cp $SYS_PREFIX/include/LNCONFIG.h $tmpdir/jni
 ac_output loaders/android/bootstrap.c.in $tmpdir/jni/bootstrap.c
 cd $tmpdir
 
-APP_ABI=armeabi
+APP_ABI=armeabi-v7a
 case "X$ANDROIDARCH" in
 Xx86) 
   APP_ABI=x86

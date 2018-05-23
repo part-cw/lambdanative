@@ -5,7 +5,7 @@
 ANDROIDSDK=`find /usr/local/android-sdk-*  -maxdepth 0 -print 2> /dev/null | tail -n 1`
 ANDROIDNDK=`find /usr/local/android-ndk-*  -maxdepth 0 -print  2> /dev/null| tail -n 1`
 # minimum version to support (a matching target must be installed)
-ANDROIDAPI=15
+ANDROIDAPI=19
 #android target cpu, either arm (default), x86 or mips
 ANDROIDARCH=arm
 # ------------------------------------
