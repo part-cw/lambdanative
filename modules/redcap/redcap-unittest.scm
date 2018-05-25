@@ -157,6 +157,8 @@
       (redcap-import-record-csv redcap:testhost redcap:testtoken redcap:testrecord2)
       ;; Import to specific repeated instrument
       (redcap-import-record redcap:testhost redcap:testtoken "1" redcap:testrepeatable 'event "event_d_arm_1" 'instrument "form_2" 'instance "2")
+      ;; Import to repeated event
+      (redcap-import-record redcap:testhost redcap:testtoken "1" redcap:testrepeatable 'event "event_c_arm_1" 'instance "2")
       ;; Export full data as json (default)
       (set! success (test-success equal? (redcap-export-records redcap:testhost redcap:testtoken) redcap:testfullexport))
       ;; Export xml from a specific record
@@ -190,7 +192,7 @@
 (define redcap:testrecord2 (string-append "study_no,redcap_event_name,redcap_repeat_instrument,redcap_repeat_instance,yesno,num,form_1_complete,firstrow,form_2_complete\n"
                                           "1,event_d_arm_1,,,,,0,,\n"
                                           "1,event_c_arm_1,,1,1,,1,,0\n"
-                                          "1,event_c_arm_1,,2,,,0,2,2\n"
+                                          "1,event_c_arm_1,,2,,,0,1,2\n"
                                           "1,event_d_arm_1,form_2,1,,,,2,1\n"
                                           "1,event_d_arm_1,form_2,2,,,,1,2\n"
                                           "2,event_a_arm_1,,,1,42,2,,"))

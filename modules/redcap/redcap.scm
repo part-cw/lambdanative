@@ -125,9 +125,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (redcap:list->xmlstr record event data . xargs)
   (let* ((instance   (redcap:arg 'instance   xargs #f))
          (instrument (redcap:arg 'instrument xargs #f))
-         (repeat (if (and instance instrument) ;;add repeat information if provided
-                     (string-append "<redcap_repeat_instrument>" instrument "</redcap_repeat_instrument>"
-                                    "<redcap_repeat_instance>" instance "</redcap_repeat_instance>") "")))
+         (instance-string   (if instance
+                                (string-append "<redcap_repeat_instance>"   instance   "</redcap_repeat_instance>")
+                                ""))
+         (instrument-string (if (and instrument instance)
+                                (string-append "<redcap_repeat_instrument>" instrument "</redcap_repeat_instrument>")
+                                ""))
+         (repeat (string-append instrument-string instance-string)))
     (string-append
       "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" "\r\n"
       "<records>" "\r\n"
