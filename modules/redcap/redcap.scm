@@ -772,11 +772,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;  in the future alongside other similarly-set project-wide customizations
 ;;  such as the existing returned attributes `is_longitudinal`, `randomization_enabled`, etc.
 (define (redcap-repeatable? host token)
-  (let* ((record (car (redcap-export-records host token)))
-         (repeat-instrument-pair (caddr  record))
-         (repeat-instance-pair   (cadddr record)))
-    (and (string=? "redcap_repeat_instrument" (car repeat-instrument-pair))
-         (string=? "redcap_repeat_instance"   (car repeat-instance-pair)))))
+  (let ((records (redcap-export-records host token)))
+    (if records 
+        (let* ((records (redcap-export-records host token))
+               (repeat-instrument-pair (caddr  (car records)))
+               (repeat-instance-pair   (cadddr (car records))))
+          (and (string=? "redcap_repeat_instrument" (car repeat-instrument-pair))
+               (string=? "redcap_repeat_instance"   (car repeat-instance-pair))))
+        #f)))
 
 (define (redcap-get-filename header)
          ;; Get index of name=" which occurs before file name in the header
