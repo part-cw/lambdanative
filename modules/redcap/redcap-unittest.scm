@@ -178,6 +178,12 @@
       (if success (set! success (test-success equal? (redcap-export-ids redcap:testhost redcap:testtoken 'event "event_a_arm_1") '("1" "2"))))
       ;; Get next available instance index
       (if success (set! success (test-success eq? (redcap-get-next-instance redcap:testhost redcap:testtoken "1" "2") 3)))
+      (if success (set! success (test-success eq? (redcap-get-next-instance-index redcap:testhost redcap:testtoken "1" 'form "form_2" 'event "event_c_arm_1") 3)))
+      (if success (set! success (test-success eq? (redcap-get-next-instance-index redcap:testhost redcap:testtoken "1" 'form "form_2" 'event "event_d_arm_1") 3)))
+      (if success (set! success (test-success eq? (redcap-get-next-instance-index redcap:testhost redcap:testtoken "1" 'event "event_d_arm_1") 3)))
+      (if success (set! success (test-success eq? (redcap-get-next-instance-index redcap:testhost redcap:testtoken "1" 'form "form_2") 3)))
+      (if success (set! success (test-success eq? (redcap-get-next-instance-index redcap:testhost redcap:testtoken "1" 'form "form_3") #f)))
+      (if success (set! success (test-success eq? (redcap-get-next-instance-index redcap:testhost redcap:testtoken "1" 'event "event_b_arm_1") #f)))
       success)))
 
 (define redcap:testrecord1a '(("yesno" . "1") ("num" . "9") ("form_1_complete" . "1")))

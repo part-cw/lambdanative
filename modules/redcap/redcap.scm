@@ -444,6 +444,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
 )
 
+;; Get the next instance index given a repeatable event or instrument
+;; For events, supplying only the event name will suffice
+;; For instruments, if the project is longitudinal,
+;;  both the instrument name and the event should be supplied,
+;;  otherwise the next index over all events will be returned.
+;; If neither are given, the next index over all repeated events and instruments
+;;  will be returned; this is not likely what is desired.
+(define (redcap-get-next-instance-index host token record . xargs)
+  (let* ((form  (redcap:arg 'form  xargs #f))
+         (event (redcap:arg 'event xargs #f))
+         (records (if record (if (pair? record) record (list record)) #f))
+         (forms   (if form   (if (pair? form)   form   (list form))   #f))
+         (events  (if event  (if (pair? event)  event  (list event))  #f))
+         (response (redcap-export-records host token 'forms forms 'records records 'events events 'fields "redcap_repeat_instance" 'type "eav")))
+    (cond ((not response) #f) ;; redcap-export-records has produced an error
+          ((= (length response) 0) 1) ;; no existing records
+          ((not (alist-ref (car response) "redcap_repeat_instance")) #f) ;; is not repeatable
+          (else (+ 1 (foldr
+            (lambda (record maxinstance)
+              (let* ((instance (alist-ref record "redcap_repeat_instance"))
+                     (i (if (string? instance) (string->number instance) instance)))
+                (if (and i (> i maxinstance)) i maxinstance)))
+            0 response))))))
+
 ;returns the index for instance in
 (define (redcap-get-next-instance host token record form)
   (let* ((forms (if (pair? form) form (list form)))
@@ -765,25 +789,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     )
   )
 )
-
-;; Returns #t if the project has repeatable events/instruments enabled
-;; Unfortunately, if anything has been set to be repeatable,
-;;  any record export will have both redcap_repeat_instrument and _instance
-;;  regardless of which events are repeatable and if only entire events are
-;;  so we can only check if there exists some sort of repeatable enabled
-;; There is currently (v8.1.9) no API to query this directly,
-;;  but it might appear in https://rc.bcchr.ca/redcap_demo/api/help/?content=exp_proj
-;;  in the future alongside other similarly-set project-wide customizations
-;;  such as the existing returned attributes `is_longitudinal`, `randomization_enabled`, etc.
-(define (redcap-repeatable? host token)
-  (let ((records (redcap-export-records host token)))
-    (if records 
-        (let* ((records (redcap-export-records host token))
-               (repeat-instrument-pair (caddr  (car records)))
-               (repeat-instance-pair   (cadddr (car records))))
-          (and (string=? "redcap_repeat_instrument" (car repeat-instrument-pair))
-               (string=? "redcap_repeat_instance"   (car repeat-instance-pair))))
-        #f)))
 
 (define (redcap-get-filename header)
          ;; Get index of name=" which occurs before file name in the header
