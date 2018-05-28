@@ -90,14 +90,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Helper function to parse REDCAP JSON format [much easier than XML parsing]
 (define (redcap:jsonstr->list str)
-  (if (or (list? str) (fx< (string-length str) 3) (not (string-contains str "[{")) (not (string-contains str "}]")))
-    ;; Determine whether content just empty or whether it was improperly formatted (possibly incomplete)
-    (if (and (string? str) (fx>= (string-length str) 3)) #f (list))
-    (let* ((index (string-contains str "[{"))
-           ;; Remove anything outside brackets first
-           (output (json-decode (substring str index (string-length str)))))
-      (if (json-error? output) #f (vector->list output))))
-)
+  (cond ((and (string? str) (string-contains str "[{") (string-contains str "}]"))
+          (let* ((index (string-contains str "[{"))
+                 ;; Remove anything outside brackets first
+                 (output (json-decode (substring str index (string-length str)))))
+            (if (json-error? output) #f (vector->list output))))
+        ((or (list? str) (and (string? str) (string-contains str "[]"))) '())
+        (else #f)))
 
 ;; Helper function to split return string into header and body
 (define (redcap:split-headerbody str)
@@ -458,9 +457,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (forms   (if form   (if (pair? form)   form   (list form))   #f))
          (events  (if event  (if (pair? event)  event  (list event))  #f))
          (response (redcap-export-records host token 'forms forms 'records records 'events events 'fields "redcap_repeat_instance" 'type "eav")))
-    (cond ((not response) #f) ;; redcap-export-records has produced an error
-          ((= (length response) 0) 1) ;; no existing records
-          ((not (alist-ref (car response) "redcap_repeat_instance")) #f) ;; is not repeatable
+    (cond ((not response) #f)
+          ((= (length response) 0)
+            (begin (log-warning "No REDCap entry currently exists; instance will begin at 1.") 1))
+          ((not (alist-ref (car response) "redcap_repeat_instance"))
+            (begin (log-error "This REDCap entry is not repeatable.") #f))
           (else (+ 1 (foldr
             (lambda (record maxinstance)
               (let* ((instance (alist-ref record "redcap_repeat_instance"))
@@ -488,7 +489,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                       (if (fx> instance maxinstance) (set! maxinstance instance))
                       (loop (cdr entries))))) (fx+ maxinstance 1))
            (begin (log-warning "Exported REDcap record has no repeated entry") 1))
-       (begin (log-warning "Cannot retrieve instance number from REDCap. I assume this is the first entry.") 1)))
+       (begin (log-error "Cannot retrieve instance number from REDCap.") #f)))
 
 )
 
