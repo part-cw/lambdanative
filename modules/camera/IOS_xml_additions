@@ -1,0 +1,4 @@
+<key>NSCameraUsageDescription</key>
+<string>Need camera access to take photos and/or video.</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>Need microphone access when recording video.</string>
