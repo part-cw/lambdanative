@@ -1,1 +1,1 @@
-config eventloop ln_core ln_glcore ln_glgui gd png camera
+config eventloop ln_core ln_glcore ln_glgui gd png camera videoplayer

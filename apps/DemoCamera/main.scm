@@ -43,8 +43,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define background #f)
 (define default:background (list 4 4 (glCoreTextureCreate 4 4 (make-u8vector 16 #xff)) 0.1 0.1 .9 .9))
 
-(define camera-image (string-append (system-directory) (system-pathseparator) "camera.jpg"))
-(define camera-image2 (string-append (system-directory) (system-pathseparator) "camera.png"))
+(define camera-image (string-append (system-directory) (system-pathseparator) "vidcam.jpg"))
+(define camera-image2 (string-append (system-directory) (system-pathseparator) "vidcam.png"))
+(define vid-location (string-append (system-directory) (system-pathseparator) "example.mp4"))
 
 (define lastmodtime 0.)
 
@@ -82,11 +83,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (let ((w (glgui-width-get))
           (h (glgui-height-get)))
       (set! background (glgui-pixmap gui 0 0 default:background w h))
+      (camera-set-max-length-video 45)
       (let* ((bw 150) (bh 50)
             (bx (/ (- w bw) 2.))
             (by (/ (- h bh) 2.)))
-        (glgui-button-string gui bx by bw bh "Take Picture" ascii_18.fnt 
-          (lambda (un . used) (camera-start camera-image))))
+        (glgui-button-string gui bx (+ by (* bh 2)) bw bh "Take Picture" ascii_18.fnt
+           (lambda (un . used) (camera-start camera-image)))
+        (glgui-button-string gui bx by bw bh "Take Video" ascii_18.fnt
+          (lambda (un . used) (camera-start-video vid-location)))
+        (glgui-button-string gui bx (- by (* bh 2)) bw bh "Watch Video" ascii_18.fnt
+          (lambda (un . used) (videoplayer vid-location))))
     )
     (if (file-exists? camera-image) (delete-file camera-image))
     (if (file-exists? camera-image2) (delete-file camera-image2))
@@ -94,9 +100,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (if (not (file-exists? logdir)) (create-directory logdir)))
   )
 ;; events
-  (lambda (t x y) 
+  (lambda (t x y)
     (autoload)
-    (if (= t EVENT_KEYPRESS) (begin 
+    (if (= t EVENT_KEYPRESS) (begin
       (if (= x EVENT_KEYESCAPE) (terminate))))
     (glgui-event gui t x y))
 ;; termination
