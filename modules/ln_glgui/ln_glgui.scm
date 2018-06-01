@@ -93,3 +93,4 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (include "recurrence.scm")
 (include "xyplot.scm")
 (include "bubbleselector.scm")
+(include "framed-container.scm")
