@@ -63,11 +63,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (if (and draggable_x?
                    (<= (+ xofs (- mx drag_oldx)) frame-x)
                    (>= (+ xofs (- mx drag_oldx)) (- frame-x (- content-w frame-w))))
-              (glgui-framed-container-ofs-set! g frame (+ xofs (- mx drag_oldx)) 'xofs))
+              (glgui-framed-container-content-ofs-set! g frame (+ xofs (- mx drag_oldx)) 'xofs))
           (if (and draggable_y?
                    (<= (+ yofs (- my drag_oldy)) frame-y)
                    (>= (+ yofs (- my drag_oldy)) (- frame-y (- content-h frame-h))))
-              (glgui-framed-container-ofs-set! g frame (+ yofs (- my drag_oldy)) 'yofs))
+              (glgui-framed-container-content-ofs-set! g frame (+ yofs (- my drag_oldy)) 'yofs))
           (glgui-widget-set! g wgt 'drag_oldx (fix mx))
           (glgui-widget-set! g wgt 'drag_oldy (fix my)))))
       ((and inside (fx= type EVENT_BUTTON1DOWN)) ;; touch down
@@ -94,7 +94,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (frame-w (glgui-widget-get g frame 'w))
         (x-scrollbar (glgui-widget-get g frame 'x-scrollbar))
         (y-scrollbar (glgui-widget-get g frame 'y-scrollbar)))
-    (cond ((eq? id 'scrollcolor)
+    (cond ((eq? id 'hidden)
+            (glgui:framed-container-hidden-set! g frame val))
+          ((eq? id 'scrollcolor)
             (if x-scrollbar (glgui-widget-set! g x-scrollbar 'color val))
             (if y-scrollbar (glgui-widget-set! g y-scrollbar 'color val)))
           ((eq? id 'scrollwidth)
@@ -111,7 +113,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; Checks to see if content is in a valid position,
 ;; i.e. if the top isn't too low or if the bottom isn't too high, same with the sides
 ;; ofs-set! may cause content to be in an invalid position which makes it undraggable
-(define (glgui-framed-container-position-valid? g frame)
+(define (glgui-framed-container-content-position-valid? g frame)
   (let* ((content   (glgui-widget-get g frame   'content))
          (content-x (glgui-widget-get g content 'xofs))
          (content-y (glgui-widget-get g content 'yofs))
@@ -126,31 +128,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (<= content-y frame-y)
          (>= content-y (- frame-y (- content-h frame-h))))))
 
-(define (glgui-framed-container-hidden-set! g frame b)
-  (let ((content     (glgui-widget-get g frame 'content))
-        (y-scrollbar (glgui-widget-get g frame 'y-scrollbar)))
-    (glgui-widget-set! g frame       'hidden b)
-    (glgui-widget-set! g content     'hidden b)
-    (glgui-widget-set! g y-scrollbar 'hidden b)
-    ;; For some reason, unhiding containers will reset their positions
-    ;; but unhiding other widgets does not change their positions
-    (if (not b) (glgui:framed-container-scrollbars-set! g frame))))
-
 ;; Set position back to initial settings
 ;; The upper-left corner of content will be aligned with frame
-(define (glgui-framed-container-ofs-reset! g frame)
+(define (glgui-framed-container-content-ofs-reset! g frame)
   (let* ((content    (glgui-widget-get g frame   'content))
          (frame-h    (glgui-widget-get g frame   'h))
          (content-h  (glgui-widget-get g content 'h))
          (new-xofs   (glgui-widget-get g frame   'xofs))
          (frame-yofs (glgui-widget-get g frame   'yofs))
          (new-yofs   (- frame-yofs (- content-h frame-h))))
-    (glgui-framed-container-ofs-set! g frame new-xofs 'xofs)
-    (glgui-framed-container-ofs-set! g frame new-yofs 'yofs)))
+    (glgui-framed-container-content-ofs-set! g frame new-xofs 'xofs)
+    (glgui-framed-container-content-ofs-set! g frame new-yofs 'yofs)))
 
 ;; Set new position for content and widgets in frame
 ;; ofs == 'xofs or 'yofs
-(define (glgui-framed-container-ofs-set! g frame new-ofs ofs)
+(define (glgui-framed-container-content-ofs-set! g frame new-ofs ofs)
   (let* ((content (glgui-widget-get g frame 'content))
          (old-ofs (glgui-widget-get g content ofs))
          (dofs (- new-ofs old-ofs)))
@@ -175,6 +167,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (handler (glgui-widget-get frame subwgt 'input-handle)))
       (if (and armed (procedure? handler)) (handler frame subwgt EVENT_BUTTON1UP sub-x sub-y))))
     (glgui-get frame 'widget-list)))
+
+(define (glgui:framed-container-hidden-set! g frame b)
+  (let ((content     (glgui-widget-get g frame 'content))
+        (y-scrollbar (glgui-widget-get g frame 'y-scrollbar)))
+    (glgui-widget-set! g content     'hidden b)
+    (glgui-widget-set! g y-scrollbar 'hidden b)
+    ;; For some reason, unhiding containers will reset their positions
+    ;; but unhiding other widgets does not change their positions
+    (if (not b) (glgui:framed-container-scrollbars-set! g frame))))
 
 ;; The ratios scrollbar-w/h : frame-w/h and frame-w/h : content-w/h are equal
 ;; If the left/bottom of content is dx/dy beyond/below the left/bottom of frame,
