@@ -54,6 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   extern char *android_clipboard_paste();
   extern int android_clipboard_clear();
   extern int android_clipboard_hascontent();
+  extern int android_clipboard_release();
 #endif
 
 // Clipboard copying
@@ -133,6 +134,14 @@ char *clipboard_paste(){
   return buf;
 }
 
+// Releases reference to string fetched during paste
+int clipboard_release(){
+#ifdef ANDROID
+  return android_clipboard_release();
+#endif
+  return;
+}
+
 // Clipboard Clearing
 int clipboard_clear(){
 #ifdef WIN32
@@ -177,7 +186,10 @@ end-of-c-declare
   ((c-lambda (char-string int) bool "___result=
     clipboard_copy(___arg1,___arg2);")
     str (string-length str)))
-(define clipboard-paste (c-lambda () char-string "___result=clipboard_paste();"))
+(define clipboard-paste
+  (let ((str (c-lambda () char-string "___result=clipboard_paste();")))
+    (c-lambda () bool "___result=clipboard_release();")
+    str))
 (define clipboard-hascontent (c-lambda () bool "___result=clipboard_hascontent();"))
 
 ;; eof

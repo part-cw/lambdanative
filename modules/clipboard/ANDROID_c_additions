@@ -1,3 +1,6 @@
+jstring jstr;
+const char *str = NULL;
+
 int android_clipboard_copy(char *str){
   JNIEnv *env = GetJNIEnv();
   jstring jstr = (*env)->NewStringUTF(env,str);
@@ -14,12 +17,20 @@ char *android_clipboard_paste(){
   jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
   if (env&&globalObj){
     jmethodID method = (*env)->GetMethodID(env, main_class, "getClipboardContent", "()Ljava/lang/String;");
-    jstring jstr = (jstring) (*env)->CallObjectMethod(env, globalObj, method, jstr);
-    const char *str = (*env)->GetStringUTFChars(env, jstr, 0);
-    (*env)->ReleaseStringUTFChars(env, jstr, str);
+    jstr = (jstring) (*env)->CallObjectMethod(env, globalObj, method, jstr);
+    str  = (*env)->GetStringUTFChars(env, jstr, 0);
+    // (*env)->ReleaseStringUTFChars(env, jstr, str);
     return str;
   }
   return "";
+}
+
+int android_clipboard_release(){
+  if (str) {
+    JNIEnv *env = GetJNIEnv();
+    (*env)->ReleaseStringUTFChars(env, jstr, str);
+    str = NULL;
+  }
 }
 
 int android_clipboard_clear(){
