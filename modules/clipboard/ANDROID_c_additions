@@ -25,12 +25,13 @@ char *android_clipboard_paste(){
   return "";
 }
 
-int android_clipboard_release(){
+void android_clipboard_release(){
   if (str) {
     JNIEnv *env = GetJNIEnv();
     (*env)->ReleaseStringUTFChars(env, jstr, str);
     str = NULL;
   }
+  return;
 }
 
 int android_clipboard_clear(){
