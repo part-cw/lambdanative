@@ -182,11 +182,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (align0 (glgui-widget-get g wgt 'align))
          (align (if (and focus (not (= align0 GUI_ALIGNRIGHT)) label (> labelw w)) GUI_ALIGNRIGHT align0))
          (inside (and (fx> mx x) (fx< mx (fx+ x w 5)) (fx> my y) (fx< my (fx+ y h)))))
+    (if (fx= type EVENT_BUTTON1UP)
+      (glgui-widget-set! g wgt 'armed #f))
     (if (and clickable inside armed (fx= type EVENT_BUTTON1UP))
       (begin
         (glgui-widget-setglobal! g 'focus #f)
         (glgui-widget-set! g wgt 'focus #t)
-        (glgui-widget-set! g wgt 'armed #f)
         (if (and onfocuscb (not focus)) (onfocuscb g wgt type mx my))
       ))
     (if (and inside (fx= type EVENT_BUTTON1DOWN))
