@@ -56,6 +56,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   extern int android_clipboard_hascontent();
   extern void android_clipboard_release();
 #endif
+#ifdef LINUX
+  #include <X11/Xlib.h>
+  extern Display* microgl_getDisplay();
+  extern Window microgl_getWindow();
+  extern void log_c(char *);
+#endif
 
 // Clipboard copying
 int clipboard_copy(char *str, int len){
@@ -86,7 +92,18 @@ int clipboard_copy(char *str, int len){
 #ifdef IOS
   return ios_clipboard_copy(str);
 #endif
-
+#ifdef LINUX
+  Display *display = microgl_getDisplay();
+  Window window = microgl_getWindow();
+  Atom selection = XInternAtom(display, "CLIPBOARD", 0);
+  Atom format = XInternAtom(display, "STRING", 0);
+  XEvent event;
+  XSetSelectionOwner (display, selection, window, 0);
+  if (XGetSelectionOwner (display, selection) != window)
+    return 0;
+  // Doesn't work yet
+  return 0;
+#endif
   return 0;
 }
 
@@ -129,7 +146,36 @@ char *clipboard_paste(){
 #ifdef MACOSX
   return macosx_clipboard_paste();
 #endif
+#ifdef LINUX
+  char *str = NULL;
+  Display *display = microgl_getDisplay();
+  Window window = microgl_getWindow();
+  Atom selection = XInternAtom(display, "CLIPBOARD", 0);
+  Atom type = XInternAtom(display, "STRING", 0);
+  Atom propid = XInternAtom(display, "XSEL_DATA", 0);
+  Atom incrid = XInternAtom(display, "INCR", 0);
+  XEvent event;
 
+  XConvertSelection(display, selection, type, propid, window, CurrentTime);
+  do {
+    XNextEvent(display, &event);
+  } while (event.type != SelectionNotify || event.xselection.selection != selection);
+
+  if (event.xselection.property){
+    unsigned long ressize, restail;
+    int resbits;
+    XGetWindowProperty(display, window, propid, 0, LONG_MAX/4, 0, AnyPropertyType,
+        &type, &resbits, &ressize, &restail, (unsigned char**)&str);
+
+    if (type == incrid){
+      log_c("Buffer is too large");
+      str="";
+    }
+  }else{
+    str="";
+  }
+  return str;
+#endif
   char* buf="";
   return buf;
 }
@@ -137,9 +183,8 @@ char *clipboard_paste(){
 // Releases reference to string fetched during paste
 void clipboard_release(){
 #ifdef ANDROID
-  return android_clipboard_release();
+  android_clipboard_release();
 #endif
-  return;
 }
 
 // Clipboard Clearing
@@ -188,7 +233,7 @@ end-of-c-declare
     str (string-length str)))
 (define clipboard-paste
   (let ((str (c-lambda () char-string "___result=clipboard_paste();")))
-    (c-lambda () void "clipboard_release")
+    (c-lambda () void "clipboard_release();")
     str))
 (define clipboard-hascontent (c-lambda () bool "___result=clipboard_hascontent();"))
 

@@ -442,4 +442,6 @@ void microgl_init(void)
 int microgl_screenwidth(void) { return screen_width; }
 int microgl_screenheight() { return screen_height; }
 
+Display* microgl_getDisplay(){ return Dpy; }
+Window microgl_getWindow(){ return win.Win; }
 // eof
