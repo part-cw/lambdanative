@@ -171,6 +171,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (clearoninput (glgui-widget-get g wgt 'clearoninput))
          (aftercharcb (glgui-widget-get g wgt 'aftercharcb))
          (onfocuscb (glgui-widget-get g wgt 'onfocuscb))
+         (armed (glgui-widget-get g wgt 'armed))
          (password (glgui-widget-get g wgt 'password))
          (fnt (glgui-widget-get g wgt 'font))
          (label0 (glgui-widget-get g wgt 'label))
@@ -181,12 +182,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (align0 (glgui-widget-get g wgt 'align))
          (align (if (and focus (not (= align0 GUI_ALIGNRIGHT)) label (> labelw w)) GUI_ALIGNRIGHT align0))
          (inside (and (fx> mx x) (fx< mx (fx+ x w 5)) (fx> my y) (fx< my (fx+ y h)))))
-    (if (and clickable inside (fx= type EVENT_BUTTON1UP))
+    (if (and clickable inside armed (fx= type EVENT_BUTTON1UP))
       (begin
         (glgui-widget-setglobal! g 'focus #f)
         (glgui-widget-set! g wgt 'focus #t)
+        (glgui-widget-set! g wgt 'armed #f)
         (if (and onfocuscb (not focus)) (onfocuscb g wgt type mx my))
       ))
+    (if (and inside (fx= type EVENT_BUTTON1DOWN))
+      (glgui-widget-set! g wgt 'armed #t))
     (if (and label inside focus (fx= type EVENT_BUTTON1DOWN))
       (if wrapped?
         (let* ((direction (glgui-widget-get g wgt 'direction))
@@ -325,6 +329,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'callback #f
      'aftercharcb #f    ;; A callback that is called after every character and after delete
      'onfocuscb #f    ;; A callback that is called when the label is clicked and gets focus
+     'armed #f
      'color color
      'hidden #f
      'direction GUI_LEFTTORIGHT
