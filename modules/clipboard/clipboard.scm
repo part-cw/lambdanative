@@ -188,7 +188,7 @@ end-of-c-declare
     str (string-length str)))
 (define clipboard-paste
   (let ((str (c-lambda () char-string "___result=clipboard_paste();")))
-    (c-lambda () void "___result=clipboard_release();")
+    (c-lambda () void "clipboard_release")
     str))
 (define clipboard-hascontent (c-lambda () bool "___result=clipboard_hascontent();"))
 
