@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (string-append (substring str 0 i) s (substring str i (string-length str))))
 
 (define (glgui:label-copypaste-overlay label-g label-wgt)
-  (let* ((item-w 70) (item-h 30) (item-w-half (/ item-w 2))
+  (let* ((item-w 60) (item-h 30) (item-w-half (/ item-w 2))
          (container-w (glgui-width-get))
          (container-h (glgui-height-get))
          (mx        (glgui-widget-get label-g label-wgt 'old-mx))
@@ -102,9 +102,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                       (glgui-widget-set! gui container 'down-wgt wgt)))
               inside)))
          (copybutton  (if copyable?
-            (glgui-button-string container copy-x  item-y item-w item-h "COPY"  textEng_14.fnt (cb 'copy))  #f))
+            (glgui-button container copy-x  item-y item-w item-h copy.img  (cb 'copy))  #f))
          (pastebutton (if pastable?
-            (glgui-button-string container paste-x item-y item-w item-h "PASTE" textEng_14.fnt (cb 'paste)) #f)))
+            (glgui-button container paste-x item-y item-w item-h paste.img (cb 'paste)) #f)))
     ;; Don't let widgets underneath receive events (for now)
     (if container (glgui-widget-set! gui container 'input-handle
       (lambda (g wgt type mx my)
