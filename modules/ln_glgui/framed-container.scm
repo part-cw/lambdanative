@@ -70,7 +70,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (glgui-framed-container-content-ofs-set! g frame (+ yofs (- my drag_oldy)) 'yofs))
           (glgui-widget-set! g wgt 'drag_oldx (fix mx))
           (glgui-widget-set! g wgt 'drag_oldy (fix my)))))
-      ((and inside (fx= type EVENT_BUTTON1DOWN)) ;; touch down
+      ((or (and inside (fx= type EVENT_BUTTON1DOWN)) ;; touch down
+           (and inside (fx= type EVENT_MOTION) (not drag_oldx) (not drag_oldy))) ;; if moving but no oldxy set, set them
         (glgui-widget-set! g wgt 'drag_oldx (fix mx))
         (glgui-widget-set! g wgt 'drag_oldy (fix my))
         (glgui-widget-set! g wgt 'dragged? #f))

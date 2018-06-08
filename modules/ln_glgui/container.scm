@@ -104,6 +104,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
 )
 
+;; Gets the topmost GUI by traversing parents
+(define (glgui-container-gui-get wgt)
+  (let ((parent (glgui-get wgt 'parent)))
+    (if parent
+        (glgui-container-gui-get parent)
+        wgt)))
+
+;; Given coordinates (x, y) in wgt,
+;; get the same position in the frame of reference of
+;; the topmost GUI
+(define (glgui-container-gui-xy-get wgt x y)
+  (let ((parent (glgui-get wgt 'parent))
+        (wgt-x  (glgui-get wgt 'xofs))
+        (wgt-y  (glgui-get wgt 'yofs)))
+    (if parent
+        (glgui-container-gui-xy-get parent (+ x wgt-x) (+ y wgt-y))
+        (cons x y))))
+
 (define (glgui-container g x y w h)
   (glgui-widget-add g
     'x 0
@@ -112,6 +130,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     'h h
     'xofs x
     'yofs y
+    'parent g
     'widget-list '()
     'widget-count 0
     'container #t
