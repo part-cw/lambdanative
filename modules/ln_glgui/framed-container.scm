@@ -123,7 +123,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (new-dim (+ old-dim delta)))
     (glgui-widget-set! g content dim new-dim)
     (glgui-widget-set! g content ofs new-ofs)
-    (glgui:framed-container-scrollbars-set! g frame)))
+    (if (not (glgui-framed-container-content-position-valid? g frame))
+        (glgui-framed-container-content-ofs-reset! g frame)
+        (glgui:framed-container-scrollbars-set! g frame))))
 
 ;; Checks to see if content is in a valid position,
 ;; i.e. if the top isn't too low or if the bottom isn't too high, same with the sides
