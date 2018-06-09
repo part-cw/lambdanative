@@ -231,9 +231,9 @@ end-of-c-declare
   ((c-lambda (char-string int) bool "___result=
     clipboard_copy(___arg1,___arg2);")
     str (string-length str)))
-(define clipboard-paste
-  (let ((str (c-lambda () char-string "___result=clipboard_paste();")))
-    (c-lambda () void "clipboard_release();")
+(define (clipboard-paste)
+  (let ((str ((c-lambda () char-string "___result=clipboard_paste();"))))
+    ((c-lambda () void "clipboard_release();"))
     str))
 (define clipboard-hascontent (c-lambda () bool "___result=clipboard_hascontent();"))
 
