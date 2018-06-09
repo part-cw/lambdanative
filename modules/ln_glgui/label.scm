@@ -38,7 +38,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Inserts s after i characters in str
 (define (string-insert-at str s i)
-  (string-append (substring str 0 i) s (substring str i (string-length str))))
+  (if (and (string? str) (string? s))
+      (string-append (substring str 0 i) s (substring str i (string-length str)))
+      (if (string? str) str "")))
 
 (define (glgui:label-copypaste-overlay label-g label-wgt)
   (let* ((item-w 60) (item-h 30) (item-w-half (/ item-w 2))
@@ -75,12 +77,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (inside? (lambda (mx my)
             (and (> mx copy-x) (< mx (+ paste-x item-w)) (> my item-y) (< my (+ item-y item-h)))))
          (cb (lambda (action) (lambda xargs
-            (let ((text     (glgui-widget-get label-g label-wgt 'label))
-                  (focuspos (glgui-widget-get label-g label-wgt 'focuspos)))
-            (cond ((eq? action 'copy)
-                    (clipboard-copy text))
-                  ((eq? action 'paste)
-                    (glgui-widget-set! label-g label-wgt 'label (string-insert-at text (clipboard-paste) focuspos))))))))
+            (let* ((text     (glgui-widget-get label-g label-wgt 'label))
+                   (focuspos (glgui-widget-get label-g label-wgt 'focuspos))
+                   (newtext  (if (clipboard-hascontent) (string-insert-at text (clipboard-paste) focuspos) text)))
+              (cond ((eq? action 'copy)
+                      (clipboard-copy text))
+                    ((eq? action 'paste)
+                      (glgui-widget-set! label-g label-wgt 'label newtext)))))))
          ;; Remove copypaste menu when clicked or moving outside or when copy/paste is clicked
          (input-handle (lambda (g wgt type mx my)
             (let* ((down-inside  (glgui-widget-get gui container 'down-inside))
