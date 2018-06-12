@@ -141,6 +141,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (longpress-waiting? (car longpress))
          (longpress-time (caddr longpress))
          (longpress-duration (glgui-widget-get g wgt 'longpress-duration))
+         (longpress-callback (glgui-widget-get g wgt 'longpress-callback))
          (label0 (glgui-widget-get g wgt 'label))
          (label (if label0 (if password (make-string (string-length label0) #\*) label0) #f))
          (labelw (if label0 (glgui:stringwidth label fnt) 0))
@@ -151,7 +152,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     ;; Check if longpress event has occurred
     (if (and longpress-waiting? (> (- ##now longpress-time) longpress-duration))
         (begin (glgui-widget-set! g wgt 'longpress (list #f #t 0))
-               (glgui:label-copypaste-overlay g wgt)))
+               (longpress-callback g wgt)))
     (if bgcolor (if r (glgui:draw-rounded-box x y w h bgcolor) (glgui:draw-box x y w h bgcolor)))
     (if (and label clearoninput)
       (let* ((sw (min w labelw))
@@ -191,6 +192,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (longpress-waiting? (car longpress))
          (longpress-time (caddr longpress))
          (longpress-duration (glgui-widget-get g wgt 'longpress-duration))
+         (longpress-callback (glgui-widget-get g wgt 'longpress-callback))
          (label (if label0 (if password (make-string (string-length label0) #\*) label0) #f))
          (labelw (if label0 (glgui:stringwidth label fnt) 0))
          (lblh (if label (flo (glgui:fontheight fnt)) 0.))
@@ -204,7 +206,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     ;; Check if longpress event has occurred
     (if (and longpress-waiting? (> (- ##now longpress-time) longpress-duration))
         (begin (glgui-widget-set! g wgt 'longpress (list #f #t 0))
-               (glgui:label-copypaste-overlay g wgt)))
+               (longpress-callback g wgt)))
     (if bgcolor (if r (glgui:draw-rounded-box x y w h bgcolor) (glgui:draw-box x y w h bgcolor)))
     (if (and label (fx> (string-length label) 0))
       (let* ((labelsplit0 ((if (= direction GUI_RIGHTTOLEFT) string-split-width-rtl string-split-width) label w fnt))
@@ -449,6 +451,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'longpress (list #f #f 0)  ;; '(has longpress been initiated?, has longpress succeeded?, time of longpress initiation)
      'longpress-range 10  ;; How far you can move before longpress is cancelled (pixels)
      'longpress-duration 0.5  ;; How long you need to hold to activate longpress (seconds)
+     'longpress-callback glgui:label-copypaste-overlay
      'copyable? #f
      'pastable? #f
      'color color
