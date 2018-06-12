@@ -6,7 +6,7 @@ int ios_clipboard_copy(char* str){
 
 int ios_clipboard_hascontent(){
   UIPasteboard *gpBoard = [UIPasteboard generalPasteboard];
-  return gpBoard.hasStrings;
+  return [gpBoard containsPasteboardTypes:UIPasteboardTypeListString];
 }
 
 char *ios_clipboard_paste(){
