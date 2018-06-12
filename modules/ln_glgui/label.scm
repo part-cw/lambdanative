@@ -36,12 +36,6 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-;; Inserts s after i characters in str
-(define (string-insert-at str s i)
-  (if (and (string? str) (string? s))
-      (string-append (substring str 0 i) s (substring str i (string-length str)))
-      (if (string? str) str "")))
-
 (define (glgui:label-copypaste-overlay label-g label-wgt)
   (let* ((item-w 60) (item-h 30) (item-w-half (/ item-w 2))
          (container-w (glgui-width-get))
@@ -77,9 +71,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (inside? (lambda (mx my)
             (and (> mx copy-x) (< mx (+ paste-x item-w)) (> my item-y) (< my (+ item-y item-h)))))
          (cb (lambda (action) (lambda xargs
-            (let* ((text     (glgui-widget-get label-g label-wgt 'label))
-                   (focuspos (glgui-widget-get label-g label-wgt 'focuspos))
-                   (newtext  (if (clipboard-hascontent) (string-insert-at text (clipboard-paste) focuspos) text)))
+            (let* ((text      (glgui-widget-get label-g label-wgt 'label))
+                   (focuspos  (glgui-widget-get label-g label-wgt 'focuspos))
+                   (pastetext (clipboard-paste))
+                   (newtext   (if (string? pastetext) (string-insert-at text pastetext focuspos) text)))
               (cond ((eq? action 'copy)
                       (clipboard-copy text))
                     ((eq? action 'paste)
@@ -454,8 +449,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'longpress (list #f #f 0)  ;; '(has longpress been initiated?, has longpress succeeded?, time of longpress initiation)
      'longpress-range 10  ;; How far you can move before longpress is cancelled (pixels)
      'longpress-duration 0.5  ;; How long you need to hold to activate longpress (seconds)
-     'copyable? #t
-     'pastable? #t
+     'copyable? #f
+     'pastable? #f
      'color color
      'hidden #f
      'direction GUI_LEFTTORIGHT
@@ -484,6 +479,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui-inputlabel g x y w h label fnt color . bgcolor)
   (let ((wgt (glgui-label g x y w h label fnt color (if (fx= (length bgcolor) 1) (car bgcolor) #f))))
     (glgui-widget-set! g wgt 'enableinput #t)
+    (glgui-widget-set! g wgt 'copyable? #t)
+    (glgui-widget-set! g wgt 'pastable? #t)
     wgt
   ))
 
