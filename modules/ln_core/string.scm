@@ -238,6 +238,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (list (string-mapconcat first " ") (string-mapconcat second " "))))))
 )
 
+;; Inserts s after i characters in str
+;; Precondition: 0 <= i <= (string-length str)
+(define (string-insert-at str s i)
+  (string-append (substring str 0 i) s (substring str i (string-length str))))
+
 ;; @deffn {procedure} string-split-width str width font
 ;;   Returns a modified version of string str which is wrapped 
 ;;   to fit into a window of width w using the fontsize obtained from font
