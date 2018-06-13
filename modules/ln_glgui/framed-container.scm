@@ -226,7 +226,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (too-low?    (< (+ content-y content-h) (+ frame-y frame-h))))
     (if (and too-high? scrollable?)
         (glgui-widget-set! g frame 'scroll-y (- content-h frame-h)))
-    (if (or too-low? (and too-hight? (not scrollable?)))
+    (if (or too-low? (and too-high? (not scrollable?)))
         (glgui-widget-set! g frame 'scroll-y 0))))
 
 ;; PRIVATE FUNCTIONS
