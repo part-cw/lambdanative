@@ -36,6 +36,8 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
+;; HANDLERS
+
 ;; Input handler for CONTENT, not frame!
 (define (glgui:framed-container-input g wgt type mx my)
   (let* ((xofs         (glgui-widget-get-dyn g wgt 'xofs))
@@ -61,13 +63,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (glgui-widget-set! g wgt 'dragged? #t)
           (glgui:framed-container-subwidgets-dearm! frame)
           (if (and draggable_x?
-                   (<= (+ xofs (- mx drag_oldx)) frame-x)
-                   (>= (+ xofs (- mx drag_oldx)) (- frame-x (- content-w frame-w))))
-              (glgui-framed-container-content-ofs-set! g frame (+ xofs (- mx drag_oldx)) 'xofs))
+                   (or (and (>= mx drag_oldx) (<= (+ xofs (- mx drag_oldx)) frame-x))
+                       (and (<= mx drag_oldx) (>= (+ xofs (- mx drag_oldx)) (- frame-x (- content-w frame-w))))))
+              (glgui-widget-set! g frame 'scroll-x (- frame-x (+ xofs (- mx drag_oldx)))))
           (if (and draggable_y?
-                   (<= (+ yofs (- my drag_oldy)) frame-y)
-                   (>= (+ yofs (- my drag_oldy)) (- frame-y (- content-h frame-h))))
-              (glgui-framed-container-content-ofs-set! g frame (+ yofs (- my drag_oldy)) 'yofs))
+                   (or (and (>= my drag_oldy) (<= (+ yofs (- my drag_oldy)) frame-y))
+                       (and (<= my drag_oldy) (>= (+ yofs (- my drag_oldy)) (- frame-y (- content-h frame-h))))))
+              (glgui-widget-set! g frame 'scroll-y (- (+ yofs (- my drag_oldy) content-h) frame-y frame-h)))
           (glgui-widget-set! g wgt 'drag_oldx (fix mx))
           (glgui-widget-set! g wgt 'drag_oldy (fix my)))))
       ((and inside (fx= type EVENT_BUTTON1DOWN)) ;; touch down
@@ -94,81 +96,142 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (frame-w (glgui-widget-get g frame 'w))
         (x-scrollbar (glgui-widget-get g frame 'x-scrollbar))
         (y-scrollbar (glgui-widget-get g frame 'y-scrollbar)))
-    (cond ((eq? id 'hidden)
-            (glgui:framed-container-hidden-set! g frame val))
-          ((eq? id 'scrollcolor)
-            (if x-scrollbar (glgui-widget-set! g x-scrollbar 'color val))
-            (if y-scrollbar (glgui-widget-set! g y-scrollbar 'color val)))
+    (cond ((eq? id 'scrollcolor)
+            (glgui-widget-set! g x-scrollbar 'color val)
+            (glgui-widget-set! g y-scrollbar 'color val))
           ((eq? id 'scrollwidth)
-            (if x-scrollbar
-              (begin (glgui-widget-set! g x-scrollbar 'h val)
-                     (glgui-widget-set! g x-scrollbar 'y (- frame-y val))))
-            (if y-scrollbar
-              (begin (glgui-widget-set! g y-scrollbar 'w val)
-                     (glgui-widget-set! g y-scrollbar 'x (+ frame-x frame-w val)))))
+            (glgui-widget-set! g x-scrollbar 'h val)
+            (glgui-widget-set! g y-scrollbar 'w val)
+            (glgui-widget-set! g x-scrollbar 'y (- frame-y val))
+            (glgui-widget-set! g y-scrollbar 'x (+ frame-x frame-w val)))
           ((eq? id 'scrollrounded)
-            (if x-scrollbar (glgui-widget-set! g x-scrollbar 'rounded val))
-            (if y-scrollbar (glgui-widget-set! g y-scrollbar 'rounded val))))))
+            (glgui-widget-set! g x-scrollbar 'rounded val)
+            (glgui-widget-set! g y-scrollbar 'rounded val))
+          ((eq? id 'hidden)
+            (glgui:framed-container-hidden-set! g frame val))
+          ((eq? id 'scroll-x)
+            (glgui:framed-container-scroll-x-set! g frame val))
+          ((eq? id 'scroll-y)
+            (glgui:framed-container-scroll-y-set! g frame val))
+          ((eq? id 'content-w)
+            (glgui:framed-container-content-w-set! g frame val))
+          ((eq? id 'content-h)
+            (glgui:framed-container-content-h-set! g frame val))
+          ((eq? id 'xofs)
+            (glgui:framed-container-position-x-set! g frame val))
+          ((eq? id 'yofs)
+            (glgui:framed-container-position-y-set! g frame val)))))
 
-;; Grows (or shrinks if delta negative) content in given dimension
-;; and updates scrollbars correspondingly
-;; dim == 'w or 'h
-(define (glgui-framed-container-content-grow g frame delta dim)
-  (let* ((content (glgui-widget-get g frame 'content))
-         (ofs     (if (eq? dim 'w) 'xofs 'yofs))
-         (old-ofs (glgui-widget-get g content ofs))
-         (new-ofs (if (eq? ofs 'yofs) (- old-ofs delta) old-ofs))
-         (old-dim (glgui-widget-get g content dim))
-         (new-dim (+ old-dim delta)))
-    (glgui-widget-set! g content dim new-dim)
-    (glgui-widget-set! g content ofs new-ofs)
-    (if (not (glgui-framed-container-content-position-valid? g frame))
-        (glgui-framed-container-content-ofs-reset! g frame)
-        (glgui:framed-container-scrollbars-set! g frame))))
+;; UPDATE-HANDLE FUNCTIONS
 
-;; Checks to see if content is in a valid position,
-;; i.e. if the top isn't too low or if the bottom isn't too high, same with the sides
-;; ofs-set! may cause content to be in an invalid position which makes it undraggable
-(define (glgui-framed-container-content-position-valid? g frame)
-  (let* ((content   (glgui-widget-get g frame   'content))
-         (content-x (glgui-widget-get g content 'xofs))
-         (content-y (glgui-widget-get g content 'yofs))
-         (content-w (glgui-widget-get g content 'w))
-         (content-h (glgui-widget-get g content 'h))
-         (frame-x   (glgui-widget-get g frame 'xofs))
-         (frame-y   (glgui-widget-get g frame 'yofs))
-         (frame-w   (glgui-widget-get g frame 'w))
-         (frame-h   (glgui-widget-get g frame 'h)))
-    (and (<= content-x frame-x)
-         (>= content-x (- frame-x (- content-w frame-w)))
-         (<= content-y frame-y)
-         (>= content-y (- frame-y (- content-h frame-h))))))
+;; Set hidden for content and scrollbars
+(define (glgui:framed-container-hidden-set! g frame b)
+  (let ((content     (glgui-widget-get g frame 'content))
+        (x-scrollbar (glgui-widget-get g frame 'x-scrollbar))
+        (y-scrollbar (glgui-widget-get g frame 'y-scrollbar)))
+    (glgui-widget-set! g content 'hidden b)
+    (if b (begin (glgui-widget-set! g x-scrollbar 'hidden #t)
+                 (glgui-widget-set! g y-scrollbar 'hidden #t))
+          (glgui:framed-container-scrollbars-set! g frame))))
 
-;; Set position back to initial settings
-;; The upper-left corner of content will be aligned with frame
-(define (glgui-framed-container-content-ofs-reset! g frame)
-  (let* ((content    (glgui-widget-get g frame   'content))
-         (frame-h    (glgui-widget-get g frame   'h))
-         (content-h  (glgui-widget-get g content 'h))
-         (new-xofs   (glgui-widget-get g frame   'xofs))
-         (frame-yofs (glgui-widget-get g frame   'yofs))
-         (new-yofs   (- frame-yofs (- content-h frame-h))))
-    (glgui-framed-container-content-ofs-set! g frame new-xofs 'xofs)
-    (glgui-framed-container-content-ofs-set! g frame new-yofs 'yofs)))
-
-;; Set new position for content and widgets in frame
-;; ofs == 'xofs or 'yofs
-(define (glgui-framed-container-content-ofs-set! g frame new-ofs ofs)
-  (let* ((content (glgui-widget-get g frame 'content))
-         (old-ofs (glgui-widget-get g content ofs))
-         (dofs (- new-ofs old-ofs)))
-    (glgui-widget-set! g content ofs new-ofs)
-    (glgui:framed-container-subwidgets-shift! frame dofs (if (eq? ofs 'xofs) 'x 'y))
+;; Set how far right the widget should be scrolled to
+(define (glgui:framed-container-scroll-x-set! g frame scroll-x)
+  (let* ((content          (glgui-widget-get g frame   'content))
+         (scroll-x-old     (glgui-widget-get g frame   'scroll-x))
+         (frame-x          (glgui-widget-get g frame   'xofs))
+         (content-xofs-old (glgui-widget-get g content 'xofs))
+         (content-xofs-new (- frame-x scroll-x))
+         (shift            (- content-xofs-new content-xofs-old)))
+    (glgui-widget-set! g content 'xofs content-xofs-new)
+    (glgui:framed-container-subwidgets-shift! frame 'x shift)
     (glgui:framed-container-scrollbars-set! g frame)))
+
+;; Set how far down the widget should be scrolled to
+(define (glgui:framed-container-scroll-y-set! g frame scroll-y)
+  (let* ((content          (glgui-widget-get g frame   'content))
+         (scroll-y-old     (glgui-widget-get g frame   'scroll-y))
+         (frame-y          (glgui-widget-get g frame   'yofs))
+         (frame-h          (glgui-widget-get g frame   'h))
+         (content-h        (glgui-widget-get g content 'h))
+         (content-yofs-old (glgui-widget-get g content 'yofs))
+         (content-yofs-new (- (+ frame-y frame-h scroll-y) content-h))
+         (shift            (- content-yofs-new content-yofs-old)))
+    (glgui-widget-set! g content 'yofs content-yofs-new)
+    (glgui:framed-container-subwidgets-shift! frame 'y shift)
+    (glgui:framed-container-scrollbars-set! g frame)))
+
+;; Set width of content
+(define (glgui:framed-container-content-w-set! g frame content-w)
+  (let* ((content (glgui-widget-get g frame 'content)))
+    (glgui-widget-set! g content 'w content-w)
+    (glgui:framed-container-scrollbars-set! g frame)))
+
+;; Set height of content
+(define (glgui:framed-container-content-h-set! g frame content-h)
+  (let* ((content   (glgui-widget-get g frame   'content))
+         (frame-y   (glgui-widget-get g frame   'yofs))
+         (frame-h   (glgui-widget-get g frame   'h))
+         (scroll-y  (glgui-widget-get g frame   'scroll-y))
+         (content-yofs-new (- (+ frame-y frame-h scroll-y) content-h)))
+    (glgui-widget-set! g content 'h content-h)
+    (glgui-widget-set! g content 'yofs content-yofs-new)
+    (glgui:framed-container-scrollbars-set! g frame)))
+
+;; Set x-position of everything after frame-x has been changed
+(define (glgui:framed-container-position-x-set! g frame frame-x)
+  (let* ((content  (glgui-widget-get g frame 'content))
+         (scroll-x (glgui-widget-get g frame 'scroll-x))
+         (content-xofs-new (- frame-x scroll-x)))
+    (glgui-widget-set! g content 'yofs content-xofs-new)
+    (glgui:framed-container-scrollbars-set! g frame)))
+
+;; Set y-position of everything after frame-y has been changed
+(define (glgui:framed-container-position-y-set! g frame frame-y)
+  (let* ((content   (glgui-widget-get g frame   'content))
+         (scroll-y  (glgui-widget-get g frame   'scroll-y))
+         (frame-h   (glgui-widget-get g frame   'h))
+         (content-h (glgui-widget-get g content 'h))
+         (content-yofs-new (- (+ frame-y frame-h scroll-y) content-h)))
+    (glgui-widget-set! g content 'yofs content-yofs-new)
+    (glgui:framed-container-scrollbars-set! g frame)))
+
+;; PUBLIC FUNCTIONS
+
+;; If right side of content is to the left  of the right side of frame, snap to right side of frame
+;; If left  side of content is to the right of the left  side of frame, snap to left  side of frame
+(define (glgui-framed-container-position-x-snap! g frame)
+  (let* ((content (glgui-widget-get g frame 'content))
+         (frame-x    (glgui-widget-get g frame   'xofs))
+         (frame-w    (glgui-widget-get g frame   'w))
+         (content-x  (glgui-widget-get g content 'xofs))
+         (content-w  (glgui-widget-get g content 'w))
+         (too-left?  (< (+ content-x content-w) (+ frame-x frame-w)))
+         (too-right? (> content-x frame-x)))
+    (if too-left?
+        (glgui-widget-set! g frame 'scroll-x (- content-w frame-w)))
+    (if too-right?
+        (glgui-widget-set! g frame 'scroll-x 0))))
+
+;; If bottom of content is above bottom of frame, snap to bottom of frame
+;; If top    of content is below top    of frame, snap to top of frame
+(define (glgui-framed-container-position-y-snap! g frame)
+  (let* ((content   (glgui-widget-get g frame   'content))
+         (frame-y   (glgui-widget-get g frame   'yofs))
+         (frame-h   (glgui-widget-get g frame   'h))
+         (content-y (glgui-widget-get g content 'yofs))
+         (content-h (glgui-widget-get g content 'h))
+         (too-high? (> content-y frame-y))
+         (too-low?  (< (+ content-y content-h) (+ frame-y frame-h))))
+    (if too-high?
+        (glgui-widget-set! g frame 'scroll-y (- content-h frame-h)))
+    (if too-low?
+        (glgui-widget-set! g frame 'scroll-y 0))))
+
+;; PRIVATE FUNCTIONS
 
 ;; Shift subwidgets by adding shift
 ;; dir == 'x or 'y
-(define (glgui:framed-container-subwidgets-shift! frame shift dir)
+(define (glgui:framed-container-subwidgets-shift! frame dir shift)
   (for-each (lambda (subwgt)
     (let ((sub-dir (glgui-widget-get frame subwgt dir)))
       (glgui-widget-set! frame subwgt dir (+ sub-dir shift))))
@@ -183,17 +246,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (handler (glgui-widget-get frame subwgt 'input-handle)))
       (if (and armed (procedure? handler)) (handler frame subwgt EVENT_BUTTON1UP sub-x sub-y))))
     (glgui-get frame 'widget-list)))
-
-(define (glgui:framed-container-hidden-set! g frame b)
-  (let ((content     (glgui-widget-get g frame 'content))
-        (x-scrollbar (glgui-widget-get g frame 'x-scrollbar))
-        (y-scrollbar (glgui-widget-get g frame 'y-scrollbar)))
-    (glgui-widget-set! g content 'hidden b)
-    ;; For some reason, unhiding containers will reset their positions
-    ;; but unhiding other widgets does not change their positions
-    (if b (begin (glgui-widget-set! g x-scrollbar 'hidden #t)
-                 (glgui-widget-set! g y-scrollbar 'hidden #t))
-          (glgui:framed-container-scrollbars-set! g frame))))
 
 ;; The ratios scrollbar-w/h : frame-w/h and frame-w/h : content-w/h are equal
 ;; If the left/bottom of content is dx/dy beyond/below the left/bottom of frame,
@@ -224,6 +276,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (glgui-widget-set! g x-scrollbar 'hidden (not x-scroll?))
     (glgui-widget-set! g y-scrollbar 'hidden (not y-scroll?))))
 
+
 ;; A container that behaves like a 2D scrollbox
 ;; frame is the actual container in which widgets are placed
 ;;  frame-w, frame-h are the dimensions of the visible area
@@ -233,29 +286,48 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; Returns frame for adding widgets; content not directly exposed
 ;; N.B. framed-container-input is the callback for events on content, not frame
 (define (glgui-framed-container g x y frame-w frame-h content-w content-h)
-  (let* ((frame   (glgui-container g x y frame-w frame-h))
-         (content (glgui-container g x (- y (- content-h frame-h)) content-w content-h))
+  (let* ((content (glgui-container g x (- y (- content-h frame-h)) content-w content-h))
          (scrollbar-w (/ (* frame-w frame-w) content-w))
          (scrollbar-h (/ (* frame-h frame-h) content-h))
-         (x-scroll? (> content-w frame-w))
-         (y-scroll? (> content-h frame-h))
+         (x-scroll?   (> content-w frame-w))
+         (y-scroll?   (> content-h frame-h))
          (x-scrollbar (glgui-box g x (- y 4) scrollbar-w 4 DimGrey))
-         (y-scrollbar (glgui-box g (+ x frame-w 4) (+ y (- frame-h scrollbar-h)) 4 scrollbar-h DimGrey)))
-    (glgui-widget-set! g x-scrollbar 'hidden x-scroll?)
-    (glgui-widget-set! g y-scrollbar 'hidden y-scroll?)
-    (glgui-widget-set! g frame   'update-handle glgui:framed-container-update)
-    (glgui-widget-set! g frame   'input-handle  (lambda xargs #f))
-    (glgui-widget-set! g frame   'content       content)
-    (glgui-widget-set! g frame   'x-scrollbar   x-scrollbar)
-    (glgui-widget-set! g frame   'y-scrollbar   y-scrollbar)
-    (glgui-widget-set! g frame   'scrollcolor   DimGrey)
-    (glgui-widget-set! g frame   'scrollwidth   4)
-    (glgui-widget-set! g frame   'scrollrounded #f)
+         (y-scrollbar (glgui-box g (+ x frame-w 4) (+ y (- frame-h scrollbar-h)) 4 scrollbar-h DimGrey))
+         (frame (glgui-widget-add g
+            'x 0
+            'y 0
+            'xofs x
+            'yofs y
+            'w frame-w
+            'h frame-h
+            'content content
+            'content-w content-w
+            'content-h content-h
+            'x-scrollbar x-scrollbar
+            'y-scrollbar y-scrollbar
+            'scrollcolor DimGrey
+            'scrollwidth 4
+            'scrollrounded #f
+            'scroll-x 0
+            'scroll-y 0
+            'parent g
+            'widget-list '()
+            'widget-count 0
+            'container #t
+            'hidden #f
+            'draw-handle #f
+            'input-handle (lambda xargs #f)
+            'draggable_x? #f
+            'draggable_y? #f
+            'drag_keep 10
+            'update-handle glgui:framed-container-update)))
+    (glgui-widget-set! g x-scrollbar 'hidden (not x-scroll?))
+    (glgui-widget-set! g y-scrollbar 'hidden (not y-scroll?))
+    (glgui-widget-set! g content 'frame         frame)
     (glgui-widget-set! g content 'update-handle #f)
     (glgui-widget-set! g content 'input-handle  glgui:framed-container-input)
     (glgui-widget-set! g content 'draggable_x?  #t)
     (glgui-widget-set! g content 'draggable_y?  #t)
-    (glgui-widget-set! g content 'frame         frame)
     frame))
 
 ;; eof
