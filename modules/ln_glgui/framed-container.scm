@@ -200,31 +200,33 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; If right side of content is to the left  of the right side of frame, snap to right side of frame
 ;; If left  side of content is to the right of the left  side of frame, snap to left  side of frame
 (define (glgui-framed-container-position-x-snap! g frame)
-  (let* ((content (glgui-widget-get g frame 'content))
-         (frame-x    (glgui-widget-get g frame   'xofs))
-         (frame-w    (glgui-widget-get g frame   'w))
-         (content-x  (glgui-widget-get g content 'xofs))
-         (content-w  (glgui-widget-get g content 'w))
-         (too-left?  (< (+ content-x content-w) (+ frame-x frame-w)))
-         (too-right? (> content-x frame-x)))
-    (if too-left?
+  (let* ((content     (glgui-widget-get g frame 'content))
+         (frame-x     (glgui-widget-get g frame   'xofs))
+         (frame-w     (glgui-widget-get g frame   'w))
+         (content-x   (glgui-widget-get g content 'xofs))
+         (content-w   (glgui-widget-get g content 'w))
+         (scrollable? (> content-w frame-w))
+         (too-left?   (< (+ content-x content-w) (+ frame-x frame-w)))
+         (too-right?  (> content-x frame-x)))
+    (if (and too-left? scrollable?)
         (glgui-widget-set! g frame 'scroll-x (- content-w frame-w)))
-    (if too-right?
+    (if (or too-right? (and too-left? (not scrollable?)))
         (glgui-widget-set! g frame 'scroll-x 0))))
 
 ;; If bottom of content is above bottom of frame, snap to bottom of frame
 ;; If top    of content is below top    of frame, snap to top of frame
 (define (glgui-framed-container-position-y-snap! g frame)
-  (let* ((content   (glgui-widget-get g frame   'content))
-         (frame-y   (glgui-widget-get g frame   'yofs))
-         (frame-h   (glgui-widget-get g frame   'h))
-         (content-y (glgui-widget-get g content 'yofs))
-         (content-h (glgui-widget-get g content 'h))
-         (too-high? (> content-y frame-y))
-         (too-low?  (< (+ content-y content-h) (+ frame-y frame-h))))
-    (if too-high?
+  (let* ((content     (glgui-widget-get g frame   'content))
+         (frame-y     (glgui-widget-get g frame   'yofs))
+         (frame-h     (glgui-widget-get g frame   'h))
+         (content-y   (glgui-widget-get g content 'yofs))
+         (content-h   (glgui-widget-get g content 'h))
+         (scrollable? (> content-h frame-h))
+         (too-high?   (> content-y frame-y))
+         (too-low?    (< (+ content-y content-h) (+ frame-y frame-h))))
+    (if (and too-high? scrollable?)
         (glgui-widget-set! g frame 'scroll-y (- content-h frame-h)))
-    (if too-low?
+    (if (or too-low? (and too-hight? (not scrollable?)))
         (glgui-widget-set! g frame 'scroll-y 0))))
 
 ;; PRIVATE FUNCTIONS
