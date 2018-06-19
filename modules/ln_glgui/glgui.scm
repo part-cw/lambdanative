@@ -223,7 +223,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             (if (procedure? p) (p gui wgt t x y) (if container? (glgui:inputloop t cx cy wgt) #f))
                           (if (and (not glgui:modalstate) (not m) (not h))
                             (if (procedure? p) (p gui wgt t x y) (if container? (glgui:inputloop t cx cy wgt) #f)) #f))))
-                  (and (not (or (fx= t EVENT_BUTTON1UP) propagate glgui:propagate)) r))) 
+                  (and (not (or (fx= t EVENT_BUTTON1UP) (fx= t EVENT_KEYPRESS) (fx= t EVENT_KEYRELEASE) propagate glgui:propagate)) r)))
                widget-list)))
             guis)))
 
