@@ -247,6 +247,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   inside
 ))
 
+;; De-arm button on hide so that unhiding it won't show it in its selected state
+(define (glgui:button-update g wgt id val)
+  (cond ((eq? id 'hidden)
+          (if val (glgui-widget-set! g wgt 'armed #f)))))
+
 (define (glgui-button g x y w h img callback)
   (glgui-widget-add g
      'x x
@@ -298,6 +303,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'icon-align GUI_ALIGNLEFT    ;: If an icon is used, the side of the string on which it is placed
      'draw-handle  glgui:button-draw
      'input-handle glgui:button-input
+     'update-handle glgui:button-update
   ))
 
 ;;eof
