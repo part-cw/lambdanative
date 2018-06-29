@@ -41,6 +41,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (_y (glgui-widget-get-dyn g wgt 'y))
          (_w (glgui-widget-get-dyn g wgt 'w))
          (_h (glgui-widget-get-dyn g wgt 'h))
+         (sharpness (glgui-widget-get g wgt 'sharpness))
+         (sharpness-abs (if sharpness (* sharpness _w) 10.))
          (left (glgui-widget-get-dyn g wgt 'left))
          (a (glgui-widget-get-dyn g wgt 'armed))
          (i (glgui-widget-get g wgt 'image))
@@ -67,19 +69,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (if left
         ;; Send coordinates for 5 points of arrow pointing left
         (glCoreTexturePolygonDraw cx cy (list 
-            (list (fl+ x 10.) y2 0. 1.)   ;; Top left
-            (list x2 y2 1. 1.)            ;; Top right
-            (list x cy 0. 0.5)            ;; Point on the left
-            (list x2 y 1. 0.)             ;; Bottom right
-            (list (fl+ x 10.) y 0. 0.))   ;; Bottom left
+            (list (fl+ x sharpness-abs) y2 0. 1.)   ;; Top left
+            (list x2 y2 1. 1.)                      ;; Top right
+            (list x cy 0. 0.5)                      ;; Point on the left
+            (list x2 y 1. 0.)                       ;; Bottom right
+            (list (fl+ x sharpness-abs) y 0. 0.))   ;; Bottom left
           (if sc glgui:box (caddr glgui_button_arrow.img)) 0.)
         ;; OR send coordinates for 5 points of arrow pointing right
         (glCoreTexturePolygonDraw cx cy (list
-            (list (fl- x2 10.) y2 1. 1.)   ;; Top right
-            (list x y2 0. 1.)              ;; Top left
-            (list x2 cy 1. 0.5)            ;; Point on the right
-            (list x y 0. 0.)               ;; Bottom left
-            (list (fl- x2 10.) y 1. 0.))   ;; Bottom right
+            (list (fl- x2 sharpness-abs) y2 1. 1.)   ;; Top right
+            (list x y2 0. 1.)                        ;; Top left
+            (list x2 cy 1. 0.5)                      ;; Point on the right
+            (list x y 0. 0.)                         ;; Bottom left
+            (list (fl- x2 sharpness-abs) y 1. 0.))   ;; Bottom right
           (if sc glgui:box (caddr glgui_button_arrow.img)) 0.))
       (if f ;;String based regular buttons
         (glgui:draw-text-center (if left (+ x 10) x) y (- w 10) h (car i) f c)
@@ -119,6 +121,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'y y
      'w w
      'h h
+     'sharpness #f
      'left l
      'image img
      'callback callback
@@ -141,6 +144,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'y y
      'w w
      'h h
+     'sharpness #f
      'left l
      'image (if (pair? str)(map list str)(list str))
      'callback callback
