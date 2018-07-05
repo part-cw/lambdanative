@@ -63,7 +63,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 @synthesize glView;
 @synthesize controller;
 
-- (void)applicationDidFinishLaunching:(UIApplication *)application {
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
   DMSG("applicationDidFinishLaunching");
   CGRect screenSize = [[UIScreen mainScreen] bounds];
   window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] applicationFrame]];
