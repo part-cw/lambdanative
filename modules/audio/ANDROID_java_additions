@@ -12,10 +12,8 @@ class AudioHelper {
       MediaPlayer.OnCompletionListener listener = new MediaPlayer.OnCompletionListener(){
         @Override
         public void onCompletion(MediaPlayer mp){
-          if(playState == PlayState.PLAYING){
-            playState = PlayState.STOPPED;
-            mp.stop();
-          }
+          playState = PlayState.STOPPED;
+          mp.stop();
         }
       };
       this.player.setOnCompletionListener(listener);
