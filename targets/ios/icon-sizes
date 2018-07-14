@@ -1,19 +1,12 @@
 #!/bin/sh
-# the crazy list of artwork sizes:
-# 57:   iphone
-# 114:  retina iphone
-# 72:   ipad
-# 144:  retina ipad
-# 60:   iPod touch (iOS7)
-# 120:  iPod touch (iOS7)
-# 76:   iPad (iOS7)
-# 152:  iPad (iOS7)
-# 1024: iTunes
-# 29:   iphone settings
-# 58:   iphone 4 settings
-# 100:  Retina iPad spotlight
-# 50:   iPad Spotlight
-sizes="57 114 72 144 29 58 50 100 60 120 76 152 1024"
+# List of artwork sizes:
+# Settings: 29 (old iPad), 58 (Retina iPad, 29@2x), 87 (iPhone6+, 29@3x)
+# Spotlight: 40 (old iPad), 80 (Retina iPad 40@2x), 120 (iPhone6+, 40@3x)
+# Notification: 40 (old iPhone, 20@2x), 60 (iPhone 6+, 20@3x)
+# AppStore: 1024 (@1x)
+# App Icon: 76 (old iPad), 152 (Retina iPad, 76@2x), 167 (iPad Pro 83.5@2x),
+#           57 (old iPhone), 120 (iPhone, 60@2x), 180 (new iPhone, 60@3x)
+sizes="20 29 40 57 58 60 72 76 80 87 120 152 167 180 1024"
 
 # create a dummy splash image to get full screen on retina displays
 # a custom image can be provided (portrait)

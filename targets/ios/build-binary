@@ -79,16 +79,24 @@ cp $srcdir/*.mm $cmakedir
 cp $srcdir/*.h $cmakedir
 
 echo " => preparing icons.."
-cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-57.png" "$cmakedir/Icon.png"
-cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-114.png" "$cmakedir/Icon@2x.png"
-cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-72.png" "$cmakedir/Icon-72.png"
-cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-144.png" "$cmakedir/Icon-72@2x.png"
-cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-60.png" "$cmakedir/Icon-60.png"
-cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-120.png" "$cmakedir/Icon-60@2x.png"
-cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-76.png" "$cmakedir/Icon-76.png"
-cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-152.png" "$cmakedir/Icon-76@2x.png"
+icondir="$cmakedir/Images.xcassets/AppIcon.appiconset"
+mkdir -p "$icondir"
+for file in `ls $SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-*.png`; do 
+  dfile=`basename $file`
+  cp "$file" "$icondir/Icon${dfile:8:8}";
+done
+cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-1024.png" "$icondir/AppIcon.png"
 cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/"Default*.png "$cmakedir"
-cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-1024.png" "$cmakedir/AppIcon.png"
+cp $srcdir/Assets_Contents.json "$cmakedir/Images.xcassets/Contents.json"
+cp $srcdir/Images_Contents.json "$icondir/Contents.json"
+veval "xcrun actool $cmakedir/Images.xcassets --compile $cmakedir --platform iphoneos --minimum-deployment-target $SYS_IOSVERSION --app-icon AppIcon --output-partial-info-plist $cmakedir/partial.plist --output-format human-readable-text"
+assertfile $cmakedir/Assets.car
+
+#assetdir="$cmakedir/asset"
+#mkdir -p $assetdir
+#veval "xcrun actool $cmakedir/Images.xcassets --compile $assetdir --platform iphoneos --minimum-deployment-target $SYS_IOSVERSION --app-icon AppIcon --output-partial-info-plist $assetdir/partial.plist --output-format human-readable-text"
+#assertfile $assetdir/Assets.car
+#cp $assetdir/Assets.car $cmakedir
 
 make_soundfile_ios()
 {
