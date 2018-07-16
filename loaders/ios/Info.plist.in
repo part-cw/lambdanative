@@ -91,6 +91,7 @@
 @IOS_XML_ADDITIONS@
 
 ### allow files to be accessed from iTunes
+# Note that 539bc71 disables this for RELEASE mode
 <key>UIFileSharingEnabled</key>
 <true/>
 ### require specific hardware
