@@ -73,7 +73,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (cb (lambda (action) (lambda xargs
             (let* ((text        (glgui-widget-get label-g label-wgt 'label))
                    (oldfocuspos (glgui-widget-get label-g label-wgt 'focuspos))
-                   (pastetext (clipboard-paste))
+                   (pastetext   (clipboard-paste))
                    (newfocuspos (if (string? pastetext) (+ oldfocuspos (string-length pastetext)) oldfocuspos))
                    (newtext     (if (string? pastetext) (string-insert-at text pastetext oldfocuspos) text)))
               (cond ((eq? action 'copy)
@@ -418,10 +418,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                    ))
                 )
                 ((fx> mx 31)
-                   (set! label (string-append (substring label 0 focuspos)
-                     (string (integer->char mx)) (substring label focuspos len)))
-                   (glgui-widget-set! g wgt 'focuspos (max 0 (fx+ focuspos 1)))
-                   (glgui-widget-set! g wgt 'focusset #t)
+                   (display my) (newline)
+                   (if (fx> (bitwise-and my MODIFIER_CTRL) 0)
+                       (begin (cond
+                          ((fx= mx 99) (clipboard-copy label0)) ;; mx == 'c'
+                          ((fx= mx 118)                         ;; mx == 'v'
+                            (let ((pastetext (clipboard-paste)))
+                              (if (string? pastetext) (begin
+                                (set! label (string-insert-at label pastetext focuspos))
+                                (glgui-widget-set! g wgt 'focuspos (+ focuspos (string-length pastetext)))))))))
+                       (begin
+                          (set! label (string-append (substring label 0 focuspos)
+                          (string (integer->char mx)) (substring label focuspos len)))
+                          (glgui-widget-set! g wgt 'focuspos (max 0 (fx+ focuspos 1)))
+                          (glgui-widget-set! g wgt 'focusset #t)))
                 )
               )
               (glgui-widget-set! g wgt 'clearoninput #f)

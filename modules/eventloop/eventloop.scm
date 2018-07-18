@@ -97,6 +97,14 @@ end-of-c-declare
 (define EVENT_KEYHOME ((c-lambda () int "___result = EVENT_KEYHOME;")))
 (define EVENT_KEYEND ((c-lambda () int "___result = EVENT_KEYEND;")))
 
+;; keyboard modifier key constants
+(define MODIFIER_CTRL_MAC ((c-lambda () int "___result = MODIFIER_CTRL_MAC;")))
+(define MODIFIER_CTRL     ((c-lambda () int "___result = MODIFIER_CTRL;")))
+(define MODIFIER_ALT      ((c-lambda () int "___result = MODIFIER_ALT;")))
+(define MODIFIER_SHIFT    ((c-lambda () int "___result = MODIFIER_SHIFT;")))
+(define MODIFIER_CAPS     ((c-lambda () int "___result = MODIFIER_CAPS;")))
+(define MODIFIER_FN       ((c-lambda () int "___result = MODIFIER_FN;")))
+
 ;; orientation
 (define GUI_LANDSCAPE ((c-lambda () int "___result = GUI_LANDSCAPE;")))
 (define GUI_SEASCAPE ((c-lambda () int "___result = GUI_SEASCAPE;")))

@@ -165,4 +165,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   }
 }
 
+- (BOOL)performKeyEquivalent:(NSEvent *)event
+{
+  const char *chars = [[event characters] UTF8String];
+  int acode = (int)chars[0];
+  int mcode = ((event.modifierFlags & NSEventModifierFlagCommand)  > 0 ? MODIFIER_CMD      : 0)
+            | ((event.modifierFlags & NSEventModifierFlagOption)   > 0 ? MODIFIER_OPT      : 0)
+            | ((event.modifierFlags & NSEventModifierFlagControl)  > 0 ? MODIFIER_CTRL_MAC : 0)
+            | ((event.modifierFlags & NSEventModifierFlagShift)    > 0 ? MODIFIER_SHIFT    : 0)
+            | ((event.modifierFlags & NSEventModifierFlagCapsLock) > 0 ? MODIFIER_CAPS     : 0)
+            | ((event.modifierFlags & NSEventModifierFlagFunction) > 0 ? MODIFIER_FN       : 0);
+  if (acode>31&&acode<127) {
+    ffi_event(EVENT_KEYRELEASE,acode,mcode);
+    return YES;
+  }
+  return NO;
+}
+
 @end
