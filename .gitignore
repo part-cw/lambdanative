@@ -19,3 +19,6 @@ PROFILE
 *.keystore
 config.cache
 attic
+.project
+.classpath
+.settings/
