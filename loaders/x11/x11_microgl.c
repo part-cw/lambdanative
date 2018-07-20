@@ -104,6 +104,15 @@ void microgl_refresh()
   XSendEvent(Dpy, win.Win, False, Expose, &event);
 }
 
+// https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html
+int _microgl_modifier(XKeyEvent *event) {
+  unsigned int state = event->state;
+  return ((state & ControlMask) ? MODIFIER_CTRL  : 0) |
+         ((state & Mod1Mask)    ? MODIFIER_ALT   : 0) |
+         ((state & ShiftMask)   ? MODIFIER_SHIFT : 0) |
+         ((state & LockMask)    ? MODIFIER_CAPS  : 0);
+}
+
 int _microgl_key( XKeyEvent *event )
 {
   KeySym keysym;
@@ -140,10 +149,10 @@ void microgl_pollevents(void)
     XNextEvent( Dpy, &event );
     switch( event.type ) {
       case KeyPress:
-        microgl_hook(EVENT_KEYPRESS, _microgl_key( &event.xkey),0);
+        microgl_hook(EVENT_KEYPRESS, _microgl_key(&event.xkey), _microgl_modifier(&event.xkey));
         break;
       case KeyRelease:
-        microgl_hook(EVENT_KEYRELEASE, _microgl_key( &event.xkey),0);
+        microgl_hook(EVENT_KEYRELEASE, _microgl_key(&event.xkey), _microgl_modifier(&event.xkey));
         break;
       case ButtonPress:
         switch (event.xbutton.button) {

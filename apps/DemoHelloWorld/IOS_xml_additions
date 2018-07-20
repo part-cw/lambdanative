@@ -1,0 +1,11 @@
+<key>CFBundleURLTypes</key>
+<array>
+    <dict>
+        <key>CFBundleURLName</key>
+        <string>org.ecemgroup.sharevitalsigns</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+            <string>demohelloworld</string>
+        </array>
+    </dict>
+</array>
