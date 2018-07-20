@@ -82,7 +82,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EVENT_KEYHOME             12
 #define EVENT_KEYEND              13
 
-// modifier keys (use `&` to send multiple)
+// modifier keys (use `|` to send multiple)
 #define MODIFIER_CTRL_MAC   1 << 0
 #define MODIFIER_CTRL       1 << 1
 #define MODIFIER_CMD        MODIFIER_CTRL
