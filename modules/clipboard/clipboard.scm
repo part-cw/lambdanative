@@ -61,6 +61,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   extern Display* microgl_getDisplay();
   extern Window microgl_getWindow();
   extern void log_c(char *);
+  extern void microgl_setCopiedString(char *, int len);
+  extern void *microgl_getCopiedString(char **);
 #endif
 
 // Clipboard copying
@@ -96,12 +98,10 @@ int clipboard_copy(char *str, int len){
   Display *display = microgl_getDisplay();
   Window window = microgl_getWindow();
   Atom selection = XInternAtom(display, "CLIPBOARD", 0);
-  Atom format = XInternAtom(display, "STRING", 0);
-  XEvent event;
   XSetSelectionOwner (display, selection, window, 0);
   if (XGetSelectionOwner (display, selection) != window)
     return 0;
-  // Doesn't work yet
+  microgl_setCopiedString(str, len);
   return 0;
 #endif
   return 0;
@@ -151,6 +151,12 @@ char *clipboard_paste(){
   Display *display = microgl_getDisplay();
   Window window = microgl_getWindow();
   Atom selection = XInternAtom(display, "CLIPBOARD", 0);
+  Window owner = XGetSelectionOwner(display, selection);
+  if (owner == window) {
+    microgl_getCopiedString(&str);
+    return str;
+  }
+
   Atom type = XInternAtom(display, "STRING", 0);
   Atom propid = XInternAtom(display, "XSEL_DATA", 0);
   Atom incrid = XInternAtom(display, "INCR", 0);

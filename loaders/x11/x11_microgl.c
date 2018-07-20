@@ -64,6 +64,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 static Display *Dpy=0;
 static int Scrn=0;
+static char *copiedString = NULL;
+static int copiedStringLen = 0;
 
 // window data structure
 typedef struct microglWindow {
@@ -139,6 +141,24 @@ int _microgl_key( XKeyEvent *event )
   return 0;
 }
 
+void _microgl_sendCopyStringEvent(XSelectionRequestEvent* selReqEv) {
+  Atom format = XInternAtom(Dpy, "STRING", 0);
+  XSelectionEvent selEv = {
+    .type      = SelectionNotify,
+    .requestor = selReqEv->requestor,
+    .selection = selReqEv->selection,
+    .target    = selReqEv->target,
+    .property  = selReqEv->property,
+    .time      = CurrentTime
+  };
+  if (copiedString && selReqEv->target == format && selReqEv->property != None) {
+    XChangeProperty(Dpy, selReqEv->requestor, selReqEv->property, format, 8, PropModeReplace, copiedString, copiedStringLen + 1);
+  } else {
+    selEv.property = None;
+  }
+  XSendEvent(Dpy, selReqEv->requestor, True, NoEventMask, (XEvent *) &selEv);
+}
+
 void microgl_pollevents(void)
 {
   XEvent event;
@@ -211,6 +231,12 @@ void microgl_pollevents(void)
         if( event.xconfigure.width != win.w || event.xconfigure.height != win.h )
           XResizeWindow( Dpy, win.Win, win.w, win.h);
         break;
+      case SelectionClear:
+        if (copiedString) free(copiedString);
+        break;
+      case SelectionRequest:
+        _microgl_sendCopyStringEvent((XSelectionRequestEvent*) &event.xselectionrequest);
+        break;
     } 
   }  // Xpending
 
@@ -223,7 +249,6 @@ void microgl_pollevents(void)
   }
 
 }
-
 
 Bool _microglWaitForMapNotify( Display *d, XEvent *e, char *arg )
 {
@@ -453,4 +478,16 @@ int microgl_screenheight() { return screen_height; }
 
 Display* microgl_getDisplay(){ return Dpy; }
 Window microgl_getWindow(){ return win.Win; }
+
+void microgl_setCopiedString(char* str, int len) {
+  if (copiedString) free(copiedString);
+  copiedString = calloc(len + 1, sizeof(char));
+  memcpy(copiedString, str, len * sizeof(char));
+  copiedStringLen = len;
+}
+
+void microgl_getCopiedString(char** str) {
+  *str = copiedString;
+}
+
 // eof
