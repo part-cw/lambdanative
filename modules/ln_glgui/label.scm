@@ -418,7 +418,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                    ))
                 )
                 ((fx> mx 31)
-                   (display my) (newline)
                    (if (fx> (bitwise-and my MODIFIER_CTRL) 0)
                        (begin (cond
                           ((fx= mx 99) (clipboard-copy label0)) ;; mx == 'c'

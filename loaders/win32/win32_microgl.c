@@ -51,22 +51,31 @@ static const char microglClassName[]= "MicroglClass";
 
 #define AppIcon 101
 
-static HMODULE microglInstance; 
+static HMODULE microglInstance;
 
 // window data structure
 typedef struct microglWindow {
   HWND Wnd;
-  HDC  DC; 
+  HDC  DC;
   HGLRC RC;
   int  w,h;
   int full_w, full_h;     // compensated for border decorations
-  int  mouse_x, mouse_y; 
+  int  mouse_x, mouse_y;
 } microglWindow;
 
 static microglWindow win;
 
+// get modifier keys
+// see https://docs.microsoft.com/en-us/windows/desktop/inputdev/virtual-key-codes
+static int _microgl_modifier() {
+  return ((GetKeyState(VK_CONTROL) & 0x8000) ? MODIFIER_CTRL  : 0) |
+         ((GetKeyState(VK_MENU)    & 0x8000) ? MODIFIER_ALT   : 0) |
+         ((GetKeyState(VK_SHIFT)   & 0x8000) ? MODIFIER_SHIFT : 0) |
+         ((GetKeyState(VK_CAPITAL) & 0x1)    ? MODIFIER_CAPS  : 0);
+}
+
 // translate keyboard input
-static int _microgl_key(WPARAM wParam, LPARAM lParam, int action)
+static int _microgl_key(WPARAM wParam, LPARAM lParam, int modifier, int action)
 {
   BYTE  keyboard_state[ 256 ];
   UCHAR char_buf[ 10 ];
@@ -75,26 +84,40 @@ static int _microgl_key(WPARAM wParam, LPARAM lParam, int action)
 
   switch( wParam )
   {
-     case VK_RETURN: return EVENT_KEYENTER;
-     case VK_ESCAPE: return EVENT_KEYESCAPE;
-     case VK_TAB:    return EVENT_KEYTAB;
-     case VK_BACK:   return EVENT_KEYBACKSPACE;
-     case VK_DELETE: return EVENT_KEYDELETE;
-     case VK_LEFT:   return EVENT_KEYLEFT;
-     case VK_UP:     return EVENT_KEYUP;
-     case VK_RIGHT:  return EVENT_KEYRIGHT;
-     case VK_DOWN:   return EVENT_KEYDOWN;
-     case VK_HOME:   return EVENT_KEYHOME;
-     case VK_END:    return EVENT_KEYEND;
-     default:
-       GetKeyboardState( keyboard_state );
-       scan_code = (lParam & 0x01ff0000) >> 16;
-       if( action == EVENT_KEYRELEASE ) { scan_code |= 0x8000000; }
-       num_chars = ToAscii( wParam, scan_code,        
-            keyboard_state,   (LPWORD) char_buf, 0);                 
-       res = (int)char_buf[0];
-       if( (res >=  32 && res <= 126) || (res >= 160 && res <= 255) ) { return res; }
-       return 0;
+    case VK_RETURN: return EVENT_KEYENTER;
+    case VK_ESCAPE: return EVENT_KEYESCAPE;
+    case VK_TAB:    return EVENT_KEYTAB;
+    case VK_BACK:   return EVENT_KEYBACKSPACE;
+    case VK_DELETE: return EVENT_KEYDELETE;
+    case VK_LEFT:   return EVENT_KEYLEFT;
+    case VK_UP:     return EVENT_KEYUP;
+    case VK_RIGHT:  return EVENT_KEYRIGHT;
+    case VK_DOWN:   return EVENT_KEYDOWN;
+    case VK_HOME:   return EVENT_KEYHOME;
+    case VK_END:    return EVENT_KEYEND;
+    default:
+      // if CTRL is down, ToAscii puts ^A to ^Z (0x01 to 0x1a) in char_buf
+      // if ALT  is down, ToAscii puts  a to  z (lowercase)    in char_buf
+      // if both CTRL and ALT are down, ToAscii returns 0
+      // so if we want to be able to handle keyboard commands, we need to return the char
+      // if SHIFT is down with ALT, we still get lowercase,
+      // so we still need to check for ALT and convert it if need be
+      if (((modifier & MODIFIER_CTRL) || (modifier & MODIFIER_ALT)) && wParam >= 'A' && wParam <= 'Z') {
+        if ((modifier & MODIFIER_SHIFT) || (modifier & MODIFIER_CAPS)) {
+          return wParam;
+        } else {
+          return (wParam + ('a' - 'A'));  // convert to lowercase
+        }
+      }
+
+      GetKeyboardState( keyboard_state );
+      scan_code = (lParam & 0x01ff0000) >> 16;
+      if( action == EVENT_KEYRELEASE ) { scan_code |= 0x8000000; }
+      num_chars = ToAscii( wParam, scan_code,
+           keyboard_state,   (LPWORD) char_buf, 0);
+      res = num_chars ? (int)char_buf[0] : 0;
+      if( (res >=  32 && res <= 126) || (res >= 160 && res <= 255) ) { return res; }
+      return 0;
   }
 }
 
@@ -107,31 +130,34 @@ static VOID CALLBACK event_timer_callback(HWND hWnd, UINT uMsg, UINT idTimer, DW
 static LRESULT CALLBACK _microgl_callback( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
   static int move_flag=0, new_x, new_y, key;
+  int mod_flag = 0;
  // int new_x, new_y;
   // we get callbacks before CreateWindowEx returns!!
   //  if (!win) return DefWindowProc( hWnd, uMsg, wParam, lParam );
   switch( uMsg ) {
-    case WM_PAINT:  
+    case WM_PAINT:
       if (move_flag) {  microgl_hook(EVENT_MOTION, new_x, new_y); move_flag=0; }
-      microgl_hook(EVENT_REDRAW,0,0); 
+      microgl_hook(EVENT_REDRAW,0,0);
       break;   // no return here!
-    case WM_DESTROY: 
+    case WM_DESTROY:
       PostQuitMessage( WM_QUIT ); return 0;
-    case WM_CLOSE: 
+    case WM_CLOSE:
       microgl_hook(EVENT_CLOSE,0,0);
       PostQuitMessage( WM_QUIT ); return 0;    // 0?
     case WM_QUIT:
       microgl_hook(EVENT_CLOSE,0,0);
-      break; 
+      break;
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
-      key = _microgl_key(wParam,lParam,EVENT_KEYPRESS);
-      if (key) microgl_hook(EVENT_KEYPRESS, key, 0);
+      mod_flag = _microgl_modifier();
+      key = _microgl_key(wParam,lParam,mod_flag,EVENT_KEYPRESS);
+      if (key) microgl_hook(EVENT_KEYPRESS, key, mod_flag);
       return 0;
     case WM_KEYUP:
     case WM_SYSKEYUP:
-      key = _microgl_key(wParam,lParam,EVENT_KEYRELEASE);
-      if (key) microgl_hook(EVENT_KEYRELEASE, key, 0);
+      mod_flag = _microgl_modifier();
+      key = _microgl_key(wParam,lParam,mod_flag,EVENT_KEYRELEASE);
+      if (key) microgl_hook(EVENT_KEYRELEASE, key, mod_flag);
       return 0;
     case WM_LBUTTONDOWN:
       win.mouse_x= (int)((short)LOWORD(lParam));
@@ -190,14 +216,14 @@ void microgl_init(void)
 {
 //  char tmpfile[1024];
   WNDCLASSEX    wc;
-  microglInstance  = GetModuleHandle( NULL ); 
+  microglInstance  = GetModuleHandle( NULL );
   wc.cbSize = sizeof(WNDCLASSEX);
-  wc.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC; 
-  wc.lpfnWndProc   = (WNDPROC)_microgl_callback;  
-  wc.cbClsExtra    = 0;                             
-  wc.cbWndExtra    = 0;                             
-  wc.hInstance     = microglInstance;         
-  wc.hCursor       = LoadCursor( NULL, IDC_ARROW ); 
+  wc.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+  wc.lpfnWndProc   = (WNDPROC)_microgl_callback;
+  wc.cbClsExtra    = 0;
+  wc.cbWndExtra    = 0;
+  wc.hInstance     = microglInstance;
+  wc.hCursor       = LoadCursor( NULL, IDC_ARROW );
 
 //  wc.hIcon = 0;
 //  wc.hIconSm = 0;
@@ -217,9 +243,9 @@ void microgl_init(void)
 //  wc.hIconSm = LoadIcon( NULL, IDI_APPLICATION);
 
   wc.lpszClassName = microglClassName;
-  wc.hbrBackground = NULL;                          
-  wc.lpszMenuName  = NULL;                          
-  if (!RegisterClassEx( &wc )) 
+  wc.hbrBackground = NULL;
+  wc.lpszMenuName  = NULL;
+  if (!RegisterClassEx( &wc ))
     printf("Error: microgl: RegisterClassEx() failed [%i]\n", (int)GetLastError());
   if (!SetTimer(NULL,1,1000,event_timer_callback))
     printf("Error: microgl: SetTimer() failed [%i]\n", (int)GetLastError());
@@ -243,7 +269,7 @@ int microgl_open(int w, int h, int fs)
   RECT rect,wa;
   POINT  pos;
 
-//  printf(">> open %i %i\n",w,h); 
+//  printf(">> open %i %i\n",w,h);
   win.w = w; win.h = h;
   // full screen
   if (fs) {
@@ -266,7 +292,7 @@ int microgl_open(int w, int h, int fs)
   AdjustWindowRectEx( &rect, dwStyle, FALSE, dwExStyle );
   win.full_w= rect.right-rect.left+1;
   win.full_h= rect.bottom-rect.top+1;
-  SystemParametersInfo( SPI_GETWORKAREA, 0, &wa, 0 );  
+  SystemParametersInfo( SPI_GETWORKAREA, 0, &wa, 0 );
   win.Wnd = CreateWindowEx(
         dwExStyle,        // Extended style
         microglClassName,        // Class name
@@ -293,7 +319,7 @@ int microgl_open(int w, int h, int fs)
   pfd.iLayerType      = PFD_MAIN_PLANE;      // Drawing layer: main
   pf=ChoosePixelFormat( win.DC, &pfd);
   if (!pf) {
-    printf("ChoosePixelFormat() failed, error code %i\n", 
+    printf("ChoosePixelFormat() failed, error code %i\n",
             (int)GetLastError());
   } else {
     SetPixelFormat(win.DC,pf,&pfd);
@@ -311,8 +337,8 @@ int microgl_open(int w, int h, int fs)
   return 1;
 }
 
-int microgl_window(int w, int h) { return microgl_open(w,h,0); } 
-int microgl_fullscreen(int w, int h) { return microgl_open(w,h,1); } 
+int microgl_window(int w, int h) { return microgl_open(w,h,0); }
+int microgl_fullscreen(int w, int h) { return microgl_open(w,h,1); }
 
 // close window
 void microgl_close()
@@ -325,7 +351,7 @@ void microgl_close()
 
 // process events
 void microgl_pollevents(void)
-{ 
+{
   MSG Msg;
   while( PeekMessage( &Msg, NULL, 0, 0, PM_REMOVE ) ) { DispatchMessage( &Msg ); }
 //  if (GetMessage(&Msg, NULL, 0, 0) > 0) {

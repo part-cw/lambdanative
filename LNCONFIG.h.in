@@ -47,7 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EVENT_BUTTON1DOWN 5
 #define EVENT_BUTTON2UP   6
 #define EVENT_BUTTON2DOWN 7
-#define EVENT_BUTTON3UP   8       
+#define EVENT_BUTTON3UP   8
 #define EVENT_BUTTON3DOWN 9
 #define EVENT_MULTITOUCH  18
 #define EVENT_CLOSE       14
@@ -82,11 +82,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EVENT_KEYHOME             12
 #define EVENT_KEYEND              13
 
-// modifier keys
+// modifier keys (use `&` to send multiple)
 #define MODIFIER_CTRL_MAC   1 << 0
 #define MODIFIER_CTRL       1 << 1
 #define MODIFIER_CMD        MODIFIER_CTRL
-#define MODIFIER_ALT        1 << 1
+#define MODIFIER_ALT        1 << 2
 #define MODIFIER_OPT        MODIFIER_ALT
 #define MODIFIER_SHIFT      1 << 3
 #define MODIFIER_CAPS       1 << 4
@@ -94,7 +94,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // screen orientations
 #define GUI_PORTRAIT   1
-#define GUI_LANDSCAPE  2 
+#define GUI_LANDSCAPE  2
 #define GUI_SEASCAPE   3
 #define GUI_UPSIDEDOWN 4
 
@@ -109,10 +109,10 @@ extern "C" {
 int  scm_runflag();
 void scm_event(int,int,int);
 int  scm_width();
-int  scm_height(); 
+int  scm_height();
 int  scm_forcefullscreen();
 int  scm_screenwidth();
-int  scm_screenheight(); 
+int  scm_screenheight();
 
 // hook prototype (performs scheme init)
 void ffi_event(int,int,int);
@@ -133,7 +133,7 @@ int microgl_screenheight();
 #endif // STANDALONE
 
 #ifdef __cplusplus
-} 
+}
 #endif
 
 // output of configure script
