@@ -186,8 +186,7 @@ end-of-c-declare
       )
       ((fx= t EVENT_TERMINATE)
         (log-system "System shutdown")
-        (if (procedure? hook:terminate) (hook:terminate))
-        (if app:android? (android-finish)))
+        (terminate))
       ((fx= t EVENT_SUSPEND)
         (if (and (not app:mustinit) (not app:suspended)) (begin
           (set! app:suspended #t)
@@ -252,8 +251,8 @@ end-of-c-declare
 (set! main ln-main)
 
 (define (terminate)
-  (if (procedure? hook:terminate) (hook:terminate))
   (if app:android? (android-finish))
+  (if (procedure? hook:terminate) (hook:terminate))
 )
 
 ;; eof
