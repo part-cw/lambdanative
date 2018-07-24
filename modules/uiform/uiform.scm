@@ -1678,7 +1678,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         (newstr (substring oldstr 0 (- oldstrlen 1))))
                     (xxset focuslocation focusid (substring oldstr 0 (- oldstrlen 1)))
                     (if cb (cb focuslocation focusid newstr)))))
-              (else
+              ((fx> mx 31)
                 (let ((cb (uiget 'focuskeycb #f))
                         (newstr (string-append oldstr (string (integer->char mx)))))
                     (xxset focuslocation focusid newstr)
