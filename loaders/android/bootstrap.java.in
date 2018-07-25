@@ -66,6 +66,8 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.MediaScannerConnection;
+import java.io.File;
+import java.util.ArrayList;
 // Imports needed for modules, e.g. gps
 @ANDROID_JAVA_IMPORTS@
 
@@ -172,8 +174,21 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   }
   // MediaScanner call
   void runMediaScanner(){
-    MediaScannerConnection.scanFile(this, new String[]{"/sdcard/@SYS_APPNAME@/results",
-      "/sdcard/@SYS_APPNAME@/log","/sdcard/@SYS_APPNAME@/config"}, null, null);
+    String[] filepaths = getFilepathsRecursively(new File("/sdcard/@SYS_APPNAME@")).toArray(new String[0]);
+    MediaScannerConnection.scanFile(this, filepaths, null, null);
+  }
+
+  private ArrayList<String> getFilepathsRecursively(File dir) {
+    ArrayList<String> filepaths = new ArrayList<String>();
+    if (!dir.isDirectory()) return filepaths;
+    for (File file : dir.listFiles()) {
+      if (file.isDirectory()) {
+        filepaths.addAll(getFilepathsRecursively(file));
+      } else {
+        filepaths.add(file.getAbsolutePath());
+      }
+    }
+    return filepaths;
   }
 
   native void nativeInstanceInit();
