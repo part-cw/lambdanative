@@ -67,6 +67,10 @@ void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_nativeInst
   globalObj = (*env)->NewGlobalRef(env,thiz); 
 }
 
+void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_nativeMediaScannerCallback(JNIEnv* env, jobject thiz){
+  scm_mediascanner_callback();
+}
+
 jint JNI_OnLoad(JavaVM* vm, void* reserved){
   JNIEnv *env;
   s_vm=vm;

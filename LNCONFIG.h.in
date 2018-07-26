@@ -113,6 +113,7 @@ int  scm_height();
 int  scm_forcefullscreen();
 int  scm_screenwidth();
 int  scm_screenheight();
+void scm_mediascanner_callback();
 
 // hook prototype (performs scheme init)
 void ffi_event(int,int,int);

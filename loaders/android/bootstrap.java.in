@@ -174,8 +174,18 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   }
   // MediaScanner call
   void runMediaScanner(){
-    String[] filepaths = getFilepathsRecursively(new File("/sdcard/@SYS_APPNAME@")).toArray(new String[0]);
-    MediaScannerConnection.scanFile(this, filepaths, null, null);
+    ArrayList<String> filepathList = getFilepathsRecursively(new File("/sdcard/@SYS_APPNAME@"));
+    final int filepathsSize = filepathList.size();
+    String[] filepaths = filepathList.toArray(new String[0]);
+    MediaScannerConnection.scanFile(this, filepaths, null, new MediaScannerConnection.OnScanCompletedListener() {
+      private int count = 0;
+      @Override
+      public void onScanCompleted(String path, Uri uri) {
+        if (++count == filepathsSize) {
+          nativeMediaScannerCallback();
+        }
+      }
+    });
   }
 
   private ArrayList<String> getFilepathsRecursively(File dir) {
@@ -190,6 +200,8 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     }
     return filepaths;
   }
+
+  native void nativeMediaScannerCallback();
 
   native void nativeInstanceInit();
 }

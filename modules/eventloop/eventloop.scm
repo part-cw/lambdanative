@@ -135,7 +135,10 @@ end-of-c-declare
 ;; Android specials
 (define app:android? (string=? (system-platform) "android"))
 (define android-finish (c-lambda () void "android_finish"))
-(define android-run-mediascanner (c-lambda () void "android_run_mediascanner"))
+(define android-mediascanner-done? #f)
+(define (android-run-mediascanner)
+  (set! android-mediascanner-done? #f)
+  ((c-lambda () void "android_run_mediascanner")))
 
 (define event:fifo '())
 (define (event-push t x y)
@@ -219,6 +222,9 @@ end-of-c-declare
 
 (c-define (c-runflag) () int "scm_runflag" ""
   (if (number? app:runflag) app:runflag 0))
+
+(c-define (c-mediascanner-callback) () void "scm_mediascanner_callback" ""
+  (set! android-mediascanner-done? #t))
 
 ;; change default size (don't go full screen!)
 (define (make-window w h . force-fullscreen)
