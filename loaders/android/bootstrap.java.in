@@ -136,7 +136,9 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     super.onPause();
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONPAUSE@
-    mGLView.onPause();
+    if (!isFinishing()) {
+      mGLView.onPause();
+    }
   }
   @Override
   protected void onResume() {
@@ -172,8 +174,9 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
      startActivity(browserIntent);
     }
   }
+
   // MediaScanner call
-  void runMediaScanner(){
+  void runMediaScanner() {
     ArrayList<String> filepathList = getFilepathsRecursively(new File("/sdcard/@SYS_APPNAME@"));
     final int filepathsSize = filepathList.size();
     String[] filepaths = filepathList.toArray(new String[0]);

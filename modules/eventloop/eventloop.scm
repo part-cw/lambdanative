@@ -257,7 +257,11 @@ end-of-c-declare
 (set! main ln-main)
 
 (define (terminate)
-  (if app:android? (android-finish))
+  (if app:android? (begin
+    (android-run-mediascanner)
+    (android-finish)
+    (let loop ()
+      (if (not android-mediascanner-done?) (begin (thread-sleep! 0.1) (loop))))))
   (if (procedure? hook:terminate) (hook:terminate))
 )
 
