@@ -47,7 +47,7 @@
   _appWebView = [[WKWebView alloc] initWithFrame:self.view.frame configuration:theConfiguration];
   _appWebView.navigationDelegate = self;
   _appWebView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-  NSURL *nsurl=[NSURL URLWithString:@"http://127.0.0.1:8080"];
+  NSURL *nsurl=[NSURL URLWithString:@"http://localhost:8080"];
   NSURLRequest *nsrequest=[NSURLRequest requestWithURL:nsurl];
   [_appWebView loadRequest:nsrequest];
   [self.view addSubview:_appWebView];
