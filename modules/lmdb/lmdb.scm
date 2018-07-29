@@ -183,6 +183,11 @@ c-declare-end
 (define lmdb:index-first (c-lambda ((pointer void)) int "_mdb_index_first"))
 (define lmdb:index-next (c-lambda ((pointer void)) int "_mdb_index_next"))
 
+(define (lmdb:delete! m u8key)
+  ((c-lambda ((pointer void) scheme-object int) int
+   "___result=_mdb_del(___arg1, ___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)), ___arg3);")
+   m u8key (u8vector-length u8key)))
+
 ;; main interface
 
 (define (lmdb-delete fname)
@@ -218,6 +223,13 @@ c-declare-end
          (vlen (if (fx= res 0) (lmdb:value-len m) #f))
          (u8val (if vlen (make-u8vector vlen) #f)))
     (if u8val (begin (lmdb:value m u8val) (decode u8val)) #f)))
+
+(define (lmdb-delete! mm key)
+  (lmdb:log 2 "lmdb-delete!" mm " " key)
+  (let* ((m (car mm))
+         (encode (cadr mm))
+         (u8key (encode key)))
+    (lmdb:delete! m u8key)))
 
 (define (lmdb-close mm) 
   (lmdb:log 2 "lmdb-close " mm)
