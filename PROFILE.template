@@ -3,9 +3,9 @@ SYS_PROFILE="your profile name here"
 # organization identifiers, e.g. yourdomainhere.com:
 SYS_ORGTLD="com"
 SYS_ORGSLD="yourdomainhere"
-# iOS release (SYS_IOSRELCERT) and development (SYS_IOSDEVCERT) names:
-SYS_IOSRELCERT="iPhone Distribution: Your iOS identifier here"
-SYS_IOSDEVCERT="iPhone Developer: Your iOS identifier here (XXXXXXXXX)"
+# iOS release (SYS_IOSRELCERT) and development (SYS_IOSDEVCERT) certificate Common Names:
+SYS_IOSRELCERT="iPhone Distribution: Your iOS profile identifier (YYYYYYYYYY)"
+SYS_IOSDEVCERT="iPhone Developer: Your iOS profile identifier (XXXXXXXXXX)"
 # android keystore password (used for both keypass and storepass) with
 # the android.keystore file (same folder as this PROFLE) used as keystore
 # Note: $SYS_ORGTLD.$SYS_ORGSLD is used as the key alias
