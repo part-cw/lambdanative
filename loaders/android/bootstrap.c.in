@@ -67,10 +67,6 @@ void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_nativeInst
   globalObj = (*env)->NewGlobalRef(env,thiz); 
 }
 
-void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_nativeMediaScannerCallback(JNIEnv* env, jobject thiz){
-  scm_mediascanner_callback();
-}
-
 jint JNI_OnLoad(JavaVM* vm, void* reserved){
   JNIEnv *env;
   s_vm=vm;
@@ -94,16 +90,6 @@ void android_launch_url(char* urlstring){
     jclass cls = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
     jmethodID method = (*env)->GetMethodID(env, cls, "openURL", "(Ljava/lang/String;)V");
     (*env)->CallVoidMethod(env, globalObj, method, jurlstring);
-  }
-}
-
-// MediaScanner for output files
-void ln_android_run_mediascanner(){
-  JNIEnv *env = GetJNIEnv();
-  if (env&&globalObj) {
-    jclass cls = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
-    jmethodID method = (*env)->GetMethodID(env, cls, "runMediaScanner", "()V");
-    (*env)->CallVoidMethod(env, globalObj, method);
   }
 }
 

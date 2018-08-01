@@ -6,3 +6,17 @@ void ln_android_finish(){
     (*env)->CallVoidMethod(env, globalObj, method);
   }
 }
+
+// MediaScanner for output files
+void ln_android_run_mediascanner(){
+  JNIEnv *env = GetJNIEnv();
+  if (env&&globalObj) {
+    jclass cls = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+    jmethodID method = (*env)->GetMethodID(env, cls, "runMediaScanner", "()V");
+    (*env)->CallVoidMethod(env, globalObj, method);
+  }
+}
+
+void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_nativeMediaScannerCallback(JNIEnv* env, jobject thiz){
+  scm_mediascanner_callback();
+}
