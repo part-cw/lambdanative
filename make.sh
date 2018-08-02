@@ -841,6 +841,15 @@ make_setup_profile()
     esac
   fi
   SYS_LOCASEAPPNAME=`echo $SYS_APPNAME | tr A-Z a-z`
+  IFS="." read -ra domains <<< "$SYS_ORGSLD"
+  SYS_ORGSLD_REVERSE=${domains[${#domains[@]} - 1]}
+  for (( i = ${#domains[@]} - 2; i >= 0; i-- )); do
+    SYS_ORGSLD_REVERSE="$SYS_ORGSLD_REVERSE.${domains[$i]}"
+  done
+  SYS_ORGDOMAIN_REVERSE_DOT=$SYS_ORGTLD.$SYS_ORGSLD_REVERSE
+  SYS_PACKAGE_DOT=$SYS_ORGTLD.$SYS_ORGSLD_REVERSE.$SYS_LOCASEAPPNAME
+  SYS_PACKAGE_UNDERSCORE=`echo $SYS_PACKAGE_DOT | sed 's:\.:_:g'`
+  SYS_PACKAGE_SLASH=`echo $SYS_PACKAGE_DOT | sed 's:\.:/:g'`
   SYS_HOSTPREFIX="$SYS_PREFIXROOT/$SYS_HOSTPLATFORM"
   mkdir -p $SYS_HOSTPREFIX/bin
   mkdir -p $SYS_HOSTPREFIX/lib
@@ -1019,6 +1028,10 @@ make_setup_target()
   ac_subst SYS_HOSTEXEFIX
   ac_subst SYS_OPENWRTTARGET
   ac_subst SYS_ARCH
+  ac_subst SYS_ORGDOMAIN_REVERSE_DOT
+  ac_subst SYS_PACKAGE_DOT
+  ac_subst SYS_PACKAGE_UNDERSCORE
+  ac_subst SYS_PACKAGE_SLASH
   ac_output LNCONFIG.h $SYS_PREFIX/include/LNCONFIG.h
   texture_srcs=
   string_srcs=
