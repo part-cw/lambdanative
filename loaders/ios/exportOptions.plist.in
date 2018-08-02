@@ -11,7 +11,7 @@
   <key>provisioningProfiles</key>
   <dict>
     <key>@SYS_PACKAGE_DOT@</key>
-    <string>Distribution</string>
+    <string>@SYS_IOSPROVISIONING@</string>
   </dict>
 </dict>
 </plist>
