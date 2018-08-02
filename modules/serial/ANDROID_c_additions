@@ -14,10 +14,10 @@ static jmethodID s_serial_setrts=NULL;
 int serial_init(){
   JNIEnv *env = GetJNIEnv();
   if (env) {
-    serial_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/RS232Manager");
-    jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+    serial_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/RS232Manager");
+    jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
     if (serial_class && main_class) {
-      jmethodID getRS232Instance = (*env)->GetStaticMethodID(env,main_class, "getRS232Instance","()L@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/RS232Manager;");
+      jmethodID getRS232Instance = (*env)->GetStaticMethodID(env,main_class, "getRS232Instance","()L@SYS_PACKAGE_SLASH@/RS232Manager;");
       s_serial_open = (*env)->GetMethodID(env,serial_class, "open", "(Ljava/lang/String;IIII)I");
       s_serial_close = (*env)->GetMethodID(env,serial_class, "close", "(I)I");
       s_serial_writechar = (*env)->GetMethodID(env,serial_class, "writechar", "(II)V");

@@ -10,7 +10,7 @@
   <true/>
   <key>provisioningProfiles</key>
   <dict>
-    <key>@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@</key>
+    <key>@SYS_PACKAGE_DOT@</key>
     <string>Distribution</string>
   </dict>
 </dict>

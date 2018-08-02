@@ -2,7 +2,7 @@
   android:permission="com.google.android.c2dm.permission.SEND" >
   <intent-filter>
     <action android:name="com.google.android.c2dm.intent.RECEIVE" />
-    <category android:name="@SYS_ORGTLD@.@SYS_ORGSLD@.gcm" />
+    <category android:name="@SYS_ORGDOMAIN_REVERSE_DOT@.gcm" />
   </intent-filter>
 </receiver>
 <service android:name=".GcmIntentService" />

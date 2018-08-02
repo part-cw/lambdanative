@@ -43,7 +43,7 @@ if [ ! "X$adb" = "X" ]; then
   echo "==> Found device, installing android application $SYS_APPNAME.."
   $ANDROIDSDK/platform-tools/adb install -r $pkgfile
   echo "==> Starting application.."
-  $ANDROIDSDK/platform-tools/adb shell am start -n $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME/.$SYS_APPNAME
+  $ANDROIDSDK/platform-tools/adb shell am start -n $SYS_PACKAGE_DOT/.$SYS_APPNAME
 fi
 
 #eof

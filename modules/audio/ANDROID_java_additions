@@ -1,5 +1,5 @@
 class AudioHelper {
-  final static String TAG = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@";
+  final static String TAG = "@SYS_PACKAGE_DOT@";
   private static class MediaPlayerHelper {
     private static enum PlayState {
       STOPPED, PREPARED, PLAYING, LOOPING, PAUSED;
@@ -62,7 +62,7 @@ class AudioHelper {
       }
     }
   }
-  private static String ResourceLocation = "@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@:raw/";
+  private static String ResourceLocation = "@SYS_PACKAGE_DOT@:raw/";
   private Context context = null;
   private static AudioHelper instance = null;
   private MediaPlayer mediaPlayer = null;

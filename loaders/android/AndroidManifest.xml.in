@@ -1,7 +1,7 @@
 # android manifest
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@"
+          package="@SYS_PACKAGE_DOT@"
           android:versionCode="@SYS_APPVERSIONCODE@"
           android:versionName="@SYS_APPVERSION@">
   <uses-sdk android:minSdkVersion="@SYS_ANDROIDAPI@"/>

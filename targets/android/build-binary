@@ -125,7 +125,7 @@ fi
 if [ $use_android_tool = yes ]; then
 $ANDROIDSDK/tools/android --silent create project \
   --target $ANDROIDSDKTARGET --name $SYS_APPNAME --path $tmpdir \
-  --activity $SYS_APPNAME --package $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME
+  --activity $SYS_APPNAME --package $SYS_PACKAGE_DOT
 else
 assert "### Gradle is not supported"
 fi
@@ -193,7 +193,7 @@ if [ -d "$xmlfilesdir" ]; then
 fi
 
 echo " => transferring java hook.."
-appdir=$tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME
+appdir=$tmpdir/src/$SYS_PACKAGE_SLASH
 ac_output loaders/android/bootstrap.java.in $appdir/$SYS_APPNAME.java
 
 echo " => transferring java public classes.."
@@ -207,7 +207,7 @@ for m in $modules; do
       pubclassfile=`echo $pubclassfile | sed 's/.in//'`
       ac_output $pubclass $appdir/$pubclassfile
     else
-      echo "package $SYS_ORGTLD.$SYS_ORGSLD.$SYS_LOCASEAPPNAME;" > $appdir/$pubclassfile
+      echo "package $SYS_PACKAGE_DOT;" > $appdir/$pubclassfile
       cat $pubclass >> $appdir/$pubclassfile
     fi
   done
@@ -301,8 +301,8 @@ fi
 
 # allow free rotation of hybrid apps
 if [ `has_module hybridapp hybridapp-xwalk` = yes ]; then
-  cp $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java tmp.java
-  cat tmp.java | sed '/SCREEN_ORIENTATION_PORTRAIT/d' > $tmpdir/src/$SYS_ORGTLD/$SYS_ORGSLD/$SYS_LOCASEAPPNAME/$SYS_APPNAME.java
+  cp $tmpdir/src/$SYS_PACKAGE_SLASH/$SYS_APPNAME.java tmp.java
+  cat tmp.java | sed '/SCREEN_ORIENTATION_PORTRAIT/d' > $tmpdir/src/$SYS_PACKAGE_SLASH/$SYS_APPNAME.java
   rm tmp.java
 fi
 
@@ -325,11 +325,11 @@ if [ ! -f "$keystore" ]; then
 fi
 if [ ! -e $keystore ]; then
   echo " => generating keystore [$keystore].."
-  keytool -genkey -v -keystore $keystore -dname "CN=$SYS_ORGTLD.$SYS_ORGSLD" -alias "$SYS_ORGTLD.$SYS_ORGSLD" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$SYS_ANDROIDPW" -keypass "$SYS_ANDROIDPW"
+  keytool -genkey -v -keystore $keystore -dname "CN=$SYS_ORGDOMAIN_REVERSE_DOT" -alias "$SYS_ORGDOMAIN_REVERSE_DOT" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$SYS_ANDROIDPW" -keypass "$SYS_ANDROIDPW"
   asserterror $?
 fi
 echo " => signing application with keystore $keystore"
-jarsigner -tsa http://zeitstempel.dfn.de -sigalg SHA1withRSA -digestalg SHA1 -keystore $keystore -keypass "$SYS_ANDROIDPW" -storepass "$SYS_ANDROIDPW" $fnlfile $SYS_ORGTLD.$SYS_ORGSLD
+jarsigner -tsa http://zeitstempel.dfn.de -sigalg SHA1withRSA -digestalg SHA1 -keystore $keystore -keypass "$SYS_ANDROIDPW" -storepass "$SYS_ANDROIDPW" $fnlfile $SYS_ORGDOMAIN_REVERSE_DOT
 asserterror $?
 
 echo " => zipaligning.."

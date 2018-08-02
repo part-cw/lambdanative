@@ -1,6 +1,6 @@
 // FFI for getting Pressure sensor data to Scheme
 static double pressure_p;
-void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_pressureEvent(JNIEnv* e, jobject o, jdouble p) {
+void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_pressureEvent(JNIEnv* e, jobject o, jdouble p) {
   pressure_p=(double)p;
 }
 

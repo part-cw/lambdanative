@@ -589,12 +589,12 @@ void destroyThreadLock(void *lock){
 void start_opensl();
 void stop_opensl();
 
-void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_nativeStartOpenSL(JNIEnv* e, jobject o){
+void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeStartOpenSL(JNIEnv* e, jobject o){
   if ((*e)->ExceptionCheck(e)) return;
   start_opensl();
 }
 
-void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_nativeStopOpenSL(JNIEnv* e, jobject o){
+void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeStopOpenSL(JNIEnv* e, jobject o){
   if ((*e)->ExceptionCheck(e)) return;
   stop_opensl();
 }

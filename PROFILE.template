@@ -8,7 +8,7 @@ SYS_IOSRELCERT="iPhone Distribution: Your iOS profile identifier (YYYYYYYYYY)"
 SYS_IOSDEVCERT="iPhone Developer: Your iOS profile identifier (XXXXXXXXXX)"
 # android keystore password (used for both keypass and storepass) with
 # the android.keystore file (same folder as this PROFLE) used as keystore
-# Note: $SYS_ORGTLD.$SYS_ORGSLD is used as the key alias
+# Note: $SYS_ORGTLD.$SYS_ORGSLD_REVERSE is used as the key alias where $SYS_ORGSLD_REVERSE is the SLD in reverse domain name notation
 SYS_ANDROIDPW="yoursecrethere"
 # BB10 developer password
 SYS_BB10PW="yoursecrethere"
