@@ -818,7 +818,19 @@ make_setup_profile()
   fi
   if [ "$SYS_MODE" = "release" ]; then
     SYS_IOSCERT="iPhone Distribution" # This is actually ignored
-    SYS_IOSPROVISIONING="Distribution"
+    if [ -z "$SYS_IOSMOBILEPROVISION" ]; then
+      files=`find ~/Library/MobileDevice/Provisioning\ Profiles -name '*.mobileprovision'`
+      while read -r file; do
+       dev=`security cms -D -i "$file" | grep -A1 "<key>get-task-allow</key>" | tail -n1 | tr -d '[:space:]'`
+        if [ "$dev" == "<false/>" ]; then
+          file=`basename "$file"`
+          SYS_IOSPROVISIONING="${file%.*}"
+        fi
+      done <<< "$files"
+    else
+      SYS_IOSPROVISIONING=$SYS_IOSMOBILEPROVISION
+    fi
+    echo "=== using provisioning profile $SYS_IOSPROVISIONING"
   else
     SYS_IOSCERT="iPhone Developer"
   fi
