@@ -1,6 +1,6 @@
 // FFI for getting GPS data to Scheme
 static double gps_lon, gps_lat, gps_altitude, gps_accuracy, gps_timestamp;
-void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_gpsEvent(JNIEnv* e, jobject o, jdouble lat, jdouble lon, jdouble altitude, jdouble accuracy, jlong timestamp) {
+void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_gpsEvent(JNIEnv* e, jobject o, jdouble lat, jdouble lon, jdouble altitude, jdouble accuracy, jlong timestamp) {
   gps_lat=(double)lat;
   gps_lon=(double)lon;
   gps_altitude=(double)altitude;
@@ -9,14 +9,14 @@ void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_gpsEvent(J
 }
 
 static int sat_in_view, sat_in_fix;
-void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_@SYS_APPNAME@_satelliteEvent(JNIEnv* e, jobject o, jint inView, jint inFix) {
+void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_satelliteEvent(JNIEnv* e, jobject o, jint inView, jint inFix) {
   sat_in_view = inView;
   sat_in_fix = inFix;
 }
 
 void android_location_toggleGPS(int status){
   JNIEnv *env = GetJNIEnv();
-  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
   if (env&&globalObj){
     jmethodID method = (*env)->GetMethodID(env, main_class, "toggleGPS", "(I)V");
     (*env)->CallVoidMethod(env, globalObj, method, status);
@@ -25,7 +25,7 @@ void android_location_toggleGPS(int status){
 
 int android_location_service(){
   JNIEnv *env = GetJNIEnv();
-  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
   if (env&&globalObj){
     jmethodID method = (*env)->GetMethodID(env, main_class, "isLocationServiceEnabled", "()I");
     return (int)(*env)->CallIntMethod(env,globalObj,method);

@@ -1,3 +1,34 @@
 public void ln_finish(){
   finish();
 }
+
+// MediaScanner call
+void runMediaScanner() {
+  ArrayList<String> filepathList = getFilepathsRecursively(new File("/sdcard/@SYS_APPNAME@"));
+  final int filepathsSize = filepathList.size();
+  String[] filepaths = filepathList.toArray(new String[0]);
+  MediaScannerConnection.scanFile(this, filepaths, null, new MediaScannerConnection.OnScanCompletedListener() {
+    private int count = 0;
+    @Override
+    public void onScanCompleted(String path, Uri uri) {
+      if (++count == filepathsSize) {
+        nativeMediaScannerCallback();
+      }
+    }
+  });
+}
+
+private ArrayList<String> getFilepathsRecursively(File dir) {
+  ArrayList<String> filepaths = new ArrayList<String>();
+  if (!dir.isDirectory()) return filepaths;
+  for (File file : dir.listFiles()) {
+    if (file.isDirectory()) {
+      filepaths.addAll(getFilepathsRecursively(file));
+    } else {
+      filepaths.add(file.getAbsolutePath());
+    }
+  }
+  return filepaths;
+}
+
+native void nativeMediaScannerCallback();

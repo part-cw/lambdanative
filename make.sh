@@ -817,8 +817,20 @@ make_setup_profile()
     echo "=== configured to build $SYS_APPNAME version $SYS_APPVERSION for $SYS_PLATFORM on $SYS_HOSTPLATFORM in $SYS_MODE mode"
   fi
   if [ "$SYS_MODE" = "release" ]; then
-    SYS_IOSCERT="iPhone Distribution"
-    SYS_IOSPROVISIONING="Distribution"
+    SYS_IOSCERT="iPhone Distribution" # This is actually ignored
+    if [ -z "$SYS_IOSMOBILEPROVISION" ]; then
+      files=`find ~/Library/MobileDevice/Provisioning\ Profiles -name '*.mobileprovision'`
+      while read -r file; do
+       dev=`security cms -D -i "$file" | grep -A1 "<key>get-task-allow</key>" | tail -n1 | tr -d '[:space:]'`
+        if [ "$dev" == "<false/>" ]; then
+          file=`basename "$file"`
+          SYS_IOSPROVISIONING="${file%.*}"
+        fi
+      done <<< "$files"
+    else
+      SYS_IOSPROVISIONING=$SYS_IOSMOBILEPROVISION
+    fi
+    echo "=== using provisioning profile $SYS_IOSPROVISIONING"
   else
     SYS_IOSCERT="iPhone Developer"
   fi
@@ -841,6 +853,15 @@ make_setup_profile()
     esac
   fi
   SYS_LOCASEAPPNAME=`echo $SYS_APPNAME | tr A-Z a-z`
+  IFS="." read -ra domains <<< "$SYS_ORGSLD"
+  SYS_ORGSLD_REVERSE=${domains[${#domains[@]} - 1]}
+  for (( i = ${#domains[@]} - 2; i >= 0; i-- )); do
+    SYS_ORGSLD_REVERSE="$SYS_ORGSLD_REVERSE.${domains[$i]}"
+  done
+  SYS_ORGDOMAIN_REVERSE_DOT=$SYS_ORGTLD.$SYS_ORGSLD_REVERSE
+  SYS_PACKAGE_DOT=$SYS_ORGTLD.$SYS_ORGSLD_REVERSE.$SYS_LOCASEAPPNAME
+  SYS_PACKAGE_UNDERSCORE=`echo $SYS_PACKAGE_DOT | sed 's:\.:_:g'`
+  SYS_PACKAGE_SLASH=`echo $SYS_PACKAGE_DOT | sed 's:\.:/:g'`
   SYS_HOSTPREFIX="$SYS_PREFIXROOT/$SYS_HOSTPLATFORM"
   mkdir -p $SYS_HOSTPREFIX/bin
   mkdir -p $SYS_HOSTPREFIX/lib
@@ -1019,6 +1040,10 @@ make_setup_target()
   ac_subst SYS_HOSTEXEFIX
   ac_subst SYS_OPENWRTTARGET
   ac_subst SYS_ARCH
+  ac_subst SYS_ORGDOMAIN_REVERSE_DOT
+  ac_subst SYS_PACKAGE_DOT
+  ac_subst SYS_PACKAGE_UNDERSCORE
+  ac_subst SYS_PACKAGE_SLASH
   ac_output LNCONFIG.h $SYS_PREFIX/include/LNCONFIG.h
   texture_srcs=
   string_srcs=

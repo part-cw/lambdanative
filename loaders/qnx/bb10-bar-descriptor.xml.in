@@ -2,7 +2,7 @@
 # Specifies parameters for identifying, installing, and launching BB10 applications 
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <qnx xmlns="http://www.qnx.com/schemas/application/1.0">
-<id>@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_APPNAME@</id>
+<id>@SYS_ORGDOMAIN_REVERSE_DOT@.@SYS_APPNAME@</id>
 <name>@SYS_APPNAME@</name>
 <versionNumber>@SYS_APPVERSION@</versionNumber>
 # Fourth digit segment of the package version. First three segments are taken from the 

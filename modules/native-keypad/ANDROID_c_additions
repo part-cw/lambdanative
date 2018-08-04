@@ -1,6 +1,6 @@
 void android_show_keypad(){
   JNIEnv *env = GetJNIEnv();
-  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
   if (env&&globalObj){
     jmethodID method = (*env)->GetMethodID(env, main_class, "showKeyboard", "()V");
     (*env)->CallVoidMethod(env, globalObj, method);
@@ -8,7 +8,7 @@ void android_show_keypad(){
 }
 void android_hide_keypad(int orientation){
   JNIEnv *env = GetJNIEnv();
-  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
   if (env&&globalObj){
     jmethodID method = (*env)->GetMethodID(env, main_class, "hideKeyboard", "()V");
     (*env)->CallVoidMethod(env, globalObj, method);

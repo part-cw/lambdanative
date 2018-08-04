@@ -10,8 +10,8 @@
   <true/>
   <key>provisioningProfiles</key>
   <dict>
-    <key>@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@</key>
-    <string>Distribution</string>
+    <key>@SYS_PACKAGE_DOT@</key>
+    <string>@SYS_IOSPROVISIONING@</string>
   </dict>
 </dict>
 </plist>

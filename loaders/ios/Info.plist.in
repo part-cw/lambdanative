@@ -7,7 +7,7 @@
 <key>CFBundleExecutable</key>
 <string>@SYS_APPNAME@</string>
 <key>CFBundleIdentifier</key>
-<string>@SYS_ORGTLD@.@SYS_ORGSLD@.@SYS_LOCASEAPPNAME@</string>
+<string>@SYS_PACKAGE_DOT@</string>
 <key>CFBundleInfoDictionaryVersion</key>
 <string>6.0</string>
 <key>CFBundleShortVersionString</key>

@@ -1,8 +1,22 @@
 void ln_android_finish(){
   JNIEnv *env = GetJNIEnv();
-  jclass main_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/@SYS_APPNAME@");
+  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
   if (env&&globalObj){
     jmethodID method = (*env)->GetMethodID(env, main_class, "ln_finish", "()V");
     (*env)->CallVoidMethod(env, globalObj, method);
   }
+}
+
+// MediaScanner for output files
+void ln_android_run_mediascanner(){
+  JNIEnv *env = GetJNIEnv();
+  if (env&&globalObj) {
+    jclass cls = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
+    jmethodID method = (*env)->GetMethodID(env, cls, "runMediaScanner", "()V");
+    (*env)->CallVoidMethod(env, globalObj, method);
+  }
+}
+
+void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeMediaScannerCallback(JNIEnv* env, jobject thiz){
+  scm_mediascanner_callback();
 }

@@ -13,10 +13,10 @@ void android_audio_init(){
   if (needsinit) {
     JNIEnv *env = GetJNIEnv();
     if (env) {
-      audiohelper_class = (*env)->FindClass(env, "@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/AudioHelper");
+      audiohelper_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/AudioHelper");
       if (audiohelper_class) {
         jmethodID getInstance = (*env)->GetStaticMethodID(env,audiohelper_class, "getInstance", 
-           "()L@SYS_ORGTLD@/@SYS_ORGSLD@/@SYS_LOCASEAPPNAME@/AudioHelper;");
+           "()L@SYS_PACKAGE_SLASH@/AudioHelper;");
         s_load = (*env)->GetMethodID(env,audiohelper_class, "LoadSound", "(Ljava/lang/String;I)I");
         s_play = (*env)->GetMethodID(env,audiohelper_class, "PlaySound", "(IFFIIF)I");
         s_stop = (*env)->GetMethodID(env,audiohelper_class, "StopAll", "()I");

@@ -66,8 +66,8 @@ if [ -f $ipafile ]; then
 fi
 rmifexists "$expath"
 veval "xcodebuild -exportArchive -archivePath $SYS_PREFIX/$SYS_APPNAME-$SYS_APPVERSION.xcarchive -exportPath $expath -exportOptionsPlist $eopfile"
+assertfile $expath/$SYS_APPNAME.ipa
 cp $expath/$SYS_APPNAME.ipa $ipafile
-assertfile $ipafile
 echo "=== $ipafile"
 
 #eof

@@ -1,5 +1,5 @@
 
-void Java_@SYS_ORGTLD@_@SYS_ORGSLD@_@SYS_LOCASEAPPNAME@_LambdaNativeBackgroundService_nativeEvent(JNIEnv* e, jobject o, jint t, jint x, jint y){
+void Java_@SYS_PACKAGE_UNDERSCORE@_LambdaNativeBackgroundService_nativeEvent(JNIEnv* e, jobject o, jint t, jint x, jint y){
    if ((*e)->ExceptionCheck(e)) return;
    ffi_event((int)t,(int)x,(int)y);
 }
