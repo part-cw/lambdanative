@@ -935,36 +935,48 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (idname (string-append (if (string? id) id (if (symbol? id) (symbol->string id) "")) ":filename"))
          (filename (glgui:uiform-arg args 'filename (uiget idname #f)))
          (tmpimagepath (if filename (string-append (system-directory) (system-pathseparator) "tmp_" filename) #f))
+         (newfilepath  (if filename (string-append (system-directory) (system-pathseparator) filename) #f))
+         (photo-taken (and tmpimagepath (file-exists? tmpimagepath)))
+         (photo-saved (and newfilepath  (file-exists? newfilepath)))
          (loc (glgui:uiform-arg args 'location 'db))
-         (curimg (xxget loc filename #f))
          (archive (glgui:uiform-arg args 'archive #f))
-         (display (glgui:uiform-arg args 'display  #t))
-         (newimg (if (and display tmpimagepath (file-exists? tmpimagepath))
+         (scale (glgui:uiform-arg args 'scale 0.8))
+         (display (glgui:uiform-arg args 'display #t))
+         (high-quality (glgui:uiform-arg args 'high-quality #t))
+         (img (if (not display) #f (if photo-taken
             (let* ((fd (gdFileOpen tmpimagepath "r"))
                    (gd (gdImageCreateFromJpeg fd))
                    (w0 (gdImageSX gd))
                    (h0 (gdImageSY gd))
-                   (w1 (fix (* 0.8 w)))
+                   (w1 (fix (* scale w)))
                    (h1 (fix (/ (* h0 w1) w0)))
                    (gd2 (gdImageCreateTrueColor w1 h1))
                    (img (begin 
-                     (gdImageCopyResampled gd2 gd 0 0 0 0 w1 h1 w0 h0)
+                     ((if high-quality gdImageCopyResampled gdImageCopyResized) gd2 gd 0 0 0 0 w1 h1 w0 h0)
                      (gd->img gd2))))
               (gdImageDestroy gd)
               (gdImageDestroy gd2)
-              (gdFileClose fd) img) #f))
-         (img (if newimg newimg (if curimg curimg #f)))
-         (h (if img (cadr img) (fix (* w 0.8))))
+              (gdFileClose fd)
+              (if img (xxset loc filename img)) img)
+            (xxget loc filename #f))))
+         (h (if img (cadr img) (fix (* w scale))))
          (fnt (uiget 'fnt)))
-     (if newimg (xxset loc filename newimg))
-     (if (and tmpimagepath (file-exists? tmpimagepath)) (begin (if archive (let ((newfilepath (string-append (system-directory) (system-pathseparator) filename))) (copy-file tmpimagepath newfilepath) (xxset loc id newfilepath))) (delete-file tmpimagepath)))
-     (if (uiget 'sanemap) (begin
-       (if img (glgui:draw-pixmap-center x y w h img White)
-       (begin
-         (glgui:draw-box (+ x (* w 0.1)) y (* w 0.8) h (uiget 'color-default))
-        (if (and (not display) archive) (glgui:draw-text-center x y w h (glgui:uiform-arg args 'defaultcomplete "Photo taken.\n Tap here to take a different photo") fnt White) (glgui:draw-text-center x y w h (glgui:uiform-arg args 'default "Tap to take photo") fnt White))))
-     ))
-   h
+      (if photo-taken (begin
+        (if archive (begin
+          (if (file-exists? newfilepath) (delete-file newfilepath))
+          (copy-file tmpimagepath newfilepath)
+          (xxset loc id newfilepath)))
+        (delete-file tmpimagepath)))
+      (if (uiget 'sanemap) (begin
+        (if img
+            (glgui:draw-pixmap-center x y w h img White)
+            (begin
+              (glgui:draw-box (+ x (* w 0.1)) y (* w scale) h (uiget 'color-default))
+              (glgui:draw-text-center x y w h (if (or photo-taken photo-saved)
+                (glgui:uiform-arg args 'defaultcomplete "Photo taken.\n Tap here to take a different photo")
+                (glgui:uiform-arg args 'default "Tap to take photo")) fnt White)))
+      ))
+    h
   ))
 
 (define (glgui:uiform-camera-input type x y . args)
