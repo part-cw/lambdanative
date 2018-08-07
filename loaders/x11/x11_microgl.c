@@ -218,7 +218,9 @@ void microgl_pollevents(void)
         motion=1;
         break;
       case Expose:
-        expose=1;
+        if (event.count == 0) {
+          expose=1;
+        }
         break;
       case ClientMessage:  
         if( (Atom) event.xclient.data.l[ 0 ] == win.WMDeleteWindow )
