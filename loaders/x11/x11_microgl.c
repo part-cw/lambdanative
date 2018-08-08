@@ -218,7 +218,7 @@ void microgl_pollevents(void)
         motion=1;
         break;
       case Expose:
-        if (event.count == 0) {
+        if (event.xexpose.count == 0) {
           expose=1;
         }
         break;
