@@ -37,6 +37,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #import <Cocoa/Cocoa.h>
 
+// Define NSEventModifierFlags ourselves since they only exist in macOS 10.12+
+// https://developer.apple.com/documentation/appkit/nseventmodifierflags?language=objc
+#define NSEventModifierFlagCommand  1 << 20
+#define NSEventModifierFlagOption   1 << 19
+#define NSEventModifierFlagControl  1 << 18
+#define NSEventModifierFlagShift    1 << 17
+#define NSEventModifierFlagCapsLock 1 << 16
+#define NSEventModifierFlagFunction 1 << 23
+
 @interface SimpleOpenGLView : NSOpenGLView
 {
   NSTimer *timer;
