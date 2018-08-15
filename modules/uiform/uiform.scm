@@ -1400,6 +1400,70 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (uiform-register 'graph glgui:uiform-graph-draw #f)
 
 ;; -------------
+;; uiform slider
+
+(define (glgui:uiform-slider-draw x y w . args)
+  (let* ((h (glgui:uiform-arg args 'h (+ (uiget 'rowh) 20)))
+         (id (glgui:uiform-arg args 'id #f))
+         (min (glgui:uiform-arg args 'min 0))
+         (max (glgui:uiform-arg args 'max 100))
+         (shownumber (glgui:uiform-arg args 'number #t))  ;; Display value of slider
+         (labels (glgui:uiform-arg args 'labels '("" ""))) ;; Labels for the slider. needs min 2 (left, right), max 3 (left, middle, right) strings
+         (idstr (if (string? id) id (symbol->string id)))
+         (idpositions (string-append idstr ":positions")) ;; Stores the slider GUI positions (matching below values)
+         (idvalues (string-append idstr ":values")) ;; Stores the slider values list
+         (loc (glgui:uiform-arg args 'location 'db))
+         (fnt (uiget 'fnt))
+         (req (glgui:uiform-arg args 'required #f))
+         (stepnum (fx- max min))
+         (stepvalues  (make-list-natural min (+ 1 stepnum)))
+         (defaultvalue (glgui:uiform-arg args 'default (/ stepnum 2)))
+         (value (xxget loc id defaultvalue))
+         (boxcolor (uiget 'color-default)))
+     (uiset idvalues stepvalues)
+     (if req
+       (uiform-required-set id (abs (- (abs y) (uiget 'offset 0) h))))
+     (if (uiget 'sanemap)
+       (let* ((fnth (glgui:fontheight fnt))
+              (sw (* w 0.8))
+              (bw (- h fnth))
+              (bh bw)
+              (bx (+ x (* (/ sw stepnum) (- value min)) (- (* w 0.1) (/ bh 2))))
+              (by y)
+              (i (/ sw stepnum))
+              (positions (make-list-increment (* w 0.1) (+ 1 stepnum) i)))
+	     (uiset idpositions positions)
+         (glgui:draw-box (+ x (* w 0.1)) (+ by (/ bh 4)) sw (/ bh 2) boxcolor) ;; Horizontal bar
+	     (glgui:draw-box bx by bw bh (if (null? value) boxcolor White))  ;; Slider box
+         (if shownumber
+           (glgui:draw-text-center bx by bw bh (number->string value) fnt Black))
+         ;; draw labels
+         (glgui:draw-text-left (+ x (* w 0.1)) (+ by (- h fnth)) (- (* w 0.8) bw) fnth (car labels) fnt White)
+         (glgui:draw-text-right (+ x bw (* w 0.1)) (+ by (- h fnth)) (- (* w 0.8) bw) fnth (car (reverse labels)) fnt White)
+         (if (> (length labels) 2)
+           (glgui:draw-text-center (+ x (/ sw 2) (- (* w 0.1) (/ (- (* w 0.8) bw) 2))) (+ by (- h fnth)) (- (* w 0.8) bw) fnth (cadr  labels) fnt White))))
+      h
+  ))
+
+
+(define (glgui:uiform-slider-input type x y . args)
+  (let* ((id (glgui:uiform-arg args 'id #f))
+         (idstr (if (string? id) id (symbol->string id)))
+         (idpositions (string-append idstr ":positions"))
+         (idvalues (string-append idstr ":values"))
+         (loc (glgui:uiform-arg args 'location 'db))
+         (positions (uiget idpositions))
+         (values (uiget idvalues))
+         (value (list-ref values (list-closest positions x))))
+    (if id
+      (begin
+        (uiset 'nodemap '())
+        (xxset loc id value))) ;; Save new value of slider
+ ))
+
+(uiform-register 'slider glgui:uiform-slider-draw glgui:uiform-slider-input)
+
+;; -------------
 ;; uiform modal
 
 (define (glgui:uiform-modal-draw g wgt)
