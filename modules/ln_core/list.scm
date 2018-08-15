@@ -125,11 +125,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     #f
   ))
 
-;; new list filled with n elements containing s, s+1, s+2, ... s+n-1
+;; New list filled with n elements containing s, s+1, s+2, ... s+n-1
 (define (make-list-natural s n)
   (if (zero? n)
     '()
     (cons s (make-list-natural (+ s 1) (- n 1)))
   ))
+
+;; New list filled with n elements containing s, s+i, s+2*i, ... s+(n-1)*i
+(define (make-list-increment s n i)
+  (if (zero? n)
+    '()
+    (cons s (make-list-increment (+ s i) (- n 1) i)))
+)
 
 ;; eof

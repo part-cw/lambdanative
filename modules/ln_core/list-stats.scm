@@ -95,7 +95,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (if (= d 0) (make-list (length lst) 0.5)
         (map (lambda (x) (/ (- x mn) d)) lst)))))
 
-;; Return the smalles element of list lst
+;; Return the smallest element of list lst
 (define (list-min lst)
   (car (sort lst <)))
 
@@ -112,5 +112,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (apply + (map * lst1 lst2)))
 (define (list-fldot lst1 lst2)
   (apply fl+ (map fl* lst1 lst2)))
+
+;; Get index of element in list that is closest to val
+(define (list-closest lst v)
+  (let* ((mlst (map (lambda (x) (abs (- x v))) lst))
+         (min (list-min mlst)))
+    (list-pos mlst min))
+)
 
 ;; eof
