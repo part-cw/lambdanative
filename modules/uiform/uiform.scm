@@ -1418,7 +1418,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (stepnum (fx- max min))
          (stepvalues  (make-list-natural min (+ 1 stepnum)))
          (defaultvalue (glgui:uiform-arg args 'default (/ stepnum 2)))
-         (value (xxget loc id defaultvalue))
+         (value (xxget loc id #f))
          (boxcolor (uiget 'color-default)))
      (uiset idvalues stepvalues)
      (if req
@@ -1430,18 +1430,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (bh bw)
               (bx (+ x (* (/ sw stepnum) (- value min)) (- (* w 0.1) (/ bh 2))))
               (by y)
+	      (v (if value value defaultvalue))
               (i (/ sw stepnum))
               (positions (make-list-increment (* w 0.1) (+ 1 stepnum) i)))
 	     (uiset idpositions positions)
          (glgui:draw-box (+ x (* w 0.1)) (+ by (/ bh 4)) sw (/ bh 2) boxcolor) ;; Horizontal bar
-	     (glgui:draw-box bx by bw bh (if (null? value) boxcolor White))  ;; Slider box
-         (if shownumber
-           (glgui:draw-text-center bx by bw bh (number->string value) fnt Black))
-         ;; draw labels
+	     (glgui:draw-box bx by bw bh (if value White boxcolor))  ;; Slider box
+         (if (and shownumber value)
+           (glgui:draw-text-center bx by bw bh (number->string v) fnt Black))
+         ;; draw labels if set
+	 (if (fx> (length labels) 1) (begin  
          (glgui:draw-text-left (+ x (* w 0.1)) (+ by (- h fnth)) (- (* w 0.8) bw) fnth (car labels) fnt White)
          (glgui:draw-text-right (+ x bw (* w 0.1)) (+ by (- h fnth)) (- (* w 0.8) bw) fnth (car (reverse labels)) fnt White)
          (if (> (length labels) 2)
-           (glgui:draw-text-center (+ x (/ sw 2) (- (* w 0.1) (/ (- (* w 0.8) bw) 2))) (+ by (- h fnth)) (- (* w 0.8) bw) fnth (cadr  labels) fnt White))))
+           (glgui:draw-text-center (+ x (/ sw 2) (- (* w 0.1) (/ (- (* w 0.8) bw) 2))) (+ by (- h fnth)) (- (* w 0.8) bw) fnth (cadr  labels) fnt White)))))
       h
   ))
 
