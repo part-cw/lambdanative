@@ -1435,7 +1435,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (positions (make-list-increment (* w 0.1) (+ 1 stepnum) i)))
 	     (uiset idpositions positions)
          (glgui:draw-box (+ x (* w 0.1)) (+ by (/ bh 4)) sw (/ bh 2) boxcolor) ;; Horizontal bar
-	     (glgui:draw-box bx by bw bh (if value boxcolor White))  ;; Slider box
+	     (glgui:draw-box bx by bw bh (if value White boxcolor))  ;; Slider box
          (if (and shownumber value)
            (glgui:draw-text-center bx by bw bh (number->string v) fnt Black))
          ;; draw labels if set
