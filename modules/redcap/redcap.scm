@@ -636,10 +636,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            "Host: " host "\r\n"
            "User-Agent: " redcap:user-agent  "\r\n"
            "Content-Length: " (number->string (+ (string-length ct) (string-length at) (string-length rd)
-             (string-length fd) (string-length tk) (string-length fo) (string-length ev) (string-length re) (string-length dt)
+             (string-length fd) (string-length tk) (string-length ev) (string-length re) (string-length dt)
              (if filesize filesize 0) (u8vector-length close-vector))) "\r\n"
            "Content-Type: " redcap:content-type-file "; boundary=" bd "\r\n" "\r\n"
-             ct at rd fo ev re fd tk dt))))
+             ct at rd ev re fd tk dt))))
 
    ;; Check if we have a valid connection before proceeding
     (if (and filesize (fx= (httpsclient-open host) 1))
