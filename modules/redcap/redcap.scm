@@ -689,7 +689,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (redcap-export-file host token record field . xargs)
   (let* ((event (redcap:arg 'event xargs ""))
          (repeat (redcap:arg 'repeat xargs ""))
-         (form (redcap:arg 'form xargs #f))
          (request (string-append "content=file&action=export&token=" token
                                  "&record=" record
                                  (if event
@@ -741,15 +740,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (redcap-delete-file host token record field . xargs)
   (let* ((event (redcap:arg 'event xargs ""))
-         (form (redcap:arg 'form xargs #f))
+         (repeat (redcap:arg 'repeat xargs ""))
          (request (string-append "content=file&action=delete&token=" token
                                  "&record=" record
                                  (if event
                                    (string-append "&event=" event)
                                    ""
                                  )
-                                 (if form
-                                   (string-append "&form_instance_id=" form)
+                                 (if repeat
+                                   (string-append "&repeat_instance=" repeat)
                                    ""
                                  )
                                  "&field=" field))

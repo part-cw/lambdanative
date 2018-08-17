@@ -23,6 +23,9 @@
     (if (not success) (begin (display "Result obtained:\n") (display result) (display "\nis not equal to expected value:\n") (display expectation) (newline)))
     success))
 
+(define (test-failure eqfn? result expectation)
+  (test-success (lambda (r e) (not (eqfn? r e))) result expectation))
+
 ;; Unit test template
 ;; f takes no arguments and returns a boolean
 (define (add-unit-test name f)
@@ -306,18 +309,22 @@
                                 ("date_dec" . "") ("date_inc_sec" . "") ("crawling" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . "0"))))
 
 ;; Importing and exporting files functions
-;; Note that we can't test the `repeat` field in import and export because delete doesn't have that field
 ;;  - redcap-import-file
 ;;    - event
-;;    - form
+;;    - repeat
 ;; - redcap-export-file
 ;;    - event
-;;    - form
+;;    - repeat
 ;; - redcap-delete-file
 ;;    - event
-;;    - form
+;;    - repeat
 (unit-test "REDCap" "Files"
-  (lambda ()
+  (lambda () (and
+    (redcap:filetest "event_b_arm_1" #f)
+    (redcap:filetest "event_c_arm_1" "1")
+    (redcap:filetest "event_d_arm_1" "2"))))
+
+(define (redcap:filetest event repeat)
     (redcap-url-set! redcap:testurl)
     (let ((testfile (string-append (system-directory) (system-pathseparator) "test.csv"))
           (csvcontent (list (list "header1" "header2") (list "A" "B")))
@@ -327,9 +334,9 @@
       ;; Create a small csv file
       (csv-write testfile csvcontent)
       ;; Import the file
-      (redcap-import-file redcap:testhost redcap:testtoken "1" "file" testfile 'event "event_b_arm_1")
+    (redcap-import-file redcap:testhost redcap:testtoken "1" "file" testfile 'event event 'repeat repeat)
       ;; Export the file
-      (let ((f (redcap-export-file redcap:testhost redcap:testtoken "1" "file" testfile 'event "event_b_arm_1")))
+    (let ((f (redcap-export-file redcap:testhost redcap:testtoken "1" "file" testfile 'event event 'repeat repeat)))
         (if (list? f)
           (let* ((filepath (string-append (system-directory) (system-pathseparator) "export.csv"))
                  (fh (open-output-file filepath))
@@ -345,9 +352,9 @@
               (if success (set! success (equal? csvcontent downloadedcontent)))))
           (set! success #f)))
       ;; Check the a regular export shows a file
-      (if success (set! success (test-success string=? (redcap-export-records redcap:testhost redcap:testtoken 'records (list "1") 'events (list "event_b_arm_1") 'fields (list "file") 'format "csv") "file\n[document]\n")))
+    (if success (set! success (test-success string-contains (redcap-export-records redcap:testhost redcap:testtoken 'records (list "1") 'events (list event) 'fields (list "file") 'format "csv") "[document]")))
       ;; Delete file to prepare for next time
-      (redcap-delete-file redcap:testhost redcap:testtoken "1" "file" 'event "event_b_arm_1")
+    (redcap-delete-file redcap:testhost redcap:testtoken "1" "file" 'event event 'repeat repeat)
       ;; Check that the file is gone
-      (if success (set! success (test-success string=? (redcap-export-records redcap:testhost redcap:testtoken 'records (list "1") 'events (list "event_b_arm_1") 'fields (list "file") 'format "csv") "file\n\n")))
-      success)))
+    (if success (set! success (test-failure string-contains (redcap-export-records redcap:testhost redcap:testtoken 'records (list "1") 'events (list event) 'fields (list "file") 'format "csv") "[document]")))
+    success))
