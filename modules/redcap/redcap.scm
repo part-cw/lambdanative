@@ -612,12 +612,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (fd (string-append "--" bd "\r\n"
               "Content-Disposition: form-data; name=\"field\"" "\r\n" "\r\n"
               field "\r\n"))
-         (form (redcap:arg 'form xargs #f))
-         (fo (if form
-               (string-append "--" bd "\r\n"
-                 "Content-Disposition: form-data; name=\"form_instance_id\"" "\r\n" "\r\n"
-                 form "\r\n")
-               ""))
          (event (redcap:arg 'event xargs #f))
          (ev (if event
                (string-append "--" bd "\r\n"
@@ -704,10 +698,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                  )
                                  (if repeat
                                    (string-append "&repeat_instance=" repeat)
-                                   ""
-                                 )
-                                 (if form
-                                   (string-append "&form_instance_id=" form)
                                    ""
                                  )
                                  "&field=" field))

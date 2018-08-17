@@ -327,9 +327,9 @@
       ;; Create a small csv file
       (csv-write testfile csvcontent)
       ;; Import the file
-      (redcap-import-file redcap:testhost redcap:testtoken "1" "file" testfile 'event "event_b_arm_1" 'form "2")
+      (redcap-import-file redcap:testhost redcap:testtoken "1" "file" testfile 'event "event_b_arm_1")
       ;; Export the file
-      (let ((f (redcap-export-file redcap:testhost redcap:testtoken "1" "file" testfile 'event "event_b_arm_1" 'form "2")))
+      (let ((f (redcap-export-file redcap:testhost redcap:testtoken "1" "file" testfile 'event "event_b_arm_1")))
         (if (list? f)
           (let* ((filepath (string-append (system-directory) (system-pathseparator) "export.csv"))
                  (fh (open-output-file filepath))
@@ -347,7 +347,7 @@
       ;; Check the a regular export shows a file
       (if success (set! success (test-success string=? (redcap-export-records redcap:testhost redcap:testtoken 'records (list "1") 'events (list "event_b_arm_1") 'fields (list "file") 'format "csv") "file\n[document]\n")))
       ;; Delete file to prepare for next time
-      (redcap-delete-file redcap:testhost redcap:testtoken "1" "file" 'event "event_b_arm_1" 'form "2")
+      (redcap-delete-file redcap:testhost redcap:testtoken "1" "file" 'event "event_b_arm_1")
       ;; Check that the file is gone
       (if success (set! success (test-success string=? (redcap-export-records redcap:testhost redcap:testtoken 'records (list "1") 'events (list "event_b_arm_1") 'fields (list "file") 'format "csv") "file\n\n")))
       success)))
