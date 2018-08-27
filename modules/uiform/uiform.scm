@@ -1443,7 +1443,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (glgui:draw-text-left (+ x (* w 0.1)) (+ by (- h fnth)) (- (* w 0.8) bw) fnth (car labels) fnt White)
          (glgui:draw-text-right (+ x bw (* w 0.1)) (+ by (- h fnth)) (- (* w 0.8) bw) fnth (car (reverse labels)) fnt White)
          (if (> (length labels) 2)
-           (glgui:draw-text-center (+ x (/ sw 2) (- (* w 0.1) (/ (- (* w 0.8) bw) 2))) (+ by (- h fnth)) (- (* w 0.8) bw) fnth (cadr  labels) fnt White)))))
+           (glgui:draw-text-center (+ x (/ sw 2) (- (* w 0.1) (/ (- (* w 0.8) bw) 2))) (+ by (- h fnth)) (- (* w 0.8) bw) fnth (cadr  labels) fnt White))))))
       h
   ))
 
