@@ -8,6 +8,8 @@ ANDROIDNDK=`find /usr/local/android-ndk-*  -maxdepth 0 -print  2> /dev/null| tai
 ANDROIDAPI=19
 #android target cpu, either arm (default), x86 or mips
 ANDROIDARCH=arm
+# Java source and target version (default 1.5 when unset, set 1.6 to allow using Java 9/10)
+JAVAVERSION=1.6
 # ------------------------------------
 ## Linux cross compiler (mac)
 LINUXSDK=`find /usr/local/i?86-linux-*  -maxdepth 0 -print 2> /dev/null | tail -n 1`

@@ -307,6 +307,8 @@ if [ `has_module hybridapp hybridapp-xwalk` = yes ]; then
 fi
 
 echo " => compiling application.."
+echo "java.target = $JAVAVERSION" >> $tmpdir/ant.properties
+echo "java.source = $JAVAVERSION" >> $tmpdir/ant.properties
 veval "ant release"
 asserterror $?
 cd $here
