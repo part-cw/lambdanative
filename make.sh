@@ -820,13 +820,15 @@ make_setup_profile()
     SYS_IOSCERT="iPhone Distribution" # This is actually ignored
     if [ -z "$SYS_IOSMOBILEPROVISION" ]; then
       files=`find ~/Library/MobileDevice/Provisioning\ Profiles -name '*.mobileprovision'`
-      while read -r file; do
+      IFS_OLD=$IFS; IFS=$'\n'
+      for file in $files; do
        dev=`security cms -D -i "$file" | grep -A1 "<key>get-task-allow</key>" | tail -n1 | tr -d '[:space:]'`
         if [ "$dev" == "<false/>" ]; then
           file=`basename "$file"`
           SYS_IOSPROVISIONING="${file%.*}"
         fi
-      done <<< "$files"
+      done
+      IFS=$IFS_OLD
     else
       SYS_IOSPROVISIONING=$SYS_IOSMOBILEPROVISION
     fi
@@ -853,7 +855,10 @@ make_setup_profile()
     esac
   fi
   SYS_LOCASEAPPNAME=`echo $SYS_APPNAME | tr A-Z a-z`
-  IFS="." read -ra domains <<< "$SYS_ORGSLD"
+  mkfifo temp_pipe
+  echo "$SYS_ORGSLD" > temp_pipe &
+  IFS="." read -ra domains < temp_pipe
+  unlink temp_pipe
   SYS_ORGSLD_REVERSE=${domains[${#domains[@]} - 1]}
   for (( i = ${#domains[@]} - 2; i >= 0; i-- )); do
     SYS_ORGSLD_REVERSE="$SYS_ORGSLD_REVERSE.${domains[$i]}"
