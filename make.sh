@@ -855,14 +855,11 @@ make_setup_profile()
     esac
   fi
   SYS_LOCASEAPPNAME=`echo $SYS_APPNAME | tr A-Z a-z`
-  mkfifo temp_pipe
-  echo "$SYS_ORGSLD" > temp_pipe &
-  IFS="." read -ra domains < temp_pipe
-  unlink temp_pipe
-  SYS_ORGSLD_REVERSE=${domains[${#domains[@]} - 1]}
-  for (( i = ${#domains[@]} - 2; i >= 0; i-- )); do
-    SYS_ORGSLD_REVERSE="$SYS_ORGSLD_REVERSE.${domains[$i]}"
+  SYS_ORGSLD_TEMP=`echo $SYS_ORGSLD | sed "s/\./ /g"`
+  for subdomain in $SYS_ORGSLD_TEMP; do
+    SYS_ORGSLD_REVERSE="$subdomain $SYS_ORGSLD_REVERSE"
   done
+  SYS_ORGSLD_REVERSE=`echo $SYS_ORGSLD_REVERSE | sed "s/ /\./g"`
   SYS_ORGDOMAIN_REVERSE_DOT=$SYS_ORGTLD.$SYS_ORGSLD_REVERSE
   SYS_PACKAGE_DOT=$SYS_ORGTLD.$SYS_ORGSLD_REVERSE.$SYS_LOCASEAPPNAME
   SYS_PACKAGE_UNDERSCORE=`echo $SYS_PACKAGE_DOT | sed 's:\.:_:g'`
