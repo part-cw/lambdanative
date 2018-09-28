@@ -274,7 +274,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (let ((keycmd (if key (keypad:keycmd key) #f)))
           (if (and (char? keycmd) (not (char=? keycmd #\nul))) (glgui-widget-set! g wgt 'highlight keycmd))
         ))
-      ((and (fx= type EVENT_KEYRELEASE) (fx= mx EVENT_KEYBACK))
+      ((and (fx= type EVENT_KEYRELEASE) (fx= mx EVENT_KEYBACK) hideonreturn)
         (glgui-widget-set! g wgt 'hidden #t)
         (if (procedure? hideonreturn) (hideonreturn))))
    ;; Return the key, but if false, return whether event was from inside rectangle dimensions
