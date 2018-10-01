@@ -106,7 +106,7 @@ else
     cd "$tmpdir"
     veval "$SYS_HOST_CC $cflag_additions $ldflag_additions -framework OpenGL -framework Cocoa -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -framework Accelerate -x objective-c -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -o $apptgtdir/$SYS_APPNAME -lpayload *.m"
   else
-    cp $srcdir/main.c $tmpdir
+    cp loaders/common/main.c $tmpdir
     cd "$tmpdir"
     veval "$SYS_HOST_CC $cflag_additions $ldflag_additions -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload main.c"
   fi
