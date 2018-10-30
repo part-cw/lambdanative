@@ -26,8 +26,8 @@ IOSSDK=`find $IOSROOT/SDKs/*  -maxdepth 0 -print 2> /dev/null | tail -n 1`
 if [ ! -f $IOSROOT/usr/bin/ar ]; then
   IOSROOT=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain
 fi
-# minimum version to support
-IOSVERSION=6.0
+# minimum version to support [required by XCode 10]
+IOSVERSION=7.0
 # ------------------------------------
 ## Blackberry BB10 cross compiler (linux or mac)
 BB10SDK=/Applications/Momentics.app
