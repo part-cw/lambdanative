@@ -124,7 +124,7 @@ cd $xcodedir
 veval "cmake -GXcode $cmakedir"
 asserterror $?
 #  xcodebuild -configuration Release | grep -A 2 error
-veval "xcodebuild -configuration Release"
+veval "xcodebuild -configuration Release -allowProvisioningUpdates"
 asserterror $?
 cd $here
 tmpappdir=$xcodedir/Release-iphoneos/$SYS_APPNAME$SYS_APPFIX
@@ -159,7 +159,7 @@ mkdir "$xcodedir/$SYS_APPNAME.xcodeproj/xcshareddata"
 mkdir "$xcodedir/$SYS_APPNAME.xcodeproj/xcshareddata/xcschemes"
 cat $SYS_TMPDIR/tmp.xcscheme | sed '/^#/d' > "$xcodedir/$SYS_APPNAME.xcodeproj/xcshareddata/xcschemes/$SYS_APPNAME.xcscheme"
 cd $xcodedir
-veval "xcodebuild -scheme $SYS_APPNAME archive -archivePath $SYS_PREFIX/$SYS_APPNAME-$SYS_APPVERSION.xcarchive"
+veval "xcodebuild -scheme $SYS_APPNAME archive -archivePath $SYS_PREFIX/$SYS_APPNAME-$SYS_APPVERSION.xcarchive -allowProvisioningUpdates"
 cd $here
 assertfile $SYS_PREFIX/$SYS_APPNAME-$SYS_APPVERSION.xcarchive
 
