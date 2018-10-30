@@ -100,6 +100,8 @@ void MoLocation::checkSetup()
         locationDelegate.locationManager.desiredAccuracy = kCLLocationAccuracyBest;
         // setup delegate callbacks
         locationDelegate.locationManager.delegate = locationDelegate;
+        // Request when in use authorization
+        [locationDelegate.locationManager requestWhenInUseAuthorization];
         // start the location stuff
         [locationDelegate.locationManager startUpdatingLocation];
     }
