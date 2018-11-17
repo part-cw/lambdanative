@@ -1,11 +1,16 @@
 #!/bin/sh
 # LambdaNative initialization script to be placed in system path
 
-# Override this with actual lambdanative location
-LAMBDANATIVE=
+# Override this with actual lambdanative location.  This can be done by passing
+# the LAMBDANATIVE environment variable to this script.
+: ${LAMBDANATIVE:=}
 
 if [ "X$LAMBDANATIVE" = "X" ]; then
   echo "ERROR: this script has not been configured."
+  echo "Either configure this variable in this script"
+  echo "or pass the LAMBDANATIVE environment variable"
+  echo "to this script with the location of your lambdanative"
+  echo "installation."
   exit
 fi
 
