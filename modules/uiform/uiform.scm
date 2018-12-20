@@ -403,6 +403,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                        ((big) 'bigfnt)
                        ((header) 'hdfnt))))
          (h (glgui:fontheight fnt))
+         (indent (glgui:uiform-arg args 'indent 0.1))
          (label (glgui:uiform-arg args 'text ""))
          (wrappedlabel (if (glgui:uiform-arg args 'wrap #t)
            (string-split-width label (fix (* 0.8 w)) fnt)
@@ -415,9 +416,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        (if (> (length ss) 0) (begin
          (if (uiget 'sanemap)
          (case align
-           ((center) (glgui:draw-text-center (+ x (* 0.1 w)) ypos (- w (* 0.2 w)) h (car ss) fnt color) )
-           ((left) (glgui:draw-text-left (+ x (* 0.1 w)) ypos (- w (* 0.1 w)) h (car ss) fnt color) )
-           ((right) (glgui:draw-text-right x ypos (- w (* 0.1 w)) h (car ss) fnt color))
+           ((center) (glgui:draw-text-center (+ x (* indent w)) ypos (- w (* (* indent 2) w)) h (car ss) fnt color) )
+           ((left) (glgui:draw-text-left (+ x (* indent w)) ypos (- w (* (+ indent 0.1) w)) h (car ss) fnt color) )
+           ((right) (glgui:draw-text-right x ypos (- w (* indent w)) h (car ss) fnt color))
          ))
          (set! toth (+ toth h))
          (set! ypos (+ ypos h))
