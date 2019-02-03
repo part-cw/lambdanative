@@ -343,7 +343,7 @@ filter_entries()
 compile_payload()
 {
   dmsg_make "entering compile_payload [$@]"
-  payload_cdefs=
+  payload_cdefs=-fPIC
   payload_objs=
   payload_libs="$libraries"
   #--------
