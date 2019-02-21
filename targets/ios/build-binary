@@ -83,9 +83,9 @@ icondir="$cmakedir/Images.xcassets/AppIcon.appiconset"
 mkdir -p "$icondir"
 for file in `ls $SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-*.png`; do 
   dfile=`basename $file`
-  cp "$file" "$icondir/Icon${dfile:8:8}";
+  convert "$file" -background white -alpha off "$icondir/Icon${dfile:8:8}";
 done
-convert -flatten "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-1024.png" "$icondir/AppIcon.png"
+convert "$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-1024.png" -background white -alpha off "$icondir/AppIcon.png"
 cp "$SYS_PREFIXROOT/build/$SYS_APPNAME/"Default*.png "$cmakedir"
 cp $srcdir/Assets_Contents.json "$cmakedir/Images.xcassets/Contents.json"
 cp $srcdir/Images_Contents.json "$icondir/Contents.json"
