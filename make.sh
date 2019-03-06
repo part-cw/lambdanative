@@ -657,7 +657,7 @@ __EOF
   if [ "X"`which pdftops 2> /dev/null` = "X" ]; then
     veval "pdf2ps tmp.pdf tmp.ps"
   else
-    veval "pdftops tmp.pdf"
+    veval "pdftops -paper match tmp.pdf"
   fi
   assertfile tmp.ps
   veval "ps2eps -B -C tmp.ps"
@@ -668,7 +668,7 @@ __EOF
   fi
   veval "gs${gspostfix} -r300 -dNOPAUSE -sDEVICE=pnggray -dEPSCrop -sOutputFile=$name.png tmp.eps quit.ps"
   assertfile $name.png
-  veval "convert $name.png  -bordercolor White -border 5x5 -negate -scale 25% $name.png"
+  veval "convert $name.png -bordercolor White -border 5x5 -negate -scale 25% $name.png"
   $SYS_HOSTPREFIX/bin/pngtool png2scm $name.png > $scmfile
   cd $oldpath
   rm -rf $newpath
