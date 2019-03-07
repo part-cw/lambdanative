@@ -48,6 +48,7 @@ android_subst()
   ac_subst ANDROID_JAVA_ONRESUME "@$d/ANDROID_java_onresume"
   ac_subst ANDROID_JAVA_ONDESTROY "@$d/ANDROID_java_ondestroy"
   ac_subst ANDROID_JAVA_ONSENSORCHANGED "@$d/ANDROID_java_onsensorchanged"
+  ac_subst ANDROID_JAVA_ONACTIVITYRESULT "@$d/ANDROID_java_onactivityresult"
   ac_subst ANDROID_JAVA_ACTIVITYADDITIONS "@$d/ANDROID_java_activityadditions"
   ac_subst ANDROID_JAVA_ADDITIONS "@$d/ANDROID_java_additions"
   ac_subst ANDROID_XML_PERMISSIONS "@$d/ANDROID_xml_permissions"

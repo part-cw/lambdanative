@@ -1,0 +1,41 @@
+  if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
+    int angle=0;
+    Bitmap tgt_bitmap,src_bitmap = BitmapFactory.decodeFile(camera_tmp);
+    ExifInterface ei;
+    try {
+        ei = new ExifInterface(camera_tmp);
+        int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+        ExifInterface.ORIENTATION_NORMAL);
+        switch (orientation) {
+        case ExifInterface.ORIENTATION_ROTATE_90:
+            angle=90;
+            break;
+        case ExifInterface.ORIENTATION_ROTATE_180:
+            angle=180;
+            break;
+        case ExifInterface.ORIENTATION_ROTATE_270:
+            angle=270;
+            break;
+        }
+    } catch (IOException e) { }
+    tgt_bitmap=src_bitmap;
+    Matrix matrix = new Matrix();
+    matrix.postRotate(angle);
+    try {
+        tgt_bitmap = Bitmap.createBitmap(src_bitmap, 0, 0, src_bitmap.getWidth(), src_bitmap.getHeight(), matrix, true);
+    } catch (OutOfMemoryError err) { }
+    try {
+      FileOutputStream out = new FileOutputStream(camera_tmp);
+      tgt_bitmap.compress(Bitmap.CompressFormat.JPEG, 50, out);
+      out.flush();
+      out.close();
+    } catch (IOException e) { }
+    File src = new File(camera_tmp);
+    File tgt = new File(camera_fnl);
+    if (src.exists()) { src.renameTo(tgt); }
+  }
+  else if (requestCode == REQUEST_VIDEO_CAPTURE && resultCode == RESULT_OK) {
+    File src = new File(vid_tmp);
+    File tgt = new File(vid_fnl);
+    if (src.exists()) { src.renameTo(tgt); }
+  }

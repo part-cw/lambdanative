@@ -153,6 +153,11 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     // Extra function calls needed by modules, e.g. gyro
     @ANDROID_JAVA_ONSENSORCHANGED@
   }
+  @Override
+  public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    // Functions called when returning to app needed by modules, e.g. camera
+    @ANDROID_JAVA_ONACTIVITYRESULT@
+  }
   // Extra functions calls needed by modules, e.g. gps
   @ANDROID_JAVA_ACTIVITYADDITIONS@
 
