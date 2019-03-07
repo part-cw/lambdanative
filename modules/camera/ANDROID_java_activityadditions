@@ -5,8 +5,8 @@ private String camera_fnl;
 private String vid_tmp;
 private String vid_fnl;
 
-static final int REQUEST_IMAGE_CAPTURE = 1;
-static final int REQUEST_VIDEO_CAPTURE = 2;
+static final int REQUEST_IMAGE_CAPTURE = 76781;
+static final int REQUEST_VIDEO_CAPTURE = 76782;
 
 private void startCamera(String fnl_name, String tmp_name) {
   camera_fnl = fnl_name;

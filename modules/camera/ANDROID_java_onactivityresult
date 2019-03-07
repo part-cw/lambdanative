@@ -33,9 +33,11 @@
     File src = new File(camera_tmp);
     File tgt = new File(camera_fnl);
     if (src.exists()) { src.renameTo(tgt); }
+    return;
   }
   else if (requestCode == REQUEST_VIDEO_CAPTURE && resultCode == RESULT_OK) {
     File src = new File(vid_tmp);
     File tgt = new File(vid_fnl);
     if (src.exists()) { src.renameTo(tgt); }
+    return;
   }
