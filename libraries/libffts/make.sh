@@ -1,6 +1,7 @@
-
-PKGURL=http://anthonix.com/ffts/releases/ffts-0.7.tar.gz
+PKGURL=https://www.lambdanative.org/ffts-0.7/ffts-0.7.tar.gz
 PKGHASH=8318dc460413d952d2468c8bc9aa2e484bb72d98
+#PKGURL=https://github.com/linkotec/ffts.git
+#PKGHASH=8e3dee08b1d156a779050c288e9016fadbb0f369
 
 package_download $PKGURL $PKGHASH
 

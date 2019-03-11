@@ -35,6 +35,9 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+// As proposed by Apple to silence these warnings
+#define GL_SILENCE_DEPRECATION
+
 #import <Cocoa/Cocoa.h>
 
 // Define NSEventModifierFlags ourselves since they only exist in macOS 10.12+
