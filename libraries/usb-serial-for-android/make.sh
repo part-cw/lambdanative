@@ -25,6 +25,7 @@ if [ "$SYS_ANDROIDAPI" -lt "12" ]; then
   assert "USB Serial functions require API Level 12+. Please adjust your ANDROIDAPI setting in the SETUP file."
 fi
 
+pwd
 USBSER_TARGET=`$SYS_ANDROIDSDK/tools/android list targets | grep "^id:" | grep "android-$SYS_ANDROIDAPI" | cut -f 2 -d " "`
 veval "$SYS_ANDROIDSDK/tools/android -s create lib-project --name usbserial \
 --target $USBSER_TARGET \
@@ -34,8 +35,8 @@ asserterror $? "android create failed"
 
 echo " => compiling source..."
 if [ -n "$JAVAVERSION" ]; then
-  echo "java.target = $JAVAVERSION" >> $tmpdir/ant.properties
-  echo "java.source = $JAVAVERSION" >> $tmpdir/ant.properties
+  echo "java.target = $JAVAVERSION" >> ant.properties
+  echo "java.source = $JAVAVERSION" >> ant.properties
 fi
 veval "ant release"
 asserterror $? "compilation failed"
