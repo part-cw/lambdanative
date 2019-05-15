@@ -1,5 +1,8 @@
-PKGURL=https://github.com/gambit/gambit/archive/v4.8.5.tar.gz
-PKGHASH=08d129513d04970f30302f28cac17c4e21a25a6b
+# DON'T TRY 4.9.3 gambit issue #384 define-syntax is broken
+# PKGURL=https://www.iro.umontreal.ca/~gambit/download/gambit/v4.9/source/gambit-v4_9_3.tgz
+# PKGHASH=a3f836f732f367601d0df8bedb8e1324a14c413b
+PKGURL=https://www.iro.umontreal.ca/~gambit/download/gambit/v4.9/source/gambit-v4_9_2.tgz
+PKGHASH=70c2e66cdbaf544afdcfa6d396c37f72ec67e934
 
 package_download $PKGURL $PKGHASH
 

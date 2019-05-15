@@ -8,9 +8,9 @@
 #define DMSG(fmt...)
 #endif
 
-#define ___VERSION 407009
+#define ___VERSION 409002
 #include <gambit.h>
-#define LINKER ____20_@SCM_LINKER@
+#define LINKER ___LNK_@SCM_LINKER@
 ___BEGIN_C_LINKAGE
 extern ___mod_or_lnk LINKER (___global_state_struct*);
 ___END_C_LINKAGE
