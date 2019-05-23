@@ -38,8 +38,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; IP address convenience functions
 (define (host-ipaddr . name)
-  ;; First try to connect to Google - since this also works on Linux
-  (let* ((p (with-exception-catcher (lambda (e) #f) (lambda () (open-tcp-client "www.google.com:80"))))
+  ;; First try to connect to Github - since this also works on Linux
+  (let* ((p (with-exception-catcher (lambda (e) #f) (lambda () (open-tcp-client "www.lambdanative.org:80"))))
          (addr (if p (socket-info-address (tcp-client-self-socket-info p)) #f)))
     (if p (close-port p))
     (if addr addr
