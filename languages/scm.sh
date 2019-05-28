@@ -89,6 +89,7 @@ compile_payload_scm()
       scm_ctgt="$SYS_PREFIX/build/${scm_chsh}.c"
       scm_otgt="$SYS_PREFIX/build/${scm_chsh}.o"
       scm_dirty=no
+      scm_hdr="$scm_path/"`basename $scm_src .scm`.sch
       if [ ! -f $scm_otgt ] || [ ! -f $scm_ctgt ]; then
         scm_dirty=yes
       else
@@ -102,6 +103,10 @@ compile_payload_scm()
           if [ `newersourceindir "$scm_src" "$scm_otgt"` = "yes" ]; then
             scm_dirty=yes
           fi
+	  # This is actually much too less, should test all included/loaded files too.
+          if [ -f $scm_hdr -a `isnewer "$scm_hdr" "$scm_otgt"` = "yes" ]; then
+            scm_dirty=yes
+          fi
 	  # ln_repl module special-case: always re-compile to make global macro changes available
 	  if [ "X$scm_topdir" = "Xln_repl" ]; then
 	     scm_dirty=yes
@@ -112,7 +117,11 @@ compile_payload_scm()
         echo "    $scm_src .."
         scm_link_dirty=yes
         rmifexists "$scm_ctgt"
-        veval "$SYS_GSC -prelude \"$scm_opts\" -c -o $scm_ctgt $scm_src"
+	if [ -f $scm_hdr ]; then scm_hdr="-e '(load \"$scm_hdr\")'"; else scm_hdr=""; fi
+	gsc_processing=""
+	# if [ $SYS_VERBOSE ]; then gsc_processing="$gsc_processing -expansion"; fi
+        veval "$SYS_GSC -prelude \"$scm_opts\" -c -o $scm_ctgt $gsc_processing $scm_hdr $scm_src"
+        if [ $veval_result != "0" ]; then rmifexists "$scm_ctgt"; fi
         assertfile "$scm_ctgt"
         rmifexists "$scm_otgt"
         veval "$SYS_ENV $SYS_CC $payload_cdefs -c -o $scm_otgt $scm_ctgt -I$SYS_PREFIX/include -I$SYS_PREFIX/include/freetype2 -I$scm_path"
