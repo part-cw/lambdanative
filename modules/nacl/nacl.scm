@@ -64,17 +64,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <assert.h>
 
-void randombytes(unsigned char * ptr,unsigned int length) 
+void randombytes(unsigned char * ptr,unsigned int length)
 {
   int err = 1;
 #ifdef WIN32
   static HCRYPTPROV prov = 0;
   if (!prov) { if (!CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, 0)) err = 1; }
-  if (!err && !CryptGenRandom(prov, length, ptr)) err = 1; 
+  if (!err && !CryptGenRandom(prov, length, ptr)) err = 1;
 #elif defined(IOS)
   err = (SecRandomCopyBytes(kSecRandomDefault,length,ptr)!=noErr);
-#else  // generic unix approach
-  FILE* fh = fopen("/dev/urandom", "rb");
+#else  // generic unix approach - WARNING: THIS BLOCKS IF ENTRYOP POOL EMPTY
+  FILE* fh = fopen("/dev/random", "rb");
   if (fh != NULL) {
     if (fread(ptr, length, 1, fh) == 0) err = 1;
     fclose(fh);
@@ -100,22 +100,22 @@ end-of-c-declare
 
 (nacl-def crypto_box_PUBLICKEYBYTES)
 (nacl-def crypto_box_SECRETKEYBYTES)
-(nacl-def crypto_box_NONCEBYTES) 
-(nacl-def crypto_box_ZEROBYTES) 
+(nacl-def crypto_box_NONCEBYTES)
+(nacl-def crypto_box_ZEROBYTES)
 (nacl-def crypto_box_BEFORENMBYTES)
-(nacl-def crypto_box_BOXZEROBYTES) 
-(nacl-def crypto_scalarmult_SCALARBYTES) 
+(nacl-def crypto_box_BOXZEROBYTES)
+(nacl-def crypto_scalarmult_SCALARBYTES)
 (nacl-def crypto_scalarmult_BYTES)
-(nacl-def crypto_sign_BYTES) 
-(nacl-def crypto_secretbox_KEYBYTES) 
+(nacl-def crypto_sign_BYTES)
+(nacl-def crypto_secretbox_KEYBYTES)
 (nacl-def crypto_secretbox_NONCEBYTES)
-(nacl-def crypto_secretbox_ZEROBYTES) 
+(nacl-def crypto_secretbox_ZEROBYTES)
 (nacl-def crypto_secretbox_BOXZEROBYTES)
-(nacl-def crypto_stream_KEYBYTES) 
-(nacl-def crypto_stream_NONCEBYTES) 
+(nacl-def crypto_stream_KEYBYTES)
+(nacl-def crypto_stream_NONCEBYTES)
 (nacl-def crypto_auth_BYTES)
-(nacl-def crypto_auth_KEYBYTES) 
-(nacl-def crypto_onetimeauth_BYTES) 
+(nacl-def crypto_auth_KEYBYTES)
+(nacl-def crypto_onetimeauth_BYTES)
 (nacl-def crypto_onetimeauth_KEYBYTES)
 (nacl-def crypto_hash_BYTES)
 

@@ -2,8 +2,8 @@
 # see https://github.com/gambit/gambit/issues/384
 # PKGURL=https://www.iro.umontreal.ca/~gambit/download/gambit/v4.9/source/gambit-v4_9_3.tgz
 # PKGHASH=a3f836f732f367601d0df8bedb8e1324a14c413b
-PKGURL=https://www.iro.umontreal.ca/~gambit/download/gambit/v4.9/source/gambit-v4_9_2.tgz
-PKGHASH=70c2e66cdbaf544afdcfa6d396c37f72ec67e934
+PKGURL=https://github.com/gambit/gambit/archive/v4.9.2.tar.gz
+PKGHASH=3e0521b84ba4a13cafac04eb6671a13fe10a3b01
 
 package_download $PKGURL $PKGHASH
 
