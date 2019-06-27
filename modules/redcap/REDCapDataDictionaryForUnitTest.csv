@@ -1,0 +1,17 @@
+"Variable / Field Name","Form Name","Section Header","Field Type","Field Label","Choices, Calculations, OR Slider Labels","Field Note","Text Validation Type OR Show Slider Number","Text Validation Min","Text Validation Max",Identifier?,"Branching Logic (Show field only if...)","Required Field?","Custom Alignment","Question Number (surveys only)","Matrix Group Name","Matrix Ranking?","Field Annotation"
+study_no,form_1,,text,"Study No",,,,,,,,y,,,,,
+yesno,form_1,,yesno,"Yes or No?",,"A note here",,,,,,,RH,,,,
+num,form_1,,text,"This is an integer",,,integer,0,10,,,,,,,,
+drop,form_2,,dropdown,"Multiple choice dropdown","1, One | 2, Two | 3, Three",,,,,,,,,,,,
+radio,form_2,,radio,"Single answer","1, A | 2, B | 3, C",,,,,,,,,,,,
+checks,form_2,"Bottom section",checkbox,Names,"1, Fred Flinstone | 2, Jack Johnson | 3, Carl Sagan | 4, Bob Saget",,,,,y,,y,LH,,,,
+firstrow,form_2,"Look, a matrix!",radio,"First row","1, A | 2, B | 3, C",,,,,,,y,,,mat,y,first!
+secondrow,form_2,,radio,"Second row","1, A | 2, B | 3, C",,,,,,,,,,mat,y,
+file,form_2,,file,"A file",,,,,,,,,,,,,
+date_dec,form_3,,text,"Date (decreasing)",,,date_ymd,,,,,,,,,,
+date_inc_sec,form_3,,text,"Date with seconds (increasing)",,,datetime_seconds_dmy,,,,,,,,,,
+crawling,form_3,,text,Crawling,,,crawling,,,,,,,,,,
+postal_code,form_3,,text,"Postal Code",,,postalcode_canada,,,,,,,,,,
+email,form_3,,text,Email,,,email,,,,,,,,,,
+truefalse,form_3,,truefalse,"Vrai ou faux",,,,,,,,,RH,,,,
+slider,form_3,,slider,Slider,,,,,,,,,RH,,,,

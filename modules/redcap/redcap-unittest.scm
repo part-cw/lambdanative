@@ -1,4 +1,7 @@
 ;; Test information - must be filled in to work
+;; To setup the test project that works with this unit test, import the files appropriately in REDCap:
+;; REDCapDataDictionaryForUnitTest.csv, REDCapEventsForUnitTest.csv, and REDCapInstrumentMappingForUnitTest.csv
+;; The unit test uses the default Arm 1.
 ;; For a true test, delete all records in the project before running it
 (define redcap:testurl "/redcap/api/") ;; Update this if necessary
 (define redcap:testhost "<add here>")
