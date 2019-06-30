@@ -25,6 +25,8 @@
 # note: CFBundleDisplayName is REQUIRED for file sharing to work!
 <key>CFBundleDisplayName</key>
 <string>@SYS_APPNAME@</string>
+<key>CFBundleName</key>
+<string>@SYS_APPNAME@</string>
 <key>CSResourcesFileMapped</key>
 <true/>
 <key>LSRequiresCarbon</key>
