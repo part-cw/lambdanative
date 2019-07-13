@@ -118,8 +118,11 @@ static int httpsclient_open(char *host, int port, int use_keys, char *cert, char
   }
   SSL_load_error_strings();
   SSL_library_init();
+#if OPENSSL_VERSION_NUMBER < 0x1010103fL
   ctx = SSL_CTX_new(SSLv23_client_method());
-  // ctx = SSL_CTX_new(TLS_client_method());
+#else
+  ctx = SSL_CTX_new(TLS_client_method());
+#endif
   if ( ctx == NULL ) { return 0; }
   SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2); //disable SSLv2
   SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3);
