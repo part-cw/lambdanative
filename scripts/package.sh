@@ -208,7 +208,7 @@ package_download()
 
 package_configure()
 {
-  echo " => configuring source.."
+  echo " => configuring source in" `pwd` "..."
   pkg_conf_opt=$@
   pkg_ccdir=`echo "$SYS_CC" | cut -f 1 -d " "`
   pkg_ccdir=`dirname ${pkg_ccdir}`

@@ -6,6 +6,7 @@ compile_init()
 {
   languages=
   compile_init_dirs=`echo "$SYS_PATH" | tr ':' '\n'`
+  vecho "searching supported languages in $compile_init_dirs"
   for compile_init_dir in $compile_init_dirs; do
     if [ -d $compile_init_dir/languages ]; then
       compile_init_lngs=`ls -1 $compile_init_dir/languages/*.sh`
