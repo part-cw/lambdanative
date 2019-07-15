@@ -1,12 +1,12 @@
---- crypto/ui/ui_openssl.c	2011-12-05 10:56:19.000000000 -0800
-+++ crypto/ui/ui_openssl.c	2011-12-05 10:57:56.000000000 -0800
-@@ -410,7 +410,8 @@
- 	return 1;
- 	}
+--- crypto/ui/ui_openssl.c	2019-07-05 13:46:15.773249717 +0200
++++ crypto/ui/ui_openssl.c	2019-07-05 13:51:13.259387480 +0200
+@@ -274,7 +274,8 @@
+     return 1;
+ }
  
 -static volatile sig_atomic_t intr_signal;
 +//static volatile sig_atomic_t intr_signal;
 +static volatile int intr_signal;
- #endif
+ # endif
  
  static int read_string_inner(UI *ui, UI_STRING *uis, int echo, int strip_nl)
