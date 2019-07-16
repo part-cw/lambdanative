@@ -25,20 +25,22 @@ linux*)
     EXTRACONF=linux-generic32
   fi
 ;;
+macosx)
+  if [ "$KERNEL_BITS" = "32" ]; then
+      EXTRACONF="darwin-i386-cc"
+  else
+      EXTRACONF="darwin64-x86_64-cc"
+  fi
+;;
 android*)
     EXTRACONF="android-arm -D__ANDROID_API__=$SYS_ANDROIDAPI"
     XX_ANDROID_NDK_HOME=`find $SYS_PREFIX -name AndroidVersion.txt 2> /dev/null`
     export ANDROID_NDK_HOME=`dirname $XX_ANDROID_NDK_HOME`
-    echo SYS_ANDROIDNDK $SYS_ANDROIDNDK ANDROID_NDK_HOME: $ANDROID_NDK_HOME
-    # export ANDROID_NDK_HOME=$ANDROIDNDK
     PATH=`ls -d $SYS_PREFIX/android-ndk-*-toolchain/bin`:$PATH
     # FIXME: This was better `clang` as Android is supposed to phase
     # out gcc.  But that would be inconsistent with the ndk in use.
     EXTRACONF="$EXTRACONF CC=gcc"
-    echo PATH: $PATH
 ;;
-macosx)
-    EXTRACONF="BSD-generic32 no-devcryptoeng"
 *)
   EXTRACONF=BSD-generic32
 ;;

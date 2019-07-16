@@ -1329,7 +1329,7 @@ END
   if [ $USE_XETEX = no ]; then
     echo " ** Using GD to render strings"
   else
-    touch $SYS_HOSTPREFIX/.use_xetex
+    touch $SYS_TMPDIR/.use_xetex
   fi
 }
 
@@ -1350,7 +1350,7 @@ make_toolcheck()
   asserttool grep wget zip tar sed tr cut tail head find
   # language 
   asserttool autoconf make gcc patch
-  if [ `is_gui_app` = "yes" -a ! -f $SYS_HOSTPREFIX/.use_xetex ]; then
+  if [ `is_gui_app` = "yes" -a ! -f $SYS_TMPDIR/.use_xetex ]; then
     make_xelatexcheck
   fi
   # platform specific tools
