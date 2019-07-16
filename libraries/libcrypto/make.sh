@@ -37,6 +37,8 @@ android*)
     EXTRACONF="$EXTRACONF CC=gcc"
     echo PATH: $PATH
 ;;
+macosx)
+    EXTRACONF="BSD-generic32 no-devcryptoeng"
 *)
   EXTRACONF=BSD-generic32
 ;;
