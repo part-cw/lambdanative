@@ -77,7 +77,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    ;; Button with action callback that returns the page you want to go to
    (button h 75 size header indent 0.05 rounded #t text "Go Back" action ,(lambda () 'main))
    (spacer)
-   (label text "For more features that you can include in a script see the LNHealth app \"Demo Widgets\". Look at the main.sx file in the sandbox folder." align left size small)
+   (label text "For more features that you can include in a script see the LNhealth app \"Demo Widgets\". Look at the main.sx file in the sandbox folder which is located at https://github.com/part-cw/LNhealth/tree/master/apps/WidgetDemo" align left size small)
   )
   (about
    "About"
@@ -99,29 +99,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (make-window 480 800)
     (glgui-orientation-set! GUI_PORTRAIT)
     (set! gui (make-glgui))
-    
+
     (let ((aw (glgui-width-get))
           (ah (glgui-height-get)))
       (glgui-box gui 0 0 aw ah DarkGreen)
       (set! form (glgui-uiform gui 0 0 aw ah)))
-    
+
     ;; Set the sandbox up to be the current directory and use the above example as the script
     (glgui-widget-set! gui form 'sandbox (system-directory))
     (glgui-widget-set! gui form 'uiform demouiform:example)
-    
+
     ;; Set the fonts
     (glgui-widget-set! gui form 'fnt ascii_18.fnt)
     (glgui-widget-set! gui form 'smlfnt ascii_14.fnt)
     (glgui-widget-set! gui form 'hdfnt ascii_24.fnt)
     (glgui-widget-set! gui form 'bigfnt ascii_40.fnt)
-    
+
     ;; Create the table to store data (default location for widget values)
     (glgui-widget-set! gui form 'database (make-table))
-    
+
   )
 ;; events
-  (lambda (t x y) 
-    (if (= t EVENT_KEYPRESS) (begin 
+  (lambda (t x y)
+    (if (= t EVENT_KEYPRESS) (begin
       (if (= x EVENT_KEYESCAPE) (terminate))))
     (glgui-event gui t x y))
 ;; termination
