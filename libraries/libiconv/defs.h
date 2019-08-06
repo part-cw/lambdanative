@@ -18,6 +18,27 @@
 #define _LIBICONV_DEFS_H_
 
 #include <sys/types.h>
+#include <stdint.h>
+
+#ifdef _WIN32
+ typedef uint8_t u_int8_t;
+ typedef uint16_t u_int16_t;
+ typedef uint32_t u_int32_t;
+ // wild guesses
+ typedef unsigned short u_short;
+ typedef unsigned char u_char;
+
+# ifndef __BEGIN_DECLS
+#  ifdef	__cplusplus
+#   define __BEGIN_DECLS	extern "C" {
+#   define __END_DECLS }
+#  else
+#   define __BEGIN_DECLS
+#   define __END_DECLS
+#  endif
+# endif
+
+#endif
 
 /*
  * Internally we use our own UNICODE character to be independent on

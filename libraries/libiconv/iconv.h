@@ -21,6 +21,19 @@
 
 typedef void * iconv_t;
 
+#ifdef _WIN32
+# ifndef __BEGIN_DECLS
+#  ifdef	__cplusplus
+#   define __BEGIN_DECLS	extern "C" {
+#   define __END_DECLS }
+#  else
+#   define __BEGIN_DECLS
+#   define __END_DECLS
+#  endif
+# endif
+
+#endif
+
 __BEGIN_DECLS
 iconv_t	iconv_open(const char *to, const char *from);
 //iconv_t	iconv_open(char *to, char *from);
