@@ -693,7 +693,7 @@ make_stringfile()
       string_srcs="$string_srcs $scmfile"
       if [ `isnewer $srcfile $scmfile` = "yes" ]; then
          echo " => $name.."
-         if [ $USE_XETEX = yes ]; then 
+         if [ "$USE_XETEX" = "yes" ]; then 
            make_string_latex $font $size "$label" $name $scmfile $opt
          else
            make_string_gd $font $size "$label" $name $scmfile
@@ -1326,7 +1326,7 @@ END
   fi
   cd $here_xelatex
   rm -rf $chkdir
-  if [ $USE_XETEX = no ]; then
+  if [ "$USE_XETEX" = "no" ]; then
     echo " ** Using GD to render strings"
   else
     touch $SYS_TMPDIR/.use_xetex
