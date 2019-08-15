@@ -141,7 +141,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (string-mapconcat (reverse tmp) ": ")))
 
 (define (log:exception-handler e)
-  (log-error (thread-name (current-thread)) ": "(exception->string e))
+  (log-error (thread-name (current-thread)) ": " (exception->string e))
   (log-trace (current-thread))
   (log-error "HALT")
   (exit))
@@ -150,9 +150,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (current-exception-handler log:exception-handler)
 
 ;; catch exceptions in threads
-(define (make-safe-thread p . name)
-  (let ((p2 (lambda () (current-exception-handler log:exception-handler) (p))))
-    (make-thread p2 (if (fx= (length name) 1) (car name) 'unnamed_thread))))
+(define make-safe-thread
+  (let ((make-thread make-thread))
+    (lambda (p . name)
+      (let ((p2 (lambda () (current-exception-handler log:exception-handler) (p))))
+	(make-thread p2 (if (fx= (length name) 1) (car name) 'unnamed_thread))))))
+
+(set! make-thread make-safe-thread)
 
 ;; trim files in log directory
 (log-folder-cleanup)
