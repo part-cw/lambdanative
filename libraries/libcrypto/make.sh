@@ -35,6 +35,11 @@ macosx)
 android*)
     EXTRACONF="android-arm -D__ANDROID_API__=$SYS_ANDROIDAPI"
     XX_ANDROID_NDK_HOME=`find $SYS_PREFIX -name AndroidVersion.txt 2> /dev/null`
+    if [ "X$XX_ANDROID_NDK_HOME" = "X" ]; then
+      XX_ANDROID_NDK_HOME=`find $ANDROIDNDK -name AndroidVersion.txt 2> /dev/null`
+      /bin/cp $XX_ANDROID_NDK_HOME $SYS_PREFIX/android-ndk-*-toolchain
+      XX_ANDROID_NDK_HOME=`find $SYS_PREFIX -name AndroidVersion.txt 2> /dev/null`
+    fi
     export ANDROID_NDK_HOME=`dirname $XX_ANDROID_NDK_HOME`
     PATH=`ls -d $SYS_PREFIX/android-ndk-*-toolchain/bin`:$PATH
     # FIXME: This was better `clang` as Android is supposed to phase
