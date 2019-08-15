@@ -103,7 +103,10 @@ end-of-c-declare
     (let loop ((i 0)(res '()))
       (if (= i n) res 
         (let* ((decoderes (quirc_extract_and_decode q i))
-               (u8len (if (fx= decoderes QUIRC_SUCCESS) (quirc_decoded_len) #f))
+               (u8len (if (fx= decoderes QUIRC_SUCCESS) (quirc_decoded_len)
+                          (begin
+                            (log-debug "Quirc image nr " 1 n ": " ((c-lambda (int) char-string "quirc_strerror") decoderes))
+                            #f)))
                (u8data (if u8len (make-u8vector u8len 0) #f)))
           (if u8data (quirc_decoded_data u8data))
           (loop (fx+ i 1) (append res (if u8data (list u8data) '()))))))))
