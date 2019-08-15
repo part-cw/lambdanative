@@ -200,7 +200,7 @@ for m in $modules; do
   for pubclass in $pubclasses; do
     pubclassfile="`basename $pubclass | sed 's/ANDROID_java_public_//'`.java"
     echo "    $pubclassfile.."
-    if [ `echo $pubclass | cut -d . -f 2` == "in" ]; then
+    if [ "`echo $pubclass | cut -d . -f 2`" = "in" ]; then
       pubclassfile=`echo $pubclassfile | sed 's/.in//'`
       ac_output $pubclass $appdir/$pubclassfile
     else
