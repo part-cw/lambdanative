@@ -9,7 +9,7 @@ rmifexists $SYS_PREFIX/include/openssl
 EXTRACONF=
 case $SYS_PLATFORM in
 win32*)
-  EXTRACONF=mingw
+  EXTRACONF="no-engine mingw"
 ;;
 linux486*)
   EXTRACONF=linux-generic32
