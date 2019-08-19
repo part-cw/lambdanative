@@ -92,7 +92,19 @@ class RS232Manager implements Runnable{
       return -1;
     }
     UsbSerialDriver mSerialDriver = availableDrivers.get(0);
-    UsbDeviceConnection mDeviceConnection = mUsbManager.openDevice(mSerialDriver.getDevice());
+    android.hardware.usb.UsbDevice mUsbDevice = mSerialDriver.getDevice();
+
+    for (int i = 0; i < mUsbDevice.getInterfaceCount(); i++) {
+      boolean success;
+      if(mUsbDevice.getInterface(i) == null) {
+        success = false;
+      } else {
+        success = true;
+      }
+      Log.d("RS232Manager", Integer.toString(i) + Boolean.toString(success));
+    }
+
+    UsbDeviceConnection mDeviceConnection = mUsbManager.openDevice(mUsbDevice);
     if (mDeviceConnection == null) {
       return -1;
     }
@@ -185,10 +197,15 @@ class RS232Manager implements Runnable{
     }
   }
   public void setrts(int dev,boolean val){
-    try {
-      mSerialPort.setRTS(val);
-    } catch (IOException e){
-      Log.d("RS232Manager","Exception: "+e);
+    Log.i("RS232Manager","Setting RTS");
+    if(mSerialPort != null) {
+      try {
+        mSerialPort.setRTS(val);
+      } catch (IOException e){
+        Log.d("RS232Manager","Exception: "+e);
+      }
+    } else {
+      Log.e("RS232Manager","null Serial Port");
     }
   }
 }
