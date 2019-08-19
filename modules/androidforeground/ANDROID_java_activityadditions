@@ -1,0 +1,8 @@
+/* -*-java-*- */
+void startLnForegroundService() {
+    startService(new Intent(this, LambdaNativeForegroundService.class));
+}
+
+void stopLnForegroundService() {
+    stopService(new Intent(this, LambdaNativeForegroundService.class));
+}

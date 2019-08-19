@@ -1,0 +1,1 @@
+<uses-feature android:name="android.permission.FOREGROUND_SERVICE" android:required="false" />

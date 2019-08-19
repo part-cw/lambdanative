@@ -1,0 +1,21 @@
+/* -*-C-*- */
+
+void android_start_ln_foreground_service()
+{
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "startLnForegroundService", "()V");
+    (*env)->CallIntMethod(env, globalObj, method);
+  }
+}
+
+void android_stop_ln_foreground_service()
+{
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "stopLnForegroundService", "()V");
+    (*env)->CallVoidMethod(env, globalObj, method);
+  }
+}

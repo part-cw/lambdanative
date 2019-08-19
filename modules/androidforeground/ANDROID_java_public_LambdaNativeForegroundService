@@ -1,0 +1,72 @@
+/* -*-java-*- */
+
+import android.util.Log;
+import android.app.Service;
+import android.app.Notification;
+import android.app.Notification.Builder;
+//import android.support.v4.app.NotificationCompat;
+import android.content.Intent;
+import android.os.IBinder;
+import android.os.SystemClock;
+
+public class LambdaNativeForegroundService extends Service {
+  final static int notificationIsRunningId = 1;
+  boolean running=true;
+  Thread backgroundThread;
+  public LambdaNativeForegroundService() {
+  }
+  @Override
+  public IBinder onBind(Intent intent) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+  @Override
+  public void onCreate() {
+//    Log.d("","LambdaNativeForegroundService created");
+  }
+  private void bgActivity() {
+//    Log.d("","LambdaNativeForegroundService started");
+    backgroundThread = new Thread() {
+      public void run() {
+          // setPriority(Thread.MAX_PRIORITY);
+        setPriority(Thread.MIN_PRIORITY);
+        while (running) {
+//            Log.d("", "LambdaNativeForegroundService EVENT_IDLE");
+//            nativeEvent(19,0,0); // EVENT_IDLE
+
+            // SystemClock.sleep(30000);  // should be 30 seconds i.e. 30000 ms
+            try {
+                this.sleep(30000);  // should be 30 seconds i.e. 30000 ms
+                try {
+                    nativeEvent(19,0,0); // EVENT_IDLE
+                } catch (Throwable e) {
+                    Log.e("LambdaNativeForegroundService", "exception: " + e.toString());
+                }
+            } catch (InterruptedException e) {}
+        }
+//        Log.d("","LambdaNativeForegroundService thread stopped");
+      }
+    };
+    backgroundThread.start();
+  }
+  @Override
+  public void onStart(Intent intent, int startId) {
+//    Log.d("","LambdaNativeForegroundService starting");
+
+    Notification notification = new Notification.Builder(this)
+        .setContentTitle(getString(R.string.app_name))
+        // .setContentText("TBD")
+        .setSmallIcon(R.drawable.icon)
+        // .setLargeIcon(aBitmap)
+        .build();
+
+    startForeground(notificationIsRunningId, notification);
+    bgActivity();
+  }
+  @Override
+  public void onDestroy() {
+      //    running=false;
+//    Log.d("","LambdaNativeForegroundService stopped");
+  }
+  native void nativeEvent(int t, int x, int y);
+}
+
