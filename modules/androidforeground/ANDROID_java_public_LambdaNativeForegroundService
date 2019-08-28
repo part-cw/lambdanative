@@ -57,10 +57,15 @@ public class LambdaNativeForegroundService extends Service {
         // .setContentText("TBD")
         .setSmallIcon(R.drawable.icon)
         // .setLargeIcon(aBitmap)
+        .setOngoing(true)
         .build();
 
     startForeground(notificationIsRunningId, notification);
     bgActivity();
+  }
+  @Override public int onStartCommand(Intent intent, int flags, int startId) {
+      super.onStartCommand(intent, flags, startId);
+      return START_STICKY;
   }
   @Override
   public void onDestroy() {
@@ -69,4 +74,3 @@ public class LambdaNativeForegroundService extends Service {
   }
   native void nativeEvent(int t, int x, int y);
 }
-
