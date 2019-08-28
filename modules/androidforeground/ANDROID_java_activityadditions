@@ -1,5 +1,28 @@
 /* -*-java-*- */
 void startLnForegroundService() {
+    /* API 26+: In order to compile for prior API versions comment out
+     * the following attempt to disable battery optimizations
+     */
+    /* // BEGIN "conditionally compiled code" */
+    if(Build.VERSION.SDK_INT>Build.VERSION_CODES.LOLLIPOP_MR1) {
+        String pkg=getPackageName();
+        PowerManager pm=getSystemService(PowerManager.class);
+        if(!pm.isIgnoringBatteryOptimizations(pkg)) {
+            /* See also the comment in ANDROID_xml_permissions: Google may
+             * not like the required
+             * ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS permission
+             * being used.
+             *
+             * If it is not requested in the permissions file,
+             * uncomment the following startActivityForResult(...) and
+             * comment out startActivity(...) in the line after.
+             */
+            // startActivityForResult(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS), 0);
+            startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).setData(Uri.parse("package:"+pkg)))
+        }
+    }
+    /* // END "conditionally compiled code" */
+
     startService(new Intent(this, LambdaNativeForegroundService.class));
 }
 

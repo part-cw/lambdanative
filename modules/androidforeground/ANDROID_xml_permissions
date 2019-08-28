@@ -1,1 +1,15 @@
 <uses-feature android:name="android.permission.FOREGROUND_SERVICE" android:required="false" />
+<!--
+
+With API level 26 REQUEST_IGNORE_BATTERY_OPTIMIZATIONS might be
+appropriate to enable services to continuesly run.
+
+However: Google is reported to remove apps needing this permission:
+https://commonsware.com/blog/2015/11/11/google-anti-trust-issues.html
+
+If this is bothering you, remove this comment and the permission below
+and modify ANDROID_java_activityadditions to use the alternative,
+- though rather impractical - method.
+
+-->
+<uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" android:required="false" />
