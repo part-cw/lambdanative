@@ -111,7 +111,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     setContentView(mGLView);
     mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
 
-    /* Included @IF_ANDROIDAPI_GT_22@
+    @IF_ANDROIDAPI_GT_22@
     if (getApplicationContext().checkCallingOrSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
         !=  android.content.pm.PackageManager.PERMISSION_GRANTED) {
         requestPermissions(new String[] { android.Manifest.permission.WRITE_EXTERNAL_STORAGE }, 1);
