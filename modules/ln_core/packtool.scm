@@ -56,6 +56,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; extract an embedded file
 (define (packtool-unpack file cdata overwrite)
+  (let ((rootpath (system-directory)))
+    (if (not (file-exists? rootpath)) (create-directory rootpath)))
   (let ((path (packtool:prep file)))
     (if (or overwrite (not (file-exists? path)))
       (let ((data (u8vector-decompress cdata)))
