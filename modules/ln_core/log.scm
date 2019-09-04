@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; logger
 
 ;; we are logging from different threads
-(define log:mutex (make-mutex))
+(define log:mutex (make-mutex 'log))
 (define (log:grab!) (mutex-lock! log:mutex))
 (define (log:release!) (mutex-unlock! log:mutex))
 
@@ -142,8 +142,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (log:exception-handler e)
   (log-error (thread-name (current-thread)) ": " (exception->string e))
-  (log-trace (current-thread))
+  (when (deadlock-exception? e)
+        (log-error "HALT")
+        (exit))
+  ;;(log-trace (current-thread)) ;; Seems not to work at least for deadlock-exception?
   (log-error "HALT")
+  ;; FIXME: this looks wrong
   (exit))
 
 ;; catch primordial thread exceptions
