@@ -142,12 +142,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (log:exception-handler e)
   (log-error (thread-name (current-thread)) ": " (exception->string e))
-  (when (deadlock-exception? e)
-        (log-error "HALT")
-        (exit))
-  ;;(log-trace (current-thread)) ;; Seems not to work at least for deadlock-exception?
+  (log-trace (current-thread))
   (log-error "HALT")
-  ;; FIXME: this looks wrong
   (exit))
 
 ;; catch primordial thread exceptions
