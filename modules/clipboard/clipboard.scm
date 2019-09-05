@@ -225,7 +225,13 @@ int clipboard_hascontent(){
   return macosx_clipboard_hascontent();
 #endif
 
-  return 0;
+  /* FIXME: Actually check win32 and linux.  However it's bettert to
+   * provide a false positive claiming content (thus suggesting to the
+   * user to paste is even though that would fail) than falsely claim
+   * nothing available thus preventing avail content to be pasted.
+   */
+
+  return 1;
 }
 
 end-of-c-declare
