@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; logger
 
 ;; we are logging from different threads
-(define log:mutex (make-mutex))
+(define log:mutex (make-mutex 'log))
 (define (log:grab!) (mutex-lock! log:mutex))
 (define (log:release!) (mutex-unlock! log:mutex))
 

@@ -148,7 +148,7 @@ end-of-c-declare
      (let ((ret (car event:fifo)))
         (set! event:fifo (cdr event:fifo)) ret) #f))
 
-(define eventloop:mutex (make-mutex))
+(define eventloop:mutex (make-mutex 'eventloop))
 (define (eventloop:grab!) (mutex-lock! eventloop:mutex))
 (define (eventloop:release!) (mutex-unlock! eventloop:mutex))
 
