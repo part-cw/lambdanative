@@ -10,7 +10,7 @@
 (define repl-server-address "*:7000")
 
 (define (ide-repl-pump ide-repl-connection in-port out-port tgroup)
-  (define m (make-mutex))
+  (define m (make-mutex (gensym 'ide-repl-pump)))
   (define (process-input)
     (let loop ((state 'normal))
       (let ((c (read-char ide-repl-connection)))
