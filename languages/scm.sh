@@ -52,6 +52,7 @@ compile_payload_scm()
     else
       scm_opts="(declare (block)(not safe)(standard-bindings)(extended-bindings))"
     fi
+    scm_opts="${scm_opts}(define-cond-expand-feature $SYS_PLATFORM)"
     # support global macro definitions
     if [ -f "${SYS_HOSTPREFIX}/lib/global-macros.scm" ]; then
       scm_opts="${scm_opts}(include \\\"~~lib/global-macros.scm\\\")"
