@@ -124,7 +124,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; %%%%%%%%%%%%%%%%%%%%%%%%%%%
 ;; client
 
-(define rupi:mutex (make-mutex))
+(define rupi:mutex (make-mutex 'rupi:mutex))
 (define (rupi:grab!) (mutex-lock! rupi:mutex))
 (define (rupi:release!) (mutex-unlock! rupi:mutex))
 
