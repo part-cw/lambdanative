@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (store:setlocal! store "extern:clear!" proc))
 
 ;; thread-safe access to data stores
-(define store:mutex (make-mutex))
+(define store:mutex (make-mutex 'store:mutex))
 (define (store:grab!) (mutex-lock! store:mutex))
 (define (store:release!) (mutex-unlock! store:mutex))
 
