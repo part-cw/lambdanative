@@ -51,7 +51,7 @@ if [ "$SYS_PLATFORM" != "$SYS_HOSTPLATFORM" -a "X$FILE_COMPILE" != "X" ]; then
     sed -i -es%'@IS_CROSS_COMPILE_TRUE@FILE_COMPILE = file${EXEEXT}'%"@IS_CROSS_COMPILE_TRUE@FILE_COMPILE = ${FILE_COMPILE}"% magic/Makefile.in
 fi
 
-package_configure --enable-static --disable-shared $EXTRACONF "'CFLAGS=-fPIC -O3 -DPCRE_STATIC'"
+package_configure --enable-static --disable-shared $EXTRACONF "'CFLAGS=-fPIC -O3 -DPCRE_STATIC -DNOSHLWAPI'"
 
 
 # build
