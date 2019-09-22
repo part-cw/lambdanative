@@ -63,8 +63,19 @@ EOF
 (define magic-open
   (c-lambda (int) (pointer void) "magic_open"))
 
-(define magic-load
-  (c-lambda ((pointer void) char-string) int "magic_load"))
+(define (magic-load file)
+  (define magic-load*
+    (c-lambda ((pointer void) char-string) int "magic_load"))
+  (cond
+   ((or (string? file) (not file))
+    (magic-load* file))
+   ;; Load the embedded magic.mgc
+   (else
+    (let ((embedded (string-append
+		     (system-directory) (system-pathseparator)
+		     "lib" (system-pathseparator) "magic.mgc")))
+      (if (not (magic-load* embedded))
+	  (log-error "magic: couldn't load embedded magic.mgc"))))))
 
 (define magic-error
   (c-lambda ((pointer void)) char-string "magic_error"))
