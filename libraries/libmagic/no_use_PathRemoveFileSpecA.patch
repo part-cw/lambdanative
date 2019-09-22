@@ -1,0 +1,20 @@
+--- src/magic.original.c	2014-08-28 17:53:19.000000000 +0200
++++ src/magic.c	2019-08-07 17:56:04.790561769 +0200
+@@ -175,7 +175,16 @@
+ 	LPTSTR dllpath = malloc(sizeof(*dllpath) * (MAX_PATH + 1));
+ 	dllpath[MAX_PATH] = 0;	/* just in case long path gets truncated and not null terminated */
+ 	if (GetModuleFileNameA(NULL, dllpath, MAX_PATH)){
+-		PathRemoveFileSpecA(dllpath);
++                // PathRemoveFileSpecA(dllpath);
++                {
++                  // PathRemoveFileSpecA is not avail on mingw
++                  int i = strlen(dllpath);
++                  while(i>0) {
++                    if(dllpath[i] == '\\') break;
++                    dllpath[i--] = '\0';
++                  }
++                  dllpath[i] = '\0';
++                }
+ 		if (strlen(dllpath) > 3 &&
+ 		    stricmp(&dllpath[strlen(dllpath) - 3], "bin") == 0) {
+ 			if (asprintf(&tmppath,
