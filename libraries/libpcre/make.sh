@@ -13,7 +13,11 @@ fi
 
 # configure
 
-package_configure $EXTRACONF
+lncc=`echo $SYS_CC| cut -d ' ' -f 1`
+case $lncc in
+     *clang) deflncxx="CXX=${lncc}++" ;;
+esac
+package_configure $EXTRACONF "CC=$lncc $deflncxx"
 
 # build
 
@@ -26,6 +30,7 @@ cp pcre.h pcreposix.h pcrecpparg.h pcre_scanner.h pcre_stringpiece.h $SYS_PREFIX
 
 package_cleanup
 
+unsset deflncxx
 unset EXTRACONF
 
 #eof
