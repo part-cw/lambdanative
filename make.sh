@@ -693,7 +693,7 @@ make_stringfile()
       string_srcs="$string_srcs $scmfile"
       if [ `isnewer $srcfile $scmfile` = "yes" ]; then
          echo " => $name.."
-         if [ $USE_XETEX = yes ]; then 
+         if [ "$USE_XETEX" = "yes" ]; then 
            make_string_latex $font $size "$label" $name $scmfile $opt
          else
            make_string_gd $font $size "$label" $name $scmfile
@@ -1032,6 +1032,7 @@ make_setup_target()
   ac_subst SYS_APPVERSION
   ac_subst SYS_APPVERSIONCODE
   ac_subst SYS_ANDROIDAPI
+  ac_subst IF_ANDROIDAPI_GT_22 "`if [ $SYS_ANDROIDAPI -lt 23 ]; then echo '/* IF_ANDROIDAPI_GT_22 commented out:'; else echo '/* IF_ANDROIDAPI_GT_22 active here:*/'; fi`"
   ac_subst SYS_ANDROIDSDK
   ac_subst SYS_ANDROIDNDK
   ac_subst SYS_ANDROIDARCH
@@ -1326,8 +1327,10 @@ END
   fi
   cd $here_xelatex
   rm -rf $chkdir
-  if [ $USE_XETEX = no ]; then
+  if [ "$USE_XETEX" = "no" ]; then
     echo " ** Using GD to render strings"
+  else
+    touch $SYS_TMPDIR/.use_xetex
   fi
 }
 
@@ -1348,7 +1351,7 @@ make_toolcheck()
   asserttool grep wget zip tar sed tr cut tail head find
   # language 
   asserttool autoconf make gcc patch
-  if [ `is_gui_app` = "yes" ]; then
+  if [ `is_gui_app` = "yes" -a ! -f $SYS_TMPDIR/.use_xetex ]; then
     make_xelatexcheck
   fi
   # platform specific tools

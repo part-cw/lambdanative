@@ -71,6 +71,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; Local variables specifying REDCap server settings
 (define redcap:url "/redcap/api/")
 (define (redcap-url-set! url) (set! redcap:url url))
+(define redcap:port 443)
+(define (redcap-port-set! port) (set! redcap:port port))
 (define redcap:user-agent "lambdanative/1.0")
 (define redcap:content-type "application/x-www-form-urlencoded")
 (define redcap:content-type-file "multipart/form-data")
@@ -184,7 +186,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (request (string-append "format=" format "&content=metadata&token=" token (if forms (string-append "&forms[0]=" forms ) "") (if fields (string-append "&fields[0]=" fields ) "") ))  ;;TODO expand to multiple fields and forms
          (request-str (redcap:make-request-str host request)))
     ;; Check if we have a valid connection before proceeding
-    (if (fx= (httpsclient-open host) 1)
+    (if (fx= (httpsclient-open host redcap:port) 1)
       (begin
        ;;(display request-str)
         (httpsclient-send (string->u8vector request-str))
@@ -230,7 +232,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (request (string-append "format=" format "&content=instrument&token=" token))
          (request-str (redcap:make-request-str host request)))
     ;; Check if we have a valid connection before proceeding
-    (if (fx= (httpsclient-open host) 1)
+    (if (fx= (httpsclient-open host redcap:port) 1)
       (begin
         (httpsclient-send (string->u8vector request-str))
         (redcap:data-clear!)
@@ -278,7 +280,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (message   (string-append  "token=" token "&content=record&format=xml&type=" type "&overwriteBehavior=" over "&data=" (redcap:list->xmlstr record event data 'instance instance 'instrument instrument) " &returnContent=count&returnFormat=json"))
         (request-str (redcap:make-request-str host message)))
     ;; Check if we have a valid connection before proceeding
-    (if (fx= (httpsclient-open host) 1)
+    (if (fx= (httpsclient-open host redcap:port) 1)
       (begin
         (httpsclient-send (string->u8vector request-str))
         (redcap:data-clear!)
@@ -332,7 +334,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (request (string-append ct ft tp ob tk dt cl))
         (request-str (redcap:make-request-str host request bd)))
     ;; Check if we have a valid connection before proceeding
-    (if (fx= (httpsclient-open host) 1)
+    (if (fx= (httpsclient-open host redcap:port) 1)
       (begin
         (httpsclient-send (string->u8vector request-str))
         (redcap:data-clear!)
@@ -398,7 +400,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (request-all (string-append request eventstr formstr fieldstr recordstr filterstr))
          (request-str (redcap:make-request-str host request-all)))
     ;; Check if we have a valid connection before proceeding
-    (if (fx= (httpsclient-open host) 1)
+    (if (fx= (httpsclient-open host redcap:port) 1)
       (begin
         (httpsclient-send (string->u8vector request-str))
         (redcap:data-clear!)
@@ -498,7 +500,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let* ((request (string-append "token=" token "&content=exportFieldNames&format=json"))
          (request-str (redcap:make-request-str host request)))
     ;; Check if we have a valid connection before proceeding
-    (if (fx= (httpsclient-open host) 1)
+    (if (fx= (httpsclient-open host redcap:port) 1)
       (begin
         (httpsclient-send (string->u8vector request-str))
         (redcap:data-clear!)
@@ -547,7 +549,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                      "format=json&fields=" id "&type=flat"))
              (request-str (redcap:make-request-str host request)))
         ;; Check if we have a valid connection before proceeding
-        (if (and (fx= (httpsclient-open host) 1) id)
+        (if (and (fx= (httpsclient-open host redcap:port) 1) id)
           (begin
             (httpsclient-send (string->u8vector request-str))
             (redcap:data-clear!)
@@ -642,7 +644,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              ct at rd ev re fd tk dt))))
 
    ;; Check if we have a valid connection before proceeding
-    (if (and filesize (fx= (httpsclient-open host) 1))
+    (if (and filesize (fx= (httpsclient-open host redcap:port) 1))
       (let* ((fh (open-input-file filename))
              (buflen 100000)
              (buf (make-u8vector buflen)))
@@ -702,7 +704,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                  "&field=" field))
          (request-str (redcap:make-request-str host request)))
     ;; Check if we have a valid connection before proceeding
-    (if (fx= (httpsclient-open host) 1)
+    (if (fx= (httpsclient-open host redcap:port) 1)
       (begin
         (httpsclient-send (string->u8vector request-str))
         (redcap:data-clear!)
@@ -754,7 +756,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                  "&field=" field))
          (request-str (redcap:make-request-str host request)))
     ;; Check if we have a valid connection before proceeding
-    (if (fx= (httpsclient-open host) 1)
+    (if (fx= (httpsclient-open host redcap:port) 1)
       (begin
         (httpsclient-send (string->u8vector request-str))
         (redcap:data-clear!)

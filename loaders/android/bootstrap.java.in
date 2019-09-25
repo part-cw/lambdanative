@@ -75,6 +75,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   //Variable declarations needed for modules, e.g. gps
   @ANDROID_JAVA_VARIABLES@
 
+  int idle_tmScheduleRate = 250;
   Timer idle_tm = new Timer();
   TimerTask idle_task = new TimerTask() {
     public void run() {
@@ -109,11 +110,20 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     mGLView = new xGLSurfaceView(this);
     setContentView(mGLView);
     mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+
+    @IF_ANDROIDAPI_GT_22@
+    if (getApplicationContext().checkCallingOrSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        !=  android.content.pm.PackageManager.PERMISSION_GRANTED) {
+        requestPermissions(new String[] { android.Manifest.permission.WRITE_EXTERNAL_STORAGE }, 1);
+        // startActivity(new Intent(android.provider.Settings.ACTION_MEMORY_CARD_SETTINGS).setData(Uri.parse("package:"+"@SYS_PACKAGE_DOT@")));
+    }
+    /* end of IF_ANDROIDAPI_GT_22 */
+
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONCREATE@
 
     // start EVENT_IDLE 
-    idle_tm.scheduleAtFixedRate(idle_task, 0, 250);
+    if(idle_tmScheduleRate > 0) idle_tm.scheduleAtFixedRate(idle_task, 0, idle_tmScheduleRate);
 
     nativeInstanceInit();
   }

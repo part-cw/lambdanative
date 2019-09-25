@@ -1,0 +1,5 @@
+event_name,arm_num,day_offset,offset_min,offset_max,unique_event_name,custom_event_label
+"event A",1,0,0,0,event_a_arm_1,
+"event B",1,1,0,0,event_b_arm_1,
+"event C",1,2,0,0,event_c_arm_1,
+"event D",1,3,0,0,event_d_arm_1,

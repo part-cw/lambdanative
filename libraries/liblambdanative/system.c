@@ -46,6 +46,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/param.h>
 #endif
 
+#if defined(LINUX)
+#include <unistd.h>
+#endif
+
 #ifdef WIN32
 #include <windows.h>
 #endif
