@@ -6,9 +6,6 @@ ANDROIDSDK=`find /usr/local/android-sdk-*  -maxdepth 0 -print 2> /dev/null | tai
 ANDROIDNDK=`find /usr/local/android-ndk-*  -maxdepth 0 -print  2> /dev/null| tail -n 1`
 # minimum version to support (a matching target must be installed)
 ANDROIDAPI=19
-if [ "$SYS_PLATFORM" = "android" ]; then
-  SYS_PLATFORM_VARIANT="-api${ANDROIDAPI}"
-fi
 #android target cpu, either arm (default), x86 or mips
 ANDROIDARCH=arm
 # Java source and target version (default 1.5 when unset, set 1.6 to allow using Java 9/10)
