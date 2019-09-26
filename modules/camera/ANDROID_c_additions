@@ -6,8 +6,8 @@ void android_camera_start(char* fnl_name, char *tmp_name)
     jstring jfnl = (*env)->NewStringUTF(env,fnl_name);
     jstring jtmp = (*env)->NewStringUTF(env,tmp_name);
     jclass cls = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
-    jmethodID method = (*env)->GetMethodID(env, cls, "startCamera", "(Ljava/lang/String;Ljava/lang/String;)V");
-    (*env)->CallVoidMethod(env, globalObj, method, jfnl, jtmp);
+    jmethodID method = cls ? (*env)->GetMethodID(env, cls, "startCamera", "(Ljava/lang/String;Ljava/lang/String;)V") : NULL;
+    if(method) (*env)->CallVoidMethod(env, globalObj, method, jfnl, jtmp);
   }
 }
 
@@ -18,7 +18,7 @@ void android_videocamera_start(char* fnl_name, char *tmp_name, int *maxlength)
     jstring jfnl = (*env)->NewStringUTF(env,fnl_name);
     jstring jtmp = (*env)->NewStringUTF(env,tmp_name);
     jclass cls = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
-    jmethodID method = (*env)->GetMethodID(env, cls, "startVidCamera", "(Ljava/lang/String;Ljava/lang/String;I)V");
-    (*env)->CallVoidMethod(env, globalObj, method, jfnl, jtmp, maxlength);
+    jmethodID method = cls ? (*env)->GetMethodID(env, cls, "startVidCamera", "(Ljava/lang/String;Ljava/lang/String;I)V"): NULL;
+    if(method) (*env)->CallVoidMethod(env, globalObj, method, jfnl, jtmp, maxlength);
   }
 }
