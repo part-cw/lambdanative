@@ -1,4 +1,4 @@
-package jscheme;
+package LNjScheme;
 
 /** Holds a string representation of some Scheme code in <TT>CODE</tt>.
  * A string is better than a file because with no files, its easier to

@@ -1,4 +1,4 @@
-package jscheme;
+package LNjScheme;
 import java.io.*;
 
 /** This class represents a Scheme interpreter.

@@ -1,4 +1,4 @@
-package jscheme;
+package LNjScheme;
 import java.io.*;
 
 /** A primitive is a procedure that is defined as part of the Scheme report,

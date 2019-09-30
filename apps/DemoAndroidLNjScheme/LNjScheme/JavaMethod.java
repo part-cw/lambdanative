@@ -1,4 +1,4 @@
-package jscheme;
+package LNjScheme;
 import java.lang.reflect.*;
 
 /** @author Peter Norvig, peter@norvig.com http://www.norvig.com

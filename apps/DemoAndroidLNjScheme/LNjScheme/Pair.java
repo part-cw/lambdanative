@@ -1,4 +1,4 @@
-package jscheme;
+package LNjScheme;
 
 /** A Pair has two fields, first and rest (or car and cdr).
  * The empty list is represented by null. The methods that you might

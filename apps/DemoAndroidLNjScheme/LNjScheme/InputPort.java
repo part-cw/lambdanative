@@ -1,4 +1,4 @@
-package jscheme;
+package LNjScheme;
 import java.io.*;
 
 /** InputPort is to Scheme as InputStream is to Java.

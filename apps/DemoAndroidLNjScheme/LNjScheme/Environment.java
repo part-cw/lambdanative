@@ -1,4 +1,4 @@
-package jscheme;
+package LNjScheme;
 
 /** Environments allow you to look up the value of a variable, given
  * its name.  Keep a list of variables and values, and a pointer to
