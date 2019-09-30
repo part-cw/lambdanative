@@ -23,3 +23,4 @@ name.
 1. Baseline: unpacked the sources from `jscheme-source.jar` into
    subdirectory `LNjScheme`.
 2. Changed package name to LNjScheme and added Makefile.
+3. Refine errors raised from application of Java methods.

@@ -25,17 +25,27 @@ public class JavaMethod extends Procedure {
 
   }
 
+  private Object raiseJavaMethodError(String msg, Exception e, Object args) {
+    return error(msg + " " + e + " on " + this + stringify(args) + ";");
+  }
+
   /** Apply the method to a list of arguments. **/
   public Object apply(Scheme interpreter, Object args) {
     try {
       if (isStatic) return method.invoke(null, toArray(args));
       else return method.invoke(first(args), toArray(rest(args)));
-    } catch (IllegalAccessException e) { ; }
-    catch (IllegalArgumentException e) { ; }
-    catch (InvocationTargetException e) { ; }
-    catch (NullPointerException e) { ; }
-    return error("Bad Java Method application:" + this
-			+ stringify(args) + ", ");
+    }
+    catch (IllegalAccessException e)
+      { raiseJavaMethodError("Bad Java Method application:", e, args); }
+    catch (IllegalArgumentException e)
+      { raiseJavaMethodError("Bad Java Method application:", e, args); }
+    catch (InvocationTargetException e)
+      { raiseJavaMethodError("Bad Java Method application:", e, args); }
+    catch (NullPointerException e)
+      { raiseJavaMethodError("Bad Java Method application:", e, args); }
+    catch (Exception e)
+      { raiseJavaMethodError("Bad Java Method application:", e, args); }
+    return null; /* unreached */
   }
 
   public static Class toClass(Object arg) throws ClassNotFoundException {
@@ -75,7 +85,7 @@ public class JavaMethod extends Procedure {
   }
 
   /** Convert a list of class names into an array of Classes. **/
-  public Class[] classArray(Object args) throws ClassNotFoundException {
+  public static Class[] classArray(Object args) throws ClassNotFoundException {
     int n = length(args);
     Class[] array = new Class[n];
     for(int i = 0; i < n; i++) {
