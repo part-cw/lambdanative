@@ -1,0 +1,35 @@
+/* -*-java-*- */
+
+private static Object LNjScheme_this = null;
+public static @SYS_PACKAGE_DOT@.@SYS_APPNAME@ me() {return (@SYS_PACKAGE_DOT@.@SYS_APPNAME@) jscheme_this;}
+
+private static LNjScheme.Scheme LNjSchemeSession = new LNjSscheme.Scheme(new String[0]);
+
+public Object LNjSchemeCallBasic(Object expr) {
+    if(LNjSchemeSession != null) {
+        synchronized(LNjSchemeSession) {
+            jscheme_this = this;
+            return LNjSchemeSession.eval(expr);
+        }
+    } else return null;
+}
+
+public String jschemeCall(String msg) {
+    try {
+        LNjScheme.InputPort in = new LNjScheme.InputPort(new java.io.ByteArrayInputStream(msg.getBytes(java.nio.charset.Charset.forName("UTF-8"))));
+        Object expr = in.read();
+        if(in.isEOF(expr)) return "E\n\"invalid input\"";
+        Object result = jschemeCallBasic(expr);
+        java.io.StringWriter buf = new java.io.StringWriter();
+        java.io.PrintWriter port = new java.io.PrintWriter(buf);
+        port.println("D");
+        LNjScheme.SchemeUtils.write(result, port, true);
+        return buf.toString();
+    } catch (Exception e) {
+        java.io.StringWriter buf = new java.io.StringWriter();
+        java.io.PrintWriter port = new java.io.PrintWriter(buf);
+        port.println("E");
+        LNjScheme.SchemeUtils.write(("" + e).toCharArray(), port, true);
+        return buf.toString();
+    }
+}
