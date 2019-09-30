@@ -241,7 +241,7 @@ public class Primitive extends Procedure {
 
      ///////////// Extensions ////////////////
 
-     .defPrim("new",     	    NEW,       1)
+     .defPrim("new",     	    NEW,       1, n)
      .defPrim("class",   	    CLASS,     1)
      .defPrim("method",  	    METHOD,    2, n)
      .defPrim("exit",    	    EXIT,      0, 1)
@@ -478,13 +478,7 @@ public class Primitive extends Procedure {
       ////////////////  EXTENSIONS
     case CLASS:         try { return Class.forName(stringify(x, false)); }
                         catch (ClassNotFoundException e) { return FALSE; }
-    case NEW:           try { return JavaMethod.toClass(x).newInstance(); }
-                        catch (ClassCastException e)     { ; }
-                        catch (NoSuchMethodError e)      { ; }
-                        catch (InstantiationException e) { ; }
-                        catch (ClassNotFoundException e) { ; }
-                        catch (IllegalAccessException e) { ; }
-                        return FALSE;
+    case NEW:           return JavaMethod.invokeConstructor(x, rest(args));
     case METHOD:        return new JavaMethod(stringify(x, false), y,
 					      rest(rest(args)));
     case EXIT:          System.exit((x == null) ? 0 : (int)num(x));

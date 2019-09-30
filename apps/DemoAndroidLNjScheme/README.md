@@ -24,3 +24,4 @@ name.
    subdirectory `LNjScheme`.
 2. Changed package name to LNjScheme and added Makefile.
 3. Refine errors raised from application of Java methods.
+4. Pull some code from the community version to support constructors with arguments.

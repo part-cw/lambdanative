@@ -95,4 +95,156 @@ public class JavaMethod extends Procedure {
     return array;
   }
 
+  /*** Backported ***/
+  /*** The following functionality is inspired and pratially stolen
+   * from the community version, which extented the original
+   * jscheme.  I'd rather strip down jscheme for use as embedded
+   * language (e.g., this use case does often not need quasiquote
+   * and macro expansion) than use and digest the bloat of a jscheme
+   * 7.2 or alike.
+   *
+   * However: I need constructors with arguments. ***/
+
+  /** Each bucket in an method table contains a Class[] of
+      parameterTypes and the corresponding method or constructor. **/
+  private static final int BUCKET_SIZE = 2;
+  private static Class[] getParameterTypes(Object m) {
+    return (m instanceof Method) ? ((Method) m).getParameterTypes() :
+      ((Constructor) m).getParameterTypes();
+  }
+
+  /** Returns Object[] of parameterType, method pairs. **/
+  private static Object[] methodArray(Object[] v) {
+    Object[] result = new Object[v.length*BUCKET_SIZE];
+    for(int i = 0; i < v.length; i++) {
+      result[i*BUCKET_SIZE] = getParameterTypes(v[i]);
+      result[i*BUCKET_SIZE+1] = v[i];
+    }
+    return result;
+  }
+  /* */
+  private static Object findMethod(Object[] methods, Object[] args) {
+    int best = -1;
+    /*
+    System.err.println("Found " + (methods.length/2) + " constructors: " + methods);
+    System.err.println("Checking against " + args.length + " args, these:");
+    for(int i=0; i<args.length; i++)
+        System.err.println("Arg" + i + ": " + args[i].getClass().getName() + "\n");
+    */
+    for(int m1 = 0; m1 < methods.length; m1 = m1 + BUCKET_SIZE) {
+      Class[] p1 = ((Class[]) methods[m1]);
+    /*
+    System.err.println("Index " + m1 + " Arguments:");
+    for(int i=0; i<p1.length; i++)
+        System.err.println("Arg" + i + ": " + p1[i].getName() + "\n");
+    */
+      if(isApplicable(p1, args) &&
+	 (best == -1 || !moreApplicable(((Class[]) methods[best]), p1)))
+	best = m1;
+    }
+    // System.err.println("Index " + best + " Gave best match " + methods[best] + " returning " + methods[best+1]);
+    if (best != -1) return methods[best+1];
+    throw new RuntimeException("no applicable method found in " + methods + " for " + args);
+    /*
+    // print debugging info
+    StringBuffer alts = new StringBuffer();
+    for(int m1 = 0; m1 < methods.length; m1 = m1 + BUCKET_SIZE)
+	if (methods[m1+1] instanceof Member)
+           alts.append("   * "+methods[m1+1] +"\n");
+	else {
+            Class[] ts=(Class[]) methods[m1];
+            alts.append("   * "+methods[m1+1]+" ( ");
+	    for (int i=0;i<ts.length; i++)
+		alts.append(ts[i]+" ");
+            alts.append(")\n");
+	}
+
+    StringBuffer argtypes = new StringBuffer();
+    for(int i=0; i<args.length; i++)
+      if (args[i] == null) argtypes.append(" ? ");
+      else argtypes.append(" "+args[i].getClass()+" ");
+    return E.error("\n\nERROR: NO " +
+                   ((methods[1] instanceof Member)?
+                        ((methods[1] instanceof Method)? "METHOD":
+			 "CONSTRUCTOR"): "PROCEDURE") +
+                   " WITH NAME\n    "+
+		   ((methods[1] instanceof Member)?
+		    ((Member) methods[1]).getName() : "?") +
+                  "\n and args\n     "+ U.vectorToList(args) +
+                  "\n of types \n    "+argtypes.toString()+
+                  "\n\n possible alternatives are :\n" + alts.toString() +
+		   "\n\n");
+    */
+  }
+  private static boolean isApplicable (Class[] types, Object[] args) {
+    if (types.length == args.length) {
+      for (int i = 0; i < args.length; i++)
+	if (! isArgApplicable(types[i], args[i])) return false;
+      return true;
+    } else return false;
+  }
+  private static boolean isArgApplicable(Class p, Object a) {
+    return (a == null  && Object.class.isAssignableFrom(p)) ||
+	p.isInstance(a) ||
+        p.isPrimitive() && (primitiveWrapperType(p)).isInstance(a);
+  }
+  /** Given a primitive type return its wrapper class. **/
+  private static Class primitiveWrapperType(Class p) {
+    return
+      p == java.lang.Byte.TYPE ? java.lang.Byte.class :
+      p == java.lang.Long.TYPE ? java.lang.Long.class :
+      p == java.lang.Float.TYPE ? java.lang.Float.class :
+      p == java.lang.Short.TYPE ? java.lang.Short.class :
+      p == java.lang.Double.TYPE ? java.lang.Double.class :
+      p == java.lang.Boolean.TYPE ? java.lang.Boolean.class :
+      p == java.lang.Integer.TYPE ? java.lang.Integer.class :
+      p == java.lang.Character.TYPE ? java.lang.Character.class :
+      // (Class) E.error("unknow primitive type: ", p);
+      null;
+  }
+  /** A method m1 is more specific than method m2 if all parameters of
+    m1 are subclasses of the corresponding parameters of m2.  **/
+  private static boolean moreApplicable(Class[] p1, Class[] p2) {
+    for(int i = 0; i < p1.length; i++)
+      if (!p2[i].isAssignableFrom(p1[i])) return false;
+    return true;
+  }
+
+  private static String invokeError(String msg, Throwable e, Object[] args) {
+    StringBuffer b = new StringBuffer();
+    b.append(msg + " " + e + " Args:\n");
+    for(int i=0; i<args.length; i++)
+        b.append("Arg" + i + ": " + args[i].getClass().getName() + "\n");
+    return b.toString();
+  }
+
+  private static Object invokeConstructor0(Object name, Object[] args) {
+    Class cls = null;
+    try{
+        cls = toClass(name);
+    } catch (ClassNotFoundException e) { throw new RuntimeException("\"new\": class not found: " + name); }
+    java.lang.reflect.Constructor m[] = cls.getConstructors();
+    // FIXME: the cast to (Object[]) is not nice.  Just how to get away?
+    //
+    // Should be possible to do this better:
+    // https://stackoverflow.com/questions/234600/can-i-use-class-newinstance-with-constructor-arguments#234617
+    //
+    java.lang.reflect.Constructor c = (java.lang.reflect.Constructor)findMethod(methodArray(m), args);
+    if(c == null) return null;
+    else
+        try {
+            return c.newInstance(args);
+        } catch (InstantiationException e) {
+            throw new RuntimeException("InstantiationException " + e + " creating " + cls + " for " + args);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("IllegalAccessException " + e + " creating " + cls + " for " + args);
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            Throwable e1 = e.getTargetException();
+            throw new RuntimeException(invokeError("InvocationTargetException: " + c, e1, args));
+        }
+  }
+
+  public static Object invokeConstructor(Object name, Object args) {
+      return invokeConstructor0(name, listToVector(args));
+  }
 }
