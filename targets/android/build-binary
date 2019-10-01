@@ -315,7 +315,7 @@ pkgfile="$tmpdir/bin/$(echo $SYS_APPNAME)-release-unsigned.apk"
 assertfile "$pkgfile"
 
 echo " => transferring application.."
-fnlfile=$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-android.apk
+fnlfile=$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-android${SYS_PLATFORM_VARIANT}.apk
 cp $pkgfile $fnlfile
 assertfile $fnlfile
 
