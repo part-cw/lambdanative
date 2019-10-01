@@ -952,6 +952,9 @@ make_setup_target()
   setup_target=$1
   assertfile $setup_target "Don't know how to setup a build for $SYS_PLATFORM on a $SYS_HOSTPLATFORM host"
   ac_reset
+  if [ "$SYS_PLATFORM" = "android" ] && [ "X$SYS_PLATFORM_VARIANT" = "X" ]; then
+    SYS_PLATFORM_VARIANT="-api${ANDROIDAPI}"
+  fi
   SYS_PREFIX="${SYS_PREFIXROOT}/${SYS_PLATFORM}${SYS_PLATFORM_VARIANT}"
   #--------
   # register custom compiler/linker options
