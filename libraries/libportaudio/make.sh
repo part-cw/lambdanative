@@ -3,7 +3,10 @@ PKGHASH=56c596bba820d90df7d057d8f6a0ec6bf9ab82e8
 
 package_download $PKGURL $PKGHASH
 
-package_patch
+# Restrict patching to two platforms
+if [ $SYS_HOSTPLATFORM = openbsd ] || [ $SYS_HOSTPLATFORM = macosx ]; then
+  package_patch
+fi
 rmifexists $SYS_PREFIX/include/portaudio.h
 
 # openbsd needs this
