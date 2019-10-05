@@ -266,6 +266,7 @@ void rtaudio_start(int samplerate, double volume)
     inputParameters.device = (portaudio_idev<0?INPUT_DEVICE:portaudio_idev);
     if (inputParameters.device == paNoDevice) { goto error; }
     PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(inputParameters.device);
+    if (deviceInfo == NULL) { goto error; }
     if (deviceInfo->maxInputChannels==1) {
       portaudio_use_mono=1;
       inputParameters.channelCount = 1;
