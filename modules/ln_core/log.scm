@@ -50,11 +50,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define log:path (string-append (system-directory) (system-pathseparator) "log"))
 
-(set! log:file (string-append log:path (system-pathseparator) "log_"
-    (time->string (current-time) "%Y%m%d_%H%M%S") ".txt"))
+(define log:file)
 
-;; 20101007: don't log if the directory doesn't exist
-(define log:on (not (or (not (file-exists? (system-directory))) (not (file-exists? log:path)))))
+(define log:on)
+
+;; log-reset! : re-test existence of log directory and switch to new log file
+(define (log-reset! #!optional (file #f)) ;; EXPORT
+  (set! log:file (if file
+                     (string-append log:path (system-pathseparator) file)
+                     (string-append log:path (system-pathseparator) "log_"
+                                    (time->string (current-time) "%Y%m%d_%H%M%S") ".txt")))
+  ;; 20101007: don't log if the directory doesn't exist
+  (set! log:on (not (or (not (file-exists? (system-directory))) (not (file-exists? log:path))))))
+
+(log-reset!) ;; initiate backward compatible logging.
 
 (define log:hook #f)
 

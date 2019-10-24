@@ -42,9 +42,6 @@ android*)
     fi
     export ANDROID_NDK_HOME=`dirname $XX_ANDROID_NDK_HOME`
     PATH=`ls -d $SYS_PREFIX/android-ndk-*-toolchain/bin`:$PATH
-    # FIXME: This was better `clang` as Android is supposed to phase
-    # out gcc.  But that would be inconsistent with the ndk in use.
-    EXTRACONF="$EXTRACONF CC=gcc"
 ;;
 *)
   EXTRACONF=BSD-generic32

@@ -68,9 +68,9 @@ fi
 assertfile $android_customtoolchain
 android_sysroot="$android_customtoolchain/sysroot"
 android_cross=`ls -1 $android_customtoolchain/bin/*-gcc | sed 's/gcc$//'`
-
-SYS_CC=$android_cross"gcc $SYS_DEBUGFLAG -fPIC -DANDROID -D__ANDROID_API__=${ANDROIDAPI} -isysroot $android_sysroot $cflag_additions"
-SYS_CPP=$android_cross"gcc -E"
+LN_C_compiler=clang
+SYS_CC=$android_cross"$LN_C_compiler $SYS_DEBUGFLAG -fPIC -DANDROID -D__ANDROID_API__=${ANDROIDAPI} -isysroot $android_sysroot $cflag_additions"
+SYS_CPP=$android_cross"$LN_C_compiler -E"
 SYS_AR=$android_cross"ar"
 SYS_AS=$android_cross"as"
 SYS_NM=$android_cross"nm"
