@@ -25,7 +25,7 @@ public class JavaMethod extends Procedure {
 
   }
 
-  private Object raiseJavaMethodError(String msg, Exception e, Object args) {
+  private Object raiseJavaMethodError(String msg, Throwable e, Object args) {
     return error(msg + " " + e + " on " + this + stringify(args) + ";");
   }
 
@@ -39,9 +39,10 @@ public class JavaMethod extends Procedure {
       { raiseJavaMethodError("Bad Java Method application:", e, args); }
     catch (IllegalArgumentException e)
       { raiseJavaMethodError("Bad Java Method application:", e, args); }
-    catch (InvocationTargetException e)
-      { raiseJavaMethodError("Bad Java Method application:", e, args); }
-    catch (NullPointerException e)
+    catch (InvocationTargetException e) {
+      Throwable e1 = e.getCause();
+      raiseJavaMethodError("Bad Java Method application: " + method, e1, args);
+    } catch (NullPointerException e)
       { raiseJavaMethodError("Bad Java Method application:", e, args); }
     catch (Exception e)
       { raiseJavaMethodError("Bad Java Method application:", e, args); }
