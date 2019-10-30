@@ -250,8 +250,8 @@ asserterror $?
 
 echo " => adding precompiled libaries.."
 for lib in $payload_libs; do
-  if [ -f "$SYS_PREFIXROOT/android/lib/$lib.jar" ]; then
-    cp $SYS_PREFIXROOT/android/lib/$lib.jar $tmpdir/libs/
+  if [ -f "$SYS_PREFIX/lib/$lib.jar" ]; then
+    cp $SYS_PREFIX/lib/$lib.jar $tmpdir/libs/
   fi
 done
 
