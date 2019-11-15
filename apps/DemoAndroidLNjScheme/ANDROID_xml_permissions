@@ -1,0 +1,2 @@
+<!-- This permission is ONLY required because the Demo uses WebView with external URL -->
+<uses-permission android:name="android.permission.INTERNET" />
