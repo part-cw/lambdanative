@@ -36,18 +36,160 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-;; minimal hybrid app example
+;; basic hybrid app example
+
+(define index-js
+#<<EOJS
+
+// Send HTTP GET to back end
+function get_async(url,fun) {
+  var xhr = new XMLHttpRequest();
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState == XMLHttpRequest.DONE) {
+      if (xhr.status == 200) {
+        fun(decodeURI(xhr.responseText));
+      } else {
+        console.log('** get_async FAILED, status=' + xhr.status + ' [' + xhr.statusText + ']');
+      }
+    }
+  }
+  xhr.open('GET', url, true);
+  xhr.send(null);
+};
+
+// Ask the Scheme backend to calculate the inner rectangle dimensions
+function calculateRect() {
+  // Get width, height, and percent from the fields
+  var w = document.getElementById("width").value;
+  var h = document.getElementById("height").value;
+  var p = document.getElementById("percent").value;
+  var ajax_cmd = "calculate-rect.cgi?w=" + w + "&h=" + h + "&p=" + p;
+  console.log(ajax_cmd);
+  get_async(ajax_cmd, function(data) {
+    var resultp = document.getElementById("result");
+    if (data.localeCompare("MISSING_PARAMS") == 0) {
+      resultp.innerHTML = "Error, something went wrong. Missing parameters!";
+    } else if (data.localeCompare("NOT_NUMBERS") == 0) {
+      resultp.innerHTML = "Error. Please enter a number in each box for width, height, and percent of area."
+    } else if (data.localeCompare("NOT_POSITIVE") == 0) {
+      resultp.innerHTML = "Error. All values must be positive (> 0)."
+    } else {
+      var returned_data = false;
+      try { returned_data = JSON.parse(data); } catch(err) { console.log("error calculating") };
+      if (returned_data) {
+        var area = returned_data["area"];
+        var narea = returned_data["narea"];
+        var new_w = returned_data["neww"];
+        var new_h = returned_data["newh"];
+        resultp.innerHTML = "The original rectangle has an area of " + area + ". The new one has an area of " + narea +
+                            ", " + p + "% of the original. The new rectangle has <b>width " + new_w + "</b> and <b>height " + new_h + "</b>.";
+      }
+    }
+  });
+}
+
+EOJS
+)
 
 (define db (make-website))
 
+;; Basic webpage
 (website-addhook db "/index.html" 
   (lambda (args) 
      (string->u8vector (with-output-to-string "" 
        (lambda () (sxml->xml
          `(html (body (h1 "Hello from LambdaNative") 
-            (p "This is HTML served from a hybrid app")))
-       ))))))
+            (p "This is HTML served from a hybrid app.")
+            (p "It contains an example of communication between the front end HTML, Javascript and back end Scheme.")
+            (br)
+            (p "Given a rectangle, the below calculator finds the width and height of a rectangle that takes up a given percentage of the area of the original (that can be centered within it, with the same border all the way around). While unnecessary, the calculations are done in Scheme.")
+            ;; Form calls Javascript function when Calculate button pressed
+            ;; Return false in order to not do any other action from the form submit
+            (form (@ (onsubmit "calculateRect(); return false;"))
+              (table (@ (style "width:100%"))
+                (tr
+                  (th "Width:")
+                  (th "Height:")
+                  (th "Percent of area:"))
+                (tr
+                  (td (@ (style "text-align:center"))
+                    (input (@ (id "width")
+                              (type "number")
+                              (style "width:50;")) ""))
+                  (td (@ (style "text-align:center"))
+                    (input (@ (id "height")
+                              (type "number")
+                              (style "width:50;")) ""))
+                  (td (@ (style "text-align:center"))
+                    (input (@ (id "percent")
+                              (type "number")
+                              (style "width:50;")) ""))))
+              (br)
+              (br)
+              (input (@ (type "submit")
+                        (value "Calculate"))))
+            ;; Result will be shown here
+            (p (@ (id "result")) "")
+            ;; Include Javascript here, inside the body
+            (script (@ (type "text/javascript")) ,index-js)))))))))
 
 (website-serve db 8080)
+
+;; Back-end respond to GET here
+(website-addhook db "/calculate-rect.cgi" (lambda (x)
+  (let* ((qstring (assoc "QUERY_STRING" x))
+         (params (getargs->list (if qstring (cadr qstring) '()))))
+     (log-error params)
+     (if params
+       (let ((wentry (assoc "w" params))
+             (hentry (assoc "h" params))
+             (pentry (assoc "p" params)))
+         (if (and wentry hentry pentry)
+           (let ((w (string->number (cadr wentry)))
+                 (h (string->number (cadr hentry)))
+                 (p (string->number (cadr pentry))))
+             (if (and w p h)
+               (if (and (> w 0) (> h 0) (> p 0))
+                 ;; Calculate the new rectangle dimensions and return them
+                 ;; in JSON format converted to a u8vector
+                 (string->u8vector (json-encode (calculate-rect w h p)))
+                 ;; Return error because one of the numbers is 0 or negative
+                 (string->u8vector "NOT_POSITIVE"))
+               ;; Return error if converting to numbers failed
+               (string->u8vector "NOT_NUMBERS")))
+           ;; Return error if for some reason any of the parameters are missing
+           (string->u8vector "MISSING_PARAMS")))
+       (string->u8vector "MISSING_PARAMS")))))
+
+;; Given a rectangle, this procedure calculates the width and height of a rectangle that takes up a
+;; given percentage of the area of the original (that can be centered within it,
+;; with the same border all the way around).
+;; w is the width of the original rectangle
+;; h is the hieght of the original rectangle
+;; p is the percent of area to use for the new rectangle
+;; This procedure returns a list or pairs with values for the neww and newh
+(define (calculate-rect w h p)
+  (let* ((area (* w h))
+         ;; Calculate new (target) area
+         (narea (* area (/ p 100)))
+         (diff (- h w))
+         ;; Use quadratic formula with a= 1, b = diff, and c = new area
+         (nw (abs (/ (+ (* diff -1) (sqrt (- (* diff diff) (* -4 narea)))) 2)))
+         (nh (abs (/ (- (* diff -1) (sqrt (- (* diff diff) (* -4 narea)))) 2))))
+    (list (cons "area" (float->string area 2)) (cons "narea" (float->string narea 2))
+          (cons "neww" (float->string nw 2)) (cons "newh" (float->string nh 2))))
+)
+
+;; Convert a string of arguments into a list of lists
+(define (getargs->list str)
+  (if (string? str)
+    (let ((tmp (string-split str #\&)))
+      (map (lambda (s)
+             (let ((sp (string-split s #\=)))
+               (if (fx= (length sp) 1)
+                 (append sp (list ""))
+                 sp)))
+           tmp))
+  '()))
 
 ;; eof
