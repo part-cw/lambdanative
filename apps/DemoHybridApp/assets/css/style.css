@@ -1,0 +1,12 @@
+table {
+  width: 100%;
+}
+
+td {
+  text-align: center;
+}
+
+input[type=number] {
+  width: 50;
+}
+

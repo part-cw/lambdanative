@@ -91,14 +91,16 @@ function calculateRect() {
 EOJS
 )
 
-(define db (make-website))
+;; Defining CSS
+(define (css f) `(link (@ (href ,f) (rel "stylesheet"))))
 
 ;; Basic webpage
-(website-addhook db "/index.html" 
+(website-addhook #f "/index.html"
   (lambda (args) 
      (string->u8vector (with-output-to-string "" 
        (lambda () (sxml->xml
-         `(html (body (h1 "Hello from LambdaNative") 
+         `(html (head ,(css "css/style.css"))
+           (body (h1 "Hello from LambdaNative")
             (p "This is HTML served from a hybrid app.")
             (p "It contains an example of communication between the front end HTML, Javascript and back end Scheme.")
             (br)
@@ -106,24 +108,21 @@ EOJS
             ;; Form calls Javascript function when Calculate button pressed
             ;; Return false in order to not do any other action from the form submit
             (form (@ (onsubmit "calculateRect(); return false;"))
-              (table (@ (style "width:100%"))
+              (table
                 (tr
                   (th "Width:")
                   (th "Height:")
                   (th "Percent of area:"))
                 (tr
-                  (td (@ (style "text-align:center"))
+                  (td
                     (input (@ (id "width")
-                              (type "number")
-                              (style "width:50;")) ""))
-                  (td (@ (style "text-align:center"))
+                              (type "number")) ""))
+                  (td
                     (input (@ (id "height")
-                              (type "number")
-                              (style "width:50;")) ""))
-                  (td (@ (style "text-align:center"))
+                              (type "number")) ""))
+                  (td
                     (input (@ (id "percent")
-                              (type "number")
-                              (style "width:50;")) ""))))
+                              (type "number")) ""))))
               (br)
               (br)
               (input (@ (type "submit")
@@ -133,13 +132,12 @@ EOJS
             ;; Include Javascript here, inside the body
             (script (@ (type "text/javascript")) ,index-js)))))))))
 
-(website-serve db 8080)
+(website-serve #f 8080)
 
 ;; Back-end respond to GET here
-(website-addhook db "/calculate-rect.cgi" (lambda (x)
+(website-addhook #f "/calculate-rect.cgi" (lambda (x)
   (let* ((qstring (assoc "QUERY_STRING" x))
          (params (getargs->list (if qstring (cadr qstring) '()))))
-     (log-error params)
      (if params
        (let ((wentry (assoc "w" params))
              (hentry (assoc "h" params))
