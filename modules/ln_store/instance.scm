@@ -78,4 +78,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       #f
     )
   ))
+
+(define (store:instance-timestamp store id)
+  (let ((t (store:instancetable store)))
+    (if (table? t)
+      (begin
+        (store:grab!)
+        (let ((res (table-ref t id #f)))
+          (store:release!)
+          (if (pair? res) (cdr res) 0.)
+        )
+      )
+      (begin
+        (log-error "store:instance-timestamp: unknown store " store)
+        0.
+      ))))
+
 ;; eof
