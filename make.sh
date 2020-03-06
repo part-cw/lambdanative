@@ -1357,6 +1357,9 @@ make_toolcheck()
   if [ `is_gui_app` = "yes" -a ! -f $SYS_TMPDIR/.use_xetex ]; then
     make_xelatexcheck
   fi
+  if [ -f $SYS_TMPDIR/.use_xetex ]; then
+    USE_XETEX=yes
+  fi
   # platform specific tools
   if [ -s targets/$SYS_PLATFORM/check-tools ]; then
     . targets/$SYS_PLATFORM/check-tools
