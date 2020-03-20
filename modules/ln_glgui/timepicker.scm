@@ -89,50 +89,50 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (glgui:timepicker-middle-callback widget hpicker mpicker spicker hinput minput sinput)
   (lambda (g wgt . x)
-    (let ((hval (glgui-widget-get g hpicker 'value))
-          (hvallist (glgui-widget-get g hpicker 'vallist))
-          (mval (glgui-widget-get g mpicker 'value))
-          (mvallist (glgui-widget-get g mpicker 'vallist))
-          (ampm (glgui-widget-get g widget 'ampmbutton))
-          (bg (glgui-widget-get g widget 'bg))
-          (c1label (glgui-widget-get g widget 'c1label))
-          (c2label (glgui-widget-get g widget 'c2label))
-          (tc1label (glgui-widget-get g widget 'tc1label))
-          (tc2label (glgui-widget-get g widget 'tc2label))
-          (keypad (glgui-widget-get g widget 'keypad))
-          (keypadcb (glgui-widget-get g widget 'keypadcb)))
-      (glgui-widget-set! g tc1label 'hidden #f)
-      (if tc2label
-        (glgui-widget-set! g tc2label 'hidden #f))
-      (if ampm
-        (glgui-widget-set! g ampm 'hidden #t))
-      (glgui-widget-set! g hinput 'label (list-ref hvallist (fix hval)))
-      (glgui-widget-set! g minput 'label (list-ref mvallist (fix mval)))
-      (if (and spicker sinput)
-        (let ((sval (glgui-widget-get g spicker 'value))
-              (svallist (glgui-widget-get g spicker 'vallist)))
-          (glgui-widget-set! g sinput 'label (list-ref svallist (fix sval)))))
-      (glgui-widget-set! g hinput 'focus #f)
-      (glgui-widget-set! g minput 'focus #f)
-      (glgui-widget-set! g hinput 'hidden #f)
-      (glgui-widget-set! g minput 'hidden #f)
-      (if sinput
-        (begin
-          (glgui-widget-set! g sinput 'focus #f)
-          (glgui-widget-set! g sinput 'hidden #f)))
-      (glgui-widget-set! g hpicker 'hidden #t)
-      (glgui-widget-set! g mpicker 'hidden #t)
-      (if spicker
-        (glgui-widget-set! g spicker 'hidden #t))
-      (glgui-widget-set! g c1label 'hidden #t)
-      (if c2label
-        (glgui-widget-set! g c2label 'hidden #t))
-      (glgui-widget-set! g bg 'hidden #t)
-      (glgui-widget-set! g (if (eqv? wgt hpicker) hinput (if (eqv? wgt mpicker) minput sinput)) 'focus #t)
-      (glgui-widget-set! g keypad 'hidden #f)
-      (if keypadcb (keypadcb g wgt))
-    )
-  )
+    (let ((keypadenabled (glgui-widget-get g widget 'keypadenabled)))
+      (if keypadenabled
+        (let ((hval (glgui-widget-get g hpicker 'value))
+              (hvallist (glgui-widget-get g hpicker 'vallist))
+              (mval (glgui-widget-get g mpicker 'value))
+              (mvallist (glgui-widget-get g mpicker 'vallist))
+              (ampm (glgui-widget-get g widget 'ampmbutton))
+              (bg (glgui-widget-get g widget 'bg))
+              (c1label (glgui-widget-get g widget 'c1label))
+              (c2label (glgui-widget-get g widget 'c2label))
+              (tc1label (glgui-widget-get g widget 'tc1label))
+              (tc2label (glgui-widget-get g widget 'tc2label))
+              (keypad (glgui-widget-get g widget 'keypad))
+              (keypadcb (glgui-widget-get g widget 'keypadcb)))
+          (glgui-widget-set! g tc1label 'hidden #f)
+          (if tc2label
+              (glgui-widget-set! g tc2label 'hidden #f))
+          (if ampm
+              (glgui-widget-set! g ampm 'hidden #t))
+          (glgui-widget-set! g hinput 'label (list-ref hvallist (fix hval)))
+          (glgui-widget-set! g minput 'label (list-ref mvallist (fix mval)))
+          (if (and spicker sinput)
+              (let ((sval (glgui-widget-get g spicker 'value))
+                    (svallist (glgui-widget-get g spicker 'vallist)))
+                (glgui-widget-set! g sinput 'label (list-ref svallist (fix sval)))))
+          (glgui-widget-set! g hinput 'focus #f)
+          (glgui-widget-set! g minput 'focus #f)
+          (glgui-widget-set! g hinput 'hidden #f)
+          (glgui-widget-set! g minput 'hidden #f)
+          (if sinput
+              (begin
+                (glgui-widget-set! g sinput 'focus #f)
+                (glgui-widget-set! g sinput 'hidden #f)))
+          (glgui-widget-set! g hpicker 'hidden #t)
+          (glgui-widget-set! g mpicker 'hidden #t)
+          (if spicker
+              (glgui-widget-set! g spicker 'hidden #t))
+          (glgui-widget-set! g c1label 'hidden #t)
+          (if c2label
+              (glgui-widget-set! g c2label 'hidden #t))
+          (glgui-widget-set! g bg 'hidden #t)
+          (glgui-widget-set! g (if (eqv? wgt hpicker) hinput (if (eqv? wgt mpicker) minput sinput)) 'focus #t)
+          (glgui-widget-set! g keypad 'hidden #f)
+          (if keypadcb (keypadcb g wgt))))))
 )
 
 (define (glgui:timepicker-input-callback widget hpicker mpicker spicker ampmbutton hinput minput sinput)
@@ -519,6 +519,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           'minput minput
           'sinput sinput
           'keypadcb #f
+          ;; Can turn off ability to use keypad to edit values
+          'keypadenabled #t
           'tc1label tc1label
           'tc2label tc2label
           'keypad keypad
