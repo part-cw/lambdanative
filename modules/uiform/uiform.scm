@@ -493,7 +493,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                  (cw 3)
                  (ch txth)
                  (cc (if (odd? (fix (* 2 ##now))) White selcolor)))
-             (glgui:draw-box cx cy cw ch cc)))))
+             (glgui:draw-box cx cy cw ch cc)))
+       ))
      h
   ))
 
