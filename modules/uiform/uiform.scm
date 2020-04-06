@@ -118,6 +118,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (stset 'required (alist-set-notime curentry ids (if (< val 0) 0 val)))
         (stset 'required (append curentry  (list (list ids (if (< val 0) 0 val)))))))
 )
+
+;; clears all flags for required fields in store
+(define (uiform-required-clear id )
+  (let* ((curentry (stget 'required  '()))
+         (ids (if (symbol? id) id (string->symbol id)))
+         (present (alist-ref curentry ids #f)))
+    (if present
+        (stset 'required (alist-delkeys curentry ids))
+        ))
+)
+
+
 ;;returns a list containing a string with fields that are required but have no value and the lowest vertical position
 (define (uiform-required-missing)
   (let ((availlist (table->list (uiget 'database)))
