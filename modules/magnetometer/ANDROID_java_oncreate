@@ -1,0 +1,2 @@
+mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_GAME);
