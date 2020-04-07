@@ -1,0 +1,3 @@
+<uses-feature android:name="android.hardware.sensor.compass" />
+<uses-feature android:name="android.hardware.sensor.accelerometer" />
+<uses-feature android:name="android.hardware.sensor.gyroscope" />
