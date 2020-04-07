@@ -1,0 +1,15 @@
+// Gyroscope
+if (motionmanager_needsinit) {
+  motionManager = [[CMMotionManager alloc] init];
+  motionmanager_needsinit = 0;
+}
+
+if ([motionManager isMagnetometerAvailable]) {
+  [motionManager setGyroUpdateInterval: (1.0 / 50)];
+  [motionManager startMagnetometerUpdatesToQueue: [NSOperationQueue mainQueue] withHandler: ^(CMMagnetometerData *magnetometerData, NSError *error) {
+    [[NSUserDefaults standardUserDefaults] setValue: [NSNumber numberWithDouble: magnetometerData.magneticField.x] forKey: @"magnetometer_x"];
+    [[NSUserDefaults standardUserDefaults] setValue: [NSNumber numberWithDouble: magnetometerData.magneticField.y] forKey: @"magnetometer_y"];
+    [[NSUserDefaults standardUserDefaults] setValue: [NSNumber numberWithDouble: magnetometerData.magneticField.z] forKey: @"magnetometer_z"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+  }];
+}

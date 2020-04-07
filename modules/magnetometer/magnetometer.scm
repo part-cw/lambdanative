@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -36,8 +36,7 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-;; get magnetometer data from devices (only android; iOS todo)
-
+;; get magnetometer data from devices
 (c-declare  #<<end-of-c-declare
 
 #ifdef IOS
@@ -57,7 +56,7 @@ static double mag_x(void) {
 #ifdef ANDROID
   return android_mag_getx();
 #elif IOS
-  return 0; //ios_mag_getx();
+  return ios_mag_getx();
 #else
   return 0;
 #endif
@@ -67,7 +66,7 @@ static double mag_y(void) {
 #ifdef ANDROID
   return android_mag_gety();
 #elif IOS
-  return 0; //ios_mag_gety();
+  return ios_mag_gety();
 #else
   return 0;
 #endif
@@ -77,7 +76,7 @@ static double mag_z(void) {
 #ifdef ANDROID
   return android_mag_getz();
 #elif IOS
-  return 0; //ios_mag_getz();
+  return ios_mag_getz();
 #else
   return 0;
 #endif
@@ -86,8 +85,8 @@ static double mag_z(void) {
 end-of-c-declare
 )
 
-(define mag-x (c-lambda () double "mag_x"))
-(define mag-y (c-lambda () double "mag_y"))
-(define mag-z (c-lambda () double "mag_z"))
+(define magnetometer-x (c-lambda () double "mag_x"))
+(define magnetometer-y (c-lambda () double "mag_y"))
+(define magnetometer-z (c-lambda () double "mag_z"))
 
 ;; eof
