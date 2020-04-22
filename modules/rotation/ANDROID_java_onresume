@@ -1,0 +1,1 @@
+mSensorManager.registerListener(this, mRot, SensorManager.SENSOR_DELAY_GAME);

@@ -1,0 +1,13 @@
+// magnetometer
+extern double ios_mag_getx() {
+  NSNumber* x = [[NSUserDefaults standardUserDefaults] valueForKey:@"magnetometer_x"];
+  return [x doubleValue];
+}
+extern double ios_mag_gety() {
+  NSNumber* y = [[NSUserDefaults standardUserDefaults] valueForKey:@"magnetometer_y"];
+  return [y doubleValue];
+}
+extern double ios_mag_getz() {
+  NSNumber* z = [[NSUserDefaults standardUserDefaults] valueForKey:@"magnetometer_z"];
+  return [z doubleValue];
+}
