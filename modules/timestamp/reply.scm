@@ -61,7 +61,7 @@ int get_tsr_status(unsigned char *tsr, int len){
   TS_STATUS_INFO *ts_status = TS_RESP_get_status_info(ts_resp);
   if (ts_resp==NULL)
     return 0;
-  ret = ASN1_INTEGER_get(ts_status->status);
+  ret = ASN1_INTEGER_get(TS_STATUS_INFO_get0_status(ts_status));
   TS_RESP_free(ts_resp);
   return ret;
 }
@@ -83,7 +83,7 @@ int get_tsr_statusstr(unsigned char *tsr, int len,unsigned char *txt){
   if (ts_resp==NULL)
     return 0;
   TS_STATUS_INFO *ts_status = TS_RESP_get_status_info(ts_resp);
-  int st = ASN1_INTEGER_get(ts_status->status);
+  int st = ASN1_INTEGER_get(TS_STATUS_INFO_get0_status(ts_status));
   if (st > 5)
     return 0;
   ret = status_len[st];

@@ -1,0 +1,4 @@
+if (event.sensor.getType()==Sensor.TYPE_ROTATION_VECTOR) {
+  rotEvent((double)event.values[0], (double)event.values[1], (double)event.values[2],
+   (double)event.values[3], (double)event.values[4]);
+}

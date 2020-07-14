@@ -1,0 +1,1 @@
+native void magEvent(double x, double y, double z);

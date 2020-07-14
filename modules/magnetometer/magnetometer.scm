@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2016, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -36,62 +36,57 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-;; Storage for instance-related variables
+;; get magnetometer data from devices
+(c-declare  #<<end-of-c-declare
 
-(define (store:instance-set! store id val)
-  (if (not val)
-    (store:instance-clear! store id)
-    (let ((t (store:instancetable store)))
-      (if (table? t)
-        (begin
-          (store:grab!)
-          (table-set! t id (cons val ##now))
-          (store:release!)
-          #t
-        )
-        #f)
-    )))
+#ifdef IOS
+  double ios_mag_getx(void);
+  double ios_mag_gety(void);
+  double ios_mag_getz(void);
+#endif
 
-(define (store:instance-ref store id . fback)
-  (let ((fallback (if (= (length fback) 1) (car fback) #f))
-        (t (store:instancetable store)))
-    (if (table? t)
-      (begin
-        (store:grab!)
-        (let ((res (table-ref t id #f)))
-          (store:release!)
-          (if (pair? res) (car res) fallback)
-        )
-      )
-      #f
-    )))
+#ifdef ANDROID
+  double android_mag_getx(void);
+  double android_mag_gety(void);
+  double android_mag_getz(void);
+#endif
 
-(define (store:instance-clear! store id)
-  (let ((t (store:instancetable store)))
-    (if (and (table? t) (table-ref t id #f))
-      (begin
-        (store:grab!)
-        (table-set! t id)
-        (store:release!)
-        #t
-      )
-      #f
-    )
-  ))
 
-(define (store:instance-timestamp store id)
-  (let ((t (store:instancetable store)))
-    (if (table? t)
-      (begin
-        (store:grab!)
-        (let ((res (table-ref t id #f)))
-          (store:release!)
-          (if (pair? res) (cdr res) 0.)
-        )
-      )
-      (begin
-        (log-error "store:instance-timestamp: unknown store " store)
-        0.
-      ))))
+static double mag_x(void) {
+#ifdef ANDROID
+  return android_mag_getx();
+#elif IOS
+  return ios_mag_getx();
+#else
+  return 0;
+#endif
+}
+
+static double mag_y(void) {
+#ifdef ANDROID
+  return android_mag_gety();
+#elif IOS
+  return ios_mag_gety();
+#else
+  return 0;
+#endif
+}
+
+static double mag_z(void) {
+#ifdef ANDROID
+  return android_mag_getz();
+#elif IOS
+  return ios_mag_getz();
+#else
+  return 0;
+#endif
+}
+
+end-of-c-declare
+)
+
+(define magnetometer-x (c-lambda () double "mag_x"))
+(define magnetometer-y (c-lambda () double "mag_y"))
+(define magnetometer-z (c-lambda () double "mag_z"))
 
 ;; eof

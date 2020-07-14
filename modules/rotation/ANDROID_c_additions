@@ -1,0 +1,26 @@
+// FFI for getting  rotation vector sensor data to Scheme
+static double  rot_q1,  rot_q2,  rot_q3,  rot_q4,  rot_accuracy;
+void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_rotEvent(JNIEnv* e, jobject o, jdouble q1, jdouble q2, jdouble q3, jdouble q4, jdouble accuracy) {
+
+   rot_q1=(double)q1;
+   rot_q2=(double)q2;
+   rot_q3=(double)q3;
+   rot_q4=(double)q4;
+   rot_accuracy=(double)accuracy;
+}
+
+double android_rot_getq1(){
+  return  rot_q1; 
+}
+double android_rot_getq2(){
+  return   rot_q2; 
+}
+double android_rot_getq3(){
+  return   rot_q3; 
+}
+double android_rot_getq4(){
+  return   rot_q4; 
+}
+double android_rot_getaccuracy(){
+  return   rot_accuracy; 
+}

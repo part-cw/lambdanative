@@ -1,0 +1,16 @@
+// Gyroscope
+if (motionmanager_needsinit) {
+  motionManager = [[CMMotionManager alloc] init];
+  motionmanager_needsinit = 0;
+}
+
+if ([motionManager isDeviceMotionAvailable]) {
+  [motionManager setDeviceMotionUpdateInterval: (1.0 / 50)];
+  [motionManager startDeviceMotionUpdatesToQueue: [NSOperationQueue mainQueue] withHandler: ^(CMDeviceMotion *motion, NSError *error) {
+    [[NSUserDefaults standardUserDefaults] setValue: [NSNumber numberWithDouble: motion.attitude.quaternion.x] forKey: @"quaternion_x"];
+    [[NSUserDefaults standardUserDefaults] setValue: [NSNumber numberWithDouble: motion.attitude.quaternion.y] forKey: @"quaternion_y"];
+    [[NSUserDefaults standardUserDefaults] setValue: [NSNumber numberWithDouble: motion.attitude.quaternion.z] forKey: @"quaternion_z"];
+    [[NSUserDefaults standardUserDefaults] setValue: [NSNumber numberWithDouble: motion.attitude.quaternion.w] forKey: @"quaternion_w"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+  }];
+}

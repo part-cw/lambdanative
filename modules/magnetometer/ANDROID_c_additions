@@ -1,0 +1,16 @@
+// FFI for getting magntometer sensor data to Scheme
+static double mag_x, mag_y, mag_z;
+void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_magEvent(JNIEnv* e, jobject o, jdouble x, jdouble y, jdouble z) {
+  mag_x=(double)x;
+  mag_y=(double)y;
+  mag_z=(double)z;
+}
+double android_mag_getx(){
+  return -0.1*mag_x; 
+}
+double android_mag_gety(){
+  return -0.1*mag_y; 
+}
+double android_mag_getz(){
+  return -0.1*mag_z; 
+}

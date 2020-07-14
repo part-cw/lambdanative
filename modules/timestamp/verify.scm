@@ -40,6 +40,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (c-declare #<<end-of-c-declare
 #include <string.h>
+#include <openssl/bio.h>
+#include <openssl/err.h>
 #include <openssl/ts.h>
 void log_c(char *);
 
@@ -57,6 +59,7 @@ static int verify_cb(int ok, X509_STORE_CTX *ctx){
 int hash_tsr_verify(unsigned char *hash, int hash_len, unsigned char *tsr, int tsr_len,
                     unsigned char *CAfile){
   int ret=0;
+  int f=0;
   const unsigned char *tr = tsr;
   TS_RESP *ts_resp =  TS_RESP_new();
   d2i_TS_RESP(&ts_resp, &tr, tsr_len);
@@ -66,23 +69,21 @@ int hash_tsr_verify(unsigned char *hash, int hash_len, unsigned char *tsr, int t
   if (ctx==NULL)
     return 0;
   long imprint_len;
-  ctx->flags |= TS_VFY_IMPRINT;
-  ctx->imprint = hash;
-  ctx->imprint_len = hash_len;
-  if (ctx->imprint==NULL)
+  f |= TS_VFY_IMPRINT;
+  if (TS_VERIFY_CTX_set_imprint(ctx, hash, hash_len)==NULL)
     return 0;
-
-  ctx->flags |= TS_VFY_SIGNATURE;
+  TS_VERIFY_CTX_add_flags(ctx, f | TS_VFY_SIGNATURE);
   X509_STORE *cert_ctx = X509_STORE_new();
   X509_STORE_set_verify_cb(cert_ctx, verify_cb);
   X509_LOOKUP *lookup = X509_STORE_add_lookup(cert_ctx, X509_LOOKUP_file());
   if (lookup == NULL)
     return 0;
+
   int pass = X509_LOOKUP_load_file(lookup, CAfile, X509_FILETYPE_PEM);
   if (!pass)
     return 0;
-  ctx->store = cert_ctx;
-  if (ctx->store==NULL)
+
+  if (TS_VERIFY_CTX_set_store(ctx, cert_ctx)== NULL)
     return 0;
 
   // If this isn't here verification fails ... OpenSSL_add_all_algorithms(); works too
@@ -91,11 +92,10 @@ int hash_tsr_verify(unsigned char *hash, int hash_len, unsigned char *tsr, int t
   if (!ret) {
     BIO *bio = BIO_new(BIO_s_mem());
     ERR_print_errors(bio);
-    char *err = (char *) malloc(bio->num_write + 1);
-    memset(err, 0, bio->num_write + 1);
-    BIO_read(bio, err, bio->num_write);
-    BIO_free (bio);
+    char *err = NULL;
+    size_t len = BIO_get_mem_data (bio, &err);
     log_c(err);
+    BIO_free (bio);
   }
   TS_RESP_free(ts_resp);
   EVP_cleanup();

@@ -1,0 +1,1 @@
+mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_GAME);
