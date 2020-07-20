@@ -78,7 +78,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            path0
            (string-append (system-directory) (system-pathseparator) path0)))
          (fullpath (if has-fullpath? (car fullpath0) path)))
-    (if (file-exists? path)
+    (if (and (file-exists? path) (not (eq? #\~ (string-ref path (- (string-length path) 1)))))
       (let* ((i (file-info path))
              (t (file-info-type i)))
        (cond
