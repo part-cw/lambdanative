@@ -259,6 +259,7 @@ class  xGLSurfaceView extends GLSurfaceView {
     setRenderer(renderer);
   }
   public boolean onTouchEvent(final MotionEvent event) {
+    super.onTouchEvent(event);
     t=0;
     x=(int)event.getX(); y=(int)event.getY();
     switch (event.getAction()&MotionEvent.ACTION_MASK) {
