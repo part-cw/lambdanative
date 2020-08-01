@@ -43,6 +43,14 @@ android*)
     export ANDROID_NDK_HOME=`dirname $XX_ANDROID_NDK_HOME`
     PATH=`ls -d $SYS_PREFIX/android-ndk-*-toolchain/bin`:$PATH
 ;;
+ios*)
+  SDK=`xcrun --sdk iphoneos --show-sdk-path`
+  if [ "$SYS_CPU" = "arm64" ]; then
+    EXTRACONF=ios64-xcrun
+  else
+    EXTRACONF=ios-xcrun
+  fi
+;;
 *)
   EXTRACONF=BSD-generic32
 ;;
