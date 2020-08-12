@@ -56,6 +56,7 @@ android_subst()
   ac_subst ANDROID_XML_RECEIVERS "@$d/ANDROID_xml_receivers"
   ac_subst ANDROID_XML_SERVICES "@$d/ANDROID_xml_services"
   ac_subst ANDROID_ACTIVITY_ATTRIBUTES "@$d/ANDROID_activity_attributes"
+  ac_subst ANDROID_APPLICATION_ATTRIBUTES "@$d/ANDROID_application_attributes"
 }
 android_subst loaders/android
 
