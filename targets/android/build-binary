@@ -215,12 +215,36 @@ ac_output loaders/android/AndroidManifest.xml.in $SYS_TMPDIR/tmp.xml
 cat $SYS_TMPDIR/tmp.xml | sed '/^#/d' > "$tmpdir/AndroidManifest.xml"
 rmifexists $SYS_TMPDIR/tmp.xml
 
-
 echo " => creating payload module.."
 tmpmoddir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 mkdir $tmpmoddir/libpayload
 cp loaders/android/Android.mk.module $tmpmoddir/libpayload/Android.mk
-cp $SYS_PREFIX/lib/libpayload.a $tmpmoddir/libpayload
+
+# Loop over possible architectures and copy their precompiled files
+abis="armeabi-v7a arm64-v8a x86 x86_64"
+APP_ABI=
+for abi in $abis; do
+  case "$abi" in
+  armeabi-v7a)
+    arch=arm
+  ;;
+  arm64-v8a)
+    arch=arm64
+  ;;
+  x86)
+    arch=x86
+  ;;
+  x86_64)
+    arch=x86_64
+  ;;
+  esac
+  lib=$SYS_PREFIXROOT/android/$arch/lib/libpayload.a
+  if [ -f $lib ]; then
+    APP_ABI="$APP_ABI $abi"
+    mkdir $tmpmoddir/libpayload/$abi
+    cp $lib $tmpmoddir/libpayload/$abi
+  fi
+done
 
 echo " => preparing JNI.."
 mkdir $tmpdir/jni
@@ -229,25 +253,12 @@ cp $SYS_PREFIX/include/LNCONFIG.h $tmpdir/jni
 ac_output loaders/android/bootstrap.c.in $tmpdir/jni/bootstrap.c
 cd $tmpdir
 
-APP_ABI=armeabi-v7a
-case "X$ANDROIDARCH" in
-Xx86) 
-  APP_ABI=x86
-;;
-Xmips) 
-  APP_ABI=mips
-;;
-Xarm64)
-  APP_ABI=arm64-v8a
-;;
-esac
-
 if [ $SYS_MODE = "debug" ]; then
   echo " => compiling payload module with debug options.."
-  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build APP_ABI=$APP_ABI NDK_LOG=1 NDK_DEBUG=1"
+  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build APP_ABI=\"$APP_ABI\" NDK_LOG=1 NDK_DEBUG=1"
 else
   echo " => compiling payload module.."
-  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build --silent APP_ABI=$APP_ABI"
+  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build --silent APP_ABI=\"$APP_ABI\""
 fi
 asserterror $?
 
@@ -318,7 +329,7 @@ pkgfile="$tmpdir/bin/$(echo $SYS_APPNAME)-release-unsigned.apk"
 assertfile "$pkgfile"
 
 echo " => transferring application.."
-fnlfile=$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-android${SYS_PLATFORM_VARIANT}.apk
+fnlfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM)-api${ANDROIDAPI}.apk"
 cp $pkgfile $fnlfile
 assertfile $fnlfile
 

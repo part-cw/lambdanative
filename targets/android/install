@@ -38,7 +38,7 @@
 echo "==> attempting to install android application $SYS_APPNAME.."
 adb=`$ANDROIDSDK/platform-tools/adb devices | sed -n '/device\$/p'`
 if [ ! "X$adb" = "X" ]; then
-  pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-android${SYS_PLATFORM_VARIANT}.apk"
+  pkgfile="$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-$(echo $SYS_PLATFORM)-api${ANDROIDAPI}.apk"
   assertfile $pkgfile
   echo "==> Found device, installing android application $SYS_APPNAME.."
   $ANDROIDSDK/platform-tools/adb install -r $pkgfile
