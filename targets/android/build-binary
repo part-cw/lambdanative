@@ -56,7 +56,14 @@ android_subst()
   ac_subst ANDROID_XML_RECEIVERS "@$d/ANDROID_xml_receivers"
   ac_subst ANDROID_XML_SERVICES "@$d/ANDROID_xml_services"
   ac_subst ANDROID_ACTIVITY_ATTRIBUTES "@$d/ANDROID_activity_attributes"
-  ac_subst ANDROID_APPLICATION_ATTRIBUTES "@$d/ANDROID_application_attributes"
+  # This is a terrible hack to solve the problem with android:usesCleartextTraffic
+  # not being available for APIs <23, but being required above it.
+  if [ $SYS_ANDROIDAPI -lt 23 ]; then
+    ac_subst ANDROID_APPLICATION_ATTRIBUTES ""
+    vecho "WARNING: Removed ANDROID_APPLICATION_ATTRIBUTES substitutions for API levels <23"
+  else
+    ac_subst ANDROID_APPLICATION_ATTRIBUTES "@$d/ANDROID_application_attributes"
+  fi
 }
 android_subst loaders/android
 
