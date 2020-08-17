@@ -39,7 +39,7 @@
 . "$SITARASDK/linux-devkit/environment-setup"
 SDKROOT="${SDK_PATH_TARGET}"
 CROSS="${SDK_PATH_NATIVE}/usr/bin/${TOOLCHAIN_PREFIX}"
-SYS_CC=$CROSS"gcc $SYS_DEBUGFLAG -isysroot $SDKROOT -DSITARA -DLINUX $cflag_additions"
+SYS_CXX=$CROSS"g++ $SYS_DEBUGFLAG -isysroot $SDKROOT -DSITARA -DLINUX $cflag_additions"
 SYS_ARCH=`$SYS_CC -dumpmachine`
 SYS_AR=$CROSS"ar"
 SYS_RANLIB=$CROSS"ranlib"
