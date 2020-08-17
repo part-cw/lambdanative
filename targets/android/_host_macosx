@@ -35,10 +35,6 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-if [ "X$ANDROIDARCH" = "X" ]; then
-  ANDROIDARCH=arm
-fi
-
 # search for a working API
 android_apichanged=
 while [ ${ANDROIDAPI} -ge 3 ]; do
@@ -54,7 +50,11 @@ if [ ! "X$android_apichanged" = "X" ]; then
   echo "$android_apichanged"
 fi
 
-android_chainpath=`ls -1d $ANDROIDNDK/toolchains/${ANDROIDARCH}*-4.* | head -n 1`
+if [ "X$ANDROIDARCH" = "Xarm64" ]; then
+  android_chainpath=`ls -1d $ANDROIDNDK/toolchains/aarch64*-4.* | head -n 1`
+else
+  android_chainpath=`ls -1d $ANDROIDNDK/toolchains/${ANDROIDARCH}*-4.* | head -n 1`
+fi
 android_chain=`basename "$android_chainpath"`
 android_ndkver=`basename "$ANDROIDNDK"`
 android_customtoolchain=${SYS_PREFIX}/${android_ndkver}-${ANDROIDARCH}-${ANDROIDAPI}-toolchain

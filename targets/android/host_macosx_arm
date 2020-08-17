@@ -1,0 +1,4 @@
+SYS_CPU=arm
+ANDROIDARCH=arm
+APP_ABI=armeabi-v7a
+. $SYS_ROOT/targets/android/_host_macosx

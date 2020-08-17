@@ -1,3 +1,5 @@
+extern void scm_mediascanner_callback();
+
 void ln_android_finish(){
   JNIEnv *env = GetJNIEnv();
   jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");

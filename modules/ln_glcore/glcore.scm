@@ -376,9 +376,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (if entry (begin
     (if (not (vector-ref entry 0)) (_glCoreTextureInit t))
     (let ((tx (u32vector-ref (vector-ref entry 1) 0)))
-      (if (not (= glCore:curtexture tx))
+      (if (not (= glCore:curtexture tx)) (begin
         (glBindTexture GL_TEXTURE_2D tx)
-        (set! glCore:curtexture tx)))
+        (set! glCore:curtexture tx))))
     ) (log-error "glCoreTextureBind: unbound index " t)
  )))
 
@@ -393,7 +393,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (interp  (vector-ref entry 6))
          (wrap  (vector-ref entry 7)))
     (glGenTextures 1 u32t)  
-    (if (= (u32vector-ref u32t 0) GL_INVALID_VALUE) 
+    (if (or (= (u32vector-ref u32t 0) GL_INVALID_VALUE)
+      ;this is a general check that gl is working in this thread
+            (= (glIsEnabled GL_TEXTURE_2D) 0))  
        (log-error "_glCoreTextureInit: failed to generate texture")
        (begin
          (vector-set! entry 0 #t)  ;; mark as initialized
