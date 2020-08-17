@@ -36,6 +36,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 SYS_CC="gcc $SYS_DEBUGFLAG -DNETBSD -I/usr/X11R7/include $cflag_additions"
+SYS_CXX="g++ $SYS_DEBUGFLAG -DNETBSD -I/usr/X11R7/include $cflag_additions"
 SYS_AR=ar
 SYS_RANLIB=ranlib
 SYS_STRIP=strip
