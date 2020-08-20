@@ -111,6 +111,24 @@ else
     veval "$SYS_HOST_CC $cflag_additions $ldflag_additions -framework ApplicationServices -framework CoreAudio -framework AudioUnit -framework AudioToolbox -framework CoreFoundation -framework CoreServices -framework Foundation -I$SYS_PREFIX/include -L$SYS_PREFIX/lib -DUSECONSOLE -o $apptgtdir/$SYS_APPNAME -lpayload main.c"
   fi
 fi
+
+identity=`security find-identity -v -p codesigning | grep "Developer ID Application" | cut -d\  -f5-`
+echo " => signing application [$identity].."
+if [ "X$identity" == "X" ]; then
+  codesign -fs - $apptgtdir
+  asserterror $?
+else
+  veval "codesign --keychain ~/Library/Keychains/login.keychain -fs $identity $apptgtdir"
+  asserterror $?
+fi
+
+echo " => verifying application signature.."
+checkfail=`codesign --verify $apptgtdir 2>&1`
+if [ "$checkfail" ]; then
+  echo "ERROR: $SYS_APPNAME build was not successful [$checkfail]"
+  exit 1
+fi
+
 cd $here
 assertfile $apptgtdir/$SYS_APPNAME
 rm -rf "$tmpdir"
