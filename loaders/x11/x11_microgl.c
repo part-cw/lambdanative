@@ -430,7 +430,6 @@ int microgl_open(int w, int h, int fs)
 
   XClassHint* classHint = XAllocClassHint();
   classHint->res_name = SYS_APPNAME;
-  classHint->res_class = SYS_APPNAME;
   XSetClassHint( Dpy, win.Win, classHint);
   XFree(classHint);
 
