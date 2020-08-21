@@ -428,6 +428,12 @@ int microgl_open(int w, int h, int fs)
   XStoreName( Dpy, win.Win, SYS_APPNAME);
   XSetIconName( Dpy, win.Win, SYS_APPNAME);
 
+  XClassHint* classHint = XAllocClassHint();
+  classHint->res_name = SYS_APPNAME;
+  classHint->res_class = SYS_APPNAME;
+  XSetClassHint( Dpy, win.Win, classHint);
+  XFree(classHint);
+
 // clear garbage fast?
   glViewport(0,0,w,h);
   glClearColor(0,0,0,0);

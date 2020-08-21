@@ -55,6 +55,13 @@ cd "$desktop"
 unzip -oqq $pkgfile
 cd "${SYS_APPNAME}${SYS_APPFIX}"
 mkdir -p log
+
+dsktop_file="$SYS_PREFIX/$SYS_APPNAME/$SYS_APPNAME.desktop"
+if [ -f $dsktop_file ]; then
+	echo "==> attempting to copy .desktop file to $HOME/.local/share/applications/"
+	cp $dsktop_file "$HOME/.local/share/applications/"
+fi
+
 cd "$here"
 echo "==> Starting application.."
 eval "$exefile"
