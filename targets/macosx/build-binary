@@ -114,11 +114,12 @@ fi
 
 identity=`security find-identity -v -p codesigning | grep "Developer ID Application" | cut -d\  -f5-`
 echo " => signing application [$identity].."
+
 if [ "X$identity" == "X" ]; then
-  codesign -fs - $apptgtdir
+  codesign -i $SYS_PACKAGE_DOT -fs - $apptgtdir
   asserterror $?
 else
-  veval "codesign --keychain ~/Library/Keychains/login.keychain -fs $identity $apptgtdir"
+  veval "codesign --keychain ~/Library/Keychains/login.keychain -i $SYS_PACKAGE_DOT -fs $identity --options=runtime $apptgtdir"
   asserterror $?
 fi
 
