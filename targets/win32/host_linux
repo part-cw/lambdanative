@@ -39,6 +39,7 @@ win_sysroot=`ls -1d ${WIN32SDK}/i?86-*mingw32* | head -n 1`
 win_cross=`ls -1 ${WIN32SDK}/bin/*mingw32*-gcc | head -n 1 | sed 's/gcc$//'`
 
 SYS_CC=$win_cross"gcc $SYS_DEBUGFLAG -isysroot $win_sysroot -DWIN32 -DWINVER=0x0501 $cflag_additions"
+SYS_CXX=$win_cross"g++ $SYS_DEBUGFLAG -isysroot $win_sysroot -DWIN32 -DWINVER=0x0501 $cflag_additions"
 SYS_AR=$win_cross"ar"
 SYS_RANLIB=$win_cross"ranlib"
 SYS_STRIP=$win_cross"strip"

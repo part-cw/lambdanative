@@ -1022,6 +1022,7 @@ make_setup_target()
   ac_subst SYS_HOSTPREFIX
   ac_subst SYS_GSC
   ac_subst SYS_CC
+  ac_subst SYS_CXX
   ac_subst SYS_AR
   ac_subst SYS_RANLIB
   ac_subst SYS_STRIP
