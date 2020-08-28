@@ -1,6 +1,6 @@
 #!/bin/sh
 # LambdaNative - a cross-platform Scheme framework
-# Copyright (c) 2009-2013, University of British Columbia
+# Copyright (c) 2009-2020, University of British Columbia
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or
@@ -64,5 +64,5 @@ SYS_APPFIX=.app
 SYS_LD=ld
 
 SYS_CC="$SYS_CC $cflag_additions"
-
+SYS_CXX=`echo $SYS_CC | sed 's/gcc/g++/'`
 #eof
