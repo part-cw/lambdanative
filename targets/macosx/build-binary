@@ -81,7 +81,10 @@ if [ `is_gui_app` = "yes" ]; then
   echo " => transferring icon.."
   cp "$iconimg" $apptgtdir/Icon.icns
   echo " => preparing plist.."
-  cp loaders/macosx/Info.plist $apptgtdir
+  configsrc=loaders/macosx/Info.plist.in
+  ac_output $configsrc tmp.xml
+  assertfile tmp.xml
+  cat tmp.xml | sed '/^#/d' > "$apptgtdir/Info.plist"
 fi
 
 make_soundfile_macosx()
