@@ -1,6 +1,6 @@
 --- configure.in.orig	2016-10-29 18:23:04.000000000 -0700
 +++ configure.in	2018-10-31 17:52:16.000000000 -0700
-@@ -258,8 +258,14 @@
+@@ -258,8 +258,17 @@
                elif xcodebuild -version -sdk macosx10.12 Path >/dev/null 2>&1 ; then
                   mac_version_min="-mmacosx-version-min=10.4"
                   mac_sysroot="-isysroot `xcodebuild -version -sdk macosx10.12 Path`"
@@ -10,8 +10,11 @@
 +              elif xcodebuild -version -sdk macosx10.14 Path >/dev/null 2>&1 ; then
 +                 mac_version_min="-mmacosx-version-min=10.4"
 +                 mac_sysroot="-isysroot `xcodebuild -version -sdk macosx10.14 Path`"
++              elif xcodebuild -version -sdk macosx10.15 Path >/dev/null 2>&1 ; then
++                 mac_version_min="-mmacosx-version-min=10.4"
++                 mac_sysroot="-isysroot `xcodebuild -version -sdk macosx10.15 Path`"
                else
 -                 AC_MSG_ERROR([Could not find 10.5 to 10.12 SDK.])
-+                 AC_MSG_ERROR([Could not find 10.5 to 10.14 SDK.])
++                 AC_MSG_ERROR([Could not find 10.5 to 10.15 SDK.])
                fi
             esac
