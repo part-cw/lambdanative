@@ -8,7 +8,7 @@ EXTRACONF=
 if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
   EXTRACONF=--host=$SYS_ARCH
 fi
-if [ $SYS_PLATFORM = android ]; then
+if [ $SYS_PLATFORM = android -o  $SYS_PLATFORM = win32 ]; then
   EXTRACONF="$EXTRACONF --without-vpx"
 fi
 

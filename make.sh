@@ -37,7 +37,7 @@
 
 # make_debug=yes
 
-dmsg_make() 
+dmsg_make()
 {
   if [ ! "X$scm_debug" = X ]; then
     echo "MAKE_DEBUG: $@"
@@ -154,7 +154,7 @@ resetstate()
        ;;
     esac
   fi
-} 
+}
 
 #################################
 # misc file and directory support
@@ -184,7 +184,7 @@ newersourceindir()
   dir=`dirname $1`
   srcfiles=
   for l in $languages; do
-    srcfiles="$srcfiles "`ls -1 $dir/*.$l 2> /dev/null` 
+    srcfiles="$srcfiles "`ls -1 $dir/*.$l 2> /dev/null`
   done
   for src in $srcfiles; do
     if `test "$src" -nt "$tgt"`; then
@@ -221,7 +221,7 @@ newerindir()
 
 ac_cache="$SYS_TMPDIR/tmp.subst"
 
-ac_reset() 
+ac_reset()
 {
   if [ -f $ac_cache ]; then
     rm $ac_cache
@@ -236,7 +236,7 @@ ac_subst()
     substcmd="$ac_tool $ac_cache $1 \"`eval $paramcmd`\""
   else
     substcmd="$ac_tool $ac_cache $1 \"$2\""
-  fi 
+  fi
   eval $substcmd
 }
 
@@ -246,7 +246,7 @@ ac_output()
   infile=`echo "${1}" | sed 's/\.in$//'`.in
   if [ "X$2" = "X" ]; then
     outfile=$1
-  else 
+  else
     outfile=$2
   fi
   assertfile $infile "substitution source file $infile not found"
@@ -310,7 +310,7 @@ filter_entries()
     if [ ! "X$includes" = "X" ]; then
       included=no
       for tmp in `echo "$includes" | tr '+' ' '`; do
-        if [ "X$tmp" = "X$filter" ]; then 
+        if [ "X$tmp" = "X$filter" ]; then
           included=yes
         fi
       done
@@ -322,7 +322,7 @@ filter_entries()
     if [ ! "X$excludes" = "X" ]; then
       excluded=no
       for tmp in `echo "$excludes" | tr '!' ' '`; do
-        if [ "X$tmp" = "X$filter" ]; then 
+        if [ "X$tmp" = "X$filter" ]; then
           excluded=yes
         fi
       done
@@ -531,7 +531,7 @@ make_textures()
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/textures
   mkdir -p $tgtdir
   srcdir="$appsrcdir/textures"
-  if [ -d $srcdir ]; then 
+  if [ -d $srcdir ]; then
     make_texturedir "$srcdir" "main-"
   fi
   for m in $modules; do
@@ -550,15 +550,15 @@ make_fontfile()
   if [ `isnewer $srcfile $incfile` = "yes" ]; then
     while read line; do
       fline=`echo "$line" | sed '/^#/d'`
-      if [ "$fline" ]; then 
+      if [ "$fline" ]; then
         fontname=`echo "$fline" | cut -f 1 -d " "`
         font=`locatefile fonts/$fontname`
-        assertfile $font 
+        assertfile $font
         bits=`echo "$fline" | cut -f 2 -d " "`
-        if [ "X$bits" = "X7" ]; then 
+        if [ "X$bits" = "X7" ]; then
            bits=`locatefile fonts/ascii7.set`
         else
-          if [ "X$bits" = "X8" ]; then 
+          if [ "X$bits" = "X8" ]; then
             bits=`locatefile fonts/ascii8.set`
           else
             bits=`locatefile fonts/$bits`
@@ -585,7 +585,7 @@ make_fonts()
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/fonts
   mkdir -p $tgtdir
   srcfile="$appsrcdir/FONTS"
-  if [ -f $srcfile ]; then 
+  if [ -f $srcfile ]; then
     make_fontfile "$srcfile" "main-"
   fi
   for m in $modules; do
@@ -638,9 +638,9 @@ make_string_latex()
 cat > tmp.tex << __EOF
 \batchmode
 \documentclass{article}
-\makeatletter 
-\renewcommand{\Large}{\@setfontsize\Large{$size}{$size}} 
-\makeatother 
+\makeatletter
+\renewcommand{\Large}{\@setfontsize\Large{$size}{$size}}
+\makeatother
 \usepackage{fontspec}
 \usepackage{xunicode}
 %\fontspec [ Path = $fontpath ]{$fontname}
@@ -681,7 +681,7 @@ make_stringfile()
   cat $srcfile | sed '/^#/d' > $SYS_TMPDIR/tmp.STRINGS
   echo >> $SYS_TMPDIR/tmp.STRINGS
   while read -r fline; do
-    if [ "$fline" ]; then 
+    if [ "$fline" ]; then
       fontname=`eval "getparam 1 $fline"`
       font=`locatefile fonts/$fontname`
       assertfile $font
@@ -693,7 +693,7 @@ make_stringfile()
       string_srcs="$string_srcs $scmfile"
       if [ `isnewer $srcfile $scmfile` = "yes" ]; then
          echo " => $name.."
-         if [ "$USE_XETEX" = "yes" ]; then 
+         if [ "$USE_XETEX" = "yes" ]; then
            make_string_latex $font $size "$label" $name $scmfile $opt
          else
            make_string_gd $font $size "$label" $name $scmfile
@@ -712,7 +712,7 @@ make_strings()
   tgtdir=$SYS_PREFIXROOT/build/$SYS_APPNAME/strings
   mkdir -p $tgtdir
   srcfile="$appsrcdir/STRINGS"
-  if [ -f $srcfile ]; then 
+  if [ -f $srcfile ]; then
     make_stringfile "$srcfile" "main-"
   fi
   for m in $modules; do
@@ -757,7 +757,7 @@ make_sounds()
   make_soundfile=$1
   echo " => processing sounds needed for $SYS_APPNAME.."
   srcdir="$appsrcdir/sounds"
-  if [ -d "$srcdir" ]; then 
+  if [ -d "$srcdir" ]; then
     make_sounddir "$srcdir" $make_soundfile
   fi
   for m in $modules; do
@@ -790,10 +790,10 @@ add_items()
         xis=`locatefile $itemname/$newi/$capitemname silent`
         if [ ! "X$xis" = "X" ] && [ -f "$xis" ]; then
           add_items `cat "$xis"`
-        fi 
+        fi
       fi
     else
-      if [ $newi = $optnewi ]; then 
+      if [ $newi = $optnewi ]; then
         assert "$newi in $itemname not found"
       else
         echo "INFO: optional $newi in $itemname not found, skipping"
@@ -842,8 +842,8 @@ make_setup_profile()
   SYS_PREFIXROOT=`pwd`"-cache"
   if [ ! -d $SYS_PREFIXROOT ]; then
     case $SYS_HOSTPLATFORM in
-      macosx) 
-        SYS_PREFIXROOT=$HOME/Library/Caches/lambdanative 
+      macosx)
+        SYS_PREFIXROOT=$HOME/Library/Caches/lambdanative
       ;;
       *)
         if [ "X$XDG_CACHE_HOME" = "X" ]; then
@@ -875,7 +875,7 @@ make_setup_profile()
   fi
   mkdir -p $SYS_PREFIXROOT/packages
   mkdir -p $SYS_PREFIXROOT/build
-  SYS_ANDROIDAPI=$ANDROIDAPI 
+  SYS_ANDROIDAPI=$ANDROIDAPI
   SYS_ANDROIDSDK=$ANDROIDSDK
   SYS_ANDROIDNDK=$ANDROIDNDK
   SYS_ANDROIDARCH=$ANDROIDARCH
@@ -887,7 +887,7 @@ make_setup_profile()
   echo $SYS_BUILDHASH
   SYS_BUILDEPOCH=`date +"%s"`
   # build the subtool
-  if ! `test -x  $SYS_HOSTPREFIX/bin/subtool` || 
+  if ! `test -x  $SYS_HOSTPREFIX/bin/subtool` ||
        `test tools/subtool/subtool.c -nt $SYS_HOSTPREFIX/bin/subtool`; then
     flags=
     if [ $SYS_HOSTPLATFORM = win32 ]; then
@@ -935,7 +935,7 @@ make_setup_profile()
       libraries=$libraries" "`cat "$xlibs"`
     fi
     appsrcdirs="$appsrcdirs plugins/$p"
-  done 
+  done
   libraries=`filter_entries $SYS_PLATFORM $libraries`
   tool_libraries=
   if [ "$SYS_HOSTPLATFORM" = "$SYS_PLATFORM" ]; then
@@ -1127,7 +1127,7 @@ make_install_tool()
   if [ -x "$binary" ]; then
     echo "==> installing $SYS_APPNAME as a lambdanative tool"
     cp "$binary" $SYS_PREFIX/bin
-  else 
+  else
     echo "Error: No binary found [$binary]"
   fi
   setstate
@@ -1239,7 +1239,7 @@ make_library()
   assertfile "$libdir"
   if [ -f "$libdir/LIB_DEPENDS" ]; then
     dlibs=`cat $libdir/LIB_DEPENDS`
-    filtered_dlibs=`filter_entries $SYS_PLATFORM $dlibs` 
+    filtered_dlibs=`filter_entries $SYS_PLATFORM $dlibs`
     for dlib in $filtered_dlibs; do
       make_library $dlib "(dependency)"
     done
@@ -1255,12 +1255,12 @@ make_library()
     else
       ac_output build.sh
       quiet=
-      if [ "X$SYS_VERBOSE" = "X" ]; then  
+      if [ "X$SYS_VERBOSE" = "X" ]; then
         quiet="> /dev/null 2> /dev/null"
       fi
       veval "$SYS_ENV sh build.sh $quiet"
       rm build.sh
-    fi 
+    fi
     cd $here
   fi
 }
@@ -1348,9 +1348,9 @@ make_toolcheck()
 {
   setstate TOOLCHECK
   echo "==> checking for required tools.."
-  # basic 
+  # basic
   asserttool grep wget zip tar sed tr cut tail head find
-  # language 
+  # language
   asserttool autoconf make gcc patch
   if [ `is_gui_app` = "yes" -a ! -f $SYS_TMPDIR/.use_xetex ]; then
     make_xelatexcheck
@@ -1386,13 +1386,13 @@ make_lntoolcheck()
       . $SYS_TMPDIR/config.cache
       rmifexists $SYS_TMPDIR/tmp.subst
       make_setup silent
-      make_libraries     
+      make_libraries
       make_payload
       make_executable
       make_install_tool
       SYS_CPU=$tmp_sys_cpu
     fi
-  done 
+  done
   if [ -f $SYS_TMPDIR/tmp.config.cache ]; then
     mv $SYS_TMPDIR/tmp.config.cache $SYS_TMPDIR/config.cache
     . $SYS_TMPDIR/config.cache
@@ -1415,7 +1415,7 @@ make_gcc()
   gcc_ball="gcc-${gcc_version}.tar.gz"
   gcc_prefix=$SYS_PREFIXROOT/gcc/$SYS_HOSTPLATFORM/gcc-${gcc_version}
   tgt=$SYS_PREFIXROOT/packages/$gcc_ball
-  if [ ! -f "$tgt" ]; then  
+  if [ ! -f "$tgt" ]; then
     echo " => downloading $gcc_ball.."
     veval "wget ftp://ftp.gnu.org/gnu/gcc/gcc-${gcc_version}/$gcc_ball -O $tgt"
   fi
@@ -1449,7 +1449,7 @@ smoke_result()
    echo "$1 $2" >> $SYS_TMPDIR/smoke.result
 }
 
-smoke_one() 
+smoke_one()
 {
   smoker=$1
   echo "SMOKING $smoker.."
@@ -1470,7 +1470,7 @@ smoke_one()
   echo "=> Configured $SYS_APPNAME for platform $SYS_PLATFORM."
   echo "=> Building $SYS_APPNAME.."
   make_setup silent
-  make_libraries     
+  make_libraries
   if [ `is_gui_app` = "yes" ]; then
     make_textures
     make_fonts
@@ -1487,7 +1487,7 @@ smoke_one()
      smoke_result $smoker "**FAIL"
      echo "ERROR: make failed"
      return
-  fi  
+  fi
   appdir=`ls -1d $SYS_HOSTPREFIX/${SYS_APPNAME}${SYS_APPFIX}`
   appexe=`ls -1 $SYS_HOSTPREFIX/${SYS_APPNAME}${SYS_APPFIX}/${SYS_APPNAME}*`
   appexelocal="./"`basename $appexe`
@@ -1648,7 +1648,7 @@ if [ "X$make_argument" = "Xall" ] && [ -f "targets/$SYS_PLATFORM/make_argument" 
 fi
 
 case "$make_argument" in
-clean) 
+clean)
   rm -rf $SYS_TMPDIR/tmp.?????? 2> /dev/null
   make_clean
 ;;

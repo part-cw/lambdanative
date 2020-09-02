@@ -30,11 +30,7 @@ compile_payload_scm()
     scm_coresrcs=
     scm_auxsrcs=
     for m in $modules; do
-      if [ $m = "syntax-case" ]; then
-        scm_modsrc="$SYS_HOSTPREFIX/lib/syntax-case.scm"
-      else
-        scm_modsrc=`locatefile modules/$m/$m.scm silent`
-      fi
+      scm_modsrc=`locatefile modules/$m/$m.scm silent`
       if [ `string_contains "$scm_coremodules" " $m "` = yes ]; then
         scm_coresrcs="$scm_coresrcs $scm_modsrc"
       else
@@ -64,19 +60,6 @@ compile_payload_scm()
     payload_cdefs="$payload_cdefs -D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
     if [ `is_standalone_app` = "yes" ]; then
        payload_cdefs="$payload_cdefs -DSTANDALONE"
-    fi
-    #--------
-    # syntax-case special-case
-    if [ `string_contains "$modules" "syntax-case"` = yes ]; then
-      if [ ! -f ${SYS_HOSTPREFIX}/lib/gambcext.tmp ]; then
-        echo " => compiling syntax-case dynamic library.."
-        veval "$SYS_GSC -dynamic -o  ${SYS_HOSTPREFIX}/lib/gambcext.o1 ${SYS_HOSTPREFIX}/lib/syntax-case.scm"
-        mv ${SYS_HOSTPREFIX}/lib/gambcext.o1 ${SYS_HOSTPREFIX}/lib/gambcext.tmp
-      fi
-      assertfile ${SYS_HOSTPREFIX}/lib/gambcext.tmp
-      cp ${SYS_HOSTPREFIX}/lib/gambcext.tmp ${SYS_HOSTPREFIX}/lib/gambcext.o1
-    else
-      rmifexists ${SYS_HOSTPREFIX}/lib/gambcext.o1
     fi
     #--------
     # compile scheme source files
