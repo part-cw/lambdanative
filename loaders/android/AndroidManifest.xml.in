@@ -4,8 +4,10 @@
           package="@SYS_PACKAGE_DOT@"
           android:versionCode="@SYS_APPVERSIONCODE@"
           android:versionName="@SYS_APPVERSION@">
-  <uses-sdk android:minSdkVersion="@SYS_ANDROIDAPI@"/>
+  <uses-sdk android:minSdkVersion="@SYS_ANDROIDAPI@"
+            android:targetSdkVersion="28" />
   <application android:label="@string/app_name"
+               @ANDROID_APPLICATION_ATTRIBUTES@
                android:icon="@drawable/icon">
     <activity android:name="@SYS_APPNAME@"
               @ANDROID_ACTIVITY_ATTRIBUTES@

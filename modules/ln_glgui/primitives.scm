@@ -224,6 +224,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              (goy (if g (flo (glgui:glyph-offsety g)) 0.)))
         (loop (flmax above goy)  (flmin below (fl- goy gh)) (cdr cs))))))
 
+; returns a fixnum width of the string, rounded up
 (define (glgui:stringwidth txt fnt)
   (let loop ((x 0.)(cs (glgui:string->glyphs txt)))
     (if (fx= (length cs) 0) (fix (ceiling x))
@@ -231,6 +232,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              (ax (if glyph (flo (glgui:glyph-advancex glyph)) 0.)))
         (loop (fl+ x ax) (cdr cs))))))
 
+; returns a list of floats widths of the glyphs in the string
 (define (glgui:stringwidth-lst txt fnt)
   (let loop ((cs (glgui:string->glyphs txt)) (ret '()))
     (if (fx= (length cs) 0) ret
@@ -295,7 +297,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (if (fx= i (length strsplit))
           (if (fx> newstr_len 0) (append strlist (list newstr)) strlist)
           (let* ((buildstr (string-append (list-ref strsplit i) (if (and (not lastspace) (fx= i (- (length strsplit) 1))) "" " ")))
-                 (buildstr_len (fix (glgui:stringwidth buildstr fnt)))
+                 (buildstr_len (glgui:stringwidth buildstr fnt))
                  (wrap? (fx> (fx+ newstr_len buildstr_len) (fix w))))
             (if (and wrap? (fx> (fx+ buildstr_len) (fix w)))
               ;; Special case where a single word is too long to fit on a line, cut word up
@@ -304,7 +306,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                      (lastindex (- (length cutword) 1))
                      (lines (append prevline (list-head cutword lastindex)))
                      (nextstr (list-ref cutword lastindex)))
-                (loop (fx+ i 1) (append strlist lines) nextstr (fix (glgui:stringwidth nextstr fnt))))
+                (loop (fx+ i 1) (append strlist lines) nextstr (glgui:stringwidth nextstr fnt)))
               (loop (fx+ i 1) (append strlist (if wrap? (list (if (fx> (string-length newstr) 0) (string-append (substring newstr 0 (fx- (string-length newstr) 1)) "\n") "")) '()))
                   (string-append (if wrap? "" newstr) buildstr)
                   (fx+ buildstr_len (if wrap? 0 newstr_len))))))))
@@ -313,13 +315,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (string-split-width-break str w fnt)
   (let* ((ws (glgui:stringwidth-lst str fnt))
          (stindex (- (length ws) 1)))
-    (let loop ((wleft (sum (list-head ws stindex))) (i stindex))
-       (if (and (fx> (fix wleft) w) (fx> i 0))
+    (let loop ((wleft (sum ws)) (i stindex))
+       (if (and (fx> (fix (ceiling wleft)) w) (fx> i 0))
          (loop (- wleft (list-ref ws (- i 1))) (- i 1))
          (let* ((buildstr (substring str 0 i))
-                (buildstr_len (fix (glgui:stringwidth buildstr fnt)))
+                (buildstr_len (glgui:stringwidth buildstr fnt))
                 (nextstr (substring str i (string-length str)))
-                (nextstr_len (fix (glgui:stringwidth nextstr fnt))))
+                (nextstr_len (glgui:stringwidth nextstr fnt)))
            (append (list buildstr) (if (and (fx> nextstr_len w) (fx> (string-length nextstr) 1)) (string-split-width-break nextstr w fnt) (list nextstr)))))))
 )
 
@@ -339,11 +341,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (if (fx> newstr_len 0) (append strlist (list newstr)) strlist)
                                            ;; Don't add a space, if it is the last word and there is no end space
           (let* ((buildstr (string-append (if (fx= i 0) "" " ") (list-ref strsplit i)))
-                 (buildstr_len (fix (glgui:stringwidth buildstr fnt)))
+                 (buildstr_len (glgui:stringwidth buildstr fnt))
                  (wrap? (fx> (fx+ newstr_len buildstr_len) (fix w))))
-            (loop (fx- i 1) (append strlist (if wrap? (list newstr) '()))
-                (string-append buildstr (if wrap? "" newstr))
-                (fx+ buildstr_len (if wrap? 0 newstr_len)))))))
+            (if (and wrap? (fx> (fx+ buildstr_len) (fix w)))
+              ;; Special case where a single word is too long to fit on a line, cut word up
+              (let* ((prevline (if (fx> (string-length newstr) 0) (list newstr) (list)))
+                     (cutword (string-split-width-break-rtl buildstr (fix w) fnt))
+                     (lastindex (- (length cutword) 1))
+                     (lines (append prevline (list-head cutword lastindex)))
+                     (nextstr (list-ref cutword lastindex)))
+                (loop (fx- i 1) (append strlist lines) nextstr (glgui:stringwidth nextstr fnt)))
+              (loop (fx- i 1) (append strlist (if wrap? (list newstr) '()))
+                  (string-append buildstr (if wrap? "" newstr))
+                  (fx+ buildstr_len (if wrap? 0 newstr_len))))))))
    ))
+
+(define (string-split-width-break-rtl str w fnt)
+  (let* ((ws (glgui:stringwidth-lst str fnt))
+         (stindex (- (length ws) 1)))
+    (let loop ((wright (sum ws)) (i 0))
+       (if (and (fx> (fix (ceiling wright)) w) (fx< i stindex))
+         (loop (- wright (list-ref ws i)) (+ i 1))
+         (let* ((buildstr (substring str i (string-length str)))
+                (buildstr_len (glgui:stringwidth buildstr fnt))
+                (nextstr (substring str 0 i))
+                (nextstr_len (glgui:stringwidth nextstr fnt)))
+           (append (list buildstr) (if (and (fx> nextstr_len w) (fx> (string-length nextstr) 1)) (string-split-width-break-rtl nextstr w fnt) (list nextstr)))))))
+)
 
 ;; eof

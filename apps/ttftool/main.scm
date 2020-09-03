@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (c-declare  #<<end-of-c-declare
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <gd.h>
 
 int stringfile(char *fnt, char *fntsize, char *str, char *fname)

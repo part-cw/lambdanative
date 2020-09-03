@@ -55,6 +55,7 @@ make_sounds make_soundfile_linux
 
 echo " => compiling application.."
 tgt=$apptgtdir/$SYS_APPNAME$SYS_EXEFIX
+
 if [ `is_standalone_app` = "yes" ]; then
   veval "$SYS_CC -I$SYS_PREFIX/include \
     $cflag_additions -DUSECONSOLE -o $tgt \
@@ -79,6 +80,23 @@ if [ ! "X$SYS_MODE" = "Xdebug" ]; then
   $SYS_STRIP $tgt
   asserterror $?
 fi
+make_desktop_file_linux()
+{
+  tgt_dsktop="$apptgtdir/$SYS_APPNAME.desktop"
+  echo "[Desktop Entry]" >> $tgt_dsktop
+  echo "Version=1.0" >> $tgt_dsktop
+  echo "Type=Application" >> $tgt_dsktop
+  echo "Name=$SYS_APPNAME" >> $tgt_dsktop
+  echo "Exec=$tgt" >> $tgt_dsktop
+  if [ `is_gui_app` = "yes" ]; then
+    echo "Terminal=false" >> $tgt_dsktop
+  else
+    echo "Terminal=true" >> $tgt_dsktop
+  fi
+  echo "Icon=$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork.png" >> $tgt_dsktop
+  chmod 777 $tgt_dsktop
+}
+make_desktop_file_linux
 cd $here
 
 echo " => cleaning up.."

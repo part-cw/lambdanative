@@ -3,6 +3,7 @@ SYS_PROFILE="your profile name here"
 # organization identifiers, e.g. yourdomainhere.com:
 SYS_ORGTLD="com"
 SYS_ORGSLD="yourdomainhere"
+SYS_ORGEMAIL="youremail@yourdomainhere.com"
 # iOS release (SYS_IOSRELCERT) and development (SYS_IOSDEVCERT) certificate Common Names:
 SYS_IOSRELCERT="iPhone Distribution: Your iOS profile identifier (YYYYYYYYYY)"
 SYS_IOSDEVCERT="iPhone Developer: Your iOS profile identifier (XXXXXXXXXX)"

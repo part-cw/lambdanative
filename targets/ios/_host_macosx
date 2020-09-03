@@ -52,6 +52,7 @@ fi
 assertfile $SYS_CC
 SYS_CC="$SYS_CC $SYS_DEBUGFLAG -isysroot $IOSSDK -DIOS -DIPHONE -miphoneos-version-min=$SYS_IOSVERSION"
 SYS_CC="$SYS_CC -fPIC -fsigned-char -fomit-frame-pointer $cflag_additions"
+SYS_CXX=`echo $SYS_CC | sed 's/clang/clang++/'`
 SYS_AR="$ios_cross/ar"
 if [ ! -f $SYS_AR ]; then
   SYS_AR=`xcrun -find -sdk iphoneos ar`

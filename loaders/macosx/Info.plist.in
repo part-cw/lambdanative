@@ -6,6 +6,16 @@
         <string>English</string>
         <key>NSPrincipalClass</key>
         <string>NSApplication</string>
+        <key>CFBundleExecutable</key>
+        <string>@SYS_APPNAME@</string>
+        <key>CFBundleIdentifier</key>
+        <string>@SYS_PACKAGE_DOT@</string>
+        <key>CFBundleShortVersionString</key>
+        <string>@SYS_APPVERSION@</string>
+        <key>CFBundlePackageType</key>
+        <string>APPL</string>
+        <key>CFBundleVersion</key>
+        <string>@SYS_APPVERSION@</string>
         <key>CFBundleIconFile</key>
         <string>Icon.icns</string>
 </dict>

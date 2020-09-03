@@ -161,6 +161,10 @@ ___result = GL_CLAMP_TO_EDGE;
 
 (define glPopMatrix (c-lambda () void "glPopMatrix"))
 
+(define glIsEnabled (c-lambda (int) int "glIsEnabled"))
+
+(define glGetError (c-lambda () int "glGetError"))
+
 (define (glTranslatef a b c) 
   ((c-lambda (float float float) void "glTranslatef") 
      (flo a) (flo b) (flo c)))

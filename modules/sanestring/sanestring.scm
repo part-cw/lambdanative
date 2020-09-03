@@ -102,7 +102,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; human weight in kg possibly with a decimal point
 (define (sanestring-weight-kg s)
-  (pregexp-match "^(?x: ([2-9] | [1-9][0-9] | [1-2][0-9][0-9] )( () | \\.[0-9]+ )?  )$" s))
+  (pregexp-match "^(?x: ([0-9] | [1-9][0-9] | [1-2][0-9][0-9] )( () | \\.[0-9]+ )?  )$" s))
 
 (define (sanestring-alpha s)
   (pregexp-match "^([a-zA-Z\\s]+)$" s))
