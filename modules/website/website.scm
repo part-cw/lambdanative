@@ -124,8 +124,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (else "application/force-download")
   ))
 
-(define (website:server db port)
-  (let ((accept-port (open-tcp-server (list server-address: "*" port-number: port reuse-address: #t))))
+(define (website:server db port address)
+  (let ((accept-port (open-tcp-server (list server-address: address port-number: port reuse-address: #t))))
     (let loop () (let ((connection (read accept-port)))
         (if (not (eof-object? connection))
             (begin (thread-start! (make-safe-thread (lambda ()
@@ -267,9 +267,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define website:db (make-table))
 (define (website-getdb) website:db)
 
-(define (website-serve db port) (thread-start! (make-safe-thread (lambda ()
+(define (website-serve db port . bind) (thread-start! (make-safe-thread (lambda ()
   (current-exception-handler log:exception-handler)
-  (website:server (if db db website:db) port)))))
+  (website:server (if db db website:db) port (if (or (null? bind) (not (eq? (car bind) 'localonly))) "*" "127.0.0.1"))))))
 
 (define (website-addhook db document proc)
   (table-set! (if db db website:db)
