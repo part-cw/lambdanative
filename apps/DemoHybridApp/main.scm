@@ -132,7 +132,7 @@ EOJS
             ;; Include Javascript here, inside the body
             (script (@ (type "text/javascript")) ,index-js)))))))))
 
-(website-serve #f 8080)
+(website-serve #f 8080 'localonly)
 
 ;; Back-end respond to GET here
 (website-addhook #f "/calculate-rect.cgi" (lambda (x)

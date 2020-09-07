@@ -79,6 +79,11 @@ for m in $modules; do
 done
 android_subst `locatedir apps/$SYS_APPNAME`
 
+if [ "X$ANDROIDSDK" = "X" ]; then
+  echo "ERROR: \$ANDROIDSDK is empty - ensure your SETUP file returns a valid sdk path."
+  exit
+fi
+
 use_android_tool=yes
 
 if [ -x "$ANDROIDSDK/tools/bin/avdmanager" ]; then

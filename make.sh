@@ -385,7 +385,7 @@ compile_payload()
   #--------
   # add the library objects
   for payload_lib in $payload_libs; do
-    tmp_objs=`ls -1 $SYS_PREFIX/build/$payload_lib/*.o | tr '\n' ' '`
+    tmp_objs=`ls -1 $SYS_PREFIX/build/$payload_lib/*.o 2> /dev/null | tr '\n' ' '`
     payload_objs="$tmp_objs $payload_objs"
   done
   #--------
