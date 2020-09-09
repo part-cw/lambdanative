@@ -162,6 +162,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (glCoreColor color)
   (apply glCoreTextureDraw (append (list x y w h) (cddr img) (list 0.))))
 
+;;draw a pixmap centered inside a box bw x bh with size nw x nh. set nw x h to #f for no scaling or either one for original ratio
+(define (glgui:draw-pixmap-center-stretch x y bw bh nw nh img color)
+  (let* ((sw (car img))
+         (sh (cadr img))
+         (scx (if nw (/ nw sw) (if nh (/ nh sh) 1))) ;;scale 
+         (scy (if nh (/ nh sh) scx))
+         (iw (if nw nw (fix (* sw scx))))
+         (ih (if nh nh (fix (* sh scy))))
+         (x0 (+ x (* (- bw iw)  0.5)))
+         (y0 (+ y (* (- bh ih)  0.5))))
+  (glCoreColor color)
+  (apply glCoreTextureDraw (append (list x0 y0 iw ih) (cddr img) (list 0.)))))
+
 ;; ----------
 ;; strings (aka pixmap lists)
 
