@@ -951,7 +951,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (idname (string-append (if (string? id) id (if (symbol? id) (symbol->string id) "")) ":filename"))
          (filename (glgui:uiform-arg args 'filename (uiget idname #f)))
          (tmpimagepath (if filename (string-append (system-directory) (system-pathseparator) "tmp_" filename) #f))
-         (newfilepath  (if filename (string-append (system-directory) (system-pathseparator) filename) #f))
+         (newfilepath  (if filename (string-append (system-directory)(system-pathseparator) (uiget 'camerafolder ".") (system-pathseparator) filename) #f))
          (photo-taken (and tmpimagepath (file-exists? tmpimagepath)))
          (photo-saved (and newfilepath  (file-exists? newfilepath)))
          (loc (glgui:uiform-arg args 'location 'db))
@@ -973,9 +973,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (gdImageDestroy gd)
               (gdImageDestroy gd2)
               (gdFileClose fd)
-              (if img (xxset loc filename img)) img)
-            (xxget loc filename #f))))
-         (h (if img (cadr img) (fix (* w scale))))
+              (if img (uiset filename img))
+               img)
+            (uiget filename #f))))
+         (hp (if img (cadr img) (fix (* w scale))))
+         (wp (if img (car img) (fix (* w scale)))) ;;width pic/img
+         (wi (fix (* w scale 0.5))) ;;width icon
          (fnt (uiget 'fnt)))
       (if photo-taken (begin
         (if archive (begin
@@ -985,14 +988,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (delete-file tmpimagepath)))
       (if (uiget 'sanemap) (begin
         (if img
-            (glgui:draw-pixmap-center x y w h img White)
+            (begin (glgui:draw-pixmap-center x y w hp img White) (glgui:draw-pixmap-center (fix (- (+ x (* w 0.5)) (* wi 0.5))) y wi wi  camera.img White)
+              (glgui:draw-text-center x (- y (* 0.5 hp) 12) w hp (glgui:uiform-arg args 'defaultcomplete "Photo taken.\n Tap camera symbol to take a different photo") fnt White))
             (begin
-              (glgui:draw-box (+ x (* w 0.1)) y (* w scale) h (uiget 'color-default))
-              (glgui:draw-text-center x y w h (if (or photo-taken photo-saved)
-                (glgui:uiform-arg args 'defaultcomplete "Photo taken.\n Tap here to take a different photo")
-                (glgui:uiform-arg args 'default "Tap to take photo")) fnt White)))
+              (glgui:draw-box (- (+ x (* w 0.5)) (* wp 0.5)) y wp hp (uiget 'color-default))
+              (glgui:draw-pixmap-center (- (+ x (* w 0.5)) (* wi 0.5))  y wi wi  camera.img White)
+              (glgui:draw-text-center x (- y (* 0.5 hp) 12) w hp (if (or photo-taken photo-saved)
+                (glgui:uiform-arg args 'defaultcomplete "Photo taken.\n Tap camera symbol to take a different photo")
+                (glgui:uiform-arg args 'default "Tap camera symbol to take photo")) fnt White)))
       ))
-    h
+    hp
   ))
 
 (define (glgui:uiform-camera-input type x y . args)
@@ -1820,8 +1825,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'keypad-height 350
      'keypad-shift 0
      'keypad-on #f
-     'modal-height 200
+     'camerafolder "camera"    
      ;; -------------
+     ;;modal
+     'modal-height 200                          
+      ;; -------------
      ;; colors
      'color-low     (color-fade Black 0.5)
      'color-default (color-fade White 0.3)
@@ -1846,6 +1854,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    )))
    (set! uiform:g g)
    (set! uiform:wgt wgt)
+   (let ((camdir (string-append (system-directory) (system-pathseparator) (uiget 'camerafolder "."))))
+   (if (not (file-exists? camdir)) (create-directory camdir)))
    wgt))
 
 (define (sa-database->file t file)
