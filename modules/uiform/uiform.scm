@@ -1684,6 +1684,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (content-height (uiget 'contenth))
          (header-height (uiget 'headerh))
          (visible-height (- h header-height))
+         (maintime (uiget 'maintime #f))
          (fnt (uiget 'fnt))
          (hfnt (uiget 'hdfnt fnt))
          (bfnt (uiget 'btfnt fnt))
@@ -1735,10 +1736,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                   (loop (cdr titles)))))))))
 
    ;; Date and time on all but the first page
-   (if (not (eq? (uiget 'page) 'main))
+   (if (and (uiget 'disptime #t) (or maintime (not (eq? (uiget 'page) 'main))))
      (let* ((dateh (glgui:fontheight fnt))
             (datey (+ y h (- (+ dateh 3)))))
-       (glgui:draw-text-left (+ x 3) datey (* 0.95 w) dateh (seconds->string ##now "%Y-%m-%d") fnt White)
+       (glgui:draw-text-left (+ x 13) datey (* 0.95 w) dateh (seconds->string ##now "%Y-%m-%d") fnt White)
        (glgui:draw-text-center (+ x (* 0.25 w)) datey (* 0.5 w) dateh (seconds->string ##now "%H:%M") fnt White)))
 
    (if (and (list? prv) (> (length prv) 1))
@@ -1791,8 +1792,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (content-height (uiget 'contenth))
           (allvis (>= visible-height content-height)))
      (if (not allvis) 
-       (let* ((sw 5.) (sx (+ x w -6.))
-              (sh (* visible-height (/ visible-height content-height)))
+       (let* ((sbw (uiget 'sbwidth 5.))
+              (sw sbw) (sx (- (+ x w) (+ sbw 1)))
+              (sh (* visible-height (/ visible-height content-height) 0.5))
               (sy (- (+ y visible-height) (if (= sh visible-height) 0. (* (- visible-height sh) (/ ofs (- content-height visible-height)))) sh)))
        (glgui:draw-box sx sy sw sh (color-fade White 0.2))
      )))
