@@ -1548,6 +1548,66 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      ))
    ))
  ))
+ 
+ 
+;; timer module  with option tu run  up or down, and alarm event. optional reset on tap
+(define (glgui:uiform-timer-draw x y w . args)
+  (let* ((bfnt (uiget 'btfnt))
+         (now ##now)
+         (loc (glgui:uiform-arg args 'location 'db))
+         (charged (glgui:uiform-arg args 'charged #t))
+         (autostart (glgui:uiform-arg args 'autostart #t))
+         (countdown (glgui:uiform-arg args 'countdown #f)) ;; run forward or backward
+         (settime (glgui:uiform-arg args 'settime (if countdown 60 #f)))  ;; starttime for countdown or alarmtime for forwars (set to #f for infinite)
+         (starttime  (stget 'timerstime  #f))  ;stores initialization time in sec
+         (stime (if starttime starttime now))
+         (etime  (if countdown (- settime (- now stime)) (- now stime))) ;;stores elapsed time in sec
+         (string (if (> etime 0.) (seconds->string (fix etime) "%M:%S")  "00:00"))
+         (fntsize (glgui:uiform-arg args 'size 'normal))
+         (fnt (cond
+                 ((and (eq? fntsize 'normal) bfnt) bfnt)
+                 ((eq? fntsize 'normal) (uiget 'fnt))
+                 ((eq? fntsize 'small) (uiget 'smlfnt))
+                 ((eq? fntsize 'big) (uiget 'bigfnt))
+                 ((eq? fntsize 'header) (uiget 'hdfnt))))
+         (fnth (glgui:fontheight fnt))
+         (color (glgui:uiform-arg args 'color White))
+         (bgcolor (glgui:uiform-arg args 'button-color (uiget 'background-color Black)))
+         (alarmcolor (glgui:uiform-arg args 'alarm-color Red))
+         (alarm (if (or (< etime 0) (if settime (> etime settime) #t)) #t #f ))
+         (h (+ fnth 40))
+         (wt (* (string-length string) fnth 1.5))
+         )
+    
+     (if (and autostart (not starttime)) (stset 'timerstime stime)) ;;initialize
+     (stset 'timeralarm (if alarm #t #f))
+     (if (uiget 'sanemap) (begin
+         (glgui:draw-box (+ x (* (- w (* wt 2)) 0.5)) y (* wt 2) h (if alarm alarmcolor bgcolor))
+         (glgui:draw-text-center x (+ y (* (- h fnth) 0.5)) w fnth string fnt color) 
+             
+       ))
+     h
+  ))
+
+(define (glgui:uiform-timer-input type x y . args)
+ (let* ((now ##now)
+        (charged (glgui:uiform-arg args 'charged #t))
+        (enablereset (glgui:uiform-arg args 'reset #f));;reset timer on click
+        ) 
+      (if charged (stset  'timerstime now))
+      (if enablereset (stset  'timerstime now)) 
+ ))
+  
+(define (uiform-timer-reset)
+    (stset  'timerstime #f)
+    )
+(define (uiform-timer-start)
+    (stset  'timerstime ##now)
+    )
+
+  
+  (uiform-register 'timer glgui:uiform-timer-draw glgui:uiform-timer-input)
+ 
 
 ;; -------------
 ;; uiform
