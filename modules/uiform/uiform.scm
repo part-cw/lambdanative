@@ -1018,6 +1018,67 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (uiform-register 'camera glgui:uiform-camera-draw glgui:uiform-camera-input)
 
 ;; --------------
+;; video support
+
+(define (glgui:uiform-video-draw x y w . args)
+  (let* ((id (glgui:uiform-arg args 'id ""))
+         (idname (string-append (if (string? id) id (if (symbol? id) (symbol->string id) "")) ":filename"))
+         (filename (glgui:uiform-arg args 'filename (uiget idname #f)))
+         (tmpimagepath (if filename (string-append (system-directory) (system-pathseparator) "tmp_" filename) #f))
+         (newfilepath  (if filename (string-append (system-directory)(system-pathseparator) (uiget 'camerafolder ".") (system-pathseparator) filename) #f))
+         (video-taken (and tmpimagepath (file-exists? tmpimagepath)))
+         (video-saved (and newfilepath  (file-exists? newfilepath)))
+         (loc (glgui:uiform-arg args 'location 'db))
+         (archive (glgui:uiform-arg args 'archive #t))
+         (scale (glgui:uiform-arg args 'scale 0.8))
+         (display (glgui:uiform-arg args 'display #t))
+         (high-quality (glgui:uiform-arg args 'high-quality #t))
+         (hp  (fix (* w scale)))
+         (wp (fix (* w scale))) ;;width pic/img
+         (wi (fix (* w scale 0.5))) ;;width icon
+         (fnt (uiget 'fnt)))
+      (if video-taken (begin
+        (if archive (begin
+          (if (file-exists? newfilepath) (delete-file newfilepath))
+          (copy-file tmpimagepath newfilepath)
+          (xxset loc id newfilepath)))
+        (delete-file tmpimagepath)))
+      (if (uiget 'sanemap) (begin
+        (if video-taken
+            (begin 
+              (glgui:draw-box (- (+ x (* w 0.5)) (* wp 0.5)) y wp hp Green)
+              (glgui:draw-pixmap-center (fix (- (+ x (* w 0.5)) (* wi 0.5))) y wi wi  camera.img White)
+              (glgui:draw-text-center x (- y (* 0.5 hp) 12) w hp (glgui:uiform-arg args 'defaultcomplete "Video taken.\n Tap camera symbol to take a different video") fnt White))
+            (begin
+              (glgui:draw-box (- (+ x (* w 0.5)) (* wp 0.5)) y wp hp (if (or video-taken video-saved) Green (uiget 'color-default)))
+              (glgui:draw-pixmap-center (- (+ x (* w 0.5)) (* wi 0.5))  y wi wi  camera.img White)
+              (glgui:draw-text-center x (- y (* 0.5 hp) 12) w hp (if (or video-taken video-saved)
+                (glgui:uiform-arg args 'defaultcomplete "Video taken.\n Tap camera symbol to take a different photo")
+                (glgui:uiform-arg args 'default "Tap camera symbol to take video")) fnt White)))
+      ))
+    hp
+  ))
+
+(define (glgui:uiform-video-input type x y . args)
+  (let* ((id (glgui:uiform-arg args 'id ""))
+         (loc (glgui:uiform-arg args 'location 'db))
+         (duration (glgui:uiform-arg args 'duration #f))
+         (filename (glgui:uiform-arg args 'filename (string-append (if (string? id) id (if (symbol? id) (symbol->string id) "")) "_" (seconds->string ##now "%Y%d%m_%H%M%S")  ".mp4")))
+         (idname (string-append (if (string? id) id (if (symbol? id) (symbol->string id) "")) ":filename"))
+         (imagepath (if filename (string-append (system-directory) (system-pathseparator) "tmp_" filename) #f)))
+    (if imagepath (begin
+      (uiset idname filename)
+      (if (file-exists? imagepath) (delete-file imagepath))
+      (if (number? duration) (camera-set-max-length-video duration) (camera-set-max-length-video 0))
+      (camera-start-video imagepath)
+      (uiset 'nodemap '())
+      (if (file-exists? imagepath)(xxset loc id imagepath))
+    ))
+ ))
+
+(uiform-register 'video glgui:uiform-video-draw glgui:uiform-video-input)
+
+;; --------------
 ;; radio box
 
 (define (glgui:uiform-radio-draw x y w . args)
