@@ -691,7 +691,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    ;; Check if we have a valid connection before proceeding
     (if (and filesize (fx= (httpsclient-open host redcap:port) 1))
       (let* ((fh (open-input-file filename))
-             (buflen 100000)
+             (buflen (if (or (string=? (system-platform) "android") (string=? (system-platform) "ios")) 50000 (if (string=? (system-platform) "linux") 100000 100000 )))
              (buf (make-u8vector buflen)))
         (httpsclient-send request-vector)
         (let loop ((start 0) (end (if (fx< filesize buflen) filesize buflen)))
@@ -704,6 +704,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 (httpsclient-send (subu8vector buf 0 len))
                 (httpsclient-send buf)
               )
+              (thread-sleep! 0.0001) ;;allow GUI to refresh
               (loop (fx+ start buflen) (if (fx> (fx+ start (fx* 2 buflen)) filesize) filesize (fx+ end buflen)))
             )
           )
