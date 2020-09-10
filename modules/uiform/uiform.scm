@@ -867,10 +867,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((h (glgui:uiform-arg args 'height 32))
         (defcolor (uiget 'color-default)) 
         (selcolor (uiget 'color-select)) 
+        (display (glgui:uiform-arg args 'display #f))
+        (fnt (uiget 'fnt))
         (value (min 1. (max 0. (glgui:uiform-arg args 'value 0.)))))
      (if (uiget 'sanemap) (begin 
        (glgui:draw-box (+ x (* w 0.1)) y (* w 0.8) h defcolor)
        (glgui:draw-box (+ x (* w 0.1) 2) (+ y 2) (* value (- (* w 0.8) 4.)) (- h 4) selcolor)
+       (if display (glgui:draw-text-center x (+ y 3) w (- h 10) (string-append (number->string (fix (* 100 value))) "%") fnt White))
      ))
   h))
 
@@ -948,7 +951,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (idname (string-append (if (string? id) id (if (symbol? id) (symbol->string id) "")) ":filename"))
          (filename (glgui:uiform-arg args 'filename (uiget idname #f)))
          (tmpimagepath (if filename (string-append (system-directory) (system-pathseparator) "tmp_" filename) #f))
-         (newfilepath  (if filename (string-append (system-directory) (system-pathseparator) filename) #f))
+         (newfilepath  (if filename (string-append (system-directory)(system-pathseparator) (uiget 'camerafolder ".") (system-pathseparator) filename) #f))
          (photo-taken (and tmpimagepath (file-exists? tmpimagepath)))
          (photo-saved (and newfilepath  (file-exists? newfilepath)))
          (loc (glgui:uiform-arg args 'location 'db))
@@ -970,9 +973,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (gdImageDestroy gd)
               (gdImageDestroy gd2)
               (gdFileClose fd)
-              (if img (xxset loc filename img)) img)
-            (xxget loc filename #f))))
-         (h (if img (cadr img) (fix (* w scale))))
+              (if img (uiset filename img))
+               img)
+            (uiget filename #f))))
+         (hp (if img (cadr img) (fix (* w scale))))
+         (wp (if img (car img) (fix (* w scale)))) ;;width pic/img
+         (wi (fix (* w scale 0.5))) ;;width icon
          (fnt (uiget 'fnt)))
       (if photo-taken (begin
         (if archive (begin
@@ -982,14 +988,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (delete-file tmpimagepath)))
       (if (uiget 'sanemap) (begin
         (if img
-            (glgui:draw-pixmap-center x y w h img White)
+            (begin (glgui:draw-pixmap-center x y w hp img White) (glgui:draw-pixmap-center (fix (- (+ x (* w 0.5)) (* wi 0.5))) y wi wi  camera.img White)
+              (glgui:draw-text-center x (- y (* 0.5 hp) 12) w hp (glgui:uiform-arg args 'defaultcomplete "Photo taken.\n Tap camera symbol to take a different photo") fnt White))
             (begin
-              (glgui:draw-box (+ x (* w 0.1)) y (* w scale) h (uiget 'color-default))
-              (glgui:draw-text-center x y w h (if (or photo-taken photo-saved)
-                (glgui:uiform-arg args 'defaultcomplete "Photo taken.\n Tap here to take a different photo")
-                (glgui:uiform-arg args 'default "Tap to take photo")) fnt White)))
+              (glgui:draw-box (- (+ x (* w 0.5)) (* wp 0.5)) y wp hp (uiget 'color-default))
+              (glgui:draw-pixmap-center (- (+ x (* w 0.5)) (* wi 0.5))  y wi wi  camera.img White)
+              (glgui:draw-text-center x (- y (* 0.5 hp) 12) w hp (if (or photo-taken photo-saved)
+                (glgui:uiform-arg args 'defaultcomplete "Photo taken.\n Tap camera symbol to take a different photo")
+                (glgui:uiform-arg args 'default "Tap camera symbol to take photo")) fnt White)))
       ))
-    h
+    hp
   ))
 
 (define (glgui:uiform-camera-input type x y . args)
@@ -1008,6 +1016,67 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ))
 
 (uiform-register 'camera glgui:uiform-camera-draw glgui:uiform-camera-input)
+
+;; --------------
+;; video support
+
+(define (glgui:uiform-video-draw x y w . args)
+  (let* ((id (glgui:uiform-arg args 'id ""))
+         (idname (string-append (if (string? id) id (if (symbol? id) (symbol->string id) "")) ":filename"))
+         (filename (glgui:uiform-arg args 'filename (uiget idname #f)))
+         (tmpimagepath (if filename (string-append (system-directory) (system-pathseparator) "tmp_" filename) #f))
+         (newfilepath  (if filename (string-append (system-directory)(system-pathseparator) (uiget 'camerafolder ".") (system-pathseparator) filename) #f))
+         (video-taken (and tmpimagepath (file-exists? tmpimagepath)))
+         (video-saved (and newfilepath  (file-exists? newfilepath)))
+         (loc (glgui:uiform-arg args 'location 'db))
+         (archive (glgui:uiform-arg args 'archive #t))
+         (scale (glgui:uiform-arg args 'scale 0.8))
+         (display (glgui:uiform-arg args 'display #t))
+         (high-quality (glgui:uiform-arg args 'high-quality #t))
+         (hp  (fix (* w scale)))
+         (wp (fix (* w scale))) ;;width pic/img
+         (wi (fix (* w scale 0.5))) ;;width icon
+         (fnt (uiget 'fnt)))
+      (if video-taken (begin
+        (if archive (begin
+          (if (file-exists? newfilepath) (delete-file newfilepath))
+          (copy-file tmpimagepath newfilepath)
+          (xxset loc id newfilepath)))
+        (delete-file tmpimagepath)))
+      (if (uiget 'sanemap) (begin
+        (if video-taken
+            (begin 
+              (glgui:draw-box (- (+ x (* w 0.5)) (* wp 0.5)) y wp hp Green)
+              (glgui:draw-pixmap-center (fix (- (+ x (* w 0.5)) (* wi 0.5))) y wi wi  camera.img White)
+              (glgui:draw-text-center x (- y (* 0.5 hp) 12) w hp (glgui:uiform-arg args 'defaultcomplete "Video taken.\n Tap camera symbol to take a different video") fnt White))
+            (begin
+              (glgui:draw-box (- (+ x (* w 0.5)) (* wp 0.5)) y wp hp (if (or video-taken video-saved) Green (uiget 'color-default)))
+              (glgui:draw-pixmap-center (- (+ x (* w 0.5)) (* wi 0.5))  y wi wi  camera.img White)
+              (glgui:draw-text-center x (- y (* 0.5 hp) 12) w hp (if (or video-taken video-saved)
+                (glgui:uiform-arg args 'defaultcomplete "Video taken.\n Tap camera symbol to take a different photo")
+                (glgui:uiform-arg args 'default "Tap camera symbol to take video")) fnt White)))
+      ))
+    hp
+  ))
+
+(define (glgui:uiform-video-input type x y . args)
+  (let* ((id (glgui:uiform-arg args 'id ""))
+         (loc (glgui:uiform-arg args 'location 'db))
+         (duration (glgui:uiform-arg args 'duration #f))
+         (filename (glgui:uiform-arg args 'filename (string-append (if (string? id) id (if (symbol? id) (symbol->string id) "")) "_" (seconds->string ##now "%Y%d%m_%H%M%S")  ".mp4")))
+         (idname (string-append (if (string? id) id (if (symbol? id) (symbol->string id) "")) ":filename"))
+         (imagepath (if filename (string-append (system-directory) (system-pathseparator) "tmp_" filename) #f)))
+    (if imagepath (begin
+      (uiset idname filename)
+      (if (file-exists? imagepath) (delete-file imagepath))
+      (if (number? duration) (camera-set-max-length-video duration) (camera-set-max-length-video 0))
+      (camera-start-video imagepath)
+      (uiset 'nodemap '())
+      (if (file-exists? imagepath)(xxset loc id imagepath))
+    ))
+ ))
+
+(uiform-register 'video glgui:uiform-video-draw glgui:uiform-video-input)
 
 ;; --------------
 ;; radio box
@@ -1540,6 +1609,66 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      ))
    ))
  ))
+ 
+ 
+;; timer module  with option tu run  up or down, and alarm event. optional reset on tap
+(define (glgui:uiform-timer-draw x y w . args)
+  (let* ((bfnt (uiget 'btfnt))
+         (now ##now)
+         (loc (glgui:uiform-arg args 'location 'db))
+         (charged (glgui:uiform-arg args 'charged #t))
+         (autostart (glgui:uiform-arg args 'autostart #t))
+         (countdown (glgui:uiform-arg args 'countdown #f)) ;; run forward or backward
+         (settime (glgui:uiform-arg args 'settime (if countdown 60 #f)))  ;; starttime for countdown or alarmtime for forwars (set to #f for infinite)
+         (starttime  (stget 'timerstime  #f))  ;stores initialization time in sec
+         (stime (if starttime starttime now))
+         (etime  (if countdown (- settime (- now stime)) (- now stime))) ;;stores elapsed time in sec
+         (string (if (> etime 0.) (seconds->string (fix etime) "%M:%S")  "00:00"))
+         (fntsize (glgui:uiform-arg args 'size 'normal))
+         (fnt (cond
+                 ((and (eq? fntsize 'normal) bfnt) bfnt)
+                 ((eq? fntsize 'normal) (uiget 'fnt))
+                 ((eq? fntsize 'small) (uiget 'smlfnt))
+                 ((eq? fntsize 'big) (uiget 'bigfnt))
+                 ((eq? fntsize 'header) (uiget 'hdfnt))))
+         (fnth (glgui:fontheight fnt))
+         (color (glgui:uiform-arg args 'color White))
+         (bgcolor (glgui:uiform-arg args 'button-color (uiget 'background-color Black)))
+         (alarmcolor (glgui:uiform-arg args 'alarm-color Red))
+         (alarm (if (or (< etime 0) (if settime (> etime settime) #t)) #t #f ))
+         (h (+ fnth 40))
+         (wt (* (string-length string) fnth 1.5))
+         )
+    
+     (if (and autostart (not starttime)) (stset 'timerstime stime)) ;;initialize
+     (stset 'timeralarm (if alarm #t #f))
+     (if (uiget 'sanemap) (begin
+         (glgui:draw-box (+ x (* (- w (* wt 2)) 0.5)) y (* wt 2) h (if alarm alarmcolor bgcolor))
+         (glgui:draw-text-center x (+ y (* (- h fnth) 0.5)) w fnth string fnt color) 
+             
+       ))
+     h
+  ))
+
+(define (glgui:uiform-timer-input type x y . args)
+ (let* ((now ##now)
+        (charged (glgui:uiform-arg args 'charged #t))
+        (enablereset (glgui:uiform-arg args 'reset #f));;reset timer on click
+        ) 
+      (if charged (stset  'timerstime now))
+      (if enablereset (stset  'timerstime now)) 
+ ))
+  
+(define (uiform-timer-reset)
+    (stset  'timerstime #f)
+    )
+(define (uiform-timer-start)
+    (stset  'timerstime ##now)
+    )
+
+  
+  (uiform-register 'timer glgui:uiform-timer-draw glgui:uiform-timer-input)
+ 
 
 ;; -------------
 ;; uiform
@@ -1555,6 +1684,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (content-height (uiget 'contenth))
          (header-height (uiget 'headerh))
          (visible-height (- h header-height))
+         (maintime (uiget 'maintime #f))
          (fnt (uiget 'fnt))
          (hfnt (uiget 'hdfnt fnt))
          (bfnt (uiget 'btfnt fnt))
@@ -1606,10 +1736,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                   (loop (cdr titles)))))))))
 
    ;; Date and time on all but the first page
-   (if (not (eq? (uiget 'page) 'main))
+   (if (and (uiget 'disptime #t) (or maintime (not (eq? (uiget 'page) 'main))))
      (let* ((dateh (glgui:fontheight fnt))
             (datey (+ y h (- (+ dateh 3)))))
-       (glgui:draw-text-left (+ x 3) datey (* 0.95 w) dateh (seconds->string ##now "%Y-%m-%d") fnt White)
+       (glgui:draw-text-left (+ x 13) datey (* 0.95 w) dateh (seconds->string ##now "%Y-%m-%d") fnt White)
        (glgui:draw-text-center (+ x (* 0.25 w)) datey (* 0.5 w) dateh (seconds->string ##now "%H:%M") fnt White)))
 
    (if (and (list? prv) (> (length prv) 1))
@@ -1662,8 +1792,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (content-height (uiget 'contenth))
           (allvis (>= visible-height content-height)))
      (if (not allvis) 
-       (let* ((sw 5.) (sx (+ x w -6.))
-              (sh (* visible-height (/ visible-height content-height)))
+       (let* ((sbw (uiget 'sbwidth 5.))
+              (sw sbw) (sx (- (+ x w) (+ sbw 1)))
+              (sh (* visible-height (/ visible-height content-height) 0.5))
               (sy (- (+ y visible-height) (if (= sh visible-height) 0. (* (- visible-height sh) (/ ofs (- content-height visible-height)))) sh)))
        (glgui:draw-box sx sy sw sh (color-fade White 0.2))
      )))
@@ -1817,8 +1948,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      'keypad-height 350
      'keypad-shift 0
      'keypad-on #f
-     'modal-height 200
+     'camerafolder "camera"    
      ;; -------------
+     ;;modal
+     'modal-height 200                          
+      ;; -------------
      ;; colors
      'color-low     (color-fade Black 0.5)
      'color-default (color-fade White 0.3)
@@ -1843,6 +1977,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    )))
    (set! uiform:g g)
    (set! uiform:wgt wgt)
+   (let ((camdir (string-append (system-directory) (system-pathseparator) (uiget 'camerafolder "."))))
+   (if (not (file-exists? camdir)) (create-directory camdir)))
    wgt))
 
 (define (sa-database->file t file)
