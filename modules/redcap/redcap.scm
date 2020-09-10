@@ -247,7 +247,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                      (cond
                        ((not (list? datalist))
                          ;; If no list returned, json not properly formatted
-                         (log-error "REDCap error: Incomplete json")
+                         (log-error "REDCap error: Incomplete json" output)
                          #f)
                        ((and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
                          ;; If the first entry is an error, then log it and return false
@@ -445,6 +445,52 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
 )
 
+
+(define (redcap-export-project host token . xargs)
+         ;; See if format was specified in xargs, use json by default
+  (let* ((format (redcap:arg 'format xargs "json"))
+         (request (string-append "format=" format "&returnFormat=json&content=project&token=" token))
+         (request-str (redcap:make-request-str host request)))
+    ;; Check if we have a valid connection before proceeding
+    (if (fx= (httpsclient-open host redcap:port) 1)
+      (begin
+        (httpsclient-send (string->u8vector request-str))
+        (redcap:data-clear!)
+        (let loop ((n #f))
+          (if (and n (fx<= n 0))
+            (begin
+              (httpsclient-close)
+              (let ((output (cadr (redcap:split-headerbody (redcap:data->string)))))
+                 (if (string=? format "json")
+                   ;; If format is json, turn into a list, otherwise just return output
+                   (let ((datalist (redcap:jsonstr->list output)))
+                     (cond
+                       ((not (list? datalist))
+                         ;; If no list returned, json not properly formatted
+                         (log-error "REDCap error: Incomplete json" output)
+                         #f)
+                       ((and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
+                         ;; If the first entry is an error, then log it and return false
+                         (log-error "REDCap error: " (cdaar datalist))
+                          #f)
+                       (else datalist)))
+                   output))
+            ) (begin
+             (if (and n (> n 0))
+               (redcap:data-append! (subu8vector redcap:buf 0 n)))
+            (loop (httpsclient-recv redcap:buf))
+          ))
+        )
+      )
+      (begin
+        (log-warning "Cannot export from REDCap, no valid connection")
+        (httpsclient-close)
+        #f ;; Denote difference between no data and no connection
+      )
+    )
+  )
+)
+
 ;; Get the next instance index given a repeatable event or instrument
 ;; For events, supplying only the event name will suffice
 ;; For instruments, if the project is longitudinal,
@@ -492,7 +538,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                       (loop (cdr entries))))) (fx+ maxinstance 1))
            (begin (log-warning "Exported REDcap record has no repeated entry") 1))
        (begin (log-error "Cannot retrieve instance number from REDCap.") #f)))
-
 )
 
 
