@@ -125,15 +125,15 @@ fi
 mkdir -p "$tmpdir"
 
 if [ $use_android_tool = no ]; then
-  ANDROIDSDKTARGET=`$ANDROIDSDK/tools/bin/avdmanager list target | grep "^id:" | grep "android-$ANDROIDAPI" | cut -f 2 -d " "`
+  ANDROIDSDKTARGET=`$ANDROIDSDK/tools/bin/avdmanager list target | grep "^id:" | grep "android-$SYS_ANDROIDAPI" | cut -f 2 -d " "`
 else
-  ANDROIDSDKTARGET=`$ANDROIDSDK/tools/android list targets | grep "^id:" | grep "android-$ANDROIDAPI" | cut -f 2 -d " "`
+  ANDROIDSDKTARGET=`$ANDROIDSDK/tools/android list targets | grep "^id:" | grep "android-$SYS_ANDROIDAPI" | cut -f 2 -d " "`
 fi
 if [ "X$ANDROIDSDKTARGET" = "X" ]; then
-  echo "ERROR: API $ANDROIDAPI not a target."
+  echo "ERROR: API $SYS_ANDROIDAPI not a target."
   exit
 else
-  echo " => using target $ANDROIDSDKTARGET [API $ANDROIDAPI]"
+  echo " => using target $ANDROIDSDKTARGET [API $SYS_ANDROIDAPI]"
 fi
 
 if [ $use_android_tool = yes ]; then
