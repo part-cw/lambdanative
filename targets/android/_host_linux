@@ -67,7 +67,7 @@ if [ ! -d $android_customtoolchain ]; then
 fi
 assertfile $android_customtoolchain
 android_sysroot="$android_customtoolchain/sysroot"
-android_cross=`ls -1 $android_customtoolchain/bin/*-gcc | sed 's/gcc$//'`
+android_cross=`ls -1 $android_customtoolchain/bin/*-gcc 2> /dev/null | sed 's/gcc$//'`
 LN_C_compiler=clang
 SYS_CC=$android_cross"$LN_C_compiler $SYS_DEBUGFLAG -fPIC -DANDROID -D__ANDROID_API__=${ANDROIDAPI} -isysroot $android_sysroot $cflag_additions"
 SYS_CXX=$android_cross"${LN_C_compiler}++ $SYS_DEBUGFLAG -fPIC -DANDROID -D__ANDROID_API__=${ANDROIDAPI} -isysroot $android_sysroot $cflag_additions"

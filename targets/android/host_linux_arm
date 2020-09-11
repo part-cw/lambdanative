@@ -1,4 +1,5 @@
 SYS_CPU=arm
 ANDROIDARCH=arm
 APP_ABI=armeabi-v7a
+APP_ABIs="$APP_ABIs $APP_ABI"
 . $SYS_ROOT/targets/android/_host_linux
