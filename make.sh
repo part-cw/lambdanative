@@ -981,6 +981,9 @@ make_setup_target()
   if [ ! "X$SYS_CPU" = "X" ]; then
     SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM/$SYS_CPU"
   fi
+  if [ ! "X$SYS_PLATFORM_VARIANT" = "X" ]; then
+    SYS_PREFIX="$SYS_PREFIX${SYS_PLATFORM_VARIANT}"
+  fi
   apptgtdir=$SYS_PREFIX/${SYS_APPNAME}${SYS_APPFIX}
   mkdir -p $SYS_PREFIX/bin
   mkdir -p $SYS_PREFIX/lib
@@ -1644,15 +1647,15 @@ fi
 if [ $SYS_PLATFORM = android ]; then
   if [ -f $SYS_TMPDIR/config_android.cache ]; then
     . $SYS_TMPDIR/config_android.cache
-    if [ ! "X$SYS_ANDROIDAPI" = "X$ANDROID_API" ] || [ ! "X$SYS_ANDROIDNDK" = "X$ANDROID_NDK" ]; then
+    if [ ! "X$SYS_ANDROIDNDK" = "X$ANDROID_NDK" ]; then
       echo " **-----------------------------------------------------------------------**"
-      echo " ** NEW ANDROID CONFIGURATION DETECTED - at the moment, this *will* require"
-      echo "    scrubbing android's build cache as otherwise you get unlinkable binaries"
-      echo "    and errors. You would do so like this:"
-      echo "    /bin/rm $SYS_PREFIXROOT/$SYS_PLATFORM/arm"
-      echo "    /bin/rm $SYS_PREFIXROOT/$SYS_PLATFORM/arm64"
-      echo "    /bin/rm $SYS_PREFIXROOT/$SYS_PLATFORM/x86"
-      echo "    /bin/rm $SYS_PREFIXROOT/$SYS_PLATFORM/x86_64"
+      echo " ** NEW ANDROID CONFIGURATION DETECTED:"
+      echo "    The NDK changed from $ANDROID_NDK to $SYS_ANDROIDNDK" !
+      echo "    If you experience problems with linking, you'll need to clean and rebuild:"
+      echo "      /bin/rm -r $SYS_PREFIXROOT/$SYS_PLATFORM/arm${SYS_PLATFORM_VARIANT}"
+      echo "      /bin/rm -r $SYS_PREFIXROOT/$SYS_PLATFORM/arm64${SYS_PLATFORM_VARIANT}"
+      echo "      /bin/rm -r $SYS_PREFIXROOT/$SYS_PLATFORM/x86${SYS_PLATFORM_VARIANT}"
+      echo "      /bin/rm -r $SYS_PREFIXROOT/$SYS_PLATFORM/x86_64${SYS_PLATFORM_VARIANT}"
       echo " **-----------------------------------------------------------------------**"
     fi
   fi

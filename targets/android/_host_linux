@@ -49,6 +49,7 @@ assertfile "$android_APIdir"
 if [ ! "X$android_apichanged" = "X" ]; then
   echo "$android_apichanged"
 fi
+SYS_PLATFORM_VARIANT="-api${ANDROIDAPI}"
 
 if [ "X$ANDROIDARCH" = "Xarm64" ]; then
   android_chainpath=`ls -1d $ANDROIDNDK/toolchains/aarch64*-4.* | head -n 1`
