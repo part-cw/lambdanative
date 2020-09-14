@@ -3,7 +3,7 @@
 # ------------------------------------
 ## location of android SDK and NDK (linux or mac)
 ANDROIDSDK=`find /usr/local/android-sdk-*  -maxdepth 0 -print 2> /dev/null | tail -n 1`
-ANDROIDNDK=`find /usr/local/android-ndk-*  -maxdepth 0 -print  2> /dev/null| tail -n 1`
+ANDROIDNDK=`find /usr/local/android-ndk-* /Applications/AndroidNDK*/Contents/NDK -maxdepth 0 -print 2> /dev/null | tail -n 1`
 # minimum version to support (a matching target must be installed)
 ANDROIDAPI=21
 #android target cpu is now handled by target/android/host_* definitions
