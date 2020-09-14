@@ -79,9 +79,14 @@ for platform in $platforms; do
     fi
   done
 done
+
 if [ ! "X"`echo "$2" | grep "android-"` = "X" ]; then
   ANDROIDAPI=`echo "$2" | cut -f 2 -d "-"`
   with_platform=`echo "$2" | cut -f 1 -d "-"`
+fi
+
+if [ ! "X$SYS_PLATFORM" = "Xandroid" ]; then
+  ANDROIDAPI=''
 fi
 
 with_mode=
