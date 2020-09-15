@@ -119,29 +119,47 @@ int _microgl_key( XKeyEvent *event )
 {
   KeySym keysym;
   XLookupString( event, NULL, 0, &keysym, NULL );
+  // Control keys
   switch (keysym) {
     case XK_Delete:       return EVENT_KEYDELETE;
     case XK_Escape:       return EVENT_KEYESCAPE;
     case XK_Tab:          return EVENT_KEYTAB;
     case XK_BackSpace:    return EVENT_KEYBACKSPACE;
-    case XK_Return:       return EVENT_KEYENTER;
+    case XK_Return:
     case XK_Home:         return EVENT_KEYHOME;
     case XK_End:          return EVENT_KEYEND;
-    case XK_KP_Left:
     case XK_Left:         return EVENT_KEYLEFT;
-    case XK_KP_Right:
     case XK_Right:        return EVENT_KEYRIGHT;
-    case XK_KP_Down:
     case XK_Down:         return EVENT_KEYDOWN;
-    case XK_KP_Up:
     case XK_Up:           return EVENT_KEYUP;
   }
-  if( (keysym >= 0x0020 && keysym <= 0x007e) || 
-      (keysym >= 0x00a0 && keysym <= 0x00ff) ) return keysym;
+  // Printable chars (Latin 1)
+  if( (keysym >= 0x0020 && keysym <= 0x007e) || // Basic Latin 1 charset
+      (keysym >= 0x00a0 && keysym <= 0x00ff) )  // Extended Latin 1 charset
+    return keysym;
+  // Control keys - numeric keypad
+  switch (keysym) {
+    case XK_KP_Left:      return EVENT_KEYLEFT;
+    case XK_KP_Right:     return EVENT_KEYRIGHT;
+    case XK_KP_Down:      return EVENT_KEYDOWN;
+    case XK_KP_Up:        return EVENT_KEYUP;
+  }
+  // Printable chars - numeric keypad
+  switch (keysym) {
+    case XK_KP_Space:     return XK_space;
+    case XK_KP_Equal:     return XK_equal;
+    case XK_KP_Multiply:  return XK_asterisk;
+    case XK_KP_Add:       return XK_plus;
+    case XK_KP_Subtract:  return XK_minus;
+    case XK_KP_Decimal:   return XK_period;
+    case XK_KP_Divide:    return XK_slash;
+  }
+  if( keysym >= XK_KP_0 && keysym <= XK_KP_9 ) // Numeric keypad [0..9]
+    return (keysym - 0xff80);
   return 0;
-}
+} 
 
-void _microgl_sendCopyStringEvent(XSelectionRequestEvent* selReqEv) {
+ void _microgl_sendCopyStringEvent(XSelectionRequestEvent* selReqEv) {
   Atom format = XInternAtom(Dpy, "STRING", 0);
   XSelectionEvent selEv = {
     .type      = SelectionNotify,
