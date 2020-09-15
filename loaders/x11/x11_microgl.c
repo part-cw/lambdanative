@@ -157,9 +157,9 @@ int _microgl_key( XKeyEvent *event )
   if( keysym >= XK_KP_0 && keysym <= XK_KP_9 ) // Numeric keypad [0..9]
     return (keysym - 0xff80);
   return 0;
-} 
+}
 
- void _microgl_sendCopyStringEvent(XSelectionRequestEvent* selReqEv) {
+void _microgl_sendCopyStringEvent(XSelectionRequestEvent* selReqEv) {
   Atom format = XInternAtom(Dpy, "STRING", 0);
   XSelectionEvent selEv = {
     .type      = SelectionNotify,
