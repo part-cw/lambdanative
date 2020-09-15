@@ -125,7 +125,7 @@ int _microgl_key( XKeyEvent *event )
     case XK_Escape:       return EVENT_KEYESCAPE;
     case XK_Tab:          return EVENT_KEYTAB;
     case XK_BackSpace:    return EVENT_KEYBACKSPACE;
-    case XK_Return:
+    case XK_Return:       return EVENT_KEYENTER;
     case XK_Home:         return EVENT_KEYHOME;
     case XK_End:          return EVENT_KEYEND;
     case XK_Left:         return EVENT_KEYLEFT;
