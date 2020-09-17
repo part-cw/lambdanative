@@ -1,6 +1,71 @@
+Index: lib/_io.scm
+==================================================================
+--- lib/_io.scm
++++ lib/_io.scm
+@@ -7442,11 +7442,11 @@
+          (if (##not port-number)
+              (fail)
+              (let ((device
+                     (##os-device-tcp-client-open
+                      (if (##null? local-address)
+-                         #f ;; default local-address to any interface
++                         (if (##u16vector? address) '#u16(0 0 0 0 0 0 0 0) #f) ;; default local-address to any interface of same address family
+                          local-address)
+                      local-port-number
+                      (if (##null? address)
+                          (macro-localhost) ;; default address to localhost
+                          address)
+
+Index: lib/os_io.c
+==================================================================
 --- lib/os_io.c
 +++ lib/os_io.c
-@@ -5549,7 +5549,7 @@ int options;)
+@@ -1558,10 +1558,18 @@
+    * Transfer responsibility for closing device to the runtime system.
+    */
+
+   self->close_direction = self->direction;
+ }
++
++void ___os_device_transfer_close_responsibility
++   ___P((___device *self),
++        (self)
++___device *self;)
++{
++  device_transfer_close_responsibility(self);
++}
+
+ ___HIDDEN void device_add_ref
+    ___P((___device *self),
+         (self)
+ ___device *self;)
+@@ -4631,16 +4639,22 @@
+ /*---------------------------------------------------------------------------*/
+
+ #ifdef USE_NETWORKING
+
+ /* TCP client stream device */
++
++typedef union ___device_tcp_addr_struct
++  {
++    struct sockaddr_in in;
++    struct sockaddr_in6 in6
++} ___device_tcp_addr;
+
+ typedef struct ___device_tcp_client_struct
+   {
+     ___device_stream base;
+     SOCKET_TYPE s;
+-    struct sockaddr addr;
++    ___device_tcp_addr addr;
+     SOCKET_LEN_TYPE addrlen;
+     int try_connect_again;
+     int connect_done;
+
+ #ifdef USE_POSIX
+@@ -5402,11 +5416,11 @@
+   int no_coalesce_flag = ___SOCK_NO_COALESCE_FLAG(options);
+   int reuse_address_flag = ___SOCK_REUSE_ADDRESS_FLAG(options);
    int udp_flag = ___SOCK_UDP_FLAG(options);
    SOCKET_TYPE s;
 
@@ -9,9 +74,153 @@
                                       udp_flag ? SOCK_DGRAM : SOCK_STREAM,
                                       0)))
      return ERR_CODE_FROM_SOCKET_CALL;
+
+ #ifndef TCP_NODELAY
+@@ -5520,11 +5534,11 @@
+       return e;
+     }
+
+   d->base.base.vtbl = &___device_tcp_client_table;
+   d->s = s;
+-  d->addr = *addr;
++  memmove(&d->addr, addr, addrlen);
+   d->addrlen = addrlen;
+   d->try_connect_again = try_connect_again;
+   d->connect_done = 0;
+
+ #ifdef USE_OPENSSL
+@@ -6012,14 +6026,14 @@
+ typedef struct ___device_udp_struct
+   {
+     ___device base;
+     SOCKET_TYPE s;
+
+-    struct sockaddr dest_sa;
++    ___device_tcp_addr dest_sa;
+     SOCKET_LEN_TYPE dest_salen; /* 0 when no destination yet set */
+
+-    struct sockaddr source_sa;
++    ___device_tcp_addr source_sa;
+     SOCKET_LEN_TYPE source_salen; /* 0 when no message yet received */
+     ___BOOL source_same_as_previous; /* true when source_sa contains latest address read by ___os_device_udp_socket_info */
+
+ #ifdef USE_WIN32
+
+@@ -6383,11 +6397,11 @@
+   return ___FIX(___UNIMPL_ERR);
+
+ #else
+
+   ___SSIZE_T n;
+-  struct sockaddr sa;
++  ___device_tcp_addr sa;
+   SOCKET_LEN_TYPE salen = sizeof (sa);
+
+   if (self->base.read_stage != ___STAGE_OPEN)
+     return ___FIX(___CLOSED_DEVICE_ERR);
+
+@@ -7982,11 +7996,11 @@
+ #ifdef USE_NETWORKING
+
+         case ___TCP_CLIENT_DEVICE_KIND:
+           {
+             ___device_tcp_client *d;
+-            struct sockaddr addr;
++            ___device_tcp_addr addr;
+
+             if ((e = ___device_tcp_client_setup_from_socket
+                        (&d,
+                         dgroup,
+                         fd,
+@@ -10354,13 +10368,13 @@
+ #else
+
+   ___SCMOBJ e;
+   ___device_tcp_client *dev;
+   ___SCMOBJ result;
+-  struct sockaddr local_sa;
++  ___device_tcp_addr local_sa;
+   SOCKET_LEN_TYPE local_salen;
+-  struct sockaddr sa;
++  ___device_tcp_addr sa;
+   SOCKET_LEN_TYPE salen;
+   ___tls_context *tls_context_p;
+   char *server_name_p;
+
+   if ((e = ___SCMOBJ_to_sockaddr (local_addr,
+@@ -10470,11 +10484,11 @@
+
+ #else
+
+   ___device_tcp_client *d =
+     ___CAST(___device_tcp_client*,___FIELD(dev,___FOREIGN_PTR));
+-  struct sockaddr sa;
++  ___device_tcp_addr sa;
+   SOCKET_LEN_TYPE salen;
+
+   if (d->base.base.read_stage != ___STAGE_OPEN &&
+       d->base.base.write_stage != ___STAGE_OPEN)
+     return ___FIX(___CLOSED_DEVICE_ERR);
+@@ -10536,11 +10550,11 @@
+ #else
+
+   ___SCMOBJ e;
+   ___device_tcp_server *dev;
+   ___SCMOBJ result;
+-  struct sockaddr local_sa;
++  ___device_tcp_addr local_sa;
+   SOCKET_LEN_TYPE local_salen;
+   ___tls_context *tls_context_p;
+
+   if ((e = ___SCMOBJ_to_sockaddr (local_addr,
+                                   local_port_num,
+@@ -10662,11 +10676,11 @@
+
+ #else
+
+   ___device_tcp_server *d =
+     ___CAST(___device_tcp_server*,___FIELD(dev,___FOREIGN_PTR));
+-  struct sockaddr sa;
++  ___device_tcp_addr sa;
+   SOCKET_LEN_TYPE salen = sizeof (sa);
+
+   if (d->base.read_stage != ___STAGE_OPEN &&
+       d->base.write_stage != ___STAGE_OPEN)
+     return ___FIX(___CLOSED_DEVICE_ERR);
+@@ -10702,11 +10716,11 @@
+ #else
+
+   ___SCMOBJ e;
+   ___device_udp *dev;
+   ___SCMOBJ result;
+-  struct sockaddr local_sa;
++  ___device_tcp_addr local_sa;
+   SOCKET_LEN_TYPE local_salen;
+
+   if ((e = ___SCMOBJ_to_sockaddr (local_addr,
+                                   local_port_num,
+                                   &local_sa,
+@@ -10885,11 +10899,11 @@
+       d->base.write_stage != ___STAGE_OPEN)
+     return ___FIX(___CLOSED_DEVICE_ERR);
+
+   if (source == ___FAL)
+     {
+-      struct sockaddr sa;
++      ___device_tcp_addr sa;
+       SOCKET_LEN_TYPE salen = sizeof (sa);
+
+       if (getsockname (d->s, &sa, &salen) < 0)
+         return ERR_CODE_FROM_SOCKET_CALL;
+
+
+Index: lib/os_setup.c
+==================================================================
 --- lib/os_setup.c
 +++ lib/os_setup.c
-@@ -728,10 +728,6 @@ ___BOOL pinpoint;)
+@@ -645,14 +645,10 @@
+
+ /* Miscellaneous networking utilities. */
 
  #ifdef USE_NETWORKING
 
@@ -22,7 +231,11 @@
 
  ___HIDDEN int network_family_decode
     ___P((int family),
-@@ -1075,7 +1071,7 @@ int arg_num;)
+         (family)
+ int family;)
+@@ -992,21 +988,21 @@
+   if (addr == ___FAL || ___U8VECTORP(addr))
+     {
        struct sockaddr_in *sa_in = ___CAST(struct sockaddr_in*,sa);
        *salen = sizeof (*sa_in);
        memset (sa_in, 0, sizeof (*sa_in));
@@ -31,7 +244,9 @@
        sa_in->sin_port = htons (port);
        result = ___SCMOBJ_to_in_addr (addr, &sa_in->sin_addr, arg_num);
      }
-@@ -1085,7 +1081,7 @@ int arg_num;)
+ #ifdef USE_IPV6
+   else if (___U16VECTORP(addr))
+     {
        struct sockaddr_in6 *sa_in6 = ___CAST(struct sockaddr_in6*,sa);
        *salen = sizeof (*sa_in6);
        memset (sa_in6, 0, sizeof (*sa_in6));
@@ -40,16 +255,25 @@
        sa_in6->sin6_port = htons (port);
        result = ___SCMOBJ_to_in6_addr (addr, &sa_in6->sin6_addr, arg_num);
      }
+ #endif
+   else
+
+Index: lib/os_setup.h
+==================================================================
 --- lib/os_setup.h
 +++ lib/os_setup.h
-@@ -190,6 +190,10 @@ extern ___SCMOBJ ___in_addr_to_SCMOBJ
+@@ -153,10 +153,14 @@
+
+ extern ___SCMOBJ ___in_addr_to_SCMOBJ
+    ___P((struct in_addr *ia,
           int arg_num),
          ());
-
++
 +#ifdef AF_INET6
 +#define USE_IPV6
 +#endif
-+
+
  #ifdef USE_IPV6
 
  extern ___SCMOBJ ___SCMOBJ_to_in6_addr
+    ___P((___SCMOBJ addr,
