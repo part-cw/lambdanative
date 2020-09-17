@@ -48,6 +48,7 @@ package_configure $EXTRACONF
 if [ "$SYS_PLATFORM" = "$SYS_HOSTPLATFORM" ]; then
   package_make
 else
+  echo 'exit 0' > gsc-boot && chmod +x gsc-boot
   cd lib
   package_make
   cd ..
