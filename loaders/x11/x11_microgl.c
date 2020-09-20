@@ -139,6 +139,9 @@ int _microgl_key( XKeyEvent *event )
     return keysym;
   // Control keys - numeric keypad
   switch (keysym) {
+    case XK_KP_Enter:     return EVENT_KEYENTER;
+    case XK_KP_Home:      return EVENT_KEYHOME;
+    case XK_KP_End:       return EVENT_KEYEND;
     case XK_KP_Left:      return EVENT_KEYLEFT;
     case XK_KP_Right:     return EVENT_KEYRIGHT;
     case XK_KP_Down:      return EVENT_KEYDOWN;
@@ -175,7 +178,7 @@ void _microgl_sendCopyStringEvent(XSelectionRequestEvent* selReqEv) {
     selEv.property = None;
   }
   XSendEvent(Dpy, selReqEv->requestor, True, NoEventMask, (XEvent *) &selEv);
-}
+} 
 
 void microgl_pollevents(void)
 {
@@ -274,7 +277,7 @@ Bool _microglWaitForMapNotify( Display *d, XEvent *e, char *arg )
 }
 
 int microgl_open(int w, int h, int fs)
-{
+ {
   XEvent event;
   XSetWindowAttributes wa;
 //  Colormap    cmap;
