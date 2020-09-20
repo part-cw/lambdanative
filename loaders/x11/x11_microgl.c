@@ -178,7 +178,7 @@ void _microgl_sendCopyStringEvent(XSelectionRequestEvent* selReqEv) {
     selEv.property = None;
   }
   XSendEvent(Dpy, selReqEv->requestor, True, NoEventMask, (XEvent *) &selEv);
-} 
+}
 
 void microgl_pollevents(void)
 {
