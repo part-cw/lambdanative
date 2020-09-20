@@ -139,6 +139,9 @@ int _microgl_key( XKeyEvent *event )
     return keysym;
   // Control keys - numeric keypad
   switch (keysym) {
+    case XK_KP_Enter:     return EVENT_KEYENTER;
+    case XK_KP_Home:      return EVENT_KEYHOME;
+    case XK_KP_End:       return EVENT_KEYEND;
     case XK_KP_Left:      return EVENT_KEYLEFT;
     case XK_KP_Right:     return EVENT_KEYRIGHT;
     case XK_KP_Down:      return EVENT_KEYDOWN;
