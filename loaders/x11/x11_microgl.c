@@ -277,7 +277,7 @@ Bool _microglWaitForMapNotify( Display *d, XEvent *e, char *arg )
 }
 
 int microgl_open(int w, int h, int fs)
- {
+{
   XEvent event;
   XSetWindowAttributes wa;
 //  Colormap    cmap;
