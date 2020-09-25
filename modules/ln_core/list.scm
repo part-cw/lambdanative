@@ -51,7 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;    (if (>= n len) l
 ;;      (reverse (list-tail (reverse l) (- len n))))))
 (define (list-head l k)
-  (if (= k 0) '()
+  (if (or (= k 0) (null? l)) '()
       (cons (car l) (list-head (cdr l) (- k 1)))))
 
 
