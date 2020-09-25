@@ -901,8 +901,13 @@ static void ln_atlas_compile_atlas(char *name, texture_atlas_t *a)
   printf("(c-declare  #<<end-of-c-declare\n#include <string.h>\nstatic unsigned char %s_font[]={\n",sane_name);
   ln_atlas_compile_compressedtexture(data,depth*w*h);
   printf("};\nend-of-c-declare\n)\n");
+/*
   printf("(define %s.z  (let ((u8v (make-u8vector %i))) ((c-lambda (scheme-object int) void \"memcpy(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)),%s_font,___arg2);\") u8v %i) u8v))\n", name, clen+1, sane_name, clen+1);
   printf("(define %s.raw (glCoreTextureCreate %i %i (u8vector-decompress %s.z) GL_LINEAR GL_REPEAT))\n",name, w ,h, name );
+*/
+  printf("(define %s.raw\n", name);
+  printf("  (let ((%s.z  (let ((u8v (make-u8vector %i))) ((c-lambda (scheme-object int) void \"memcpy(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)),%s_font,___arg2);\") u8v %i) u8v)))\n", name, clen+1, sane_name, clen+1);
+  printf("    (glCoreTextureCreate %i %i (u8vector-decompress %s.z) GL_LINEAR GL_REPEAT)))\n", w ,h, name );
 }
 
 static void ln_atlas_compile_font(char *tag, texture_font_t *font, int w, int h)
