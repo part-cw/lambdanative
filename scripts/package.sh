@@ -140,7 +140,11 @@ package_download_ball()
 {
   pkg_url=$1
   pkg_hash=$2
-  pkg=$SYS_PREFIXROOT/packages/`basename $pkg_url`
+  pkg_basename=$3
+  if [ "$pkg_basename" = "" ]; then
+     pkg_basename=`basename $pkg_url`
+  fi
+  pkg=$SYS_PREFIXROOT/packages/$pkg_basename
   if [ $SYS_HOSTPLATFORM = openbsd ]; then
     asserttool sha1
   else 
