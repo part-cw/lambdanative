@@ -121,7 +121,7 @@ compile_payload_scm()
 	if [ -f $scm_hdr ]; then scm_hdr="-e '(load \"$scm_hdr\")'"; else scm_hdr=""; fi
 	gsc_processing=""
 	# if [ $SYS_VERBOSE ]; then gsc_processing="$gsc_processing -expansion"; fi
-        veval "$SYS_GSC -prelude \"$scm_opts\" -c -o $scm_ctgt $gsc_processing $scm_hdr $scm_src"
+        veval "$SYS_GSC -:~~tgtlib=${SYS_PREFIX}/lib -prelude \"$scm_opts\" -c -o $scm_ctgt $gsc_processing $scm_hdr $scm_src"
         if [ $veval_result != "0" ]; then rmifexists "$scm_ctgt"; fi
         assertfile "$scm_ctgt"
         rmifexists "$scm_otgt"
