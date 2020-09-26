@@ -1130,6 +1130,9 @@ make_install_tool()
   binary="$SYS_PREFIX/${SYS_APPNAME}${SYS_APPFIX}/${SYS_APPNAME}${SYS_EXEFIX}"
   if [ -x "$binary" ]; then
     echo "==> installing $SYS_APPNAME as a lambdanative tool"
+    if [ $SYS_HOSTPLATFORM = macosx ]; then
+      rmifexists $SYS_PREFIX/bin/${SYS_APPNAME}${SYS_EXEFIX}
+    fi
     cp "$binary" $SYS_PREFIX/bin
   else 
     echo "Error: No binary found [$binary]"
