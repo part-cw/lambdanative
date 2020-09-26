@@ -88,6 +88,15 @@ end-of-c-declare
 
 (define force-terminate (c-lambda () void "force_terminate"))
 
+;; Cleanup and exit with given exit code.  (Unlike force-terminate,
+;; which always exists with zero.)
+;;
+;; Overriding ##exit helps to avoid segfault when leaving a gambit
+;; repl and simillar situations.
+(set! ##exit
+      (lambda (#!optional (code 0))
+        ((c-lambda (int) void "lambdanative_exit") code)))
+
 (if (not (file-exists? (system-directory)))
   (with-exception-catcher (lambda (e) #f) 
     (lambda () (create-directory (system-directory)))))
