@@ -16,6 +16,11 @@ void lambdanative_payload_setup();
 void lambdanative_payload_cleanup();
 void lambdanative_payload_event(int,int,int);
 
+void lambdanative_exit(int code)
+{
+  lambdanative_payload_cleanup();
+  exit(code);
+}
 #ifdef STANDALONE
 // standalone setup
 char **cmd_argv;
