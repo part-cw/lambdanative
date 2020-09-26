@@ -230,12 +230,43 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; process an input event
 ;; 20100519: allow multiple guis
 ;; 20100804: support gui offset
-(define (glgui-event guis t x0 y0)
-  (if (and glgui:active app:width app:height)
-    (let ((gs (if (list? guis) guis (list guis))))
-      (if (fx= t EVENT_REDRAW) (apply glgui:render gs)
-        (apply glgui:inputloop (append (list t x0 y0) gs)))
-   )))
+
+(define glgui-frame-period-max (make-parameter 0.5)) ;; How long to sleep at most in redraw.
+
+;; glgui-wakeup! - a thunk, which when called will immediately unblock
+;; the thread waiting in glgui-event.  Should be called if other
+;; threads notice the event loop should proceed.
+(define glgui-wakeup!)
+
+(define glgui-event
+  (let ((consecutive-redraw-count 1)
+        (step 0.05)
+        (wait-mutex (make-mutex 'glgui-event))
+        (wait-cv (make-condition-variable 'glgui-event)))
+    (define (wakeup!)
+      (condition-variable-signal! wait-cv))
+    (define (reset-wait!)
+      (set! consecutive-redraw-count 1))
+    (define (wait-for-time-or-signal!)
+      (if (let ((moment (min (glgui-frame-period-max) (* consecutive-redraw-count step))))
+              (mutex-unlock! wait-mutex wait-cv moment))
+          (reset-wait!)
+          (set! consecutive-redraw-count (fx+ consecutive-redraw-count 1))))
+    (define (glgui-event guis t x0 y0)
+      (if (and glgui:active app:width app:height)
+          (let ((gs (if (list? guis) guis (list guis))))
+            (if (fx= t EVENT_REDRAW)
+                (when (mutex-lock! wait-mutex 0)
+                  (apply glgui:render gs)
+                  (wait-for-time-or-signal!))
+                (begin
+                  (reset-wait!)
+                  (apply glgui:inputloop (append (list t x0 y0) gs)))))
+          (if (fx= t EVENT_REDRAW)
+              (wait-for-time-or-signal!)
+              (reset-wait!))))
+    (set! glgui-wakeup! wakeup!)
+    glgui-event))
 
 ;; provide a screen shot
 (define (glgui-screenshot)
