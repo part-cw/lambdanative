@@ -6,7 +6,7 @@ if [ "$SYS_PLATFORM" = "win32" ]; then
   echo " => Installing precompiled library..."
   cp Lib/libwpcap.a $SYS_PREFIX/lib/libpcap.a
   cp Lib/libpacket.a $SYS_PREFIX/lib/
-  cp -L -R Include/ $SYS_PREFIX/ #include/
+  cp -L -R Include/* $SYS_PREFIX/include/
   package_cleanup  
   cd $here
   continue # continues the libary building loop here
