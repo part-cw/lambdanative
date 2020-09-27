@@ -250,9 +250,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;
 ;; Examples:
 ;;
-;;  (glgui-timings-set! frame-period-max: 2 frame-period-min: 0.01) -- start with 110/sec down to 0.5/sec
+;;  (glgui-timings-set! frame-period-max: 2 frame-period-min: 0.01) -- start with 100/sec down to 0.5/sec
 ;;  (glgui-timings-set! frame-period-max: 0.5 frame-period-min: 0.05) -- 20/sec down to 2/sec
 ;;  (glgui-timings-set! frame-period-custom: (lambda (x) 0.01))  -- constant 100/sec
+;;
+;;  When concerned about a precise frame rate take a hint from gambit
+;;  manual wrt. `thread-sleep!` and wait until a point in time no
+;;  matter how long it took to process events and render the GUI:
+;;
+;; (glgui-timings-set!
+;;  frame-period-custom:
+;;  (let ((last-frame-time (current-time-seconds))
+;;        (frame-period 0.05))
+;;    (lambda (x) ;; ignoring `x`
+;;      (let* ((now (current-time-seconds))
+;;             (next (+ last-frame-time frame-period)))
+;;        (set! last-frame-time now)
+;;        (seconds->time next)))))
 
 (define glgui-timings-set!)
 
