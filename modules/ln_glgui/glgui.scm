@@ -316,9 +316,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                   (apply glgui:inputloop (append (list t x0 y0) gs)))))
           (if (fx= t EVENT_REDRAW)
               (wait-for-time-or-signal!)
-              (begin
-                (thread-sleep! step)
-                (reset-wait!)))))
+              (if frame-period-custom
+                  (thread-sleep! (frame-period-custom 1))
+                  (begin
+                    (thread-sleep! step)
+                    (reset-wait!))))))
     (set! glgui-wakeup! wakeup!)
     (set! glgui-timings-set! timings-set!)
     glgui-event))
