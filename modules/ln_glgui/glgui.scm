@@ -323,6 +323,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (set! glgui-timings-set! timings-set!)
     glgui-event))
 
+(define glgui-timings-at-10msec!
+  (let ((wait-for-10ms (lambda (_) (seconds->time (+ ##now 0.01)))))
+    (lambda ()
+      (glgui-timings-set! frame-period-custom: wait-for-10ms))))
+
 ;; provide a screen shot
 (define (glgui-screenshot)
   (let ((w (glgui-width-get))
