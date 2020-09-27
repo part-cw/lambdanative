@@ -6,14 +6,13 @@ if [ "$SYS_PLATFORM" = "win32" ]; then
   echo " => Installing precompiled library..."
   cp Lib/libwpcap.a $SYS_PREFIX/lib/libpcap.a
   cp Lib/libpacket.a $SYS_PREFIX/lib/
-  cp -L -R Include/ $SYS_PREFIX/include/
+  cp -L -R Include/* $SYS_PREFIX/include/
   package_cleanup  
   cd $here
   continue # continues the libary building loop here
 else
   PKGURL=http://www.tcpdump.org/release/libpcap-1.4.0.tar.gz
   PKGHASH=9c9710aab68be58ed1d41b5c36dc2599419a80e0
-fi
 
 package_download $PKGURL $PKGHASH
 
@@ -48,3 +47,4 @@ package_make
 INCLUDE_PATH="$SYS_PREFIX/include" LIBRARY_PATH="$SYS_PREFIX/lib" BINARY_PATH="$SYS_PREFIX/bin" package_make install
 package_cleanup
 
+fi
