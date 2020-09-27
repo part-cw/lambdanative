@@ -263,9 +263,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;  (let ((last-frame-time (current-time-seconds))
 ;;        (frame-period 0.05))
 ;;    (lambda (x) ;; ignoring `x`
-;;      (let* ((now (current-time-seconds))
-;;             (next (+ last-frame-time frame-period)))
-;;        (set! last-frame-time now)
+;;      (let ((next (+ last-frame-time frame-period)))
+;;        (set! last-frame-time next)
 ;;        (seconds->time next)))))
 
 (define glgui-timings-set!)
