@@ -65,7 +65,7 @@ void opusvoip_phone_hangup();
   #include <sys/fcntl.h>
 #endif
 
-#ifdef IPHONE
+#ifdef IOS
   #include <sys/select.h>
   #include <unistd.h>
 #endif
