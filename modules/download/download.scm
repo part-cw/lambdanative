@@ -156,6 +156,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               )
             )
            (let ((count (httpsclient-recv download:buf)))
+             (if (or (string=? (system-platform) "android") (string=? (system-platform) "ios")) (thread-sleep! 0.001)) ;;allow GUI to refresh   
              (if (> count 0) (download:data-append! download:buf))
              (loop count))
           )
