@@ -312,11 +312,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                   (begin
                     (apply glgui:render gs)
                     (wait-for-time-or-signal!)
-                  ))
-                (begin
-                  (reset-wait!)
-                  (apply glgui:inputloop (append (list t x0 y0) gs))
-                )))
+                  )
+                  (begin
+                    (reset-wait!)
+                    (apply glgui:inputloop (append (list t x0 y0) gs))
+                  )))
           (if (fx= t EVENT_REDRAW)
               (wait-for-time-or-signal!)
               (if frame-period-custom
