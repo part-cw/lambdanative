@@ -308,12 +308,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (if (and glgui:active app:width app:height)
           (let ((gs (if (list? guis) guis (list guis))))
             (if (fx= t EVENT_REDRAW)
-                (when (mutex-lock! wait-mutex 0)
-                  (apply glgui:render gs)
-                  (wait-for-time-or-signal!))
-                (begin
-                  (reset-wait!)
-                  (apply glgui:inputloop (append (list t x0 y0) gs)))))
+                (if (mutex-lock! wait-mutex 0)
+                  (begin
+                    (apply glgui:render gs)
+                    (wait-for-time-or-signal!)
+                  )
+                  (begin
+                    (reset-wait!)
+                    (apply glgui:inputloop (append (list t x0 y0) gs))
+                  )))
           (if (fx= t EVENT_REDRAW)
               (wait-for-time-or-signal!)
               (if frame-period-custom
