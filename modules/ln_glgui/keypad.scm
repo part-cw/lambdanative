@@ -196,16 +196,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ))
 
 (define (keypad:lookup mx my x y w h pad)
+  ;; FIXME: unconfirmed: errors out in list-ref.
+  ;; FIXME: COMPLEXITY: O(n^2) - use of list-ref in loop
   (let* ((ncols (flo (length (car pad))))
          (nrows (flo (length pad)))
          (wchar (/ w ncols))
          (hchar (/ h nrows))
          (mn (fix (- nrows 1 (fix (/ (- my y) hchar))))))
     (if (and (> my y) (< my (+ y h))) ;; (and (> mn -1) (< mn nrows))
-      (let* ((units (keypad:rowwidth (list-ref pad mn)))
+        (let* ((units
+                ;; TBD: COMPLEXITY: O(n) - use of list-ref
+                ;; FIXME: COMPLEXITY: O(n^2) - use of keypad:rowwidth on O(n) value
+                (keypad:rowwidth (list-ref pad mn)))
              (padx  (/ (- w (* units wchar)) 2.)))
         (let loop ((xx (+ x padx)) (data (list-ref pad mn)))
           (if (= (length data) 0) #f
+              ;; FIXME: COMPLEXITY: O(n^2) - use of length within `keypad:keywidth`
             (let ((keyw (* wchar (keypad:keywidth (car data)))))
               (if (and (> mx xx) (< mx (+ xx keyw))) (car data)
                 (loop (+ xx keyw) (cdr data)))))))
