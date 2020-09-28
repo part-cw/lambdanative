@@ -204,7 +204,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (and (> my y) (< my (+ y h))) ;; (and (> mn -1) (< mn nrows))
       (let* ((units (keypad:rowwidth (list-ref pad mn)))
              (padx  (/ (- w (* units wchar)) 2.)))
-        (let loop ((xx (+ x padx))(data (list-ref pad mn)))
+        (let loop ((xx (+ x padx)) (data (list-ref pad mn)))
           (if (= (length data) 0) #f
             (let ((keyw (* wchar (keypad:keywidth (car data)))))
               (if (and (> mx xx) (< mx (+ xx keyw))) (car data)
