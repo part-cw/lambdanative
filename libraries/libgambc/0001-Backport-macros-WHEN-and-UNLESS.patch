@@ -1,0 +1,45 @@
+From 12bae91247442210713b934276518dbba9f02459 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=B6rg=20F=2E=20Wittenberger?= <Joerg.Wittenberger@softeyes.net>
+Date: Mon, 28 Sep 2020 12:57:22 +0200
+Subject: [PATCH] Backport macros WHEN and UNLESS
+
+---
+ lib/_nonstd.scm | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/lib/_nonstd.scm b/lib/_nonstd.scm
+index f1db855..e66aba4 100644
+--- a/lib/_nonstd.scm
++++ b/lib/_nonstd.scm
+@@ -340,6 +340,28 @@
+ 
+ ;;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ 
++(define-runtime-syntax when
++  (lambda (src)
++    (##deconstruct-call
++     src
++     -3
++     (lambda (test . expressions)
++       (##expand-source-template
++        src
++        `(if ,test (##begin ,@expressions)))))))
++
++(define-runtime-syntax unless
++  (lambda (src)
++    (##deconstruct-call
++     src
++     -3
++     (lambda (test . expressions)
++       (##expand-source-template
++        src
++        `(if (##not ,test) (##begin ,@expressions)))))))
++
++;;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
++
+ (define-prim (##type-field-count type)
+   (if type
+       (let ((fields (##type-fields type)))
+-- 
+2.20.1
+
