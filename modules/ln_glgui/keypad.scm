@@ -208,14 +208,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 ;; TBD: COMPLEXITY: O(n) - use of list-ref
                 ;; FIXME: COMPLEXITY: O(n^2) - use of keypad:rowwidth on O(n) value
                 (keypad:rowwidth (list-ref pad mn)))
-             (padx  (/ (- w (* units wchar)) 2.)))
-        (let loop ((xx (+ x padx)) (data (list-ref pad mn)))
-          (if (= (length data) 0) #f
-              ;; FIXME: COMPLEXITY: O(n^2) - use of length within `keypad:keywidth`
-            (let ((keyw (* wchar (keypad:keywidth (car data)))))
-              (if (and (> mx xx) (< mx (+ xx keyw))) (car data)
-                (loop (+ xx keyw) (cdr data)))))))
-      #f)))
+               (padx  (/ (- w (* units wchar)) 2.)))
+          (let loop ((xx (+ x padx)) (data (list-ref pad mn)))
+            (if (= (length data) 0) #f
+                ;; FIXME: COMPLEXITY: O(n^2) - use of length within `keypad:keywidth`
+                (let ((keyw (* wchar (keypad:keywidth (car data)))))
+                  (if (and (> mx xx) (< mx (+ xx keyw))) (car data)
+                      (loop (+ xx keyw) (cdr data)))))))
+        #f)))
 
 (define (glgui:keypad-input g wgt type mx my)
   (let* ((x (glgui-widget-get-dyn g wgt 'x))
