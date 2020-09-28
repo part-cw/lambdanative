@@ -325,10 +325,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (set! glgui-timings-set! timings-set!)
     glgui-event))
 
-(define glgui-timings-at-10msec!
-  (let ((wait-for-10ms (lambda (_) (seconds->time (+ ##now 0.01)))))
-    (lambda ()
-      (glgui-timings-set! frame-period-custom: wait-for-10ms))))
+(define (glgui-timings-at-msec! msec)
+  (define (wait-for-msec _) (seconds->time (+ ##now msec)))
+  (define (no-wait _) 0)
+  (cond-expand
+   ((or android iod)
+    ;; TBD: convey the msec value to signaling code.
+    ;; switch delays to zero
+    (glgui-timings-set! frame-period-custom: no-wait))
+   (else (glgui-timings-set! frame-period-custom: wait-for-msec))))
+
+(define (glgui-timings-at-10msec!) (glgui-timings-at-msec! 0.01))
+
+(cond-expand
+ ((or android iod)
+  ;; 50 Hz should be enough - TBD: not yet effective
+  (glgui-timings-at-msec! 0.02))
+ (else))
 
 ;; provide a screen shot
 (define (glgui-screenshot)
