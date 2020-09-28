@@ -36,9 +36,11 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(define (function-exists? str) 
-  (with-exception-catcher (lambda (e) #f)
-    (lambda () (with-input-from-string str (lambda () (eval (read)) #t)))
-  ))
+(define (global-variable-defined? obj) (and (symbol? obj) (##global-var? obj)))
+
+(define (function-exists? obj) ;; deprecated
+  (if (string? obj)
+      (global-variable-defined? (string->symbol obj))
+      (global-variable-defined? obj)))
 
 ;; eof
