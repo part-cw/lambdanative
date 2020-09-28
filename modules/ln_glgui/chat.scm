@@ -107,7 +107,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (deltat (glgui-widget-get g wgt 'deltatime)))
     ;; Update the strlst
     (if (or (not strlst) (not (fx= (length strlst) (length lst))))
-      (begin 
+      (begin
         (set! strlst (glgui:chat-split-allstrings g wgt))
         (glgui-widget-set! g wgt 'strlst strlst)
         (set! ofs 0)
@@ -135,13 +135,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             ;; Add the complete message text
             (let loop ((k 0))
               (if (= k (length strings)) #t
-                (begin 
+                (begin
                   (glgui:draw-text-left dx (- dy (* k dh) 1) dw dh (list-ref strings k) fnt txtcol)
                   (loop (+ k 1))
                 )
               )
             )
-            ;; Add timestamps in between messages 
+            ;; Add timestamps in between messages
             (if (fx< i (- n 1))
               (begin
                 ;; Add name if receiving user changes
@@ -186,8 +186,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 )
               )
             )
-            (loop (fx+ i 1) (+ y0 dhline) 
-                  (if (fx= (fx+ i 1) n) (list) (list-ref strlst (fx+ i 1))) 
+            (loop (fx+ i 1) (+ y0 dhline)
+                  (if (fx= (fx+ i 1) n) (list) (list-ref strlst (fx+ i 1)))
                   (if (fx= (fx+ i 1) n) (list) (list-ref lst (fx+ i 1))))
           )
           (set! n (- i ofs))
@@ -231,7 +231,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                  (clipped (max valmin (min valmax calculated))))
             (glgui-widget-set! g wgt 'offset clipped)
             (glgui-widget-set! g wgt 'oldy my-fixed)
-            (unless drag (glgui-widget-set! g wgt 'drag #t)))))
+            (if (not drag) (glgui-widget-set! g wgt 'drag #t)))))
      ((and inside (fx= type EVENT_BUTTON1DOWN)) ;; touch down
       (glgui-widget-set! g wgt 'oldy my-fixed)
       (glgui-widget-set! g wgt 'fsty my-fixed)
@@ -246,15 +246,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (glgui-widget-set! g wgt 'offset (round val)) ;; snap to place?
         (if (and (not drag) inside cb)
             (let ((cur (round (+ val (/ (- (+ y h) (+ my space)) dh) -.5))))
-              (when (and (>= cur 0) (>= cur val) (< cur n))
+              (if (and (>= cur 0) (>= cur val) (< cur n)) (begin
                 (glgui-widget-set! g wgt 'current cur)
-                (if (procedure? cb) (cb g wgt type mx my)))))
+                (if (procedure? cb) (cb g wgt type mx my))))))
         (if old (glgui-widget-set! g wgt 'old #f))
         (if drag (glgui-widget-set! g wgt 'drag #f)))))
-     (else ;; neither button1 nor motion
-      (unless inside
+      (else ;; neither button1 nor motion
+       (if (not inside) (begin
         (if old (glgui-widget-set! g wgt 'old #f))
-        (if drag (glgui-widget-set! g wgt 'drag #f)))))
+        (if drag (glgui-widget-set! g wgt 'drag #f))))))
     ;; return whether or not input was applicable
     inside))
 
