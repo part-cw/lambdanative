@@ -329,7 +329,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (define (wait-for-sec _) (seconds->time (+ ##now sec)))
   (define (no-wait _) 0)
   (cond-expand
-   ((or android iod)
+   ((or android ios)
     ;; TBD: convey the time value to signaling code.
     ;; switch delays to zero
     (glgui-timings-set! frame-period-custom: no-wait))
@@ -338,7 +338,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui-timings-at-10msec!) (glgui-timings-at-sec! 0.01))
 
 (cond-expand
- ((or android iod)
+ ((or android ios)
   ;; 50 Hz should be enough - TBD: not yet effective
   (glgui-timings-at-sec! 0.02))
  (else))
