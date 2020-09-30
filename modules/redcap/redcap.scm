@@ -419,7 +419,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                           (cond
                             ((not (list? datalist))
                               ;; If no list returned, json not properly formatted
-                              (log-error "REDCap error: Incomplete json" msg)
+                              (log-error "REDCap error: Incomplete json " msg)
                               #f)
                             ((and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
                               ;; If the first entry is an error, then log it and return false
@@ -470,7 +470,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                      (cond
                        ((not (list? datalist))
                          ;; If no list returned, json not properly formatted
-                         (log-error "REDCap error: Incomplete json" output)
+                         (log-error "REDCap error: Incomplete json " output)
                          #f)
                        ((and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
                          ;; If the first entry is an error, then log it and return false
