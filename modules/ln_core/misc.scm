@@ -36,15 +36,10 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(define (eval-if-exists str)
-  (if (string? str)
-    (let ((obj (string->symbol str)))
-      (if (global-variable-defined? obj) ((eval obj))))))
-
-(define (global-variable-defined? obj)
-    (and (symbol? obj) (##global-var? obj)))
-
-(define (function-exists? str) ;; deprecated
-  (and (string? str) (global-variable-defined? (string->symbol str))))
+(define (function-exists? func)
+  (if (not (or (string? func) (symbol? func))) (raise "function-exists? must be called with string or symbol")
+  (let ((str (if (symbol? func) (symbol->string func) func)))
+    (with-exception-catcher (lambda (e) #f) 
+      (lambda () (with-input-from-string str (lambda () (procedure? (eval (read))))))))))
 
 ;; eof
