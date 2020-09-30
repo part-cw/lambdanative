@@ -676,7 +676,6 @@ end-of-c-declare
 
 ;; As the timing accuracy of serial may depend on frequent runs make
 ;; sure this behavior does not change with new glgui-event sleeps.
-(if (function-exists? "glgui-timings-at-10msec!")
-  (eval '(glgui-timings-at-10msec!)))
+(eval-if-exists "glgui-timings-at-10msec!")
 
 ;; eof

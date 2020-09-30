@@ -36,11 +36,15 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(define (global-variable-defined? obj) (and (symbol? obj) (##global-var? obj)))
+(define (eval-if-exists str)
+  (if (string? str)
+    (let ((obj (string->symbol str)))
+      (if (global-variable-defined? obj) ((eval obj))))))
 
-(define (function-exists? obj) ;; deprecated
-  (if (string? obj)
-      (global-variable-defined? (string->symbol obj))
-      (global-variable-defined? obj)))
+(define (global-variable-defined? obj)
+    (and (symbol? obj) (##global-var? obj)))
+
+(define (function-exists? str) ;; deprecated
+  (and (string? str) (global-variable-defined? (string->symbol str))))
 
 ;; eof
