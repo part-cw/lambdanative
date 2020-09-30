@@ -726,7 +726,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 ))
             )
             (let ((count (httpsclient-recv redcap:buf)))
-              (if (> count 0) (redcap:data-append! redcap:buf))
+              (if (> count 0) (redcap:data-append! (subu8vector redcap:buf 0 count)))
               (loop count))
           )
         )
