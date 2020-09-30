@@ -97,6 +97,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                  ;; Remove anything outside brackets first
                  (output (json-decode (substring str index (string-length str)))))
             (if (json-error? output) #f (vector->list output))))
+        ((and (string? str) (string-prefix? "{" str) (string-suffix? "}" str))
+          ;; Try adding square brackets around it
+          (redcap:jsonstr->list (string-append "[" str "]")))
         ((or (list? str) (and (string? str) (string-contains str "[]"))) '())
         (else #f)))
 
