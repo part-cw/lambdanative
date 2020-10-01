@@ -103,9 +103,6 @@
                               (("field_name" . "date_inc_sec") ("form_name" . "form_3") ("section_header" . "") ("field_type" . "text") ("field_label" . "Date with seconds (increasing)") ("select_choices_or_calculations" . "") ("field_note" . "")
                                ("text_validation_type_or_show_slider_number" . "datetime_seconds_dmy") ("text_validation_min" . "") ("text_validation_max" . "") ("identifier" . "") ("branching_logic" . "") ("required_field" . "")
                                ("custom_alignment" . "") ("question_number" . "") ("matrix_group_name" . "") ("matrix_ranking" . "") ("field_annotation" . ""))
-                              (("field_name" . "crawling") ("form_name" . "form_3") ("section_header" . "") ("field_type" . "text") ("field_label" . "Crawling") ("select_choices_or_calculations" . "") ("field_note" . "")
-                               ("text_validation_type_or_show_slider_number" . "crawling") ("text_validation_min" . "") ("text_validation_max" . "") ("identifier" . "") ("branching_logic" . "") ("required_field" . "")
-                               ("custom_alignment" . "") ("question_number" . "") ("matrix_group_name" . "") ("matrix_ranking" . "") ("field_annotation" . ""))
                               (("field_name" . "postal_code") ("form_name" . "form_3") ("section_header" . "") ("field_type" . "text") ("field_label" . "Postal Code") ("select_choices_or_calculations" . "") ("field_note" . "")
                                ("text_validation_type_or_show_slider_number" . "postalcode_canada") ("text_validation_min" . "") ("text_validation_max" . "") ("identifier" . "") ("branching_logic" . "") ("required_field" . "")
                                ("custom_alignment" . "") ("question_number" . "") ("matrix_group_name" . "") ("matrix_ranking" . "") ("field_annotation" . ""))
@@ -130,7 +127,7 @@
                                         "text_validation_min,text_validation_max,identifier,branching_logic,required_field,custom_alignment,question_number,matrix_group_name,matrix_ranking,field_annotation\n"
                                         "firstrow,form_2,\"Look, a matrix!\",radio,\"First row\",\"1, A | 2, B | 3, C\",,,,,,,y,,,mat,y,first!\n"))
 
-(define redcap:testfields '("study_no" "yesno" "num" "form_1_complete" "drop" "radio" "checks___1" "checks___2" "checks___3" "checks___4" "firstrow" "secondrow" "form_2_complete" "date_dec" "date_inc_sec" "crawling" "postal_code" "email" "truefalse" "slider" "form_3_complete"))
+(define redcap:testfields '("study_no" "yesno" "num" "form_1_complete" "drop" "radio" "checks___1" "checks___2" "checks___3" "checks___4" "firstrow" "secondrow" "form_2_complete" "date_dec" "date_inc_sec" "postal_code" "email" "truefalse" "slider" "form_3_complete"))
 
 ;; Importing and exporting records functions
 ;;  - redcap-import-record
@@ -177,13 +174,13 @@
       ;; Export with filter
       (if success (set! success (test-success equal? (redcap-export-records redcap:testhost redcap:testtoken 'filter "[num] = 42") redcap:testfilterexp)))
       ;; Export from a specific form
-      (if success (set! success (test-success equal? (redcap-export-records redcap:testhost redcap:testtoken 'records (list "2") 'forms (list "2")) redcap:testformsexp)))
+      (if success (set! success (test-success equal? (redcap-export-records redcap:testhost redcap:testtoken 'records (list "2") 'forms (list "form_2")) redcap:testformsexp)))
       ;; Export ids
-      (if success (set! success (test-success equal? (redcap-export-ids redcap:testhost redcap:testtoken) '("1" "1" "1" "1" "2"))))
+      (if success (set! success (test-success equal? (redcap-export-ids redcap:testhost redcap:testtoken) '("1" "1" "1" "1" "1" "2"))))
       ;; Export ids given event
       (if success (set! success (test-success equal? (redcap-export-ids redcap:testhost redcap:testtoken 'event "event_a_arm_1") '("1" "2"))))
       ;; Get next available instance index
-      (if success (set! success (test-success eq? (redcap-get-next-instance redcap:testhost redcap:testtoken "1" "2") 3)))
+      (if success (set! success (test-success eq? (redcap-get-next-instance redcap:testhost redcap:testtoken "1" "form_2") 3)))
       (if success (set! success (test-success eq? (redcap-get-next-instance-index redcap:testhost redcap:testtoken "1" 'form "form_2" 'event "event_c_arm_1") 3)))
       (if success (set! success (test-success eq? (redcap-get-next-instance-index redcap:testhost redcap:testtoken "1" 'form "form_2" 'event "event_d_arm_1") 3)))
       (if success (set! success (test-success eq? (redcap-get-next-instance-index redcap:testhost redcap:testtoken "1" 'event "event_d_arm_1") 3)))
@@ -196,8 +193,8 @@
 (define redcap:testrecord1b '((checks 1 3)))
 (define redcap:testrecord1c '(("yesno" "0") ("num" "8") ("form_1_complete" "2")
                               ("drop" "1") ("radio" "2") ("checks___1" "0") ("checks___2" "0") ("checks___4" "1") ("firstrow" "1") ("secondrow" "2") ("form_2_complete" "0")))
-;; Date must be in YY-MM-DD format; date + time must be in YY-MM-DD HH:MM[:SS]; crawling must be integer; slider 0-100 by default; email, postal code have format restrictions
-(define redcap:testrecord1d '(("date_dec" "96-06-16") ("date_inc_sec" "96-06-16 09:09:09") ("email" "test@mailinator.com") ("crawling" "0") ("postal_code" "v5v 5v5") ("slider" "80") ("truefalse" "1") ("form_3_complete" "2")))
+;; Date must be in YY-MM-DD format; date + time must be in YY-MM-DD HH:MM[:SS]; slider 0-100 by default; email, postal code have format restrictions
+(define redcap:testrecord1d '(("date_dec" "96-06-16") ("date_inc_sec" "96-06-16 09:09:09") ("email" "test@mailinator.com") ("postal_code" "v5v 5v5") ("slider" "80") ("truefalse" "1") ("form_3_complete" "2")))
 (define redcap:testchange1a '(("yesno" "")))
 (define redcap:testchange1b '(("drop" "")))
 (define redcap:testrepeatable '(("firstrow" "2")))
@@ -211,78 +208,78 @@
 
 (define redcap:testfullexport '((("study_no" . "1") ("redcap_event_name" . "event_a_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . "") ("yesno" . "") ("num" . "9") ("form_1_complete" . "1")
                                   ("drop" . "") ("radio" . "") ("checks___1" . "") ("checks___2" . "") ("checks___3" . "") ("checks___4" . "") ("firstrow" . "") ("secondrow" . "") ("file" . "") ("form_2_complete" . "")
-                                  ("date_dec" . "1996-06-16") ("date_inc_sec" . "1996-06-16 09:09:09") ("crawling" . "0") ("postal_code" . "v5v 5v5") ("email" . "test@mailinator.com") ("truefalse" . "1") ("slider" . "80") ("form_3_complete" . "2"))
+                                  ("date_dec" . "1996-06-16") ("date_inc_sec" . "1996-06-16 09:09:09") ("postal_code" . "v5v 5v5") ("email" . "test@mailinator.com") ("truefalse" . "1") ("slider" . "80") ("form_3_complete" . "2"))
                                 (("study_no" . "1") ("redcap_event_name" . "event_b_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . "") ("yesno" . "0") ("num" . "8") ("form_1_complete" . "2")
                                   ("drop" . "1") ("radio" . "2") ("checks___1" . "0") ("checks___2" . "0") ("checks___3" . "1") ("checks___4" . "1") ("firstrow" . "1") ("secondrow" . "2") ("file" . "") ("form_2_complete" . "0")
-                                  ("date_dec" . "") ("date_inc_sec" . "") ("crawling" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . ""))
+                                  ("date_dec" . "") ("date_inc_sec" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . ""))
                                 (("study_no" . "1") ("redcap_event_name" . "event_d_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . "") ("yesno" . "") ("num" . "") ("form_1_complete" . "0")
                                   ("drop" . "") ("radio" . "") ("checks___1" . "") ("checks___2" . "") ("checks___3" . "") ("checks___4" . "") ("firstrow" . "") ("secondrow" . "") ("file" . "") ("form_2_complete" . "")
-                                  ("date_dec" . "") ("date_inc_sec" . "") ("crawling" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . ""))
+                                  ("date_dec" . "") ("date_inc_sec" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . ""))
                                 (("study_no" . "1") ("redcap_event_name" . "event_c_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . 1) ("yesno" . "1") ("num" . "") ("form_1_complete" . "1")
                                   ("drop" . "") ("radio" . "") ("checks___1" . "0") ("checks___2" . "0") ("checks___3" . "0") ("checks___4" . "0") ("firstrow" . "") ("secondrow" . "") ("file" . "") ("form_2_complete" . "0")
-                                  ("date_dec" . "") ("date_inc_sec" . "") ("crawling" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . ""))
+                                  ("date_dec" . "") ("date_inc_sec" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . ""))
                                 (("study_no" . "1") ("redcap_event_name" . "event_c_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . 2) ("yesno" . "") ("num" . "") ("form_1_complete" . "0")
                                   ("drop" . "") ("radio" . "") ("checks___1" . "0") ("checks___2" . "0") ("checks___3" . "0") ("checks___4" . "0") ("firstrow" . "2") ("secondrow" . "") ("file" . "") ("form_2_complete" . "2")
-                                  ("date_dec" . "") ("date_inc_sec" . "") ("crawling" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . ""))
+                                  ("date_dec" . "") ("date_inc_sec" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . ""))
                                 (("study_no" . "1") ("redcap_event_name" . "event_d_arm_1") ("redcap_repeat_instrument" . "form_2") ("redcap_repeat_instance" . 1) ("yesno" . "") ("num" . "") ("form_1_complete" . "")
                                   ("drop" . "") ("radio" . "") ("checks___1" . "0") ("checks___2" . "0") ("checks___3" . "0") ("checks___4" . "0") ("firstrow" . "2") ("secondrow" . "") ("file" . "") ("form_2_complete" . "1")
-                                  ("date_dec" . "") ("date_inc_sec" . "") ("crawling" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . ""))
+                                  ("date_dec" . "") ("date_inc_sec" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . ""))
                                 (("study_no" . "1") ("redcap_event_name" . "event_d_arm_1") ("redcap_repeat_instrument" . "form_2") ("redcap_repeat_instance" . 2) ("yesno" . "") ("num" . "") ("form_1_complete" . "")
                                   ("drop" . "") ("radio" . "") ("checks___1" . "0") ("checks___2" . "0") ("checks___3" . "0") ("checks___4" . "0") ("firstrow" . "2") ("secondrow" . "") ("file" . "") ("form_2_complete" . "2")
-                                  ("date_dec" . "") ("date_inc_sec" . "") ("crawling" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . ""))
+                                  ("date_dec" . "") ("date_inc_sec" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . ""))
                                 (("study_no" . "2") ("redcap_event_name" . "event_a_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . "") ("yesno" . "1") ("num" . "42") ("form_1_complete" . "2")
                                   ("drop" . "") ("radio" . "") ("checks___1" . "") ("checks___2" . "") ("checks___3" . "") ("checks___4" . "") ("firstrow" . "") ("secondrow" . "") ("file" . "") ("form_2_complete" . "")
-                                  ("date_dec" . "") ("date_inc_sec" . "") ("crawling" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . "0"))))
+                                  ("date_dec" . "") ("date_inc_sec" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . "0"))))
 
 (define redcap:testrecord1exp (string-append "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n<records>\n"
-                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_a_arm_1]]></redcap_event_name><redcap_repeat_instrument><![CDATA[]]></redcap_repeat_instrument>"
-                                             "<redcap_repeat_instance><![CDATA[]]></redcap_repeat_instance><yesno><![CDATA[]]></yesno><num><![CDATA[9]]></num><form_1_complete><![CDATA[1]]></form_1_complete><drop><![CDATA[]]>"
-                                             "</drop><radio><![CDATA[]]></radio><checks___1><![CDATA[]]></checks___1><checks___2><![CDATA[]]></checks___2><checks___3><![CDATA[]]></checks___3><checks___4><![CDATA[]]></checks___4>"
-                                             "<firstrow><![CDATA[]]></firstrow><secondrow><![CDATA[]]></secondrow><file><![CDATA[]]></file><form_2_complete><![CDATA[]]></form_2_complete>"
-                                             "<date_dec><![CDATA[1996-06-16]]></date_dec><date_inc_sec><![CDATA[1996-06-16 09:09:09]]></date_inc_sec><crawling><![CDATA[0]]></crawling><postal_code><![CDATA[v5v 5v5]]></postal_code>"
+                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_a_arm_1]]></redcap_event_name><redcap_repeat_instrument></redcap_repeat_instrument>"
+                                             "<redcap_repeat_instance></redcap_repeat_instance><yesno></yesno><num><![CDATA[9]]></num><form_1_complete><![CDATA[1]]></form_1_complete><drop>"
+                                             "</drop><radio></radio><checks___1></checks___1><checks___2></checks___2><checks___3></checks___3><checks___4></checks___4>"
+                                             "<firstrow></firstrow><secondrow></secondrow><file></file><form_2_complete></form_2_complete>"
+                                             "<date_dec><![CDATA[1996-06-16]]></date_dec><date_inc_sec><![CDATA[1996-06-16 09:09:09]]></date_inc_sec><postal_code><![CDATA[v5v 5v5]]></postal_code>"
                                              "<email><![CDATA[test@mailinator.com]]></email><truefalse><![CDATA[1]]></truefalse><slider><![CDATA[80]]></slider><form_3_complete><![CDATA[2]]></form_3_complete></item>\n"
 
-                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_b_arm_1]]></redcap_event_name><redcap_repeat_instrument><![CDATA[]]></redcap_repeat_instrument>"
-                                             "<redcap_repeat_instance><![CDATA[]]></redcap_repeat_instance><yesno><![CDATA[0]]></yesno><num><![CDATA[8]]></num><form_1_complete><![CDATA[2]]></form_1_complete><drop><![CDATA[1]]>"
+                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_b_arm_1]]></redcap_event_name><redcap_repeat_instrument></redcap_repeat_instrument>"
+                                             "<redcap_repeat_instance></redcap_repeat_instance><yesno><![CDATA[0]]></yesno><num><![CDATA[8]]></num><form_1_complete><![CDATA[2]]></form_1_complete><drop><![CDATA[1]]>"
                                              "</drop><radio><![CDATA[2]]></radio><checks___1><![CDATA[0]]></checks___1><checks___2><![CDATA[0]]></checks___2><checks___3><![CDATA[1]]></checks___3><checks___4><![CDATA[1]]></checks___4>"
-                                             "<firstrow><![CDATA[1]]></firstrow><secondrow><![CDATA[2]]></secondrow><file><![CDATA[]]></file><form_2_complete><![CDATA[0]]></form_2_complete>"
-                                             "<date_dec><![CDATA[]]></date_dec><date_inc_sec><![CDATA[]]></date_inc_sec><crawling><![CDATA[]]></crawling><postal_code><![CDATA[]]></postal_code>"
-                                             "<email><![CDATA[]]></email><truefalse><![CDATA[]]></truefalse><slider><![CDATA[]]></slider><form_3_complete><![CDATA[]]></form_3_complete></item>\n"
+                                             "<firstrow><![CDATA[1]]></firstrow><secondrow><![CDATA[2]]></secondrow><file></file><form_2_complete><![CDATA[0]]></form_2_complete>"
+                                             "<date_dec></date_dec><date_inc_sec></date_inc_sec><postal_code></postal_code>"
+                                             "<email></email><truefalse></truefalse><slider></slider><form_3_complete></form_3_complete></item>\n"
 
-                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_d_arm_1]]></redcap_event_name><redcap_repeat_instrument><![CDATA[]]></redcap_repeat_instrument>"
-                                             "<redcap_repeat_instance><![CDATA[]]></redcap_repeat_instance><yesno><![CDATA[]]></yesno><num><![CDATA[]]></num><form_1_complete><![CDATA[0]]></form_1_complete><drop><![CDATA[]]>"
-                                             "</drop><radio><![CDATA[]]></radio><checks___1><![CDATA[]]></checks___1><checks___2><![CDATA[]]></checks___2><checks___3><![CDATA[]]></checks___3><checks___4><![CDATA[]]></checks___4>"
-                                             "<firstrow><![CDATA[]]></firstrow><secondrow><![CDATA[]]></secondrow><file><![CDATA[]]></file><form_2_complete><![CDATA[]]></form_2_complete>"
-                                             "<date_dec><![CDATA[]]></date_dec><date_inc_sec><![CDATA[]]></date_inc_sec><crawling><![CDATA[]]></crawling><postal_code><![CDATA[]]></postal_code>"
-                                             "<email><![CDATA[]]></email><truefalse><![CDATA[]]></truefalse><slider><![CDATA[]]></slider><form_3_complete><![CDATA[]]></form_3_complete></item>\n"
+                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_d_arm_1]]></redcap_event_name><redcap_repeat_instrument></redcap_repeat_instrument>"
+                                             "<redcap_repeat_instance></redcap_repeat_instance><yesno></yesno><num></num><form_1_complete><![CDATA[0]]></form_1_complete><drop>"
+                                             "</drop><radio></radio><checks___1></checks___1><checks___2></checks___2><checks___3></checks___3><checks___4></checks___4>"
+                                             "<firstrow></firstrow><secondrow></secondrow><file></file><form_2_complete></form_2_complete>"
+                                             "<date_dec></date_dec><date_inc_sec></date_inc_sec><postal_code></postal_code>"
+                                             "<email></email><truefalse></truefalse><slider></slider><form_3_complete></form_3_complete></item>\n"
 
-                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_c_arm_1]]></redcap_event_name><redcap_repeat_instrument><![CDATA[]]></redcap_repeat_instrument>"
-                                             "<redcap_repeat_instance><![CDATA[1]]></redcap_repeat_instance><yesno><![CDATA[1]]></yesno><num><![CDATA[]]></num><form_1_complete><![CDATA[1]]></form_1_complete><drop><![CDATA[]]>"
-                                             "</drop><radio><![CDATA[]]></radio><checks___1><![CDATA[0]]></checks___1><checks___2><![CDATA[0]]></checks___2><checks___3><![CDATA[0]]></checks___3><checks___4><![CDATA[0]]></checks___4>"
-                                             "<firstrow><![CDATA[]]></firstrow><secondrow><![CDATA[]]></secondrow><file><![CDATA[]]></file><form_2_complete><![CDATA[0]]></form_2_complete>"
-                                             "<date_dec><![CDATA[]]></date_dec><date_inc_sec><![CDATA[]]></date_inc_sec><crawling><![CDATA[]]></crawling><postal_code><![CDATA[]]></postal_code>"
-                                             "<email><![CDATA[]]></email><truefalse><![CDATA[]]></truefalse><slider><![CDATA[]]></slider><form_3_complete><![CDATA[]]></form_3_complete></item>\n"
+                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_c_arm_1]]></redcap_event_name><redcap_repeat_instrument></redcap_repeat_instrument>"
+                                             "<redcap_repeat_instance><![CDATA[1]]></redcap_repeat_instance><yesno><![CDATA[1]]></yesno><num></num><form_1_complete><![CDATA[1]]></form_1_complete><drop>"
+                                             "</drop><radio></radio><checks___1><![CDATA[0]]></checks___1><checks___2><![CDATA[0]]></checks___2><checks___3><![CDATA[0]]></checks___3><checks___4><![CDATA[0]]></checks___4>"
+                                             "<firstrow></firstrow><secondrow></secondrow><file></file><form_2_complete><![CDATA[0]]></form_2_complete>"
+                                             "<date_dec></date_dec><date_inc_sec></date_inc_sec><postal_code></postal_code>"
+                                             "<email></email><truefalse></truefalse><slider></slider><form_3_complete></form_3_complete></item>\n"
 
-                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_c_arm_1]]></redcap_event_name><redcap_repeat_instrument><![CDATA[]]></redcap_repeat_instrument>"
-                                             "<redcap_repeat_instance><![CDATA[2]]></redcap_repeat_instance><yesno><![CDATA[]]></yesno><num><![CDATA[]]></num><form_1_complete><![CDATA[0]]></form_1_complete><drop><![CDATA[]]>"
-                                             "</drop><radio><![CDATA[]]></radio><checks___1><![CDATA[0]]></checks___1><checks___2><![CDATA[0]]></checks___2><checks___3><![CDATA[0]]></checks___3><checks___4><![CDATA[0]]></checks___4>"
-                                             "<firstrow><![CDATA[2]]></firstrow><secondrow><![CDATA[]]></secondrow><file><![CDATA[]]></file><form_2_complete><![CDATA[2]]></form_2_complete>"
-                                             "<date_dec><![CDATA[]]></date_dec><date_inc_sec><![CDATA[]]></date_inc_sec><crawling><![CDATA[]]></crawling><postal_code><![CDATA[]]></postal_code>"
-                                             "<email><![CDATA[]]></email><truefalse><![CDATA[]]></truefalse><slider><![CDATA[]]></slider><form_3_complete><![CDATA[]]></form_3_complete></item>\n"
-
-                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_d_arm_1]]></redcap_event_name><redcap_repeat_instrument><![CDATA[form_2]]></redcap_repeat_instrument>"
-                                             "<redcap_repeat_instance><![CDATA[1]]></redcap_repeat_instance><yesno><![CDATA[]]></yesno><num><![CDATA[]]></num><form_1_complete><![CDATA[]]></form_1_complete><drop><![CDATA[]]>"
-                                             "</drop><radio><![CDATA[]]></radio><checks___1><![CDATA[0]]></checks___1><checks___2><![CDATA[0]]></checks___2><checks___3><![CDATA[0]]></checks___3><checks___4><![CDATA[0]]></checks___4>"
-                                             "<firstrow><![CDATA[2]]></firstrow><secondrow><![CDATA[]]></secondrow><file><![CDATA[]]></file><form_2_complete><![CDATA[1]]></form_2_complete>"
-                                             "<date_dec><![CDATA[]]></date_dec><date_inc_sec><![CDATA[]]></date_inc_sec><crawling><![CDATA[]]></crawling><postal_code><![CDATA[]]></postal_code>"
-                                             "<email><![CDATA[]]></email><truefalse><![CDATA[]]></truefalse><slider><![CDATA[]]></slider><form_3_complete><![CDATA[]]></form_3_complete></item>\n"
+                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_c_arm_1]]></redcap_event_name><redcap_repeat_instrument></redcap_repeat_instrument>"
+                                             "<redcap_repeat_instance><![CDATA[2]]></redcap_repeat_instance><yesno></yesno><num></num><form_1_complete><![CDATA[0]]></form_1_complete><drop>"
+                                             "</drop><radio></radio><checks___1><![CDATA[0]]></checks___1><checks___2><![CDATA[0]]></checks___2><checks___3><![CDATA[0]]></checks___3><checks___4><![CDATA[0]]></checks___4>"
+                                             "<firstrow><![CDATA[2]]></firstrow><secondrow></secondrow><file></file><form_2_complete><![CDATA[2]]></form_2_complete>"
+                                             "<date_dec></date_dec><date_inc_sec></date_inc_sec><postal_code></postal_code>"
+                                             "<email></email><truefalse></truefalse><slider></slider><form_3_complete></form_3_complete></item>\n"
 
                                              "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_d_arm_1]]></redcap_event_name><redcap_repeat_instrument><![CDATA[form_2]]></redcap_repeat_instrument>"
-                                             "<redcap_repeat_instance><![CDATA[2]]></redcap_repeat_instance><yesno><![CDATA[]]></yesno><num><![CDATA[]]></num><form_1_complete><![CDATA[]]></form_1_complete><drop><![CDATA[]]>"
-                                             "</drop><radio><![CDATA[]]></radio><checks___1><![CDATA[0]]></checks___1><checks___2><![CDATA[0]]></checks___2><checks___3><![CDATA[0]]></checks___3><checks___4><![CDATA[0]]></checks___4>"
-                                             "<firstrow><![CDATA[2]]></firstrow><secondrow><![CDATA[]]></secondrow><file><![CDATA[]]></file><form_2_complete><![CDATA[2]]></form_2_complete>"
-                                             "<date_dec><![CDATA[]]></date_dec><date_inc_sec><![CDATA[]]></date_inc_sec><crawling><![CDATA[]]></crawling><postal_code><![CDATA[]]></postal_code>"
-                                             "<email><![CDATA[]]></email><truefalse><![CDATA[]]></truefalse><slider><![CDATA[]]></slider><form_3_complete><![CDATA[]]></form_3_complete></item>\n"
+                                             "<redcap_repeat_instance><![CDATA[1]]></redcap_repeat_instance><yesno></yesno><num></num><form_1_complete></form_1_complete><drop>"
+                                             "</drop><radio></radio><checks___1><![CDATA[0]]></checks___1><checks___2><![CDATA[0]]></checks___2><checks___3><![CDATA[0]]></checks___3><checks___4><![CDATA[0]]></checks___4>"
+                                             "<firstrow><![CDATA[2]]></firstrow><secondrow></secondrow><file></file><form_2_complete><![CDATA[1]]></form_2_complete>"
+                                             "<date_dec></date_dec><date_inc_sec></date_inc_sec><postal_code></postal_code>"
+                                             "<email></email><truefalse></truefalse><slider></slider><form_3_complete></form_3_complete></item>\n"
+
+                                             "<item><study_no><![CDATA[1]]></study_no><redcap_event_name><![CDATA[event_d_arm_1]]></redcap_event_name><redcap_repeat_instrument><![CDATA[form_2]]></redcap_repeat_instrument>"
+                                             "<redcap_repeat_instance><![CDATA[2]]></redcap_repeat_instance><yesno></yesno><num></num><form_1_complete></form_1_complete><drop>"
+                                             "</drop><radio></radio><checks___1><![CDATA[0]]></checks___1><checks___2><![CDATA[0]]></checks___2><checks___3><![CDATA[0]]></checks___3><checks___4><![CDATA[0]]></checks___4>"
+                                             "<firstrow><![CDATA[2]]></firstrow><secondrow></secondrow><file></file><form_2_complete><![CDATA[2]]></form_2_complete>"
+                                             "<date_dec></date_dec><date_inc_sec></date_inc_sec><postal_code></postal_code>"
+                                             "<email></email><truefalse></truefalse><slider></slider><form_3_complete></form_3_complete></item>\n"
                                              "</records>"))
 
 (define redcap:testfieldsexp1 (string-append "study_no,redcap_event_name,redcap_repeat_instrument,redcap_repeat_instance,num,radio,checks___1,checks___2,checks___3,checks___4\n"
@@ -290,6 +287,7 @@
                                              "1,event_b_arm_1,,,8,2,0,0,1,1\n"
                                              "1,event_d_arm_1,,,,,,,,\n"
                                              "1,event_c_arm_1,,1,,,0,0,0,0\n"
+                                             "1,event_c_arm_1,,2,,,0,0,0,0\n"
                                              "2,event_a_arm_1,,,42,,,,,\n"))
 
 (define redcap:testfieldsexp2 (string-append "num,radio,checks___1,checks___2,checks___3,checks___4\n"
@@ -297,19 +295,18 @@
                                             "8,2,0,0,1,1\n"
                                              ",,,,,\n"
                                              ",,0,0,0,0\n"
+                                             ",,0,0,0,0\n"
                                             "42,,,,,\n"))
 
-(define redcap:testformsexp '((("study_no" . "2") ("redcap_event_name" . "event_a_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . "") ("yesno" . "1") ("num" . "42") ("form_1_complete" . "2")
-                               ("drop" . "") ("radio" . "") ("checks___1" . "") ("checks___2" . "") ("checks___3" . "") ("checks___4" . "") ("firstrow" . "") ("secondrow" . "") ("file" . "") ("form_2_complete" . "")
-                               ("date_dec" . "") ("date_inc_sec" . "") ("crawling" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . "0"))))
+(define redcap:testformsexp '((("drop" . "") ("radio" . "") ("checks___1" . "") ("checks___2" . "") ("checks___3" . "") ("checks___4" . "") ("firstrow" . "") ("secondrow" . "") ("file" . "") ("form_2_complete" . ""))))
 
 (define redcap:testeventsexp '((("study_no" . "1") ("redcap_event_name" . "event_b_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . "") ("yesno" . "0") ("num" . "8") ("form_1_complete" . "2")
                                 ("drop" . "1") ("radio" . "2") ("checks___1" . "0") ("checks___2" . "0") ("checks___3" . "1") ("checks___4" . "1") ("firstrow" . "1") ("secondrow" . "2") ("file" . "") ("form_2_complete" . "0")
-                                ("date_dec" . "") ("date_inc_sec" . "") ("crawling" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . ""))))
+                                ("date_dec" . "") ("date_inc_sec" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . ""))))
 
 (define redcap:testfilterexp '((("study_no" . "2") ("redcap_event_name" . "event_a_arm_1") ("redcap_repeat_instrument" . "") ("redcap_repeat_instance" . "") ("yesno" . "1") ("num" . "42") ("form_1_complete" . "2")
                                 ("drop" . "") ("radio" . "") ("checks___1" . "") ("checks___2" . "") ("checks___3" . "") ("checks___4" . "") ("firstrow" . "") ("secondrow" . "") ("file" . "") ("form_2_complete" . "")
-                                ("date_dec" . "") ("date_inc_sec" . "") ("crawling" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . "0"))))
+                                ("date_dec" . "") ("date_inc_sec" . "") ("postal_code" . "") ("email" . "") ("truefalse" . "") ("slider" . "") ("form_3_complete" . "0"))))
 
 ;; Importing and exporting files functions
 ;;  - redcap-import-file

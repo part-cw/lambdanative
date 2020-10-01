@@ -1,6 +1,6 @@
 #|
 lnHealth - Health related apps using the LambdaNative framework
-Copyright (c) 2009-2017, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -93,11 +93,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (let* ((request (string-append "GET " folder "?F=0 HTTP/1.0\r\nHost: " host "\r\n\r\n"))
              (status  (httpsclient-send (string->u8vector request))))
         (let loop ((n 1) (output (u8vector)))
-          (if (fx<= n 0) 
-           (begin 
+          (if (fx<= n 0)
+           (begin
              (httpsclient-close)
              (let ((res (download:split-headerbody (u8vector->string output))))
-                (if (and (string? (car res)) (fx> (string-length (car res)) 12) 
+                (if (and (string? (car res)) (fx> (string-length (car res)) 12)
                          (or (string=? (substring (car res) 9 12) "201")
                              (string=? (substring (car res) 9 12) "200")))
                   (let* ((s (cadr res))
@@ -156,7 +156,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               )
             )
            (let ((count (httpsclient-recv download:buf)))
-             (if (> count 0) (download:data-append! download:buf))
+             (if (or (string=? (system-platform) "android") (string=? (system-platform) "ios")) (thread-sleep! 0.001)) ;;allow GUI to refresh
+             (if (> count 0) (download:data-append! (subu8vector download:buf 0 count)))
              (loop count))
           )
         )
@@ -165,4 +166,4 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     )
   ))
 
-;; eof  
+;; eof

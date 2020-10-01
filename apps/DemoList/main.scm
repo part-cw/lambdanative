@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -35,11 +35,42 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
+;; minimal list example
 
-(define (function-exists? func)
-  (if (not (or (string? func) (symbol? func))) (raise "function-exists? must be called with string or symbol")
-  (let ((str (if (symbol? func) (symbol->string func) func)))
-    (with-exception-catcher (lambda (e) #f) 
-      (lambda () (with-input-from-string str (lambda () (procedure? (eval (read))))))))))
+(define gui #f)
+
+(define (numeric-callback g wgt t x y)
+  (glgui-widget-set! g lbl 'label (string-append "You clicked: " (number->string (fix (glgui-widget-get g wgt 'current))))))
+(define (numeric-list-element num)
+  (lambda (g wgt bx by bw bh selected?)
+    (glgui:draw-text-left (+ bx 13) (+ by 3) 50 24 (number->string num) ascii_24.fnt White)
+  ))
+(define (build-list)
+  (let loop ((i 0) (result (list)))
+    (if (fx= i 10) result
+      (loop (+ i 1)(append result (list (numeric-list-element i))))
+    )))
+
+(main
+;; initialization
+  (lambda (w h)
+    (make-window 320 480)
+    (glgui-orientation-set! GUI_PORTRAIT)
+    (set! gui (make-glgui))
+    (glgui-list gui 0 (* (/ (glgui-height-get) 3) 2) (glgui-width-get) (/ (glgui-height-get) 3) 25 (build-list) numeric-callback)
+    (set! lbl (glgui-label gui 0 (/ (glgui-height-get) 3) (glgui-width-get) 24 "" ascii_24.fnt White))
+  )
+;; events
+  (lambda (t x y)
+    (if (= t EVENT_KEYPRESS) (begin
+      (if (= x EVENT_KEYESCAPE) (terminate))))
+    (glgui-event gui t x y))
+;; termination
+  (lambda () #t)
+;; suspend
+  (lambda () (glgui-suspend))
+;; resume
+  (lambda () (glgui-resume))
+)
 
 ;; eof

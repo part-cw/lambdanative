@@ -115,22 +115,26 @@ else
   fi
 fi
 
-identity=`security find-identity -v -p codesigning | grep "Developer ID Application" | cut -d\  -f5-`
-echo " => signing application [$identity].."
-
-if [ "X$identity" == "X" ]; then
-  codesign -i $SYS_PACKAGE_DOT -fs - $apptgtdir
-  asserterror $?
+if [ "X$SYS_MODE" = "Xdebug" ]; then
+  echo " => not signing application to allow debugger to attach.."
 else
-  veval "codesign --keychain ~/Library/Keychains/login.keychain -i $SYS_PACKAGE_DOT -fs $identity --options=runtime $apptgtdir"
-  asserterror $?
-fi
+  identity=`security find-identity -v -p codesigning | grep "Developer ID Application" | cut -d\  -f5-`
+  echo " => signing application [$identity].."
 
-echo " => verifying application signature.."
-checkfail=`codesign --verify $apptgtdir 2>&1`
-if [ "$checkfail" ]; then
-  echo "ERROR: $SYS_APPNAME build was not successful [$checkfail]"
-  exit 1
+  if [ "X$identity" == "X" ]; then
+    codesign -i $SYS_PACKAGE_DOT -fs - $apptgtdir
+    asserterror $?
+  else
+    veval "codesign --keychain ~/Library/Keychains/login.keychain -i $SYS_PACKAGE_DOT -fs $identity --options=runtime $apptgtdir"
+    asserterror $?
+  fi
+
+  echo " => verifying application signature.."
+  checkfail=`codesign --verify $apptgtdir 2>&1`
+  if [ "$checkfail" ]; then
+    echo "ERROR: $SYS_APPNAME build was not successful [$checkfail]"
+    exit 1
+  fi
 fi
 
 cd $here

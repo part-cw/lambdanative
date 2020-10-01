@@ -39,18 +39,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; init.scm
 ;; this is the glue between the native launcher and the portable code
 
-(define-macro (define-cond-expand-feature-value v)
-  (let ((v (eval v)))
-    `(define-cond-expand-feature ,v)))
-
-(define-cond-expand-feature-value
-  (if (>= (system-version) 409002)
-      'heartbeat-interval-2019
-      'heartbeat-interval-legacy))
-
 (cond-expand
- (heartbeat-interval-2019 (if (string=? (system-platform) "android") (##set-heartbeat-interval! -1.)))
- (else (if (string=? (system-platform) "android") (##heartbeat-interval-set! -1.))))
+ (gambit-c (if (string=? (system-platform) "android") (##heartbeat-interval-set! -1.)))
+ (else (if (string=? (system-platform) "android") (##set-heartbeat-interval! -1.))))
 
 (c-declare  #<<end-of-c-declare
 
@@ -87,6 +78,15 @@ end-of-c-declare
 (define (system-cmdarg) (system-cmdargv 1)) ;; backwards compatibility
 
 (define force-terminate (c-lambda () void "force_terminate"))
+
+;; Cleanup and exit with given exit code.  (Unlike force-terminate,
+;; which always exists with zero.)
+;;
+;; Overriding ##exit helps to avoid segfault when leaving a gambit
+;; repl and simillar situations.
+(set! ##exit
+      (lambda (#!optional (code 0))
+        ((c-lambda (int) void "lambdanative_exit") code)))
 
 (if (not (file-exists? (system-directory)))
   (with-exception-catcher (lambda (e) #f) 

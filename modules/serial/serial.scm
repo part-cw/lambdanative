@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -673,5 +673,10 @@ end-of-c-declare
       )
     )
   ))
+
+;; As the timing accuracy of serial may depend on frequent runs make
+;; sure this behavior does not change with new glgui-event sleeps.
+(if (function-exists? "glgui-timings-at-10msec!")
+  (eval '(glgui-timings-at-10msec!)))
 
 ;; eof

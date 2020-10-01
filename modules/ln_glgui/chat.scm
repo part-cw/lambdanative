@@ -107,7 +107,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (deltat (glgui-widget-get g wgt 'deltatime)))
     ;; Update the strlst
     (if (or (not strlst) (not (fx= (length strlst) (length lst))))
-      (begin 
+      (begin
         (set! strlst (glgui:chat-split-allstrings g wgt))
         (glgui-widget-set! g wgt 'strlst strlst)
         (set! ofs 0)
@@ -135,13 +135,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             ;; Add the complete message text
             (let loop ((k 0))
               (if (= k (length strings)) #t
-                (begin 
+                (begin
                   (glgui:draw-text-left dx (- dy (* k dh) 1) dw dh (list-ref strings k) fnt txtcol)
                   (loop (+ k 1))
                 )
               )
             )
-            ;; Add timestamps in between messages 
+            ;; Add timestamps in between messages
             (if (fx< i (- n 1))
               (begin
                 ;; Add name if receiving user changes
@@ -186,8 +186,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 )
               )
             )
-            (loop (fx+ i 1) (+ y0 dhline) 
-                  (if (fx= (fx+ i 1) n) (list) (list-ref strlst (fx+ i 1))) 
+            (loop (fx+ i 1) (+ y0 dhline)
+                  (if (fx= (fx+ i 1) n) (list) (list-ref strlst (fx+ i 1)))
                   (if (fx= (fx+ i 1) n) (list) (list-ref lst (fx+ i 1))))
           )
           (set! n (- i ofs))
@@ -204,54 +204,59 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ))
 
 (define (glgui:chat-input g wgt type mx my)
-  (let* ((x (fix (glgui-widget-get-dyn g wgt 'x)))
+  (let* ((mx-fixed (fix mx)) ;; Q: Can `mx` or `my` ever not be fixnums?
+         (my-fixed (fix my)) ;; converting them once here for both readability and speed
+         (x (fix (glgui-widget-get-dyn g wgt 'x)))
          (y (fix (glgui-widget-get-dyn g wgt 'y)))
          (w (fix (glgui-widget-get-dyn g wgt 'w)))
          (h (fix (glgui-widget-get-dyn g wgt 'h)))
          (cb (glgui-widget-get g wgt 'callback))
          (dh (glgui-widget-get g wgt 'dh))
          (lst (glgui-widget-get g wgt 'list))
-         (n (length lst))
+         (n (length lst)) ;; length is O(n) - try to avoid
          (val (glgui-widget-get g wgt 'offset))
          (valmin 0)
          (valmax_temp (glgui-widget-get g wgt 'valmax))
          (valmax (if valmax_temp valmax_temp n))
-         (old (glgui-widget-get g wgt 'old))
-         (drag (glgui-widget-get g wgt 'drag))
-         (oldy (glgui-widget-get g wgt 'oldy))
-         (fsty (glgui-widget-get g wgt 'fsty))
+         (old (glgui-widget-get g wgt 'old)) ;; boolean: "touched/clicked"
+         (drag (glgui-widget-get g wgt 'drag)) ;; boolean: "touched/clicked" and "motion seen"
+         (oldy (glgui-widget-get g wgt 'oldy)) ;; y coordinate upon "touched/clicked" start
+         (fsty (glgui-widget-get g wgt 'fsty)) ;; y coordinate upon "touched/clicked" start
          (space (/ (modulo h dh) 2.))
-         (inside (and (fx> (fix mx) x) (fx< (fix mx) (fx+ x w)) (fx> (fix my) y) (fx< (fix my) (fx+ y h)))))
-     (cond
-       ((and (fx= type EVENT_MOTION) old) ;; drag
-         (if (> (abs (- my fsty)) 5) (begin
-           (glgui-widget-set! g wgt 'offset (max valmin (min valmax
-              (+ val (* (- valmax valmin) (/ (flo (* 1. (- oldy my))) (flo h)))))))
-           (glgui-widget-set! g wgt 'oldy (fix my))
-           (glgui-widget-set! g wgt 'drag #t)
-        ))
-       )
-       ((and inside (fx= type EVENT_BUTTON1DOWN)) ;; touch down
-         (glgui-widget-set! g wgt 'oldy (fix my))
-         (glgui-widget-set! g wgt 'fsty (fix my))
-         (glgui-widget-set! g wgt 'old #t)
-         (glgui-widget-set! g wgt 'drag #f)
-       )
-       ((and old (fx= type EVENT_BUTTON1UP)) ;; touch release
-         (glgui-widget-set! g wgt 'offset (round val)) ;; snap to place?
-         (if (and (not drag) inside cb)
-           (let ((cur (round (+ val (/ (- (+ y h) (+ my space)) dh) -.5))))
-             (if (and (>= cur 0) (>= cur val) (< cur (length lst))) (begin
-               (glgui-widget-set! g wgt 'current cur)
-               (if (procedure? cb) (cb g wgt type mx my))
-            ))))
-         (glgui-widget-set! g wgt 'old #f)
-         (glgui-widget-set! g wgt 'drag #f)
-       )
-       (else (if (not inside) (glgui-widget-set! g wgt 'old #f)))
-    )
-  inside
-))
+         (inside (and (fx> mx-fixed x) (fx< mx-fixed (fx+ x w)) (fx> my-fixed y) (fx< my-fixed (fx+ y h)))))
+    (cond
+     ((and (fx= type EVENT_MOTION) old) ;; drag
+      (if (> (abs (- my fsty)) 5)
+          (let* ((calculated (+ val (* (- valmax valmin) (/ (flo (* 1. (- oldy my))) (flo h))))) ;; Why these `flo`?
+                 (clipped (max valmin (min valmax calculated))))
+            (glgui-widget-set! g wgt 'offset clipped)
+            (glgui-widget-set! g wgt 'oldy my-fixed)
+            (if (not drag) (glgui-widget-set! g wgt 'drag #t)))))
+     ((and inside (fx= type EVENT_BUTTON1DOWN)) ;; touch down
+      (glgui-widget-set! g wgt 'oldy my-fixed)
+      (glgui-widget-set! g wgt 'fsty my-fixed)
+      (glgui-widget-set! g wgt 'old #t)
+      (glgui-widget-set! g wgt 'drag #f))
+     ((and old (fx= type EVENT_BUTTON1UP)) ;; touch release
+      (cond
+       ((not inside) ;; cancel drag
+        (if old (glgui-widget-set! g wgt 'old #f))
+        (if drag (glgui-widget-set! g wgt 'drag #f)))
+       (else
+        (glgui-widget-set! g wgt 'offset (round val)) ;; snap to place?
+        (if (and (not drag) inside cb)
+            (let ((cur (round (+ val (/ (- (+ y h) (+ my space)) dh) -.5))))
+              (if (and (>= cur 0) (>= cur val) (< cur n)) (begin
+                (glgui-widget-set! g wgt 'current cur)
+                (if (procedure? cb) (cb g wgt type mx my))))))
+        (if old (glgui-widget-set! g wgt 'old #f))
+        (if drag (glgui-widget-set! g wgt 'drag #f)))))
+      (else ;; neither button1 nor motion
+       (if (not inside) (begin
+        (if old (glgui-widget-set! g wgt 'old #f))
+        (if drag (glgui-widget-set! g wgt 'drag #f))))))
+    ;; return whether or not input was applicable
+    inside))
 
 (define (glgui-chat g x y w h dh lst fnt cb)
   (glgui-widget-add g

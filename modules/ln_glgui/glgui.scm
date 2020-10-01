@@ -283,6 +283,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((frame-period-max-value 0.5) ;; How long to sleep at most in redraw.
         (step 0.05) ;; delay increase
         (consecutive-redraw-count 1)
+        (frame-period-custom #f)
         (customized-moment #f)
         (wait-mutex (make-mutex 'glgui-event))
         (wait-cv (make-condition-variable 'glgui-event)))

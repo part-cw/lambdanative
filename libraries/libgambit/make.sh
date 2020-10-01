@@ -11,7 +11,7 @@ package_patch
 
 case $SYS_PLATFORM in
 ios)
-  EXTRACONF=--host=arm
+  EXTRACONF=--host=x86_64-apple-darwin
   cp configure configure.tmp
   cat configure.tmp | sed 's/#define HAVE_CLOCK_GETTIME/\/\/#define HAVE_CLOCK_GETTIME/g' > configure
 ;;

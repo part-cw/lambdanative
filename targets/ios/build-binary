@@ -37,14 +37,16 @@
 
 # lipo the payload
 
-payloads=`ls -1 $SYS_PREFIXROOT/ios/*/lib/libpayload.a | tr '\n' ' '`
+SYS_CPUs=`echo $SYS_CPUs | awk '{for (i=1;i<=NF;i++) if (!a[$i]++) printf("%s%s",$i,FS)}{printf("\n")}'`
+payloads=
+for SYS_CPU in $SYS_CPUs; do
+  payloads="$payloads $SYS_PREFIXROOT/ios/$SYS_CPU/lib/libpayload.a"
+done
 ios_fatlib=$SYS_PREFIXROOT/ios/libpayload-fat.a
 rmifexists $ios_fatlib
 lipo $payloads -output $ios_fatlib -create
 assertfile $ios_fatlib "lipo failed to create fat payload"
-
-# overwrite the current arch payload with the fat one
-mv $ios_fatlib $SYS_PREFIX/lib/libpayload.a
+mv $ios_fatlib $SYS_PREFIX/lib/libpayload-fat.a
 
 ios_subst()
 {
@@ -130,6 +132,9 @@ cd $here
 tmpappdir=$xcodedir/Release-iphoneos/$SYS_APPNAME$SYS_APPFIX
 if [ ! -d $tmpappdir ]; then
   tmpappdir=$xcodedir/Release/$SYS_APPNAME$SYS_APPFIX
+fi
+if [ ! -d $tmpappdir ]; then
+  tmpappdir=$xcodedir/Release-iphonesimulator/$SYS_APPNAME$SYS_APPFIX
 fi
 assertfile $tmpappdir
 

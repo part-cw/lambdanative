@@ -1,5 +1,5 @@
-PKGURL=https://www.openssl.org/source/openssl-1.1.1c.tar.gz
-PKGHASH=71b830a077276cbeccc994369538617a21bee808
+PKGURL=https://www.openssl.org/source/openssl-1.1.1h.tar.gz
+PKGHASH=8d0d099e8973ec851368c8c775e05e1eadca1794
 
 package_download $PKGURL $PKGHASH
 
@@ -33,11 +33,7 @@ macosx)
   fi
 ;;
 android*)
-  if [ "$SYS_CPU" = "arm64" ]; then
-    EXTRACONF="android-arm64 -D__ANDROID_API__=$SYS_ANDROIDAPI"
-  else
-    EXTRACONF="android-arm -D__ANDROID_API__=$SYS_ANDROIDAPI"
-  fi
+  EXTRACONF="android-$SYS_CPU -D__ANDROID_API__=$SYS_ANDROIDAPI"
   export ANDROID_NDK_HOME=$android_customtoolchain
   PATH=$android_customtoolchain/bin:$PATH
 ;;
