@@ -283,7 +283,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((frame-period-max-value 0.5) ;; How long to sleep at most in redraw.
         (step 0.05) ;; delay increase
         (consecutive-redraw-count 1)
-        (customized-moment #f)
+        (customized-moment #f) ;; may be a procedure returning the wait time/moment
         (wait-mutex (make-mutex 'glgui-event))
         (wait-cv (make-condition-variable 'glgui-event)))
     (define (timings-set! #!key (frame-period-max #f) (frame-period-min #f) (frame-period-custom #f))
@@ -316,8 +316,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                   (apply glgui:inputloop (append (list t x0 y0) gs)))))
           (if (fx= t EVENT_REDRAW)
               (wait-for-time-or-signal!)
-              (if frame-period-custom
-                  (thread-sleep! (frame-period-custom 1))
+              (if customized-moment
+                  (thread-sleep! (customized-moment 1))
                   (begin
                     (thread-sleep! step)
                     (reset-wait!))))))
