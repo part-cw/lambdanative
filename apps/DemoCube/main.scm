@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; rotating cube example
 
 (define alpha 0.)
-(define alphaincrement 0.5)
+(define alphaincrement 1.)
 (define beta 30.)
 (define betaincrement 0.)
 
@@ -95,6 +95,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (set! alphaincrement (- alphaincrement))
   (set! betaincrement (- betaincrement)))
 
+(define legacy-time #f)
+
 (main
 ;; initialization
   (lambda (w h)
@@ -110,8 +112,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (glCore-registerhook render-custom)
   )
 ;; events
-  (lambda (t x y) 
-    (if (= t EVENT_KEYPRESS) (begin 
+  (lambda (t x y)
+    (if (= t EVENT_KEYPRESS) (begin
+      (if (= x EVENT_KEYTAB)
+        (begin
+          (if legacy-time
+            (glgui-timings-set! frame-period-max: 0.5 frame-period-min: 0.05)
+            (glgui-timings-at-10msec!)
+          )
+          (set! legacy-time (not legacy-time))
+        ))
       (if (= x EVENT_KEYESCAPE) (terminate))))
     (glgui-event gui t x y)
   )
