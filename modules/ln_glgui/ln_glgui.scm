@@ -42,8 +42,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define-cond-expand-feature-value
   (if (>= (system-version) 409002)
-      'gambit-4.7.9
-      'gambit-4.9+))
+      'gambit-4.9+
+      'gambit-4.7.9))
 
 (cond-expand
  (gambit-4.7.9
