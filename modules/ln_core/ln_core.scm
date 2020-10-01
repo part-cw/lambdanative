@@ -37,9 +37,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
 (include "unit-test.scm")
+(include "flofix.scm")
 (include "color.scm")
 (include "floatstring.scm")
-(include "flofix.scm")
 (include "list.scm")
 (include "math.scm")
 (include "list-stats.scm")
