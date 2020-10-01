@@ -39,8 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (global-variable-defined? obj) (and (symbol? obj) (##global-var? obj)))
 
 (define (function-exists? obj) ;; deprecated
-  (if (string? obj)
-      (global-variable-defined? (string->symbol obj))
-      (global-variable-defined? obj)))
+  (let ((sym (if (string? obj) (string->symbol obj) obj)))
+    (and (global-variable-defined? sym)
+         (procedure? (##global-var-ref sym)))))
 
 ;; eof
