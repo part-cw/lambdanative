@@ -1,0 +1,26 @@
+This directory is an excerpt of [[https://github.com/scheme-requests-for-implementation/srfi-179][SRFI-179 repo]].
+
+Few modifications made to support gambc version 4.7.9 too.
+
+* SRFI 179: Nonempty Intervals and Generalized Arrays (Updated)
+
+** by Bradley J. Lucier
+
+
+
+keywords: [[https://srfi.schemers.org/?keywords=data-structure][Data Structure]], [[https://srfi.schemers.org/?keywords=numbers][Numbers]]
+
+This repository hosts [[https://srfi.schemers.org/srfi-179/][SRFI 179]]: Nonempty Intervals and Generalized Arrays (Updated), a [[https://srfi.schemers.org/][Scheme Request for Implementation]].
+
+This SRFI is in /final/ status.
+
+See also [[https://srfi.schemers.org/srfi-122/][SRFI 122: Nonempty Intervals and Generalized Arrays]] and [[https://srfi.schemers.org/srfi-164/][SRFI 164: Enhanced multi-dimensional Arrays]].
+
+The full documentation for this SRFI can be found in the [[https://srfi.schemers.org/srfi-179/srfi-179.html][SRFI Document]].
+
+If you'd like to participate in the discussion of this SRFI, or report issues with it, please [[https://srfi.schemers.org/srfi-179/][join the SRFI-179 mailing list]] and send your message there.
+
+Thank you.
+
+
+[[mailto:srfi-editors@srfi.schemers.org][The SRFI Editors]]
