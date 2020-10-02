@@ -329,7 +329,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (define (wait-for-sec _) (seconds->time (+ ##now sec)))
   (define (no-wait _) 0)
   (cond-expand
-   ((or android ios)
+   ((or android ios macosx)
     ;; TBD: convey the time value to signaling code.
     ;; switch delays to zero
     (glgui-timings-set! frame-period-custom: no-wait))
