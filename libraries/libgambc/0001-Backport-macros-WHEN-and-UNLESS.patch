@@ -1,7 +1,5 @@
-diff --git a/lib/_nonstd.scm b/lib/_nonstd.scm
-index f1db855..e66aba4 100644
---- a/lib/_nonstd.scm
-+++ b/lib/_nonstd.scm
+--- lib/_nonstd.scm
++++ lib/_nonstd.scm
 @@ -340,6 +340,28 @@
  
  ;;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

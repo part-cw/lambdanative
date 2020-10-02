@@ -1,22 +1,5 @@
-From f6ece71a0ada833c2cd69baf7b1d17eeea2e212a Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?J=C3=B6rg=20F=2E=20Wittenberger?= <Joerg.Wittenberger@softeyes.net>
-Date: Mon, 28 Sep 2020 13:01:23 +0200
-Subject: [PATCH] Precompiled C files for backport WHEN and UNLESS
-
----
- gsc/_gambcgsc.c |    5 +
- gsc/_gsc_.c     |    5 +
- gsi/_gambcgsi.c |    5 +
- gsi/_gsi_.c     |    5 +
- lib/_gambc.c    |  437 ++--
- lib/_nonstd.c   | 5263 ++++++++++++++++++++++++-----------------------
- lib/_num.c      |   12 +-
- 7 files changed, 2959 insertions(+), 2773 deletions(-)
-
-diff --git a/gsc/_gambcgsc.c b/gsc/_gambcgsc.c
-index 043ed92..99a107d 100644
---- a/gsc/_gambcgsc.c
-+++ b/gsc/_gambcgsc.c
+--- gsc/_gambcgsc.c
++++ gsc/_gambcgsc.c
 @@ -47,6 +47,7 @@
  "##list"
  "##load-required-module"
@@ -57,10 +40,8 @@ index 043ed92..99a107d 100644
  ___DEF_OLD_SYM_GLO(___S_whi,___G_whi)
  ___DEF_OLD_SYM_GLO(___S_while,___G_while)
  ___DEF_OLD_SYM_GLO(___S_width,___G_width)
-diff --git a/gsc/_gsc_.c b/gsc/_gsc_.c
-index 70573b7..4caa731 100644
---- a/gsc/_gsc_.c
-+++ b/gsc/_gsc_.c
+--- gsc/_gsc_.c
++++ gsc/_gsc_.c
 @@ -47,6 +47,7 @@
  "##list"
  "##load-required-module"
@@ -101,10 +82,8 @@ index 70573b7..4caa731 100644
  ___DEF_OLD_SYM_GLO(___S_whi,___G_whi)
  ___DEF_OLD_SYM_GLO(___S_while,___G_while)
  ___DEF_OLD_SYM_GLO(___S_width,___G_width)
-diff --git a/gsi/_gambcgsi.c b/gsi/_gambcgsi.c
-index 17f64fb..79ad722 100644
---- a/gsi/_gambcgsi.c
-+++ b/gsi/_gambcgsi.c
+--- gsi/_gambcgsi.c
++++ gsi/_gambcgsi.c
 @@ -43,6 +43,7 @@
  "##list"
  "##load-required-module"
@@ -145,10 +124,8 @@ index 17f64fb..79ad722 100644
  ___DEF_OLD_SYM_GLO(___S_whi,___G_whi)
  ___DEF_OLD_SYM_GLO(___S_while,___G_while)
  ___DEF_OLD_SYM_GLO(___S_width,___G_width)
-diff --git a/gsi/_gsi_.c b/gsi/_gsi_.c
-index 90654c7..031fbc9 100644
---- a/gsi/_gsi_.c
-+++ b/gsi/_gsi_.c
+--- gsi/_gsi_.c
++++ gsi/_gsi_.c
 @@ -43,6 +43,7 @@
  "##list"
  "##load-required-module"
@@ -189,10 +166,8 @@ index 90654c7..031fbc9 100644
  ___DEF_OLD_SYM_GLO(___S_whi,___G_whi)
  ___DEF_OLD_SYM_GLO(___S_while,___G_while)
  ___DEF_OLD_SYM_GLO(___S_width,___G_width)
-diff --git a/lib/_gambc.c b/lib/_gambc.c
-index d04267a..ecfd506 100644
---- a/lib/_gambc.c
-+++ b/lib/_gambc.c
+--- lib/_gambc.c
++++ lib/_gambc.c
 @@ -43,6 +43,7 @@
  "##list"
  "##load-required-module"
@@ -896,10 +871,8 @@ index d04267a..ecfd506 100644
  ___END_NEW_SYM_GLO(___S_zero_3f_,___K_weak_2d_values)
  
  #endif
-diff --git a/lib/_nonstd.c b/lib/_nonstd.c
-index a189889..e545c08 100644
---- a/lib/_nonstd.c
-+++ b/lib/_nonstd.c
+--- lib/_nonstd.c
++++ lib/_nonstd.c
 @@ -18,6 +18,7 @@
  "##direct-structure-set!"
  "##eq?"
@@ -10573,10 +10546,8 @@ index a189889..e545c08 100644
  ___DEF_MOD_KEY(0,___K_arguments,"arguments")
  ___DEF_MOD_KEY(1,___K_constant_2d_constructor,"constant-constructor")
  ___DEF_MOD_KEY(2,___K_constructor,"constructor")
-diff --git a/lib/_num.c b/lib/_num.c
-index fdf9cde..fcfa760 100644
---- a/lib/_num.c
-+++ b/lib/_num.c
+--- lib/_num.c
++++ lib/_num.c
 @@ -31299,11 +31299,11 @@ ___DEF_SLBL(13,___L13__23__23_catanh)
     ___CHECK_HEAP(14,4096)
  ___DEF_SLBL(14,___L14__23__23_catanh)
