@@ -450,7 +450,12 @@ make_artwork()
         echo " => generating master pixmap from SVG.."
         inkscape=inkscape
         if [ $SYS_HOSTPLATFORM = macosx ]; then
-          inkscape=/Applications/Inkscape.app/Contents/Resources/bin/inkscape
+          if [ -f /Applications/Inkscape.app/Contents/Resources/bin/inkscape ]; then
+            inkscape=/Applications/Inkscape.app/Contents/Resources/bin/inkscape
+          elif [ -f /Applications/Inkscape.app/Contents/MacOS/inkscape ]; then
+            inkscape=/Applications/Inkscape.app/Contents/MacOS/inkscape
+            veval "$inkscape -z $svgsrc -w 1200 -o $pngtgt"
+          fi
         fi
         asserttool $inkscape
         veval "$inkscape -z $svgsrc -w 1200 -e $pngtgt"
