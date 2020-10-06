@@ -92,8 +92,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (y (glgui-widget-get-dyn g wgt 'y))
          (w (glgui-widget-get-dyn g wgt 'w))
          (h (glgui-widget-get-dyn g wgt 'h))
-         (strlst (glgui-widget-get-dyn g wgt 'strlst))
-         (lst (glgui-widget-get-dyn g wgt 'list))
+         (strlst-cache (glgui-widget-get-dyn g wgt 'strlst-cache))
+         (strlst (or (and (vector? strlst-cache) (vector-ref strlst-cache 1)) '()))
+         (lst (or (glgui-widget-get-dyn g wgt 'list) '()))
          (n (length lst))
          (dh (glgui-widget-get g wgt 'dh))
          (fnt (glgui-widget-get g wgt 'font))
@@ -105,18 +106,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (group (glgui-widget-get g wgt 'group))
          (ofs (fix (floor (glgui-widget-get g wgt 'offset))))
          (deltat (glgui-widget-get g wgt 'deltatime)))
-    ;; Update the strlst
-    (if (or (not strlst) (not (fx= (length strlst) (length lst))))
-      (begin
-        (set! strlst (glgui:chat-split-allstrings g wgt))
-        (glgui-widget-set! g wgt 'strlst strlst)
-        (set! ofs 0)
-        (glgui-widget-set! g wgt 'offset ofs)
-        (glgui-widget-set! g wgt 'valmax (length lst))
-      )
-    )
+    (unless ;; Cache hit
+        (and (vector? strlst-cache) (eq? (vector-ref strlst-cache 0) lst))
+      ;; Update the strlst caching changes
+      (set! strlst (glgui:chat-split-allstrings g wgt))
+      (glgui-widget-set! g wgt 'strlst-cache (vector lst strlst))
+      ;; (glgui-widget-set! g wgt 'strlst strlst)
+      (set! ofs 0)
+      (glgui-widget-set! g wgt 'offset ofs)
+      (glgui-widget-set! g wgt 'valmax (length lst)))
     ;; Now put the elements on the screen
-    (if (fx> (length lst) 0)
+    (when (pair? lst)
       (let loop ((i ofs) (y0 y) (strings (list-ref strlst ofs)) (msg (list-ref lst ofs)))
         (if (and (< i n) (< (+ y0 (* dh (length strings))) (+ y h)))
           (let* ((dhline (* dh (length strings)))
@@ -201,7 +201,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (sy (+ y (if (= sh h) 0 (* h (/ ofs nlist))))))
       (glgui:draw-box sx sy sw sh DimGray)
     )
-))
+    ))
 
 (define (glgui:chat-input g wgt type mx my)
   (let* ((mx-fixed (fix mx)) ;; Q: Can `mx` or `my` ever not be fixnums?
