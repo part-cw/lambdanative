@@ -386,6 +386,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (glgui:uiform-image-draw x y w . args)
   (let* ((imgsrc (glgui:uiform-arg args 'file #f))
+         (wi (glgui:uiform-arg args 'width #f))  ;; absolute new width
+         (sc (glgui:uiform-arg args 'scale #f))  ;;% of screen width
          (img (if (string? imgsrc)
            (let ((lut (table-ref glgui:uiform-images imgsrc #f)))
              (if (not lut) (let* ((sandbox (uiget 'sandbox #f))
@@ -393,13 +395,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                   (tmpimg (if (file-exists? imgfile) (png->img imgfile) #f)))
                (if tmpimg (table-set! glgui:uiform-images imgsrc tmpimg) (log-error "image file " imgfile " not found"))
                tmpimg) lut)) imgsrc))
-         (h (if img (cadr img) 10))
+         (sw (car img))
+         (sh (cadr img))
+         (scx (if wi (/ wi sw) (if sc (/ (* w sc) sw) 1))) ;;image scale factor
+         (h (if img (if (or wi sc) (fix (* sh scx)) sh) 10))
+         (wn (if wi wi (if sc (* w sc) sw)))
          (align (glgui:uiform-arg args 'align 'center))
-         (drawproc (case align
+         (drawproc (if (or wi sc) glgui:draw-pixmap-center-stretch (case align
                        ((center) glgui:draw-pixmap-center)
                        ((left) glgui:draw-pixmap-left)
-                       ((right) glgui:draw-pixmap-right))))
-    (if (and img (uiget 'sanemap)) (drawproc x y w h img White))
+                       ((right) glgui:draw-pixmap-right)))))
+    (if (and img (uiget 'sanemap)) (if (or wi sc)
+                                       (drawproc x y  w h wn #f img White)
+                                       (drawproc x y  w h img White)))
     h))
 
 (uiform-register 'image glgui:uiform-image-draw #f)
