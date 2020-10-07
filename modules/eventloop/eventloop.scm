@@ -257,12 +257,13 @@ end-of-c-declare
 (set! main ln-main)
 
 (define (terminate . nomediascanner)
-  (if app:android? (begin
-    (let ((nm (not (if (= (length nomediascanner) 1) (car nomediascanner) #f))))
-     (if nm (android-run-mediascanner))
-     (android-finish)
-     (if nm (let loop ()
-      (if (not android-mediascanner-done?) (begin (thread-sleep! 0.1) (loop))))))))
+  (if app:android?
+    (let ((run-mediascanner? (if (= (length nomediascanner) 1) (not (car nomediascanner)) #t)))
+      (if run-mediascanner? (android-run-mediascanner))
+      (android-finish)
+      (if run-mediascanner?
+        (let loop ()
+          (if (not android-mediascanner-done?) (begin (thread-sleep! 0.1) (loop)))))))
   (if (procedure? hook:terminate) (hook:terminate))
 )
 
