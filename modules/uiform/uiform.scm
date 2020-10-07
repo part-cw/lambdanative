@@ -1021,14 +1021,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (delete-file tmpimagepath)))
       (if (uiget 'sanemap) (begin
         (if img
-            (begin (glgui:draw-pixmap-center x y w hp img White) (glgui:draw-pixmap-center (fix (- (+ x (* w 0.5)) (* wi 0.5))) y wi wi  camera.img White)
+            (begin (glgui:draw-pixmap-center x y w hp img White) (glgui:draw-pixmap-center-stretch (fix (- (+ x (* w 0.5)) (* wi 0.5))) y wi hp wi #f camera.img White)
               (glgui:draw-text-center x (- y (* 0.5 hp) 12) w hp (glgui:uiform-arg args 'defaultcomplete "Photo taken.\n Tap camera symbol to take a different photo") fnt White))
             (begin
               (glgui:draw-box (- (+ x (* w 0.5)) (* wp 0.5)) y wp hp (uiget 'color-default))
-              (glgui:draw-pixmap-center (- (+ x (* w 0.5)) (* wi 0.5))  y wi wi  camera.img White)
+              (glgui:draw-pixmap-center-stretch (- (+ x (* w 0.5)) (* wi 0.5))  y wi hp wi #f camera.img White)
               (glgui:draw-text-center x (- y (* 0.5 hp) 12) w hp (if (or photo-taken photo-saved)
-                (glgui:uiform-arg args 'defaultcomplete "Photo taken.\n Tap camera symbol to take a different photo")
-                (glgui:uiform-arg args 'default "Tap camera symbol to take photo")) fnt White)))
+              (glgui:uiform-arg args 'defaultcomplete "Photo taken.\n Tap camera symbol to take a different photo")
+              (glgui:uiform-arg args 'default "Tap camera symbol to take photo")) fnt White)))
       ))
     hp
   ))
@@ -1080,14 +1080,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (if video-taken
             (begin 
               (glgui:draw-box (- (+ x (* w 0.5)) (* wp 0.5)) y wp hp Green)
-              (glgui:draw-pixmap-center (fix (- (+ x (* w 0.5)) (* wi 0.5))) y wi wi  camera.img White)
+              (glgui:draw-pixmap-center-stretch (fix (- (+ x (* w 0.5)) (* wi 0.5))) y wi hp wi #f video.img White)
               (glgui:draw-text-center x (- y (* 0.5 hp) 12) w hp (glgui:uiform-arg args 'defaultcomplete "Video taken.\n Tap camera symbol to take a different video") fnt White))
             (begin
               (glgui:draw-box (- (+ x (* w 0.5)) (* wp 0.5)) y wp hp (if (or video-taken video-saved) Green (uiget 'color-default)))
-              (glgui:draw-pixmap-center (- (+ x (* w 0.5)) (* wi 0.5))  y wi wi  camera.img White)
+              (glgui:draw-pixmap-center-stretch (- (+ x (* w 0.5)) (* wi 0.5))  y wi hp wi #f video.img White)
               (glgui:draw-text-center x (- y (* 0.5 hp) 12) w hp (if (or video-taken video-saved)
-                (glgui:uiform-arg args 'defaultcomplete "Video taken.\n Tap camera symbol to take a different photo")
-                (glgui:uiform-arg args 'default "Tap camera symbol to take video")) fnt White)))
+              (glgui:uiform-arg args 'defaultcomplete "Video taken.\n Tap camera symbol to take a different video")
+              (glgui:uiform-arg args 'default "Tap camera symbol to take video")) fnt White)))
       ))
     hp
   ))
@@ -1098,14 +1098,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (duration (glgui:uiform-arg args 'duration #f))
          (filename (glgui:uiform-arg args 'filename (string-append (if (string? id) id (if (symbol? id) (symbol->string id) "")) "_" (seconds->string ##now "%Y%d%m_%H%M%S")  ".mp4")))
          (idname (string-append (if (string? id) id (if (symbol? id) (symbol->string id) "")) ":filename"))
-         (imagepath (if filename (string-append (system-directory) (system-pathseparator) "tmp_" filename) #f)))
-    (if imagepath (begin
+         (vidpath (if filename (string-append (system-directory) (system-pathseparator) "tmp_" filename) #f)))
+    (if vidpath (begin
       (uiset idname filename)
-      (if (file-exists? imagepath) (delete-file imagepath))
+      (if (file-exists? vidpath) (delete-file vidpath))
       (if (number? duration) (camera-set-max-length-video duration) (camera-set-max-length-video 0))
-      (camera-start-video imagepath)
+      (camera-start-video vidpath)
       (uiset 'nodemap '())
-      (if (file-exists? imagepath)(xxset loc id imagepath))
+      (if (file-exists? vidpath)(xxset loc id vidpath))
     ))
  ))
 
