@@ -572,19 +572,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                       ((left) glgui:draw-text-left)
                       ((center) glgui:draw-text-center)
                       ((right) glgui:draw-text-right)))
+         (fnth (glgui:fontheight fnt))
          (txtw  (if (and focusid idvalue idvaluestr (fx> (length wrappedstr) 0)) (glgui:stringwidth (list-ref wrappedstr (- (length wrappedstr) 1)) fnt) 0))
-         (txth  (if focusid (glgui:fontheight fnt) 0))
-         (ypos (+ y (* h (- lines 1))))
-         (toth (* h lines)))
+         (txth  (if focusid fnth 0))
+         (ypos (+ y (* fnth (- lines 1)) (* 0.5 fnth)))
+         (toth (+ fnth (* fnth lines))))
     (if (uiget 'sanemap) (begin
      (if req  (uiform-required-set id  (abs (- (abs y) (uiget 'offset 0) h )) ))
-     (glgui:draw-text-right x (+ y (* h (- lines 1))) (- (* w indent) 10) h label fnt White)
-     (glgui:draw-box (+ x (* w indent)) y (* w (- 1. indent indentright)) toth (if hasfocus selcolor defcolor))
+     (glgui:draw-text-right x ypos (- (* w indent) 10) h label fnt White)
+     (glgui:draw-box (+ x (* w indent)) y (* w (- 1. indent indentright))  toth  (if hasfocus selcolor defcolor))
      (let loop ((ss wrappedstr))
        (if (> (length ss) 0)
          (begin
-           (drawproc (+ x (* w indent) (if (eq? align 'left) 10 0)) ypos (- (* w (- 1. indent indentright)) 10) h (car ss) fnt fgcolor)
-           (set! ypos (- ypos h))
+           (drawproc (+ x (* w indent) (if (eq? align 'left) 10 0)) ypos (- (* w (- 1. indent indentright)) 10) fnth (car ss) fnt fgcolor)
+           (set! ypos (- ypos fnth))
            (loop (cdr ss)))))
      (if hasfocus
          (let* ((cx (case align
@@ -592,8 +593,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                       ((center) (+ x (* w indent) (/ (+ (- (* w (- 1. indent indentright)) 10) txtw) 2.) 2))
                       ((right) (- (+ x (* w (- 1. indentright))) 7))))
                 (cy (if idvalue
-                        (+ ypos h (/ (- h txth) 2.))
-                        (+ y (- toth h) (/ (- h txth) 2.))))
+                        (+ ypos fnth (/ (- fnth txth) 2.))
+                        (+ y (- toth  (* 1.5 fnth )) (/ (- fnth txth) 2.))))
                 (cw 3)
                 (ch txth)
                 (cc (if (odd? (fix (* 2 ##now))) White selcolor)))
