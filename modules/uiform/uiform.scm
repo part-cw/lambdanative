@@ -1096,7 +1096,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (id (glgui:uiform-arg args 'id #f))
          (loc (glgui:uiform-arg args 'location 'db))
          (curvalue (xxget loc id #f))
-         (boxcolor (uiget 'color-default))
+         (boxcolor (glgui:uiform-arg args 'boxcolor (uiget 'color-default)))
          (text (glgui:uiform-arg args 'text #f))
          (color (glgui:uiform-arg args 'color White))
          (left (glgui:uiform-arg args 'left #f))
@@ -1172,7 +1172,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (id (glgui:uiform-arg args 'id #f))
          (loc (glgui:uiform-arg args 'location 'db))
          (curvalue (xxget loc id #f))
-         (boxcolor (uiget 'color-default))
+         (boxcolor (glgui:uiform-arg args 'boxcolor (uiget 'color-default)))
          (color (glgui:uiform-arg args 'color White))
          (text (glgui:uiform-arg args 'text #f))
          (indent (glgui:uiform-arg args 'indent 0.2))
@@ -1389,7 +1389,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (mergedselections (let loop ((es mergedentries)(res '()))
            (if (= (length es) 0) res (loop (cdr es) (append res (if (member (car es) actualentries) '(#t) '(#f)))))))
          (noentries (length mergedentries))
-         (boxcolor (uiget 'color-default)))
+         (boxcolor (glgui:uiform-arg args 'boxcolor (uiget 'color-default))))
      (uiset idmerged mergedentries)
      (uiset idvalues defaultvalues)
      (if req  (uiform-required-set id  (abs (- (abs y) (uiget 'offset 0) h )) ))
@@ -1509,8 +1509,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (stepnum (fx- max min))
          (stepvalues  (make-list-natural min (+ 1 stepnum)))
          (defaultvalue (glgui:uiform-arg args 'default (/ stepnum 2)))
-         (value (xxget loc id #f))
-         (boxcolor (uiget 'color-default)))
+         (value (xxget loc id defaultvalue))
+         (boxcolor (glgui:uiform-arg args 'boxcolor (uiget 'color-default))))
      (uiset idvalues stepvalues)
      (if req
        (uiform-required-set id (abs (- (abs y) (uiget 'offset 0) h))))
@@ -1569,15 +1569,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (content (uiget 'modal-content))
          (modal-height (uiget 'modal-height))
          (color-background (uiget 'color-low))
+         (color-modal (uiget 'modal-boxcol Black))
          (color-button (uiget 'color-default))
+         (color-fnt (uiget 'modal-fntcol White))
          (button1str (car (cadr content)))
          (button2str (if (= (length content) 3) (car (caddr content)) #f)))
     (glgui:draw-box x y w h color-background)
-    (glgui:draw-box (+ x (* 0.1 w)) (+ y (* 0.5 (- h modal-height))) (* 0.8 w) modal-height Black)
+    (glgui:draw-box (+ x (* 0.1 w)) (+ y (* 0.5 (- h modal-height))) (* 0.8 w) modal-height color-modal)
     (let loop ((ss (reverse (string-split-width (car content) (fix (* 0.7 w)) fnt)))
                (ypos (+ y (* 0.5 h))))
       (if (fx> (length ss) 0) (begin
-        (glgui:draw-text-center x ypos w fnth (car ss) fnt White)  ;; XX
+        (glgui:draw-text-center x ypos w fnth (car ss) fnt color-fnt)  
         (loop (cdr ss) (+ ypos fnth)))))
     (let ((bw (* 0.2 w))
           (bh (uiget 'rowh))
@@ -1585,10 +1587,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (bx2 (+ x (* 0.6 w)))
           (by (+ y (* 0.5 (- h modal-height)) (* 0.1 modal-height))))
       (glgui:draw-box bx1 by bw bh color-button)
-      (glgui:draw-text-center  bx1 by bw bh button1str fnt White)
+      (glgui:draw-text-center  bx1 by bw bh button1str fnt color-fnt)
       (if button2str (begin 
         (glgui:draw-box bx2 by bw bh color-button)
-        (glgui:draw-text-center  bx2 by bw bh button2str fnt White)
+        (glgui:draw-text-center  bx2 by bw bh button2str fnt color-fnt)
       ))
     )
   ))
@@ -1961,7 +1963,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      ;; -------------
      ;;modal
      'modal-height 200                          
-      ;; -------------
+     'modal-fntcol White  
+     'modal-boxcol Firebrick                  
+     ;; -------------
      ;; colors
      'color-low     (color-fade Black 0.5)
      'color-default (color-fade White 0.3)
