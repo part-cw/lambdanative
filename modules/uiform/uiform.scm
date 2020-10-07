@@ -1429,14 +1429,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		 (drawproc (case align
                        ((center) glgui:draw-text-center)
                        ((left) glgui:draw-text-left)
-                       ((right) glgui:draw-text-right))))
-             (glgui:draw-box (+ x (* w 0.1)) (+ y dy 1) (* w 0.8) (- h 2) boxcolor)
+                       ((right) glgui:draw-text-right)))
+                 (text (car es))
+                 (wrappedtext (string-split-width text (fix (- (* 0.8 w) bw)) fnt))
+                 (numlines (length wrappedtext))
+                 (ypos (- (+ y dy) (* h 0.1 numlines))))
+             (if (car ss) (glgui:draw-box (+ x (* w 0.1)) (+ y dy 1) (* w 0.8) (- h 2) (color-fade boxcolor 0.5))  (glgui:draw-box (+ x (* w 0.1)) (+ y dy 1) (* w 0.8) (- h 2) boxcolor))
              (if radio
-                 (glgui:draw-pixmap-center bx by bw bh circle.img boxcolor)
-                 (glgui:draw-box bx by bw bh boxcolor))
+                 (glgui:draw-pixmap-center bx by bw bh circle.img (color-fade White 0.3))
+                 (glgui:draw-box bx by bw bh (color-fade White 0.3)))
              (if (car ss) (if radio (glgui:draw-pixmap-stretch (+ bx shift) (+ shift by) (* bw  scale) (* bh scale) circle.img White) 
                                     (glgui:draw-pixmap-center bx by bw bh check.img White)))
-             (drawproc (+ bx bw) (+ y dy) (- (* w 0.8) bw) h (car es) fnt White)))
+              (if (> numlines 1)
+                 (begin
+                  (let loop ((tx (reverse wrappedtext)))
+       		(if (> (length tx) 0) (begin
+           (drawproc (+ bx bw (* h 0.1)) ypos (- (* w 0.8) bw) h (car tx) fnt White)
+         ;;(set! toth (+ toth h))
+          (set! ypos (+ ypos (/ h (+ numlines 1))))
+         (loop (cdr tx)))))
+                  )
+             (drawproc (+ bx bw (* h 0.1)) (+ y dy) (- (* w 0.8) bw) h (car es) fnt White))))
          (loop (cdr es)(cdr ss)(+ dy h)))))
   ))
       
