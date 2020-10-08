@@ -1,3 +1,27 @@
+#|
+Copyright (C) 2020 Jörg F. Wittenberger. All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice (including the
+next paragraph) shall be included in all copies or substantial
+portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+|#
+
 (define-macro (define-values names . body)
   (let ((vals (gensym 'vals)))
     `(begin
@@ -26,90 +50,6 @@
 
 (cond-expand
  (gambit-c
-  ;; from srfi-1
-  (define (##iota count #!optional (start 0) (step 1))
-    (if (and (##eqv? step 1)
-             (##fixnum? start)
-             (##fx+? (##fx- count 1) start))
-
-        (let loop ((i count) (result '()))
-          (if (##fx> i 0)
-              (let ((i (##fx- i 1)))
-                (loop i (##cons (##fx+ start i) result)))
-              result))
-
-        (let loop ((i count) (result '()))
-          (if (##fx> i 0)
-              (let ((i (##fx- i 1)))
-                (loop i (##cons (##+ start (##* step i)) result)))
-              result))))
-  (define iota ##iota)
-  (define (take x i)
-    (let loop ((probe x)
-               (j i)
-               (rev-result '()))
-      (if (##fx> j 0)
-          (loop (if (pair? probe) (##cdr probe) (error "take: short list" x i))
-                (##fx- j 1)
-                (##cons (##car probe) rev-result))
-          (reverse rev-result))))
-
-  (define (drop x i)
-    (let loop ((probe x)
-               (j i))
-      (if (##fx> j 0)
-          (loop (if (pair? probe) (##cdr probe) (error "drop: short list" x i))
-                (##fx- j 1))
-          probe)))
-  (define (exact-integer? obj) (and (number? obj) (exact? obj)))
-  ;;
-  (define vector-copy! ##vector-copy)
-  (define s8vector-copy! ##s8vector-copy)
-  (define s16vector-copy! ##s16vector-copy)
-  (define s32vector-copy! ##s32vector-copy)
-  (define s64vector-copy! ##s64vector-copy)
-  (define u8vector-copy! ##u8vector-copy)
-  (define u16vector-copy! ##u16vector-copy)
-  (define u32vector-copy! ##u32vector-copy)
-  (define u64vector-copy! ##u64vector-copy)
-  (define f32vector-copy! ##f32vector-copy)
-  (define f64vector-copy! ##f64vector-copy)
-  (define (c64vector-copy! to at from start end)
-    (f32vector-copy! to (* 2 at) from (* 2 start) (* 2 end)))
-  (define (c128vector-copy! to at from start end)
-    (f64vector-copy! to (* 2 at) from (* 2 start) (* 2 end)))
-  ;; from srfi-43
-  (define (vectors-ref vectors i)
-    (map (lambda (v) (vector-ref v i)) vectors))
-  (define %smallest-length
-    (letrec
-        ((loop
-          (lambda (vector-list length callee)
-            (if (null? vector-list)
-                length
-                (loop (cdr vector-list)
-                      (min (vector-length
-                            (let ((e (car vector-list)))
-                              (if (vector? e) e (error "not a vector" callee e))))
-                           length)
-                      callee)))))
-      loop))
-  (define %vector-map2+!
-    (letrec ((loop (lambda (f target vectors i)
-                     (if (zero? i)
-                         target
-                         (let ((j (- i 1)))
-                           (vector-set! target j
-                                        (apply f j (vectors-ref vectors j)))
-                           (loop f target vectors j))))))
-      (lambda (f target vectors len)
-        (loop f target vectors len))))
-  (define (vector-map f vec . vectors)
-    (let ((len (%smallest-length vectors
-                                 (vector-length vec)
-                                 vector-map)))
-      (%vector-map2+! f (make-vector len) (cons vec vectors)
-                      len)))
   )
  ((or gambit r7rs)
   (begin
@@ -169,4 +109,3 @@
 )) ;; cond-expand
 
 (define-cond-expand-feature srfi-179 generic-arrays)
-
