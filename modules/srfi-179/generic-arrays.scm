@@ -54,24 +54,42 @@
           (loop (if (pair? probe) (##cdr probe) (error "drop: short list" x i))
                 (##fx- j 1))
           probe)))
-  (define (exact-integer? obj) (and (number? obj) (exact? obj)))
+  (define (exact-integer? obj)
+    (and (integer? obj)
+         (exact? obj)))
   ;;
-  (define vector-copy! ##vector-copy)
-  (define s8vector-copy! ##s8vector-copy)
-  (define s16vector-copy! ##s16vector-copy)
-  (define s32vector-copy! ##s32vector-copy)
-  (define s64vector-copy! ##s64vector-copy)
-  (define u8vector-copy! ##u8vector-copy)
-  (define u16vector-copy! ##u16vector-copy)
-  (define u32vector-copy! ##u32vector-copy)
-  (define u64vector-copy! ##u64vector-copy)
-  (define f32vector-copy! ##f32vector-copy)
-  (define f64vector-copy! ##f64vector-copy)
+  (define (vector-copy! dst-vect dst-start src-vect src-start src-end)
+    (subvector-move! src-vect src-start src-end dst-vect dst-start))
+
+  (define (s8vector-copy! dst-vect dst-start src-vect src-start src-end)
+    (subs8vector-move! src-vect src-start src-end dst-vect dst-start))
+  (define (s16vector-copy! dst-vect dst-start src-vect src-start src-end)
+    (subs16vector-move! src-vect src-start src-end dst-vect dst-start))
+  (define (s32vector-copy! dst-vect dst-start src-vect src-start src-end)
+    (subs32vector-move! src-vect src-start src-end dst-vect dst-start))
+  (define (s64vector-copy! dst-vect dst-start src-vect src-start src-end)
+    (subs64vector-move! src-vect src-start src-end dst-vect dst-start))
+
+  (define (u8vector-copy! dst-vect dst-start src-vect src-start src-end)
+    (subu8vector-move! src-vect src-start src-end dst-vect dst-start))
+  (define (u16vector-copy! dst-vect dst-start src-vect src-start src-end)
+    (subu16vector-move! src-vect src-start src-end dst-vect dst-start))
+  (define (u32vector-copy! dst-vect dst-start src-vect src-start src-end)
+    (subu32vector-move! src-vect src-start src-end dst-vect dst-start))
+  (define (u64vector-copy! dst-vect dst-start src-vect src-start src-end)
+    (subu64vector-move! src-vect src-start src-end dst-vect dst-start))
+
+  (define (f32vector-copy! dst-vect dst-start src-vect src-start src-end)
+    (subf32vector-move! src-vect src-start src-end dst-vect dst-start))
+  (define (f64vector-copy! dst-vect dst-start src-vect src-start src-end)
+    (subf64vector-move! src-vect src-start src-end dst-vect dst-start))
+
+
   (define (c64vector-copy! to at from start end)
     (f32vector-copy! to (* 2 at) from (* 2 start) (* 2 end)))
   (define (c128vector-copy! to at from start end)
     (f64vector-copy! to (* 2 at) from (* 2 start) (* 2 end)))
-  ;; from srfi-43
+  ;; This is not the vector-map from srfi-43
   (define (vectors-ref vectors i)
     (map (lambda (v) (vector-ref v i)) vectors))
   (define %smallest-length
@@ -93,7 +111,7 @@
                          target
                          (let ((j (- i 1)))
                            (vector-set! target j
-                                        (apply f j (vectors-ref vectors j)))
+                                        (apply f (vectors-ref vectors j)))
                            (loop f target vectors j))))))
       (lambda (f target vectors len)
         (loop f target vectors len))))
@@ -103,6 +121,20 @@
                                  vector-map)))
       (%vector-map2+! f (make-vector len) (cons vec vectors)
                       len)))
+
+  ;; needed only for test-arrays.scm
+
+  (define (make-list n #!optional (fill 0))
+    (if (and (exact-integer? n) (not (negative? n)))
+        (let loop ((i n) (result '()))
+          (if (> i 0)
+              (loop (- i 1) (cons fill result))
+              result))
+        (error "make-list: The first argument must be a nonnegative integer: " n fill)))
+
+  (define (exact x) (inexact->exact x))
+  (define (inexact x) (exact->inexact x))
+
   )
  ((or gambit r7rs)
   (begin
