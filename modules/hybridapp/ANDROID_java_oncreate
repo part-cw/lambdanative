@@ -1,3 +1,7 @@
+// permissions
+
+checkOrRequestPermission(android.Manifest.permission.ACCESS_FINE_LOCATION);
+
 // webview
 
 setContentView(R.layout.main);

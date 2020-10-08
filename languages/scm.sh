@@ -35,7 +35,10 @@ compile_payload_scm()
       else
         scm_modsrc=`locatefile modules/$m/$m.scm silent`
       fi
-      if [ `string_contains "$scm_coremodules" " $m "` = yes ]; then
+      # config MUST go first otherwise removal of (block) breaks things
+      if [ "$m" = "config" ]; then
+        scm_coresrcs="$scm_modsrc $scm_coresrcs"
+      elif [ `string_contains "$scm_coremodules" " $m "` = yes ]; then
         scm_coresrcs="$scm_coresrcs $scm_modsrc"
       else
         scm_auxsrcs="$scm_auxsrcs $scm_modsrc"
