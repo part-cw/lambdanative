@@ -180,8 +180,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               (if usebuffer
                 (if (fx= download:header 200)
 		  (begin
-                    (copy-file download:tempfile (string-append (system-directory) (system-pathseparator) filename))
-                    (delete-file download:tempfile)
+                    (rename-file download:tempfile (string-append (system-directory) (system-pathseparator) filename))
                     (log-status "download: local succeeded")
                     #t
                   )
