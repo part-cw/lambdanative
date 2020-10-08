@@ -807,6 +807,44 @@ add_items()
   done
 }
 
+add_items_upfront()
+{
+  for optaiu_newi in `filter_entries $SYS_PLATFORM $@`; do
+    aiu_newi=`echo "$optaiu_newi" | sed 's/^?//'`
+    aiu_idir=`locatedir $itemname/$aiu_newi silent`
+    if [ ! "X$aiu_idir" = "X" ]; then
+      isold=no
+      for oldi in $items; do
+        if [ $oldi = $aiu_newi ]; then
+        isold=yes
+        fi
+      done
+      if [ $isold = no ]; then
+        capitemname=`echo "$itemname" | tr a-z A-Z`
+        xis=`locatefile $itemname/$aiu_newi/$capitemname silent`
+        if [ ! "X$xis" = "X" ] && [ -f "$xis" ]; then
+          add_items `cat "$xis"`
+        fi
+        isold=no
+        for oldi in $items; do
+          if [ $oldi = $aiu_newi ]; then
+            isold=yes
+          fi
+        done
+        if [ $isold = no ]; then
+          items="$items $aiu_newi"
+        fi
+      fi
+    else
+      if [ $aiu_newi = $optaiu_newi ]; then
+        assert "$aiu_newi in $itemname not found"
+      else
+        echo "INFO: optional $aiu_newi in $itemname not found, skipping"
+      fi
+    fi
+  done
+}
+
 make_setup_profile()
 {
   setstate SETUP
@@ -911,7 +949,7 @@ make_setup_profile()
   items=
   itemname=modules
   if [ -f "$appsrcdir/MODULES" ]; then
-    add_items `cat $appsrcdir/MODULES`
+    add_items_upfront `cat $appsrcdir/MODULES`
   fi
   modules=$items
   items=
