@@ -256,8 +256,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (handle-replloop-exception exn)))
      (lambda () (utf8string->unicode str (lambda (str i) (raise use-fallback)))))))
 
-(define unicode->utf8string unicode->utf8string)
-
 (define (unicode->utf8string src)
   (cond ((integer? src)
          (let ((c src))
