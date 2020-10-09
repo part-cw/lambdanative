@@ -42,6 +42,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define download:data (u8vector))
 (define download:datachunk 50000)
 (define download:datalen 0)
+(define download:header #f)  ;;stores presence and type of header #f/200/300
+(define download:tempfile (string-append (system-directory) (system-pathseparator) "download.tmp"))
+(define download:size 0)
 
 ;; Helper function to split return string into header and body
 (define (download:split-headerbody str)
@@ -79,6 +82,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (download:data-clear!)
     v))
 
+;;append data to memory
 (define (download:data-append! v)
   (let ((lv (u8vector-length v))
         (la (u8vector-length download:data)))
@@ -86,6 +90,45 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (set! download:data (u8vector-append download:data (make-u8vector (max lv download:datachunk)))))
     (subu8vector-move! v 0 lv download:data download:datalen)
     (set! download:datalen (+ download:datalen lv))))
+
+;;append data to temporary file
+(define (download:data-append-local! v)
+  (let* ((lv (u8vector-length v))
+         (tempfile download:tempfile)
+         (fh (open-output-file (list path: tempfile append: #t))))
+    (if download:header
+         (begin (write-subu8vector v 0 lv fh)  (close-output-port fh))
+         (begin (download:data-append! v)
+          ;;test for header presence
+          (let* ((str (download:split-headerbody-vector  download:data))
+                 (l (length str))
+                 (hlen (+ (u8vector-length (string->u8vector (car str))) 4))
+                 (mlen (- download:datalen hlen)))
+             (if (and (string? (car str)) (fx> (string-length (car str)) 12)
+                      (or (string=? (substring (car str) 9 12) "201")
+                          (string=? (substring (car str) 9 12) "200")))
+               (if (cadr str)
+                 (let* ((size-start (string-contains (car str) "Content-Length: "))
+                        (size-rest (substring (car str) size-start (string-length (car str))))
+                        (size-stop (string-contains size-rest "\n"))
+                        (size-only (string->number (substring size-rest 18 (- size-stop 1)))))
+                   (log-status "download:append: content length " size-only)
+                   (set! download:size size-only)
+                   (set! download:header 200)
+                   (log-status "download:append: header detected " download:header)
+                   (write-subu8vector (cadr str) 0 mlen fh))
+                   ;;header not complete, go on collecting data
+                   (close-output-port fh))
+               ;;file not present, check whether a redirect
+               (if (and (string? (car str)) (fx> (string-length (car str)) 12)
+                        (or (string=? (substring (car str) 9 12) "302")
+                            (string=? (substring (car str) 9 12) "301")))
+                 (begin
+                   (set! download:header 300)
+                   (log-status "download:append: redirect detected" download:header)))
+          ))))
+         (if fh (close-output-port fh))
+))
 
 (define (download-list host folder)
   (let ((ret (httpsclient-open host)))
@@ -119,16 +162,38 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    )
  ))
 
-(define (download-getfile host path filename)
-  (let ((ret (httpsclient-open host)))
+(define (download-getfile host path filename . localbuffer)
+  (let ((usebuffer (if (= (length localbuffer) 1) (car localbuffer) #f))
+        (ret (httpsclient-open host)))
+    (set! download:header #f)
+    (set! download:size 0)
+    (if (file-exists? download:tempfile) (delete-file download:tempfile))
     (if (> ret 0)
       (let* ((request (string-append "GET " path " HTTP/1.0\r\nHost: " host "\r\n\r\n"))
              (status  (httpsclient-send (string->u8vector request))))
+        (log-status "download: request file from " request)
         (download:data-clear!)
         (let loop ((n 1))
           (if (fx<= n 0)
             (begin
               (httpsclient-close)
+              (if usebuffer
+                (if (fx= download:header 200)
+		  (begin
+                    (rename-file download:tempfile (string-append (system-directory) (system-pathseparator) filename))
+                    (log-status "download: local succeeded")
+                    #t
+                  )
+                  (if (fx= download:header 300)
+                     (let* ((fileout (download:split-headerbody-vector (download:data->u8vector)))
+                            (location-start (string-contains (car fileout) "Location: "))
+                            (location-rest (substring (car fileout) location-start (string-length (car fileout))))
+                            (location-stop (string-contains location-rest "\n"))
+                            (location-only (substring location-rest 18 (- location-stop 1)))
+                            (host (substring location-only 0 (string-contains location-only "/")))
+                            (path (substring location-only (string-contains location-only "/") (string-length location-only))))
+                        (download-getfile host path filename #t))
+                  (begin (log-status "download: could not retrieve header") #f)))
               (let ((fileout (download:split-headerbody-vector (download:data->u8vector))))
                 ;; Status is Success, save file
                 (if (and (string? (car fileout)) (fx> (string-length (car fileout)) 12)
@@ -137,11 +202,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                   (let ((fh (open-output-file (string-append (system-directory) (system-pathseparator) filename))))
                     (write-subu8vector (cadr fileout) 0 (u8vector-length (cadr fileout)) fh)
                     (close-output-port fh)
+                    (log-status "download: succeeded")
                     #t
                   )
                   ;; Status is Redirect, send new request
                   (if (and (string? (car fileout)) (fx> (string-length (car fileout)) 12)
-                           (string=? (substring (car fileout) 9 12) "302"))
+                           (or (string=? (substring (car fileout) 9 12) "302")
+                               (string=? (substring (car fileout) 9 12) "301")))
                     (let* ((location-start (string-contains (car fileout) "Location: "))
                            (location-rest (substring (car fileout) location-start (string-length (car fileout))))
                            (location-stop (string-contains location-rest "\n"))
@@ -150,20 +217,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                            (path (substring location-only (string-contains location-only "/") (string-length location-only))))
                       (download-getfile host path filename))
                     ;; Status is unknown, return false
-                    #f
+                    (begin (log-status "download: status unknown" fileout) #f)
                   )
                 )
               )
-            )
+            ))
            (let ((count (httpsclient-recv download:buf)))
-             (if (or (string=? (system-platform) "android") (string=? (system-platform) "ios")) (thread-sleep! 0.001)) ;;allow GUI to refresh
-             (if (> count 0) (download:data-append! (subu8vector download:buf 0 count)))
+             ;; (if (or (string=? (system-platform) "android") (string=? (system-platform) "ios")) (thread-sleep! 0.001)) ;;allow GUI to refresh
+             (if (> count 0)
+               (if usebuffer
+                 (download:data-append-local! (subu8vector download:buf 0 count))
+                 (download:data-append! (subu8vector download:buf 0 count))))
              (loop count))
           )
         )
       )
-      #f
+      (begin (log-status "download: could not open host " host) #f)
     )
+))
+
+;;returns percentage of filesize already downloaded; only works when destination file does not yet exist
+(define (download-status filepath)
+  (let ((tmpsize (if (file-exists? download:tempfile) (file-size download:tempfile) 0.)))
+    (if (file-exists? filepath)
+      1.
+      (if (> download:size 0) (/ tmpsize download:size) 0.))
   ))
 
 ;; eof

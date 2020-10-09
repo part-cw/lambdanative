@@ -541,7 +541,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                        (instrument (alist-ref row "redcap_repeat_instrument" #f))
                        (instance  (if (string? val) (string->number (string-remove-quotes val)) val)))
                       (if (not instrument) (log-warning "Exported REDcap instrument " (car forms) " is not repeatable"))
-                      (if (fx> instance maxinstance) (set! maxinstance instance))
+                      (if (and instance (fx> instance maxinstance)) (set! maxinstance instance))
                       (loop (cdr entries))))) (fx+ maxinstance 1))
            (begin (log-warning "Exported REDcap record has no repeated entry") 1))
        (begin (log-error "Cannot retrieve instance number from REDCap.") #f)))
@@ -651,6 +651,43 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
 )
 
+(define (redcap-delete-records host token records)
+ (let*  ((request  (string-append  "token=" token "&content=record&action=delete&returnFormat=json"))
+         (recordstr (if (pair? records)
+           (let loop ((i 0) (str ""))
+             (if (= i (length records)) str
+               (loop (+ i 1) (string-append str "&records%5B" (number->string i) "%5D=" (list-ref records i)))
+             ))
+           ""))
+         (request-str (redcap:make-request-str host (string-append request recordstr))))
+    ;; Check if we have a valid connection before proceeding
+    (if (fx= (httpsclient-open host redcap:port) 1)
+      (begin
+        (httpsclient-send (string->u8vector request-str))
+        (redcap:data-clear!)
+        (let loop ((n #f))
+          (if (and n (fx<= n 0))
+            (begin
+              (httpsclient-close)
+              (let ((msg (redcap:split-headerbody (redcap:data->string))))
+                (redcap:error-check msg))
+            )
+            (begin
+              (if (and n (> n 0))
+                (redcap:data-append! (subu8vector redcap:buf 0 n)))
+              (loop (httpsclient-recv redcap:buf))
+            )
+          )
+        )
+      )
+      (begin
+        (log-warning "Cannot delete record on REDCap, no valid connection")
+        (httpsclient-close)
+        #f
+      )
+    )
+  )
+)
 
 (define (redcap-import-file host token record field filename . xargs)
   (let* ((filesize (if (file-exists? filename) (file-info-size (file-info filename)) #f))

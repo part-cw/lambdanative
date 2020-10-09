@@ -42,14 +42,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; Useful procedures for working with csv files.
 
 (define (csv-read file)
-  (let ((raw (file->u8vector file)))
-     (let loop ((i (fx- (u8vector-length raw) 1)))
-       (if (fx>= i 0) (begin
-         (if (fx= (u8vector-ref raw i) 13) (u8vector-set! raw i 10))
-         (loop (- i 1)))))
-    (let* ((rows (string-split (u8vector->string raw) #\newline))
-           (qcount 0) (qrow "") (idx 0)
-           (finalrows (make-vector (length rows))))
+  (let* ((raw0 (file->u8vector file))
+    (raw1 (u8vector->string raw0))
+    (raw2 (string-replace-substring raw1 "\r\n" "\n"))
+    (raw3 (string-replace-char raw2 #\return #\newline))
+    (rows (string-split raw3 #\newline))
+    (qcount 0) (qrow "") (idx 0)
+    (finalrows (make-vector (length rows))))
       (for-each (lambda (row) 
          (set! qcount (+ qcount (string-count row "\"")))
          (set! qrow (string-append qrow (if (> (string-length qrow) 0) "\n" "") row))
@@ -61,7 +60,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (if (> (string-length qrow) 0) (begin 
         (vector-set! finalrows idx (csv:split qrow))
         (set! idx (+ idx 1))))
-      (vector->list (subvector finalrows 0 idx)))))
+      (vector->list (subvector finalrows 0 idx))))
 
 (define (csv:split str)
   ;; First, split the line normally on all commas

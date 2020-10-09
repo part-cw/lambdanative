@@ -35,7 +35,10 @@ compile_payload_scm()
       else
         scm_modsrc=`locatefile modules/$m/$m.scm silent`
       fi
-      if [ `string_contains "$scm_coremodules" " $m "` = yes ]; then
+      # config MUST go first otherwise removal of (block) breaks things
+      if [ "$m" = "config" ]; then
+        scm_coresrcs="$scm_modsrc $scm_coresrcs"
+      elif [ `string_contains "$scm_coremodules" " $m "` = yes ]; then
         scm_coresrcs="$scm_coresrcs $scm_modsrc"
       else
         scm_auxsrcs="$scm_auxsrcs $scm_modsrc"
@@ -52,7 +55,7 @@ compile_payload_scm()
     # -------
     # prep the compiler options
     if [ $SYS_MODE = "debug" ]; then
-      scm_opts="(declare (block)(not safe)(standard-bindings)(extended-bindings)(debug)(debug-location))"
+      scm_opts="(declare (standard-bindings)(extended-bindings)(debug)(debug-location))"
     else
       scm_opts="(declare (block)(not safe)(standard-bindings)(extended-bindings))"
     fi

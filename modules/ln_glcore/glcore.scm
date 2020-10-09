@@ -396,7 +396,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if (or (= (u32vector-ref u32t 0) GL_INVALID_VALUE)
       ;this is a general check that gl is working in this thread
             (= (glIsEnabled GL_TEXTURE_2D) 0))  
-       (log-error "_glCoreTextureInit: failed to generate texture")
+       (glcore:log 5 "_glCoreTextureInit: failed to generate texture")
        (begin
          (vector-set! entry 0 #t)  ;; mark as initialized
          (glBindTexture GL_TEXTURE_2D (u32vector-ref u32t 0))

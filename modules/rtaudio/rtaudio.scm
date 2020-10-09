@@ -139,6 +139,9 @@ static void rtaudio_stop(void) {
   novocaine_stop();
 }
 
+static void rtaudio_pa_ochannel_set(int ch1, int ch2){ }
+static void rtaudio_pa_ichannel_set(int ch1, int ch2){ }
+
 #endif // USE_NOVOCAINE
 
 // %%%%%%%%%%%%%%%%%%%%%%%%
@@ -184,6 +187,9 @@ static void rtaudio_stop(void) {
   if (rtaudio_closecb) rtaudio_closecb();
   iphone_realtime_audio_stop();
 }
+
+static void rtaudio_pa_ochannel_set(int ch1, int ch2){ }
+static void rtaudio_pa_ichannel_set(int ch1, int ch2){ }
 
 #endif // USE_IOSAUDIO
 
@@ -317,6 +323,22 @@ void rtaudio_stop(void) {
   Pa_StopStream( stream );
 }
 
+void rtaudio_pa_ochannel_set(int ch1, int ch2)
+{
+  int i;
+  for (i=0;i<16;i++) rtaudio_pa_chmap_out[i]=-1;
+  rtaudio_pa_chmap_out[ch1]=0;
+  rtaudio_pa_chmap_out[ch2]=1;
+  rtaudio_pa_map_output=1;
+}
+
+void rtaudio_pa_ichannel_set(int ch1, int ch2)
+{
+  rtaudio_pa_chmap_in[0]=ch1;
+  rtaudio_pa_chmap_in[1]=ch2;
+  rtaudio_pa_map_input=1;
+}
+
 void ln_setMicrophoneGain(float inputGain) {}
 
 #endif // USE_PORTAUDIO
@@ -347,6 +369,8 @@ void rtaudio_stop(void) {
   opensl_on=0;
 }
 
+void rtaudio_pa_ochannel_set(int ch1, int ch2){ }
+void rtaudio_pa_ichannel_set(int ch1, int ch2){ }
 void ln_setMicrophoneGain(float inputGain) {}
 
 #endif // USE_ANDROIDAUDIO
@@ -359,6 +383,8 @@ void rtaudio_start(int samplerate, double volume)
   rtaudio_srate=samplerate;
 }
 void rtaudio_stop(void) { }
+void rtaudio_pa_ochannel_set(int ch1, int ch2){ }
+void rtaudio_pa_ichannel_set(int ch1, int ch2){ }
 void ln_setMicrophoneGain(float inputGain) {}
 
 #endif // USE_BB10AUDIO
@@ -370,7 +396,8 @@ end-of-c-declare
 
 (define rtaudio-start (c-lambda (int double) void "rtaudio_start"))
 (define rtaudio-stop (c-lambda () void "rtaudio_stop"))
-
 (define rtaudio-set-gain (c-lambda (float) void "ln_setMicrophoneGain"))
+(define rtaudio-pa-ichannel-set! (c-lambda (int int) void "rtaudio_pa_ichannel_set"))
+(define rtaudio-pa-ochannel-set! (c-lambda (int int) void "rtaudio_pa_ochannel_set"))
 
 ;; eof

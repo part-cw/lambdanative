@@ -53,9 +53,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Public shortcut procedure to call the one below to enforce the limits
 (define (glgui-datawheel-update-limits gui wgt)
-  (let ((mwheel (glgui-widget-get g wgt 'monthwheel))
-        (dwheel (glgui-widget-get g wgt 'datewheel))
-        (ywheel (glgui-widget-get g wgt 'yearwheel)))
+  (let ((mwheel (glgui-widget-get gui wgt 'monthwheel))
+        (dwheel (glgui-widget-get gui wgt 'datewheel))
+        (ywheel (glgui-widget-get gui wgt 'yearwheel)))
     (glgui-widget-set! gui wgt 'unlimited #f)
     (glgui:datewheel-update-wheel-limits gui wgt mwheel dwheel ywheel #t #t)))
 
@@ -70,7 +70,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (dmax (glgui-widget-get gui widget 'datemax))
          (lyear (fix (string->number (seconds->string dmax "%Y"))))
          (oldvalue (glgui-widget-get gui widget 'value)))
-    
+
          ;; Check if we are in the earliest year - ie. need to limit the other wheels (depending on limitday and limitmonth)
          (if (fx= year eyear)
            (let ((emonth (fix (string->number (seconds->string dmin "%m")))))
@@ -90,7 +90,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                ;; Otherwise no limit on earliest day of the month
                (glgui-widget-set! gui dwheel 'valmin 1)))
            ;; Otherwise no limit on earliest month or day of the month
-           (begin 
+           (begin
              (glgui-widget-set! gui mwheel 'valmin 0)
              (glgui-widget-set! gui dwheel 'valmin 1)))
          ;; Check if we are in the latest year - ie. need to limit the other wheels
@@ -120,7 +120,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                    (if limitday?
                      (glgui-widget-set! gui dwheel 'valmax maxday)))))
            ;; Otherwise no limit on latest month or day of the month
-           (begin 
+           (begin
              (glgui-widget-set! gui mwheel 'valmax 11)
              (let ((maxday
                      (if (fx= month 2)
@@ -171,7 +171,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((mwheel (glgui-widget-get g wgt 'monthwheel))
         (dwheel (glgui-widget-get g wgt 'datewheel))
         (ywheel (glgui-widget-get g wgt 'yearwheel)))
-    (cond 
+    (cond
       ;; Directly update all subwheels for some parameters
       ((or (eqv? id 'y) (eqv? id 'hidden) (eqv? id 'topdown)  (eqv? id 'colorvalue) (eqv? id 'colorshade) (eqv? id 'modal))
         (glgui-widget-set! g mwheel id val)
@@ -192,7 +192,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (let ((curvalue (glgui-widget-get g wgt 'value)))
            (if (and curvalue (< curvalue val))
              ;; If value is less than new minimum, update it (will trigger a call to this procedure recursively)
-             (glgui-widget-set! g wgt 'value val) 
+             (glgui-widget-set! g wgt 'value val)
              ;; Otherwise just update the limits of the wheels
              (let ((enforcelimits (not (glgui-widget-get g wgt 'unlimited))))
                (glgui:datewheel-update-wheel-limits g wgt mwheel dwheel ywheel enforcelimits enforcelimits)))))
@@ -201,7 +201,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (let ((curvalue (glgui-widget-get g wgt 'value)))
            (if (and curvalue (> curvalue val))
              ;; If value is more than the new maximum, update it (will trigger a call to this procedure recursively)
-             (glgui-widget-set! g wgt 'value val)   
+             (glgui-widget-set! g wgt 'value val)
              ;; Otherwise just update the limits of the wheels
              (let ((enforcelimits (not (glgui-widget-get g wgt 'unlimited))))
                (glgui:datewheel-update-wheel-limits g wgt mwheel dwheel ywheel enforcelimits enforcelimits)))))
@@ -212,15 +212,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                (x (glgui-widget-get g wgt 'x))
                (dx (fix (/ (- w 2) 3)))
                ;; Determine which wheel is in which order
-               (first (cond 
+               (first (cond
                         ((fx= order GUI_DAY_MONTH_YEAR) dwheel)
                         ((fx= order GUI_YEAR_MONTH_DAY) ywheel)
                         ((fx= order GUI_MONTH_DAY_YEAR) mwheel)))
-               (second (cond 
+               (second (cond
                         ((fx= order GUI_DAY_MONTH_YEAR) mwheel)
                         ((fx= order GUI_YEAR_MONTH_DAY) mwheel)
                         ((fx= order GUI_MONTH_DAY_YEAR) dwheel)))
-               (third (cond 
+               (third (cond
                         ((fx= order GUI_DAY_MONTH_YEAR) ywheel)
                         ((fx= order GUI_YEAR_MONTH_DAY) dwheel)
                         ((fx= order GUI_MONTH_DAY_YEAR) ywheel))))
@@ -254,7 +254,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (glgui-widget-set! g dwheel 'valmin 1)
     (glgui-widget-set! g dwheel 'valmax 31)
     (glgui-widget-set! g wgt 'unlimited #t)))
-  
+
 ;; Create a set of three wheels for entering a date.
 (define (glgui-datewheels g x y w h datemin datemax colorvalue colorshade numfont1 numfont2 monthfont1 monthfont2)
   ;; Determine earliest and latest date

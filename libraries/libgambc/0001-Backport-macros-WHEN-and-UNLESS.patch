@@ -1,0 +1,34 @@
+--- lib/_nonstd.scm
++++ lib/_nonstd.scm
+@@ -340,6 +340,28 @@
+ 
+ ;;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ 
++(define-runtime-syntax when
++  (lambda (src)
++    (##deconstruct-call
++     src
++     -3
++     (lambda (test . expressions)
++       (##expand-source-template
++        src
++        `(if ,test (##begin ,@expressions)))))))
++
++(define-runtime-syntax unless
++  (lambda (src)
++    (##deconstruct-call
++     src
++     -3
++     (lambda (test . expressions)
++       (##expand-source-template
++        src
++        `(if (##not ,test) (##begin ,@expressions)))))))
++
++;;; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
++
+ (define-prim (##type-field-count type)
+   (if type
+       (let ((fields (##type-fields type)))
+-- 
+2.20.1
+

@@ -53,9 +53,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Public shortcut procedure to call the one below to enforce the limits
 (define (glgui-datepicker-update-limits gui wgt)
-  (let ((mpicker (glgui-widget-get g wgt 'monthpicker))
-        (dpicker (glgui-widget-get g wgt 'datepicker))
-        (ypicker (glgui-widget-get g wgt 'yearpicker)))
+  (let ((mpicker (glgui-widget-get gui wgt 'monthpicker))
+        (dpicker (glgui-widget-get gui wgt 'datepicker))
+        (ypicker (glgui-widget-get gui wgt 'yearpicker)))
     (glgui-widget-set! gui wgt 'unlimited #f)
     (glgui:datepicker-update-picker-limits gui wgt mpicker dpicker ypicker #t #t)))
 
@@ -70,7 +70,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (dmax (glgui-widget-get gui widget 'datemax))
          (lyear (fix (string->number (seconds->string dmax "%Y"))))
          (oldvalue (glgui-widget-get gui widget 'value)))
-    
+
          ;; Check if we are in the earliest year - ie. need to limit the other pickers (depending on limitday and limitmonth)
          (if (fx= year eyear)
            (let ((emonth (fix (string->number (seconds->string dmin "%m")))))
@@ -90,7 +90,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                ;; Otherwise no limit on earliest day of the month
                (glgui-widget-set! gui dpicker 'valmin 1)))
            ;; Otherwise no limit on earliest month or day of the month
-           (begin 
+           (begin
              (glgui-widget-set! gui mpicker 'valmin 0)
              (glgui-widget-set! gui dpicker 'valmin 1)))
          ;; Check if we are in the latest year - ie. need to limit the other pickers
@@ -120,7 +120,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                    (if limitday?
                      (glgui-widget-set! gui dpicker 'valmax maxday)))))
            ;; Otherwise no limit on latest month or day of the month
-           (begin 
+           (begin
              (glgui-widget-set! gui mpicker 'valmax 11)
              (let ((maxday
                      (if (fx= month 2)
@@ -171,7 +171,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((mpicker (glgui-widget-get g wgt 'monthpicker))
         (dpicker (glgui-widget-get g wgt 'datepicker))
         (ypicker (glgui-widget-get g wgt 'yearpicker)))
-    (cond 
+    (cond
       ;; Directly update all pickers for some parameters
       ((or (eqv? id 'y) (eqv? id 'h) (eqv? id 'hidden) (eqv? id 'topdown) (eqv? id 'colorarrows) (eqv? id 'colorhighlight) (eqv? id 'colorvalue) (eqv? id 'colorbg) (eqv? id 'modal) (eqv? id 'scalearrows))
         (glgui-widget-set! g mpicker id val)
@@ -192,7 +192,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (let ((curvalue (glgui-widget-get g wgt 'value)))
            (if (and curvalue (< curvalue val))
              ;; If value is less than new minimum, update it (will trigger a call to this procedure recursively)
-             (glgui-widget-set! g wgt 'value val) 
+             (glgui-widget-set! g wgt 'value val)
              ;; Otherwise just update the limits of the pickers
              (let ((enforcelimits (not (glgui-widget-get g wgt 'unlimited))))
                (glgui:datepicker-update-picker-limits g wgt mpicker dpicker ypicker enforcelimits enforcelimits)))))
@@ -201,7 +201,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (let ((curvalue (glgui-widget-get g wgt 'value)))
            (if (and curvalue (> curvalue val))
              ;; If value is more than new maximum, update it (will trigger a call to this procedure recursively)
-             (glgui-widget-set! g wgt 'value val)   
+             (glgui-widget-set! g wgt 'value val)
              ;; Otherwise just update the limits of the pickers
              (let ((enforcelimits (not (glgui-widget-get g wgt 'unlimited))))
                (glgui:datepicker-update-picker-limits g wgt mpicker dpicker ypicker enforcelimits enforcelimits)))))
@@ -212,15 +212,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                (x (glgui-widget-get g wgt 'x))
                (dx (fix (/ (- w 2) 3)))
                ;; Determine which picker is in which order
-               (first (cond 
+               (first (cond
                         ((fx= order GUI_DAY_MONTH_YEAR) dpicker)
                         ((fx= order GUI_YEAR_MONTH_DAY) ypicker)
                         ((fx= order GUI_MONTH_DAY_YEAR) mpicker)))
-               (second (cond 
+               (second (cond
                         ((fx= order GUI_DAY_MONTH_YEAR) mpicker)
                         ((fx= order GUI_YEAR_MONTH_DAY) mpicker)
                         ((fx= order GUI_MONTH_DAY_YEAR) dpicker)))
-               (third (cond 
+               (third (cond
                         ((fx= order GUI_DAY_MONTH_YEAR) ypicker)
                         ((fx= order GUI_YEAR_MONTH_DAY) dpicker)
                         ((fx= order GUI_MONTH_DAY_YEAR) ypicker))))
@@ -249,7 +249,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (glgui-widget-set! g dpicker 'valmin 1)
     (glgui-widget-set! g dpicker 'valmax 31)
     (glgui-widget-set! g wgt 'unlimited #t)))
-  
+
 ;; Create a set of three value pickers for entering a date.
 (define (glgui-datepicker g x y w h datemin datemax colorarrows colorhighlight colorvalue colorbg numfont monthfont)
   ;; Determine earliest and latest date
