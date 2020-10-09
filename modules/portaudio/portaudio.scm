@@ -47,28 +47,6 @@ int portaudio_needsinit=1;
 int portaudio_idev=-1;
 int portaudio_odev=-1;
 
-extern int rtaudio_pa_map_output;
-extern int rtaudio_pa_chmap_out[16];
-
-extern int rtaudio_pa_map_input;
-extern int rtaudio_pa_chmap_in[2];
-
-void portaudio_ochannel_set(int ch1, int ch2)
-{
-  int i;
-  for (i=0;i<16;i++) rtaudio_pa_chmap_out[i]=-1;
-  rtaudio_pa_chmap_out[ch1]=0;
-  rtaudio_pa_chmap_out[ch2]=1;
-  rtaudio_pa_map_output=1;
-}
-
-void portaudio_ichannel_set(int ch1, int ch2)
-{
-  rtaudio_pa_chmap_in[0]=ch1;
-  rtaudio_pa_chmap_in[1]=ch2;
-  rtaudio_pa_map_input=1;
-}
-
 end-of-c-declare
 )
 
@@ -108,13 +86,13 @@ end-of-c-declare
 (define (pa-devlist-outputs)
   (let loop ((ds (pa-devlist))(res '()))
     (if (fx= (length ds) 0) res
-       (loop (cdr ds) (append res 
+       (loop (cdr ds) (append res
          (if (> (cadddr (car ds)) 0) (list (car ds)) '()))))))
 
 (define (pa-devlist-inputs)
   (let loop ((ds (pa-devlist))(res '()))
     (if (fx= (length ds) 0) res
-       (loop (cdr ds) (append res 
+       (loop (cdr ds) (append res
          (if (> (caddr (car ds)) 0) (list (car ds)) '()))))))
 
 (define (pa-dev-exists? devname)
@@ -125,8 +103,5 @@ end-of-c-declare
 
 (define (pa-idev-exists? devname)
   (member devname (map cadr (pa-devlist-inputs))))
-
-(define pa-ichannel-set! (c-lambda (int int) void "portaudio_ichannel_set"))
-(define pa-ochannel-set! (c-lambda (int int) void "portaudio_ochannel_set"))
 
 ;; eof
