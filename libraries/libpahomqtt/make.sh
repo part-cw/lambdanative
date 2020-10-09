@@ -1,11 +1,14 @@
-PKGURL=https://github.com/eclipse/paho.mqtt.c/archive/v1.0.3.tar.gz
-PKGHASH=afe88aaf0500030f880ee3cb0a81efd44245ac00
+VERSION=1.3.6
+PKGURL=https://github.com/eclipse/paho.mqtt.c/archive/v${VERSION}.tar.gz
+PKGHASH=dad215b485f143b5ce1e181336372e5cb6930665
 
 package_download $PKGURL $PKGHASH
 
-package_patch
+#package_patch
 
 cd src
+TIMESTAMP=`date "+%a %d %b %Y %T %Z"`
+sed -e "s/@CLIENT_VERSION@/$VERSION/g" -e "s/@BUILD_TIMESTAMP@/$TIMESTAMP/g" VersionInfo.h.in > VersionInfo.h
 pahomqtt_srcs=`ls -1 *.c | sed '/MQTTVersion.c/d' | tr '\n' ' '`
 veval "$SYS_CC -I$SYS_PREFIX/include -DOPENSSL -c $pahomqtt_srcs"
 asserterror $? "compilation failed"
