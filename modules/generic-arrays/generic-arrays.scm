@@ -73,7 +73,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     (define c128vector-copy! #f))))
 
 (cond-expand
- ;;(debug (include "generic-arrays.scm"))
+ ;;(debug (include "generic-arrays-impl.scm"))
  (else
   (this-module
    generic-arrays
@@ -104,7 +104,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     ))
 
   (let ()
-    (include "generic-arrays.scm")
+    (include "generic-arrays-impl.scm")
     (module-generic-arrays-end))
 )) ;; cond-expand
 

@@ -2502,7 +2502,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
                                                    (error "Arghh!"))))
                                           args))))
 
-             (include "modules/srfi-179/srfi-179.sch")
+             (include "modules/generic-arrays/generic-arrays.sch")
 
              `(case n
                 ,@(map (lambda (k)
@@ -2643,7 +2643,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 (define-macro (setup-permuted-getters-and-setters)
 
-  (include "modules/srfi-179/srfi-179.sch")
+  (include "modules/generic-arrays/generic-arrays.sch")
 
   (define (list-remove l i)
     ;; new list that removes (list-ref l i) from l
@@ -2762,7 +2762,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 (define-macro (setup-reversed-getters-and-setters)
 
-  (include "modules/srfi-179/srfi-179.sch")
+  (include "modules/generic-arrays/generic-arrays.sch")
 
   (define (make-symbol . args)
     (string->symbol
@@ -2870,7 +2870,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 (define-macro (macro-generate-sample)
 
-  (include "modules/srfi-179/srfi-179.sch")
+  (include "modules/generic-arrays/generic-arrays.sch")
 
   (define (make-symbol . args)
     (string->symbol
