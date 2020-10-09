@@ -211,6 +211,79 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (glgui-utf8-set! #t)
 
+;;; BEGIN CODE TRANSITION
+;;;
+;;; Reducing the computational complexity of font operations improves
+;;; rendering time.
+
+(define-type ln-ttf:font
+  macros: prefix: macro-
+  desc ;; for now the legacy description of a font as a assoc-list
+  char->desc-table
+  )
+
+(define (ln-ttf:font? obj) (macro-ln-ttf:font? obj))
+
+(define find-font/desc)
+
+(define (ln-ttf:font-ref font char) ;; -> glyph
+  (cond
+   ((macro-ln-ttf:font? font) ;; TBD: leave this as the only case
+    (table-ref (macro-ln-ttf:font-char->desc-table font) char #f))
+   (else (ln-ttf:font-ref (find-font font) char))))
+
+(define (make-ln-ttf:font/desc fnt)
+  (let ((font-table (list->table
+                     (let ((double-the-key (lambda (x) (cons (car x) x))))
+                       ;; TBD: get rid of the doubling - requires changes to call sites
+                       (map double-the-key fnt)))))
+    (macro-make-ln-ttf:font fnt font-table)))
+
+(define find-font
+  ;; TBD consider amount of fonts and decide on font cache data
+  ;; structure.  Now assq-list; good for rather short lists, which
+  ;; are in line with good user interface design.
+  (let ((by-desc '() #;(make-table hash: eq?-hash))
+        (assq assq))
+    (define (%find-font/desc fnt)
+      (let ((hit (assq fnt by-desc) #;(table-ref by-desc fnt #f)))
+        (if hit (cdr hit) #; hit
+            (let ((font (make-ln-ttf:font/desc fnt)))
+              #;(table-set! by-desc fnt font)
+              (set! by-desc (cons (cons fnt font) by-desc))
+              font))))
+    (define (find-font fnt)
+      (cond
+       ((macro-ln-ttf:font? fnt) ;; new style
+        ;;
+        ;; TBD: after transition phase warn if this case is hit.
+        fnt)
+       ((and (pair? fnt) (pair? (car fnt))) ;; likely a legacy font
+        (%find-font/desc fnt))
+       (else (error "illegal font" fnt))))
+    (set! find-font/desc %find-font/desc)
+    find-font))
+
+(define (install-font-cache-backward-compatible-override!)
+  (let ((assoc.orig assoc))
+    ;; Backward compatibility: try to transparently hook into legacy
+    ;; lookups.
+    ;;
+    ;; TBD: 2020-08-23 This is an intermediate workaround to be removed
+    ;; ASAP.
+    (define (transparent-font-assoc k coll)
+      (cond
+       ((macro-ln-ttf:font? coll)
+        ;; TBD: after experimental phase warn if this case is hit.
+        (ln-ttf:font-ref coll k))
+       (else
+        ;; TBD: after transition phase error out if this case is hit.
+        (assoc.orig k coll))))
+    (set! assoc transparent-font-assoc)))
+
+(install-font-cache-backward-compatible-override!)
+;;; End OF TRANSITIONAL CODE
+
 (define (glgui:renderstring x y txt fnt color)
   (glCoreColor color)
   (let loop ((x0 (flo x)) (cs (glgui:string->glyphs txt)))
@@ -233,9 +306,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (cadr (cadr (car fnt)))))) h))
 
 (define (glgui:stringheight txt fnt)
+  (define font (find-font fnt))
   (let loop ((above 0.) (below 0.) (cs (glgui:string->glyphs txt)))
     (if (null? cs) (list above below)
-      (let* ((g (assoc (car cs) fnt))
+      (let* ((g (ln-ttf:font-ref font (car cs)))
              (i (if g (glgui:glyph-image g) #f))
              (gh (if i (flo (glgui:image-h i)) 0.))
              (goy (if g (flo (glgui:glyph-offsety g)) 0.)))
@@ -243,17 +317,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ; returns a fixnum width of the string, rounded up
 (define (glgui:stringwidth txt fnt)
-  (let loop ((x 0.) (cs (glgui:string->glyphs txt)))
-    (if (null? cs) (fix (ceiling x))
-      (let* ((glyph (assoc (car cs) fnt))
-             (ax (if glyph (flo (glgui:glyph-advancex glyph)) 0.)))
-        (loop (fl+ x ax) (cdr cs))))))
+  (let ((cs (glgui:string->glyphs txt))
+        (fnt (find-font fnt)))
+    (let loop ((x 0.) (cs cs))
+      (if (null? cs)
+          (fix (ceiling x))
+          (let* ((key (car cs))
+                 (glyph (ln-ttf:font-ref fnt key))
+                 (ax (if glyph (flo (glgui:glyph-advancex glyph)) 0.)))
+            (loop (fl+ x ax) (cdr cs)))))))
 
 ; returns a list of floats widths of the glyphs in the string
 (define (glgui:stringwidth-lst txt fnt)
+  (define font (find-font fnt))
   (let loop ((cs (glgui:string->glyphs txt)) (ret '()))
     (if (null? cs) ret
-      (let* ((glyph (assoc (car cs) fnt))
+      (let* ((glyph (ln-ttf:font-ref font (car cs)))
              (ax (if glyph (flo (glgui:glyph-advancex glyph)) 0.)))
         (loop (cdr cs) (append ret (list ax)))))))
 
@@ -289,14 +368,39 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (glgui:renderstring (fl+ (flo x) (flo w) (fl- strw)) centery label fnt color)))
 
 (define (glgui:draw-text-center x y w h label fnt color . clipright)
-  (let* ((strw (flo (glgui:stringwidth label fnt)))
+  ;; looks like a case of "premature optimization is the root of all evil"
+  (let* ((strw-raw (glgui:stringwidth label fnt)) ;; fixnum
+         ;; `strh` list instead of two values (top bottom) relative to baselind
          (strh (map flo (glgui:stringheight (string-append label "|") fnt)))
-         (centery (fl+ (flo y) (fl/ (if (fl> (flo h) 0.) (flo h) (fl- (car strh) (cadr strh))) 2.)
-                               (fl- (fl/ (fl+ (car strh) (cadr strh)) 2.))))
-         (clipper (if (and (pair? clipright) (car clipright))
-           glgui:stringclipright glgui:stringclipleft)))
-    (glgui:renderstring (if (fl> strw (flo w)) x (fl+ (flo x) (fl/ (fl- (flo w) strw) 2.))) centery
-       (if (fl> strw (flo w)) (clipper w label fnt) label) fnt color)))
+         (first-char-height (car strh))
+         (second-char-height (cadr strh))
+         (h-flo (flo h))
+         (y-flo (flo y)) ;; just used once (so far) for symetry
+         (centery ;; careful to have floating point only.
+          ;;
+          ;; This might be "premature optimization".  The contributes
+          ;; next to nothing to the cummulative time
+          ;; `draw-text-center` needs.
+          (fl+ y-flo
+               (fl/ (if (fl> h-flo 0.)
+                        h-flo
+                        (fl- first-char-height second-char-height))
+                    2.)
+               (fl- (fl/ (fl+ first-char-height second-char-height) 2.))))
+         (clipper
+          (let ((clipright (and (pair? clipright) (car clipright))))
+            (if clipright glgui:stringclipright glgui:stringclipleft))))
+    (let ((strw-flo (flo strw-raw))  ; with of the string
+          (w-flo (flo w)))
+      (glgui:renderstring
+       ;; FIXME: why enforce conversion to to flow in the first place?
+       (if (fl> strw-flo w-flo) ;; needs full width
+           x ;; start at left otherwise at half of empty space
+           (fl+ (flo x) (fl/ (fl- w-flo strw-flo) 2.)))
+       centery
+       (if (fl> strw-flo w-flo) (clipper w label fnt) label)
+       fnt color))))
+
 
 (define (string-split-width str w fnt)
   (if (string-contains str "\n")
