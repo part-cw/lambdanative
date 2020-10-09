@@ -288,7 +288,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (align0 (glgui-widget-get g wgt 'align))
          (align (if (and focus (not (= align0 GUI_ALIGNRIGHT)) label (> labelw w)) GUI_ALIGNRIGHT align0))
          (inside (and (fx> mx x) (fx< mx (fx+ x w 5)) (fx> my y) (fx< my (fx+ y h))))
-         (distance (if (and old-mx old-my) (sqrt (+ (square (- old-mx mx)) (square (- old-my my)))) 0))
+         (distance (if (and old-mx old-my) (fix (sqrt (+ (square (- old-mx mx)) (square (- old-my my))))) 0))
          (start-longpress  (lambda ()
             (glgui-widget-set! g wgt 'longpress (list #t #f ##now))
             (glgui-widget-set! g wgt 'old-mx mx)
