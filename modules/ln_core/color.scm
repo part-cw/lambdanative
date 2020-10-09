@@ -44,7 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (color-green x) (bitwise-and (arithmetic-shift x -8) #xff))
 (define (color-red x) (bitwise-and x #xff))
 (define (color-rgba r g b a)
-  (let* ((fixr (fix r)) (fixg (fix g)) (fixb (fix b)) (fixa (fix a))
+  (let* ((fixr (macro-fix r)) (fixg (macro-fix g)) (fixb (macro-fix b)) (fixa (macro-fix a))
          (clipr (if (fx> fixr 255) 255 (if (fx< fixr 0) 0 fixr)))
          (clipg (if (fx> fixg 255) 255 (if (fx< fixg 0) 0 fixg)))
          (clipb (if (fx> fixb 255) 255 (if (fx< fixb 0) 0 fixb)))
@@ -275,7 +275,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; 0 = totally transparent
 ;; 1 = opaque
 (define (color-fade c f) (color-rgba
-  (color-red c) (color-green c) (color-blue c) (fix (fl* 255. (flo f)))))
+  (color-red c) (color-green c) (color-blue c) (macro-fix (fl* 255. (macro-flo f)))))
 
 
 ;; oscillating alarm colors - flutterbugs :)
