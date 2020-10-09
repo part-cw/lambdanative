@@ -779,6 +779,14 @@ make_sounds()
 # search itemname directories for ITEMNAME to populate items
 add_items()
 {
+  lasti=
+  add_items_int $@
+  vecho "$itemname requested: $@"
+  vecho "$itemname identified: $items"
+}
+
+add_items_int()
+{
   for optnewi in `filter_entries $SYS_PLATFORM $@`; do
     newi=`echo "$optnewi" | sed 's/^?//'`
     idir=`locatedir $itemname/$newi silent`
@@ -786,15 +794,24 @@ add_items()
       isold=no
       for oldi in $items; do
         if [ $oldi = $newi ]; then
-        isold=yes
+          isold=yes
         fi
       done
       if [ $isold = no ]; then
-        items="$items $newi"
         capitemname=`echo "$itemname" | tr a-z A-Z`
         xis=`locatefile $itemname/$newi/$capitemname silent`
         if [ ! "X$xis" = "X" ] && [ -f "$xis" ]; then
-          add_items `cat "$xis"`
+          lasti="$newi $lasti"
+          add_items_int `cat "$xis"`
+          newi=`echo $lasti | cut -d' ' -f1`
+          items="$items $newi"
+          lasti=`echo $lasti | cut -d' ' -f2-`
+        else
+          items="$items $newi"
+          newi=`echo $lasti | cut -d' ' -f1`
+          if [ ! "X$newi" = "X" ] && [ ! "X$oldi" = "X" ] && [ $oldi = $newi ]; then
+            lasti=`echo $lasti | cut -d' ' -f2-`
+          fi
         fi 
       fi
     else

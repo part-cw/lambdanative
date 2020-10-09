@@ -16,7 +16,7 @@ veval()
 vecho()
 {
   if [ $SYS_VERBOSE ]; then
-    echo "$1"
+    echo "$@"
   fi
 }
 
