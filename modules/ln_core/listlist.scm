@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -236,9 +236,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )))
 (unit-test "listlist-set!" "Matrix value setting"
   (lambda () (and
-    (equal? (let ((m '((1 2) (3 4)))) (listlist-set! m 0 0 5)) '((5 2) (3 4)))
-    (equal? (let ((m '((1 2) (3 4)))) (listlist-set! m 1 0 5)) '((1 2) (5 4)))
-    (equal? (let ((m '((1 2 3) (4 5 6) (7 8 9)))) (listlist-set! m 1 1 55))
+    (equal? (let ((m (list (list 1 2) (list 3 4)))) (listlist-set! m 0 0 5)) '((5 2) (3 4)))
+    (equal? (let ((m (list (list 1 2) (list 3 4)))) (listlist-set! m 1 0 5)) '((1 2) (5 4)))
+    (equal? (let ((m (list (list 1 2 3) (list 4 5 6) (list 7 8 9)))) (listlist-set! m 1 1 55))
             '((1 2 3) (4 55 6) (7 8 9)))
   )))
 ;;eof

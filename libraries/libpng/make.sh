@@ -7,6 +7,8 @@ EXTRACONF=
 if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
   EXTRACONF=--host=$SYS_ARCH
 fi
+#Previous headers break the build process, so remove them
+rmifexists $SYS_PREFIX/include/png*
 
 package_configure $EXTRACONF --with-zlib-prefix="$SYS_PREFIX" --enable-static --disable-shared
 
