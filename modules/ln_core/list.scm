@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (list-notempty? lst) (and (list? lst) (not (null? lst))))
 
 ;; Make a list of length n, where each element is set to elem
-(define (make-list n elem)
+(define (make-list n #!optional (elem 0))
   (if (zero? n) '()
       (cons elem (make-list (- n 1) elem))))
 
