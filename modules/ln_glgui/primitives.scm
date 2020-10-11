@@ -228,9 +228,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (ln-ttf:font-ref font char) ;; -> glyph
   (cond
-   ((macro-ln-ttf:font? font) ;; TBD: leave this as the only case
-    (table-ref (macro-ln-ttf:font-char->desc-table font) char #f))
-   (else (ln-ttf:font-ref (find-font font) char))))
+    ((macro-ln-ttf:font? font) ;; TBD: leave this as the only case
+      (table-ref (macro-ln-ttf:font-char->desc-table font) char #f))
+    (else
+      (ln-ttf:font-ref (find-font font) char))))
 
 (define (make-ln-ttf:font/desc fnt)
   (let ((font-table (list->table
@@ -254,31 +255,28 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
               font))))
     (define (find-font fnt)
       (cond
-       ((macro-ln-ttf:font? fnt) ;; new style
-        ;;
-        ;; TBD: after transition phase warn if this case is hit.
-        fnt)
-       ((and (pair? fnt) (pair? (car fnt))) ;; likely a legacy font
-        (%find-font/desc fnt))
-       (else (error "illegal font" fnt))))
+        ((macro-ln-ttf:font? fnt) ;; new style
+          ;; TBD: after transition phase warn if this case is hit.
+          fnt)
+        ((and (pair? fnt) (pair? (car fnt))) ;; likely a legacy font
+          (%find-font/desc fnt))
+        (else
+          (error "illegal font" fnt))))
     (set! find-font/desc %find-font/desc)
     find-font))
 
 (define (install-font-cache-backward-compatible-override!)
   (let ((assoc.orig assoc))
-    ;; Backward compatibility: try to transparently hook into legacy
-    ;; lookups.
-    ;;
-    ;; TBD: 2020-08-23 This is an intermediate workaround to be removed
-    ;; ASAP.
+    ;; Backward compatibility: try to transparently hook into legacy lookups.
+    ;; TBD: 2020-08-23 This is an intermediate workaround to be removed ASAP.
     (define (transparent-font-assoc k coll)
       (cond
-       ((macro-ln-ttf:font? coll)
-        ;; TBD: after experimental phase warn if this case is hit.
-        (ln-ttf:font-ref coll k))
+        ((macro-ln-ttf:font? coll)
+          ;; TBD: after experimental phase warn if this case is hit.
+          (ln-ttf:font-ref coll k))
        (else
-        ;; TBD: after transition phase error out if this case is hit.
-        (assoc.orig k coll))))
+         ;; TBD: after transition phase error out if this case is hit.
+         (assoc.orig k coll))))
     (set! assoc transparent-font-assoc)))
 
 (install-font-cache-backward-compatible-override!)
@@ -370,16 +368,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui:draw-text-center x y w h label fnt color . clipright)
   ;; looks like a case of "premature optimization is the root of all evil"
   (let* ((strw-raw (glgui:stringwidth label fnt)) ;; fixnum
-         ;; `strh` list instead of two values (top bottom) relative to baselind
+         ;; `strh` list instead of two values (top bottom) relative to baseline
          (strh (map flo (glgui:stringheight (string-append label "|") fnt)))
          (first-char-height (car strh))
          (second-char-height (cadr strh))
          (h-flo (flo h))
-         (y-flo (flo y)) ;; just used once (so far) for symetry
+         (y-flo (flo y)) ;; just used once (so far) for symmetry
          (centery ;; careful to have floating point only.
-          ;;
           ;; This might be "premature optimization".  The contributes
-          ;; next to nothing to the cummulative time
+          ;; next to nothing to the cumulative time
           ;; `draw-text-center` needs.
           (fl+ y-flo
                (fl/ (if (fl> h-flo 0.)
