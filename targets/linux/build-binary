@@ -56,6 +56,11 @@ make_sounds make_soundfile_linux
 echo " => compiling application.."
 tgt=$apptgtdir/$SYS_APPNAME$SYS_EXEFIX
 
+if [ "$SYS_MODE" = "debug" ]; then
+  # enable profiling
+  cflag_additions="$cflag_additions -pg"
+fi
+
 if [ `is_standalone_app` = "yes" ]; then
   veval "$SYS_CC -I$SYS_PREFIX/include \
     $cflag_additions -DUSECONSOLE -o $tgt \
