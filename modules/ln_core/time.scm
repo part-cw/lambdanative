@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -1513,11 +1513,6 @@ end-of-c-declare
          (utc2 (if (= tzdiff 0) utc (+ utc (* tzdiff 3600.))))
         )
     utc2))
-
-(define (string->seconds str fmt . tz0)
-  (if (pair? tz0)
-      (string->seconds~ str (ln:tildify fmt) tz0)
-      (string->seconds~ str (ln:tildify fmt))))
 
 (define (seconds->string~ sec0 fmt tz)
   (let* ((sec (+ sec0 (* tz 3600.)))

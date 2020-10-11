@@ -35,7 +35,7 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
-;; type conversions used throughout to prevent FFI type errors 
+;; type conversions used throughout to prevent FFI type errors
 
 (define fix:fixnum-max-as-flonum (##fixnum->flonum ##max-fixnum))
 
@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (declare (not safe))
   (cond
     ((##fixnum? n) n)
-    ((##bignum? n) n) 
+    ((##bignum? n) n)
     ((##flonum? n) (if (##fl< n fix:fixnum-max-as-flonum)
         (##flonum->fixnum n) (##flonum->exact-int n)))
     ((##ratnum? n) (##floor n))
@@ -57,5 +57,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     ((##fixnum? n) (##fixnum->flonum n))
     (else (##exact->inexact n))
   ))
+
+;; Note that macro-fix and macro-flo are only visible within ln_core.scm,
+;; but are much faster. fix and flo are available everywhere but costlier.
+(define-macro (macro-fix n)
+  `(cond
+    ((##fixnum? ,n) ,n)
+    ((##bignum? ,n) ,n)
+    ((##flonum? ,n)
+     (if (##fl< ,n fix:fixnum-max-as-flonum)
+         (##flonum->fixnum ,n) (##flonum->exact-int ,n)))
+    ((##ratnum? ,n) (##floor ,n))
+    (else #f) ;; no complex numbers
+    ))
+
+(define-macro (macro-flo n)
+  `(cond
+    ((##flonum? ,n) ,n)
+    ((##fixnum? ,n) (##fixnum->flonum ,n))
+    (else (##exact->inexact ,n))))
 
 ;; eof
