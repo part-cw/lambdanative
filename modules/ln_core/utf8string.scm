@@ -253,7 +253,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (case fallback
              ((#f) (map char->integer (string->list str)))
              (else (fallback str)))
-           (handle-replloop-exception exn)))
+           (raise exn)))
      (lambda () (utf8string->unicode str (lambda (str i) (raise use-fallback)))))))
 
 (define (unicode->utf8string src)
