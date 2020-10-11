@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2014, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (c-declare  #<<end-of-c-declare
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <gd.h>
@@ -72,7 +73,7 @@ int stringfile(char *fnt, char *fntsize, char *str, char *fname)
 
   // Save the file and exit
   FILE *out = fopen(fname, "wb");
-  if (out == NULL){ 
+  if (out == NULL){
     fprintf(stderr,"Error: Cannot open %s\n",fname);
     return 1;
   }
@@ -98,9 +99,9 @@ end-of-c-declare
   (with-input-from-file file (lambda ()
     (let loop ((res '()))
       (let ((line (read-line)))
-        (if (not (string? line)) res 
-          (let ((newentry 
-                  (if (and (> (string-length line) 2) 
+        (if (not (string? line)) res
+          (let ((newentry
+                  (if (and (> (string-length line) 2)
                            (char=? (string-ref line 0) #\U))
                     (let ((data (string-split (substring line 2 (string-length line)) #\-)))
                        (if (= (length data) 1) (list (string->number (substring (car data) 0 4) 16))
