@@ -58,6 +58,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (else (##exact->inexact n))
   ))
 
+;; Note that macro-fix and macro-flo are only visible within ln_core.scm,
+;; but are much faster. fix and flo are available everywhere but costlier.
 (define-macro (macro-fix n)
   `(cond
     ((##fixnum? ,n) ,n)
