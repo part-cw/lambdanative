@@ -150,10 +150,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (string-mapconcat (reverse tmp) ": ")))
 
 (define (log:exception-handler e)
-  (log-error (thread-name (current-thread)) ": " (exception->string e))
-  (log-trace (current-thread))
-  (log-error "HALT")
-  (exit))
+  (log-error "Thread \"" (thread-name (current-thread)) "\": " (exception->string e))
+  (unless (deadlock-exception? e)
+    ;; gambit ___cleanup(); re-enters with a deadlock-exception here
+    ;; while printing the trace
+    (log-trace (current-thread)))
+  (log-error "HALT pid " ((c-lambda () int "getpid")))
+  (exit 70))
 
 ;; catch primordial thread exceptions
 (current-exception-handler log:exception-handler)

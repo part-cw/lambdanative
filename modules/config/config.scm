@@ -47,8 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 void force_terminate()
 {
-  ___cleanup();
-  exit(0);
+  lambdanative_exit(0);
 }
 
 end-of-c-declare

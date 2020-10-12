@@ -29,6 +29,7 @@ int debug_settings = ___DEBUG_SETTINGS_INITIAL;
 
 void system_init();
 
+static int lambdanative_exit_call_count = -1;  /* System running when 0 */
 void lambdanative_payload_setup()
 {
   DMSG("lambdanative_payload_setup [scm]");
@@ -39,6 +40,7 @@ void lambdanative_payload_setup()
   debug_settings = (debug_settings & ~___DEBUG_SETTINGS_REPL_MASK) |
   (___DEBUG_SETTINGS_REPL_STDIO << ___DEBUG_SETTINGS_REPL_SHIFT);
   setup_params.debug_settings = debug_settings;
+  lambdanative_exit_call_count = 0;
   ___setup(&setup_params);
   #if defined(ANDROID)
     #if (___VERSION < 409002)
@@ -52,7 +54,7 @@ void lambdanative_payload_setup()
 void lambdanative_payload_cleanup()
 {
   DMSG("lambdanative_payload_cleanup [scm]");
-  ___cleanup();
+  if(lambdanative_exit_call_count++==0) ___cleanup();
 }
 
 #ifndef STANDALONE
@@ -61,7 +63,7 @@ void scm_event(int,int,int);
 
 void lambdanative_payload_event(int t, int x, int y)
 {
-  scm_event(t,x,y);
+  if( lambdanative_exit_call_count == 0 ) scm_event(t,x,y);
 }
 #endif
 
