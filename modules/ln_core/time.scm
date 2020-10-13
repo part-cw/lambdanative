@@ -1514,6 +1514,10 @@ end-of-c-declare
         )
     utc2))
 
+;; can't do optimization here as tz0 is needed later
+(define (string->seconds str fmt . tz0)
+  (apply string->seconds~ (append (list str (ln:tildify fmt)) tz0)))
+
 (define (seconds->string~ sec0 fmt tz)
   (let* ((sec (+ sec0 (* tz 3600.)))
          (s (inexact->exact (floor sec)))
