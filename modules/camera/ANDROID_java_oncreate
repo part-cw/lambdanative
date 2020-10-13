@@ -1,0 +1,3 @@
+//checkOrRequestPermission(android.Manifest.permission.CAMERA);
+//checkOrRequestPermission(android.Manifest.permission.RECORD_AUDIO);
+//checkOrRequestPermission(android.Manifest.permission.ACCESS_FINE_LOCATION);
