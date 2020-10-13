@@ -3,7 +3,7 @@ void startLnForegroundService() {
     /* API 26+: In order to compile for prior API versions comment out
      * the following attempt to disable battery optimizations
      */
-    /* Included @IF_ANDROIDAPI_GT_22@
+    @IF_ANDROIDAPI_GT_22@
     if(Build.VERSION.SDK_INT>Build.VERSION_CODES.LOLLIPOP_MR1) {
         String pkg=getPackageName();
         PowerManager pm=getSystemService(PowerManager.class);
