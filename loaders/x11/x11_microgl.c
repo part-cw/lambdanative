@@ -35,6 +35,13 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#ifdef __cplusplus
+extern "C" {
+#if 0
+} // keep emacs indent happy
+#endif
+#endif
+
 // simple X11 loader
 #include <stdio.h>
 #include <stdlib.h>
@@ -515,5 +522,9 @@ void microgl_setCopiedString(char* str, int len) {
 void microgl_getCopiedString(char** str) {
   *str = copiedString;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 // eof
