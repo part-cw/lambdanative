@@ -82,24 +82,24 @@ void signal_hook()
 void microgl_hook(int t, int x, int y)
 {
   switch (t) {
-    case EVENT_REDRAW: 
+    case EVENT_REDRAW:
       glClearColor(0.0, 0.0, 0.0, 0.0);
-      glMatrixMode(GL_PROJECTION);	
+      glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
       glOrtho(0.,scm_width(),0.,scm_height(),-1.,1.);
-      glMatrixMode(GL_MODELVIEW);	
+      glMatrixMode(GL_MODELVIEW);
       glLoadIdentity();
       glClear(GL_COLOR_BUFFER_BIT);
       ffi_event(EVENT_REDRAW,0,0);
       microgl_swapbuffers();
       break;
-    case EVENT_CLOSE: 
+    case EVENT_CLOSE:
       ffi_event(EVENT_CLOSE,0,0);
       run_flag=0;
-      break; 
+      break;
     default:
       ffi_event(t,x,y);
-      break; 
+      break;
   }
 }
 
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 
   // determine width and height of display
   w=microgl_screenwidth(); h=microgl_screenheight();
-  
+
 #endif // USECONSOLE
 
   // allow payload to initialize
@@ -159,10 +159,10 @@ int main(int argc, char *argv[])
   } else {
     microgl_window(scm_width(),scm_height());
   }
- 
+
 #endif // USECONSOLE
 
-  while (run_flag) { 
+  while (run_flag) {
     // check for application exit
     if (run_flag) run_flag=scm_runflag();
 
@@ -173,20 +173,11 @@ int main(int argc, char *argv[])
     // ask for a redraw
     microgl_refresh();
 
-#else 
-  
+#else
+
    // generate a fake redraw event
     ffi_event(EVENT_REDRAW,0,0);
 
-#endif // USECONSOLE
-
-#ifndef USECONSOLE
-    // sleep 10ms...
-#ifdef WIN32
-    Sleep(10);  
-#else
-    usleep(10000);
-#endif
 #endif // USECONSOLE
 
    }
@@ -200,4 +191,3 @@ int main(int argc, char *argv[])
 
   return 1;
 }
-

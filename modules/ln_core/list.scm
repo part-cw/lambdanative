@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (list-notempty? lst) (and (list? lst) (not (null? lst))))
 
 ;; Make a list of length n, where each element is set to elem
-(define (make-list n elem)
+(define (make-list n #!optional (elem 0))
   (if (zero? n) '()
       (cons elem (make-list (- n 1) elem))))
 
@@ -51,7 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;    (if (>= n len) l
 ;;      (reverse (list-tail (reverse l) (- len n))))))
 (define (list-head l k)
-  (if (= k 0) '()
+  (if (or (= k 0) (null? l)) '()
       (cons (car l) (list-head (cdr l) (- k 1)))))
 
 
@@ -78,8 +78,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (list-interpolate lst x0)
   (let* ((x (max (min x0 1.) 0.))
         (n (- (length lst) 1))
-        (idx1 (fix (floor (* x n))))
-        (idx2 (fix (ceiling (* x n))))
+        (idx1 (macro-fix (floor (* x n))))
+        (idx2 (macro-fix (ceiling (* x n))))
         (v1 (list-ref lst idx1))
         (v2 (list-ref lst idx2)))
    (+ v1 (* (- (* x n) idx1) (- v2 v1)))))

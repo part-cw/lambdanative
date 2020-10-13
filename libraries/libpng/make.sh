@@ -7,11 +7,19 @@ EXTRACONF=
 if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
   EXTRACONF=--host=$SYS_ARCH
 fi
+#Previous headers break the build process, so remove them
+rmifexists $SYS_PREFIX/include/png*
 
 package_configure $EXTRACONF --with-zlib-prefix="$SYS_PREFIX" --enable-static --disable-shared
 
 if [ ! $SYS_HOSTPLATFORM = win32 ]; then
-  package_make
+  if [ $SYS_PLATFORM = android ] && [ -f $SYS_PREFIX/include/zlib.h ] ; then
+    mv $SYS_PREFIX/include/zlib.h $SYS_PREFIX/include/zlib.h.tmp
+    package_make
+    mv $SYS_PREFIX/include/zlib.h.tmp $SYS_PREFIX/include/zlib.h
+  else
+    package_make
+  fi
 else
   # mutilate some default windows makefile - argh!
   cat scripts/makefile.msys | sed "s|CC =|CC=$SYS_CC #|;s|DESTDIR=|DESTDIR=$SYS_PREFIX #|;s|ZLIBDIR=|ZLIBDIR=$SYS_PREFIX/lib #|;s|ZLIBINC=|ZLIBINC=$SYS_PREFIX/include #|" > makefile.msys

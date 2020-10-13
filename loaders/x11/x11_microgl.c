@@ -35,6 +35,13 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#ifdef __cplusplus
+extern "C" {
+#if 0
+} // keep emacs indent happy
+#endif
+#endif
+
 // simple X11 loader
 #include <stdio.h>
 #include <stdlib.h>
@@ -119,6 +126,7 @@ int _microgl_key( XKeyEvent *event )
 {
   KeySym keysym;
   XLookupString( event, NULL, 0, &keysym, NULL );
+  // Control keys
   switch (keysym) {
     case XK_Delete:       return EVENT_KEYDELETE;
     case XK_Escape:       return EVENT_KEYESCAPE;
@@ -127,17 +135,37 @@ int _microgl_key( XKeyEvent *event )
     case XK_Return:       return EVENT_KEYENTER;
     case XK_Home:         return EVENT_KEYHOME;
     case XK_End:          return EVENT_KEYEND;
-    case XK_KP_Left:
     case XK_Left:         return EVENT_KEYLEFT;
-    case XK_KP_Right:
     case XK_Right:        return EVENT_KEYRIGHT;
-    case XK_KP_Down:
     case XK_Down:         return EVENT_KEYDOWN;
-    case XK_KP_Up:
     case XK_Up:           return EVENT_KEYUP;
   }
-  if( (keysym >= 0x0020 && keysym <= 0x007e) || 
-      (keysym >= 0x00a0 && keysym <= 0x00ff) ) return keysym;
+  // Printable chars (Latin 1)
+  if( (keysym >= 0x0020 && keysym <= 0x007e) || // Basic Latin 1 charset
+      (keysym >= 0x00a0 && keysym <= 0x00ff) )  // Extended Latin 1 charset
+    return keysym;
+  // Control keys - numeric keypad
+  switch (keysym) {
+    case XK_KP_Enter:     return EVENT_KEYENTER;
+    case XK_KP_Home:      return EVENT_KEYHOME;
+    case XK_KP_End:       return EVENT_KEYEND;
+    case XK_KP_Left:      return EVENT_KEYLEFT;
+    case XK_KP_Right:     return EVENT_KEYRIGHT;
+    case XK_KP_Down:      return EVENT_KEYDOWN;
+    case XK_KP_Up:        return EVENT_KEYUP;
+  }
+  // Printable chars - numeric keypad
+  switch (keysym) {
+    case XK_KP_Space:     return XK_space;
+    case XK_KP_Equal:     return XK_equal;
+    case XK_KP_Multiply:  return XK_asterisk;
+    case XK_KP_Add:       return XK_plus;
+    case XK_KP_Subtract:  return XK_minus;
+    case XK_KP_Decimal:   return XK_period;
+    case XK_KP_Divide:    return XK_slash;
+  }
+  if( keysym >= XK_KP_0 && keysym <= XK_KP_9 ) // Numeric keypad [0..9]
+    return (keysym - 0xff80);
   return 0;
 }
 
@@ -428,6 +456,11 @@ int microgl_open(int w, int h, int fs)
   XStoreName( Dpy, win.Win, SYS_APPNAME);
   XSetIconName( Dpy, win.Win, SYS_APPNAME);
 
+  XClassHint* classHint = XAllocClassHint();
+  classHint->res_name = SYS_APPNAME;
+  XSetClassHint( Dpy, win.Win, classHint);
+  XFree(classHint);
+
 // clear garbage fast?
   glViewport(0,0,w,h);
   glClearColor(0,0,0,0);
@@ -489,5 +522,9 @@ void microgl_setCopiedString(char* str, int len) {
 void microgl_getCopiedString(char** str) {
   *str = copiedString;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 // eof

@@ -35,7 +35,10 @@ compile_payload_scm()
       else
         scm_modsrc=`locatefile modules/$m/$m.scm silent`
       fi
-      if [ `string_contains "$scm_coremodules" " $m "` = yes ]; then
+      # config MUST go first otherwise removal of (block) breaks things
+      if [ "$m" = "config" ]; then
+        scm_coresrcs="$scm_modsrc $scm_coresrcs"
+      elif [ `string_contains "$scm_coremodules" " $m "` = yes ]; then
         scm_coresrcs="$scm_coresrcs $scm_modsrc"
       else
         scm_auxsrcs="$scm_auxsrcs $scm_modsrc"
@@ -52,17 +55,19 @@ compile_payload_scm()
     # -------
     # prep the compiler options
     if [ $SYS_MODE = "debug" ]; then
-      scm_opts="(declare (block)(not safe)(standard-bindings)(extended-bindings)(debug)(debug-location))"
+      scm_opts="(declare (standard-bindings)(extended-bindings)(debug)(debug-location))"
+      payload_cdefs="$payload_cdefs -D___LIBRARY -D___PRIMAL"
     else
       scm_opts="(declare (block)(not safe)(standard-bindings)(extended-bindings))"
+      payload_cdefs="$payload_cdefs -D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
+    fi
+    scm_opts="${scm_opts}(define-cond-expand-feature $SYS_PLATFORM)"
+    if [ `is_standalone_app` = "yes" ]; then
+       payload_cdefs="$payload_cdefs -DSTANDALONE"
     fi
     # support global macro definitions
     if [ -f "${SYS_HOSTPREFIX}/lib/global-macros.scm" ]; then
       scm_opts="${scm_opts}(include \\\"~~lib/global-macros.scm\\\")"
-    fi
-    payload_cdefs="$payload_cdefs -D___SINGLE_HOST -D___LIBRARY -D___PRIMAL"
-    if [ `is_standalone_app` = "yes" ]; then
-       payload_cdefs="$payload_cdefs -DSTANDALONE"
     fi
     #--------
     # syntax-case special-case
@@ -118,9 +123,13 @@ compile_payload_scm()
         scm_link_dirty=yes
         rmifexists "$scm_ctgt"
 	if [ -f $scm_hdr ]; then scm_hdr="-e '(load \"$scm_hdr\")'"; else scm_hdr=""; fi
-	gsc_processing=""
+        if [ $SYS_MODE = "debug" ]; then
+	  gsc_processing="-debug -track-scheme"
+        else
+          gsc_processing=""
+        fi
 	# if [ $SYS_VERBOSE ]; then gsc_processing="$gsc_processing -expansion"; fi
-        veval "$SYS_GSC -prelude \"$scm_opts\" -c -o $scm_ctgt $gsc_processing $scm_hdr $scm_src"
+        veval "$SYS_GSC -:~~tgt=${SYS_PREFIX} -prelude \"$scm_opts\" -c -o $scm_ctgt $gsc_processing $scm_hdr $scm_src"
         if [ $veval_result != "0" ]; then rmifexists "$scm_ctgt"; fi
         assertfile "$scm_ctgt"
         rmifexists "$scm_otgt"

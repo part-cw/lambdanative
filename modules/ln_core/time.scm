@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -96,7 +96,7 @@ end-of-c-declare
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 
 (define (:optional args fallback)
-  (if (= (length args) 0) fallback (car args)))
+  (if (null? args) fallback (car args)))
 
 (define time-tai 'time-tai)
 (define time-utc 'time-utc)
@@ -1485,46 +1485,69 @@ end-of-c-declare
 
 ;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ;; make format percent sign into tilde
-(define (tm:tildify str)
-  (let loop ((cs (string->list str))(res '()))
-    (if (= (length cs) 0) (list->string res)
-      (loop (cdr cs) (append res (list
-        (if (char=? (car cs) #\%) #\~ (car cs))))))))
+;;
+;, Why actually?  And why at runtime?
+(define (ln:tildify str)
+  (cond
+   ((equal? str "") str)
+   ((string-contains str "%")
+    (let ((result (string-copy str)))
+      (do ((i 0 (fx+ i 1)))
+          ((fx= i (string-length result))
+           result)
+        (if (eqv? (string-ref result i) #\%)
+            (string-set! result i #\~)))))
+   (else str)))
 
-(define (string->seconds str fmt . tz0)
-  (let* ((date (string->date str (tm:tildify fmt)))
+(define (string->seconds~ str fmt . tz0)
+  (let* ((date (string->date str fmt))
          (t (date->time-monotonic date))
          (s (srfi19:time-second t))
          (ns (srfi19:time-nanosecond t))
          (t2 (- s (tm:leap-second-delta s)))
-         (tz (if (= (length tz0) 1) (car tz0) (timezone-hours (fix t2))))
+         (tz (if (pair? tz0) (car tz0) (timezone-hours (macro-fix t2))))
          (utc (+ 0.0 (* tz -3600.) t2 (* ns 1.0e-9)))
          ;; timezone-hours assumes t is UTC, this causes issues if one is DST but not both
-         (tz2 (timezone-hours (fix utc)))
+         (tz2 (timezone-hours (macro-fix utc)))
          (tzdiff (- tz tz2))
          (utc2 (if (= tzdiff 0) utc (+ utc (* tzdiff 3600.))))
         )
     utc2))
 
-(define (seconds->string sec0 fmt . tz0)
-  (let* ((tz (if (= (length tz0) 1) (car tz0) (timezone-hours (fix sec0))))
-         (sec (+ sec0 (* tz 3600.)))
+;; can't do optimization here as tz0 is needed later
+(define (string->seconds str fmt . tz0)
+  (apply string->seconds~ (append (list str (ln:tildify fmt)) tz0)))
+
+(define (seconds->string~ sec0 fmt tz)
+  (let* ((sec (+ sec0 (* tz 3600.)))
          (s (inexact->exact (floor sec)))
          (ns (inexact->exact (floor (* 1.0e9 (- sec s)))))
          (t (make-srfi19:time time-monotonic ns s))
          (d (time-monotonic->date t)))
-    (date->string d (tm:tildify fmt))))
+    (date->string d fmt)))
+
+(define (seconds->string sec fmt . tz0)
+  (let* ((tz (if (pair? tz0) (car tz0) (timezone-hours (macro-fix sec)))))
+    (seconds->string~ sec (ln:tildify fmt) tz)))
 
 (define (localseconds->string sec fmt) (seconds->string sec fmt 0.))
 
 (define (time->string t fmt) (seconds->string (time->seconds t) fmt))
 
 (define (secondselapsed->string arg1 . arg2)
-  (seconds->string arg1 (if (= (length arg2) 1) (car arg2) "%T") 0.))
+  (seconds->string arg1 (if (pair? arg2) (car arg2) "%T") 0.))
 
-(define (time->timestamp arg1) (time->string arg1 "%y%m%d-%H%M%S"))
+(define time->timestamp
+  (let ((fmt (ln:tildify "%y%m%d-%H%M%S")))
+    (define (time->timestamp arg1)
+      (let ((sec (time->seconds arg1)))
+        (seconds->string~ sec fmt (timezone-hours (macro-fix sec)))))
+    time->timestamp))
 
-(define (seconds->timestamp arg1) (seconds->string arg1 "%y%m%d-%H%M%S"))
+(define seconds->timestamp
+  (let ((fmt (ln:tildify "%y%m%d-%H%M%S")))
+    (define (seconds->timestamp arg1) (seconds->string~ arg1 fmt (timezone-hours (macro-fix arg1))))
+    seconds->timestamp))
 
 (define (current-time-seconds) (time->seconds (current-time)))
 

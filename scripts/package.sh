@@ -140,7 +140,11 @@ package_download_ball()
 {
   pkg_url=$1
   pkg_hash=$2
-  pkg=$SYS_PREFIXROOT/packages/`basename $pkg_url`
+  pkg_basename=$3
+  if [ "$pkg_basename" = "" ]; then
+     pkg_basename=`basename $pkg_url`
+  fi
+  pkg=$SYS_PREFIXROOT/packages/$pkg_basename
   if [ $SYS_HOSTPLATFORM = openbsd ]; then
     asserttool sha1
   else 
@@ -220,6 +224,7 @@ package_configure()
   LD_LIBRARY_PATH=$SYS_PREFIX/lib \
   CPPFLAGS=-I$SYS_PREFIX/include \
   CC=\"$SYS_CC -I$SYS_PREFIX/include -L$SYS_PREFIX/lib\" \
+  CXX=\"$SYS_CXX -I$SYS_PREFIX/include -L$SYS_PREFIX/lib\" \
   AR=\"$SYS_AR\" \
   RANLIB=\"$SYS_RANLIB\" \
   NM=\"$SYS_NM\" \
@@ -254,6 +259,7 @@ package_make()
   LD_LIBRARY_PATH=$SYS_PREFIX/lib \
   CPPFLAGS=-I$SYS_PREFIX/include \
   CC=\"$SYS_CC -I$SYS_PREFIX/include -L$SYS_PREFIX/lib\" \
+  CXX=\"$SYS_CXX -I$SYS_PREFIX/include -L$SYS_PREFIX/lib\" \
   AR=$SYS_AR \
   RANLIB=$SYS_RANLIB \
   $pkg_make $pkg_make_opt"

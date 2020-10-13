@@ -26,6 +26,13 @@ if [ "$SYS_ANDROIDAPI" -lt "12" ]; then
 fi
 
 pwd
+
+if [ -d $ANDROIDSDK/tools.gradle ]; then
+  echo " == this SDK is gradle based, adjusting for ant build.."
+  rm $ANDROIDSDK/tools
+  ln -s $ANDROIDSDK/tools.ant $ANDROIDSDK/tools
+fi
+
 USBSER_TARGET=`$SYS_ANDROIDSDK/tools/android list targets | grep "^id:" | grep "android-$SYS_ANDROIDAPI" | cut -f 2 -d " "`
 veval "$SYS_ANDROIDSDK/tools/android -s create lib-project --name usbserial \
 --target $USBSER_TARGET \
@@ -40,6 +47,12 @@ if [ -n "$JAVAVERSION" ]; then
 fi
 veval "ant release"
 asserterror $? "compilation failed"
+
+if [ -d  $ANDROIDSDK/tools.gradle ]; then
+  echo " == restoring gradle build."
+  rm $ANDROIDSDK/tools
+  ln -s $ANDROIDSDK/tools.gradle $ANDROIDSDK/tools
+fi
 
 echo " => installing..."
 assertfile bin/classes.jar

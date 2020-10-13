@@ -1,0 +1,17 @@
+// attitude quaternion
+extern double ios_rot_getx() {
+  NSNumber* x = [[NSUserDefaults standardUserDefaults] valueForKey:@"quaternion_x"];
+  return [x doubleValue];
+}
+extern double ios_rot_gety() {
+  NSNumber* y = [[NSUserDefaults standardUserDefaults] valueForKey:@"quaternion_y"];
+  return [y doubleValue];
+}
+extern double ios_rot_getz() {
+  NSNumber* z = [[NSUserDefaults standardUserDefaults] valueForKey:@"quaternion_z"];
+  return [z doubleValue];
+}
+extern double ios_rot_getw() {
+  NSNumber* w = [[NSUserDefaults standardUserDefaults] valueForKey:@"quaternion_w"];
+  return [w doubleValue];
+}

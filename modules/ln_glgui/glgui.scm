@@ -35,7 +35,7 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
-;; widget based GUI 
+;; widget based GUI
 
 ;; ----
 ;; event propagation
@@ -44,7 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define glgui:propagate #f)
 
-(define (glgui-propagate-set! p) 
+(define (glgui-propagate-set! p)
   (set! glgui:propagate p))
 
 ;; ----
@@ -96,7 +96,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui-orientation-set! o)
 ;;  (let ((def (if (fx> (glgui-width-get) (glgui-height-get)) GUI_LANDSCAPE GUI_PORTRAIT)))
   (let ((def (if (> app:width app:height) GUI_LANDSCAPE GUI_PORTRAIT)))
-    (cond 
+    (cond
       ((fx= def o) (set! glgui:rotate 0))
       ((fx= o GUI_LANDSCAPE) (set! glgui:rotate 1))
       ((fx= o GUI_PORTRAIT) (set! glgui:rotate 1))
@@ -107,7 +107,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     )))
 
 (define (glgui-width-get)
-  (cond 
+  (cond
     ((fx= glgui:rotate 0) app:width)
     ((fx= glgui:rotate 1) app:height)
     ((fx= glgui:rotate 2) app:height)
@@ -115,7 +115,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ))
 
 (define (glgui-height-get)
-  (cond 
+  (cond
     ((fx= glgui:rotate 0) app:height)
     ((fx= glgui:rotate 1) app:width)
     ((fx= glgui:rotate 2) app:width)
@@ -142,7 +142,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                (yofs (glgui-get g 'yofs)))
           (glPushMatrix)
           (glTranslatef (flo xofs) (flo yofs) 0.)
-          (for-each (lambda (wgt) 
+          (for-each (lambda (wgt)
             (let* ((h (glgui-widget-get g wgt 'hidden))
                    (m (glgui-widget-get g wgt 'modal))
                    (p (glgui-widget-get g wgt 'draw-handle))
@@ -157,9 +157,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                        (glCoreClipPush 0 0 w h)
                        (glgui:renderloop wgt)
                        (glCoreClipPop)
-               )))))) 
+               ))))))
              (glgui-get g 'widget-list))
-          (glPopMatrix))) 
+          (glPopMatrix)))
     guis)))
 
 ;; render one or more guis to a window
@@ -167,7 +167,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui:render g1 . gx)
   (glCoreInit)  ;; setup the OpenGL pipeline
   (glPushMatrix)
-  (cond 
+  (cond
 ;;  ------ rotation code
     ((fx= glgui:rotate 1)
       (glRotatef -90. 0. 0. 1.)
@@ -178,7 +178,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     ((fx= glgui:rotate 3)
       (glRotatef 180. 0. 0. 1.)
       (glTranslatef (flo (- app:width)) (flo (- app:height)) 0.))
-;;  ------ 
+;;  ------
   )
   (apply glgui:renderloop (append (list g1) gx))
   (glPopMatrix)
@@ -187,7 +187,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glgui:for-each-done func lst)
   (let ((len (length lst)))
     (let loop ((i 0)(done #f))
-      (if (or (fx= i len) done) done 
+      (if (or (fx= i len) done) done
         (loop (fx+ i 1) (func (list-ref lst i)))))))
 
 (define (glgui:inputloop t x0 y0 . gs)
@@ -227,15 +227,121 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                widget-list)))
             guis)))
 
+;; glgui-timings-set! change
+;;
+;; (glgui-timings-set! #!key (frame-period-max #f) (frame-period-min #f) (frame-period-custom #f))
+;;
+;; Keyword arguments - if given - customize the frame-redraw timings.
+;;
+;; frame-period-max: maximum period to wait
+;; frame-period-min: minimum period
+;;
+;; frame-period-custom: A 1-ari procedure receiving the count of
+;; consecutive EVENT_REDRAW's returning the delay to wait.
+;;
+;; If frame-period-custom is #f a heuristic increasing delay between from
+;; max/min (currently linear, which maybe will be changed to an
+;; exponential backoff) will be used.  If it is set, min/max are ignored.
+;;
+;; The heuristic assumes an interactive application which is often
+;; idle.  Once an non-redraw event is seen, interaction is assumed and
+;; frames are drawn frequently.  Without it is assumed idle and system
+;; load is reduced.
+;;
+;; Examples:
+;;
+;;  (glgui-timings-set! frame-period-max: 2 frame-period-min: 0.01) -- start with 100/sec down to 0.5/sec
+;;  (glgui-timings-set! frame-period-max: 0.5 frame-period-min: 0.05) -- 20/sec down to 2/sec
+;;  (glgui-timings-set! frame-period-custom: (lambda (x) 0.01))  -- constant 100/sec
+;;
+;;  When concerned about a precise frame rate take a hint from gambit
+;;  manual wrt. `thread-sleep!` and wait until a point in time no
+;;  matter how long it took to process events and render the GUI:
+;;
+;; (glgui-timings-set!
+;;  frame-period-custom:
+;;  (let ((last-frame-time (current-time-seconds))
+;;        (frame-period 0.05))
+;;    (lambda (x) ;; ignoring `x`
+;;      (let ((next (+ last-frame-time frame-period)))
+;;        (set! last-frame-time next)
+;;        (seconds->time next)))))
+
+(define glgui-timings-set!)
+
+;; glgui-wakeup! - a thunk, which when called will immediately unblock
+;; the thread waiting in glgui-event.  Should be called if other
+;; threads notice the event loop should proceed.  Immediately resets
+;; frame-period to frame-period-min.
+(define glgui-wakeup!)
+
 ;; process an input event
 ;; 20100519: allow multiple guis
 ;; 20100804: support gui offset
-(define (glgui-event guis t x0 y0)
-  (if (and glgui:active app:width app:height)
-    (let ((gs (if (list? guis) guis (list guis))))
-      (if (fx= t EVENT_REDRAW) (apply glgui:render gs)
-        (apply glgui:inputloop (append (list t x0 y0) gs)))
-   )))
+
+(define glgui-event
+  (let ((frame-period-max-value 0.5) ;; How long to sleep at most in redraw.
+        (step 0.05) ;; delay increase
+        (consecutive-redraw-count 1)
+        (customized-moment #f) ;; may be a procedure returning the wait time/moment
+        (wait-mutex (make-mutex 'glgui-event))
+        (wait-cv (make-condition-variable 'glgui-event)))
+    (define (timings-set! #!key (frame-period-max #f) (frame-period-min #f) (frame-period-custom #f))
+      (define (legal? x) (and (number? x) (positive? x)))
+      (if (legal? frame-period-max) (set! frame-period-max-value frame-period-max))
+      (if (legal? frame-period-min) (set! step frame-period-min))
+      (if (or (not frame-period-custom) (procedure? frame-period-custom))
+          (set! customized-moment frame-period-custom)))
+    (define (wakeup!)
+      (condition-variable-signal! wait-cv))
+    (define (reset-wait!)
+      (set! consecutive-redraw-count 1))
+    (define (wait-for-time-or-signal!)
+      ;; wait for delay or signal from other thread
+      (if (let ((moment (if customized-moment
+                            (customized-moment consecutive-redraw-count)
+                            (min frame-period-max-value (* consecutive-redraw-count step)))))
+              (mutex-unlock! wait-mutex wait-cv moment))
+          (reset-wait!)
+          (set! consecutive-redraw-count (fx+ consecutive-redraw-count 1))))
+    (define (glgui-event guis t x0 y0)
+      (if (and glgui:active app:width app:height)
+          (let ((gs (if (list? guis) guis (list guis))))
+            (if (fx= t EVENT_REDRAW)
+                (when (mutex-lock! wait-mutex 0)
+                  (apply glgui:render gs)
+                  (wait-for-time-or-signal!))
+                (begin
+                  (reset-wait!)
+                  (apply glgui:inputloop (append (list t x0 y0) gs)))))
+          (if (fx= t EVENT_REDRAW)
+              (wait-for-time-or-signal!)
+              (if customized-moment
+                  (thread-sleep! (customized-moment 1))
+                  (begin
+                    (thread-sleep! step)
+                    (reset-wait!))))))
+    (set! glgui-wakeup! wakeup!)
+    (set! glgui-timings-set! timings-set!)
+    glgui-event))
+
+(define (glgui-timings-at-sec! sec)
+  (define (wait-for-sec _) (seconds->time (+ ##now sec)))
+  (define (no-wait _) 0)
+  (cond-expand
+   ((or android ios)
+    ;; TBD: convey the time value to signaling code.
+    ;; switch delays to zero
+    (glgui-timings-set! frame-period-custom: no-wait))
+   (else (glgui-timings-set! frame-period-custom: wait-for-sec))))
+
+(define (glgui-timings-at-10msec!) (glgui-timings-at-sec! 0.01))
+
+(cond-expand
+ ((or android ios)
+  ;; 50 Hz should be enough - TBD: not yet effective
+  (glgui-timings-at-sec! 0.02))
+ (else))
 
 ;; provide a screen shot
 (define (glgui-screenshot)

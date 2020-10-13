@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2016, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -43,10 +43,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (##include "website#.scm")
 
 (##namespace (""
+  string->u8vector
+  u8vector->string
   file->u8vector
   u8vector-compress u8vector-decompress
   pregexp-replace* sxml->xml
   string-mapconcat string-split string-downcase
+  string-replace-substring
   exception->string log:exception-handler
   log-error log-system
   make-safe-thread
@@ -78,7 +81,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            path0
            (string-append (system-directory) (system-pathseparator) path0)))
          (fullpath (if has-fullpath? (car fullpath0) path)))
-    (if (file-exists? path)
+    (if (and (file-exists? path) (not (eq? #\~ (string-ref path (- (string-length path) 1)))))
       (let* ((i (file-info path))
              (t (file-info-type i)))
        (cond
@@ -121,8 +124,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (else "application/force-download")
   ))
 
-(define (website:server db port)
-  (let ((accept-port (open-tcp-server (list server-address: "*" port-number: port reuse-address: #t))))
+(define (website:server db port address)
+  (let ((accept-port (open-tcp-server (list server-address: address port-number: port reuse-address: #t))))
     (let loop () (let ((connection (read accept-port)))
         (if (not (eof-object? connection))
             (begin (thread-start! (make-safe-thread (lambda ()
@@ -217,14 +220,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let* ((decomposit (string-split-sane doc #\?))
          (document (car decomposit))
          (zdata (table-ref db document #f))
+         (proc  (table-ref db (string-append "p:" document) #f))
          (catchall (table-ref db 'catchall #f))
-         (data (if (u8vector? zdata) (website:decompress zdata)
-                 (if (procedure? zdata) (with-input-from-port port (lambda () (zdata cgi-env)))
-                   (if (procedure? catchall) (with-input-from-port port (lambda () (catchall document cgi-env))) #f))))
+         (data0 (cond
+           ((procedure? proc)
+             (with-input-from-port port (lambda () (proc (if zdata
+               (append cgi-env (list (list "DATA" (if (u8vector? zdata) (u8vector->string (website:decompress zdata)) zdata))))
+               cgi-env)))
+             ))
+           ((u8vector? zdata) (website:decompress zdata))
+           ((string? zdata) zdata)
+           ((procedure? catchall) (with-input-from-port port (lambda () (catchall document cgi-env))))
+           (else #f)))
+         (data (if (string? data0) (string->u8vector data0) data0))
          (ext (car (reverse (string-split-sane document #\.))))
          (headers (string-append "HTTP/1.0 200 OK\n"
                                 "Content-Type: " (website:lookup-mimetype ext) "\n"
-                                (if (procedure? zdata) "Cache-Control: no-cache, no-store\n" "")
+                                (if (procedure? proc) "Cache-Control: no-cache, no-store\n" "")
                                 "Access-Control-Allow-Origin: *\n"
                               ;;  "Access-Control-Allow-Methods: GET,POST,PUT\n"
                                 "\n")))
@@ -255,12 +267,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define website:db (make-table))
 (define (website-getdb) website:db)
 
-(define (website-serve db port) (thread-start! (make-safe-thread (lambda ()
+(define (website-serve db port . bind) (thread-start! (make-safe-thread (lambda ()
   (current-exception-handler log:exception-handler)
-  (website:server (if db db website:db) port)))))
+  (website:server (if db db website:db) port (if (or (null? bind) (not (eq? (car bind) 'localonly))) "*" "127.0.0.1"))))))
 
 (define (website-addhook db document proc)
-  (table-set! (if db db website:db) document proc))
+  (table-set! (if db db website:db)
+    (if (and (procedure? proc) (string? document))
+      (string-append "p:" document)
+      document
+    )
+    proc))
 
 (define (website-catchall db proc)
   (table-set! (if db db website:db) 'catchall proc))
@@ -273,5 +290,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define make-website make-table)
 
 (define (website-merge! db t) (table-merge! (if db db website:db) t))
+
+;; -------- Template related functions ---
+(define website:substitution-db (make-table))
+
+(define (website-addsubstitution token proc)
+  (table-set! website:substitution-db token proc))
+
+(define (website-substitute data)
+	(table-for-each
+	  (lambda (key value)
+	    (set! data (string-replace-substring data key (if (procedure? value) (value) value))))
+	  website:substitution-db)
+	data)
 
 ;; eof

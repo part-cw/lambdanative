@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2015, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -39,19 +39,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; init.scm
 ;; this is the glue between the native launcher and the portable code
 
-(define-macro (define-cond-expand-feature-value v)
-  (let ((v (eval v)))
-    `(define-cond-expand-feature ,v)))
-
-(define-cond-expand-feature-value
-  (if (>= (system-version) 409002)
-      'heartbeat-interval-2019
-      'heartbeat-interval-legacy))
-
-(cond-expand
- (heartbeat-interval-2019 (if (string=? (system-platform) "android") (##set-heartbeat-interval! -1.)))
- (else (if (string=? (system-platform) "android") (##heartbeat-interval-set! -1.))))
-
 (c-declare  #<<end-of-c-declare
 
 #include "LNCONFIG.h"
@@ -69,7 +56,7 @@ end-of-c-declare
 
 (define ##now 0.)
 
-(define (system-pathseparator) 
+(define (system-pathseparator)
   (string ((c-lambda () char "system_pathseparator"))))
 
 (define (system-directory) ((c-lambda () char-string "system_dir")))
@@ -88,8 +75,24 @@ end-of-c-declare
 
 (define force-terminate (c-lambda () void "force_terminate"))
 
+;; Cleanup and exit with given exit code.  (Unlike force-terminate,
+;; which always exists with zero.)
+;;
+;; Overriding ##exit helps to avoid segfault when leaving a gambit
+;; repl and simillar situations.
+(set! ##exit
+      (lambda (#!optional (code 0))
+        ((c-lambda (int) void "lambdanative_exit") code)))
+
 (if (not (file-exists? (system-directory)))
-  (with-exception-catcher (lambda (e) #f) 
+  (with-exception-catcher (lambda (e) #f)
     (lambda () (create-directory (system-directory)))))
+
+;; Disable the android heartbeat as it causes problems. Note that for 4.7.9 this
+;; has to be below the definition of system-platform to avoid an (#!unbound2)
+;; *** ERROR IN test# -- Operator is not a PROCEDURE
+(cond-expand
+ (gambit-c (if (string=? (system-platform) "android") (##heartbeat-interval-set! -1.)))
+ (else (if (string=? (system-platform) "android") (##set-heartbeat-interval! -1.))))
 
 ;; eof

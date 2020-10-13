@@ -36,6 +36,10 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
+(declare
+ (block)
+ (not interrupts-enabled))
+
 (c-declare  #<<end-of-c-declare
 
 #include "LNCONFIG.h"
@@ -148,7 +152,7 @@ end-of-c-declare
      (let ((ret (car event:fifo)))
         (set! event:fifo (cdr event:fifo)) ret) #f))
 
-(define eventloop:mutex (make-mutex))
+(define eventloop:mutex (make-mutex 'eventloop))
 (define (eventloop:grab!) (mutex-lock! eventloop:mutex))
 (define (eventloop:release!) (mutex-unlock! eventloop:mutex))
 
@@ -256,12 +260,14 @@ end-of-c-declare
 ;; override gambit main definition for backwards compatibility
 (set! main ln-main)
 
-(define (terminate)
-  (if app:android? (begin
-    (android-run-mediascanner)
-    (android-finish)
-    (let loop ()
-      (if (not android-mediascanner-done?) (begin (thread-sleep! 0.1) (loop))))))
+(define (terminate . nomediascanner)
+  (if app:android?
+    (let ((run-mediascanner? (if (= (length nomediascanner) 1) (not (car nomediascanner)) #t)))
+      (if run-mediascanner? (android-run-mediascanner))
+      (android-finish)
+      (if run-mediascanner?
+        (let loop ()
+          (if (not android-mediascanner-done?) (begin (thread-sleep! 0.1) (loop)))))))
   (if (procedure? hook:terminate) (hook:terminate))
 )
 

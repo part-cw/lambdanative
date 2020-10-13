@@ -1,6 +1,6 @@
 #!/bin/sh
 # LambdaNative - a cross-platform Scheme framework
-# Copyright (c) 2009-2013, University of British Columbia
+# Copyright (c) 2009-2020, University of British Columbia
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or
@@ -80,6 +80,11 @@ for platform in $platforms; do
   done
 done
 
+if [ ! "X"`echo "$2" | grep "android-"` = "X" ]; then
+  ANDROIDAPI=`echo "$2" | cut -f 2 -d "-"`
+  with_platform=`echo "$2" | cut -f 1 -d "-"`
+fi
+
 with_mode=
 if [ ! "X"`echo "$@" | cut -f 2- -d " " | grep release | cut -c 1` = "X" ]; then
   with_mode=release
@@ -152,7 +157,15 @@ if [ "X$with_mode" = "X" ]; then
 fi
 SYS_MODE=$with_mode
 
-echo "==> configured to build $SYS_APPNAME for $SYS_PLATFORM in $SYS_MODE ${SYS_VERBOSE}mode"
+if [ ! "X$SYS_PLATFORM" = "Xandroid" ]; then
+  ANDROIDAPI=''
+fi
+
+if [ "X$ANDROIDAPI" = "X" ]; then
+  echo "==> configured to build $SYS_APPNAME for $SYS_PLATFORM in $SYS_MODE ${SYS_VERBOSE}mode"
+else
+  echo "==> configured to build $SYS_APPNAME for $SYS_PLATFORM [api-$ANDROIDAPI] in $SYS_MODE ${SYS_VERBOSE}mode"
+fi
 echo " == using source in $appdir"
 
 cat > $SYS_TMPDIR/config.cache << EOF
@@ -164,6 +177,15 @@ SYS_MODE=$SYS_MODE
 SYS_VERBOSE=$SYS_VERBOSE
 SYS_VERSION=$SYS_VERSION
 EOF
+
+if [ $SYS_PLATFORM = android ]; then
+  cat > $SYS_TMPDIR/config_android.cache << EOF
+ANDROID_API=$ANDROIDAPI
+ANDROID_SDK=$ANDROIDSDK
+ANDROID_NDK=$ANDROIDNDK
+EOF
+  echo "SYS_ANDROIDAPI=$ANDROIDAPI" >> $SYS_TMPDIR/config.cache
+fi
 
 #cleanup state file
 if [ -f $SYS_TMPDIR/make.state ]; then

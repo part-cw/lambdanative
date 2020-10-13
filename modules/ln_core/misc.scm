@@ -36,9 +36,20 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
-(define (function-exists? str) 
-  (with-exception-catcher (lambda (e) #f)
-    (lambda () (with-input-from-string str (lambda () (eval (read)) #t)))
-  ))
+(define (global-variable-defined? obj)
+  (and (symbol? obj) ;; only for symbols
+       ;;
+       ;; anywhere referenced in either the compiled code or the
+       ;; interactive environment?
+       (##global-var? obj)
+       (not (or (eq? (##global-var-ref obj) #!unbound) ;; not compiled
+                ;; not even defined but void by `(define obj)`
+                (eq? (##global-var-ref obj) #!void)))))
+
+(define (function-exists? obj)
+  ;; globally defined to a callable procedure
+  (let ((sym (if (string? obj) (string->symbol obj) obj)))
+    (and (global-variable-defined? sym)
+         (procedure? (##global-var-ref sym)))))
 
 ;; eof

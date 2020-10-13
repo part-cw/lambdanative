@@ -1,6 +1,6 @@
 #!/bin/sh
 # LambdaNative - a cross-platform Scheme framework
-# Copyright (c) 2009-2013, University of British Columbia
+# Copyright (c) 2009-2020, University of British Columbia
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or
@@ -385,7 +385,7 @@ compile_payload()
   #--------
   # add the library objects
   for payload_lib in $payload_libs; do
-    tmp_objs=`ls -1 $SYS_PREFIX/build/$payload_lib/*.o | tr '\n' ' '`
+    tmp_objs=`ls -1 $SYS_PREFIX/build/$payload_lib/*.o 2> /dev/null | tr '\n' ' '`
     payload_objs="$tmp_objs $payload_objs"
   done
   #--------
@@ -450,7 +450,12 @@ make_artwork()
         echo " => generating master pixmap from SVG.."
         inkscape=inkscape
         if [ $SYS_HOSTPLATFORM = macosx ]; then
-          inkscape=/Applications/Inkscape.app/Contents/Resources/bin/inkscape
+          if [ -f /Applications/Inkscape.app/Contents/Resources/bin/inkscape ]; then
+            inkscape=/Applications/Inkscape.app/Contents/Resources/bin/inkscape
+          elif [ -f /Applications/Inkscape.app/Contents/MacOS/inkscape ]; then
+            inkscape=/Applications/Inkscape.app/Contents/MacOS/inkscape
+            veval "$inkscape -z $svgsrc -w 1200 -o $pngtgt"
+          fi
         fi
         asserttool $inkscape
         veval "$inkscape -z $svgsrc -w 1200 -e $pngtgt"
@@ -774,6 +779,14 @@ make_sounds()
 # search itemname directories for ITEMNAME to populate items
 add_items()
 {
+  lasti=
+  add_items_int $@
+  vecho "$itemname requested: $@"
+  vecho "$itemname identified: $items"
+}
+
+add_items_int()
+{
   for optnewi in `filter_entries $SYS_PLATFORM $@`; do
     newi=`echo "$optnewi" | sed 's/^?//'`
     idir=`locatedir $itemname/$newi silent`
@@ -781,15 +794,24 @@ add_items()
       isold=no
       for oldi in $items; do
         if [ $oldi = $newi ]; then
-        isold=yes
+          isold=yes
         fi
       done
       if [ $isold = no ]; then
-        items="$items $newi"
         capitemname=`echo "$itemname" | tr a-z A-Z`
         xis=`locatefile $itemname/$newi/$capitemname silent`
         if [ ! "X$xis" = "X" ] && [ -f "$xis" ]; then
-          add_items `cat "$xis"`
+          lasti="$newi $lasti"
+          add_items_int `cat "$xis"`
+          newi=`echo $lasti | cut -d' ' -f1`
+          items="$items $newi"
+          lasti=`echo $lasti | cut -d' ' -f2-`
+        else
+          items="$items $newi"
+          newi=`echo $lasti | cut -d' ' -f1`
+          if [ ! "X$newi" = "X" ] && [ ! "X$oldi" = "X" ] && [ $oldi = $newi ]; then
+            lasti=`echo $lasti | cut -d' ' -f2-`
+          fi
         fi 
       fi
     else
@@ -875,10 +897,11 @@ make_setup_profile()
   fi
   mkdir -p $SYS_PREFIXROOT/packages
   mkdir -p $SYS_PREFIXROOT/build
-  SYS_ANDROIDAPI=$ANDROIDAPI 
+  if [ "X$SYS_ANDROIDAPI" = "X" ]; then
+    SYS_ANDROIDAPI=$ANDROIDAPI
+  fi
   SYS_ANDROIDSDK=$ANDROIDSDK
   SYS_ANDROIDNDK=$ANDROIDNDK
-  SYS_ANDROIDARCH=$ANDROIDARCH
   SYS_HOSTEXEFIX=
   if [ "$SYS_HOSTPLATFORM" = "win32" ]; then
     SYS_HOSTEXEFIX=".exe"
@@ -952,7 +975,7 @@ make_setup_target()
   setup_target=$1
   assertfile $setup_target "Don't know how to setup a build for $SYS_PLATFORM on a $SYS_HOSTPLATFORM host"
   ac_reset
-  SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM"
+  SYS_PREFIX="${SYS_PREFIXROOT}/${SYS_PLATFORM}"
   #--------
   # register custom compiler/linker options
   payload_spcaps=`echo $SYS_PLATFORM | tr 'a-z' 'A-Z'`
@@ -981,6 +1004,9 @@ make_setup_target()
   . $setup_target
   if [ ! "X$SYS_CPU" = "X" ]; then
     SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM/$SYS_CPU"
+  fi
+  if [ ! "X$SYS_PLATFORM_VARIANT" = "X" ]; then
+    SYS_PREFIX="$SYS_PREFIX${SYS_PLATFORM_VARIANT}"
   fi
   apptgtdir=$SYS_PREFIX/${SYS_APPNAME}${SYS_APPFIX}
   mkdir -p $SYS_PREFIX/bin
@@ -1022,6 +1048,7 @@ make_setup_target()
   ac_subst SYS_HOSTPREFIX
   ac_subst SYS_GSC
   ac_subst SYS_CC
+  ac_subst SYS_CXX
   ac_subst SYS_AR
   ac_subst SYS_RANLIB
   ac_subst SYS_STRIP
@@ -1035,7 +1062,6 @@ make_setup_target()
   ac_subst IF_ANDROIDAPI_GT_22 "`if [ $SYS_ANDROIDAPI -lt 23 ]; then echo '/* IF_ANDROIDAPI_GT_22 commented out:'; else echo '/* IF_ANDROIDAPI_GT_22 active here:*/'; fi`"
   ac_subst SYS_ANDROIDSDK
   ac_subst SYS_ANDROIDNDK
-  ac_subst SYS_ANDROIDARCH
   ac_subst SYS_BUILDHASH
   ac_subst SYS_BUILDEPOCH
   ac_subst SYS_PROFILE
@@ -1093,8 +1119,9 @@ make_clean()
 {
   echo "==> cleaning up build files.."
   rmifexists $SYS_PREFIX/lib/libpayload.a
+  rmifexists "$SYS_PREFIXROOT/$SYS_PLATFORM/*/lib/libpayload.a"
   rmifexists $SYS_PREFIX/build
-  rmifexists $SYS_PREFIXROOT/$SYS_PLATFORM/*/build
+  rmifexists "$SYS_PREFIXROOT/$SYS_PLATFORM/*/build"
 }
 
 make_scrub()
@@ -1125,6 +1152,9 @@ make_install_tool()
   binary="$SYS_PREFIX/${SYS_APPNAME}${SYS_APPFIX}/${SYS_APPNAME}${SYS_EXEFIX}"
   if [ -x "$binary" ]; then
     echo "==> installing $SYS_APPNAME as a lambdanative tool"
+    if [ $SYS_HOSTPLATFORM = macosx ]; then
+      rmifexists $SYS_PREFIX/bin/${SYS_APPNAME}${SYS_EXEFIX}
+    fi
     cp "$binary" $SYS_PREFIX/bin
   else 
     echo "Error: No binary found [$binary]"
@@ -1353,6 +1383,9 @@ make_toolcheck()
   asserttool autoconf make gcc patch
   if [ `is_gui_app` = "yes" -a ! -f $SYS_TMPDIR/.use_xetex ]; then
     make_xelatexcheck
+  fi
+  if [ -f $SYS_TMPDIR/.use_xetex ]; then
+    USE_XETEX=yes
   fi
   # platform specific tools
   if [ -s targets/$SYS_PLATFORM/check-tools ]; then
@@ -1635,6 +1668,24 @@ if [ ! "X$cfg_version" = "X$cur_version" ]; then
   echo " ** FRAMEWORK VERSION CHANGE - please rerun configure for the local host"
   SYS_PATH="$SYS_PATH" ./configure $SYS_APPNAME > /dev/null
   exit 1
+fi
+
+# check if android configuration has changed since last use
+if [ $SYS_PLATFORM = android ]; then
+  if [ -f $SYS_TMPDIR/config_android.cache ]; then
+    . $SYS_TMPDIR/config_android.cache
+    if [ ! "X$SYS_ANDROIDNDK" = "X$ANDROID_NDK" ]; then
+      echo " **-----------------------------------------------------------------------**"
+      echo " ** NEW ANDROID CONFIGURATION DETECTED:"
+      echo "    The NDK changed from $ANDROID_NDK to $SYS_ANDROIDNDK" !
+      echo "    If you experience problems with linking, you'll need to clean and rebuild:"
+      echo "      /bin/rm -r $SYS_PREFIXROOT/$SYS_PLATFORM/arm${SYS_PLATFORM_VARIANT}"
+      echo "      /bin/rm -r $SYS_PREFIXROOT/$SYS_PLATFORM/arm64${SYS_PLATFORM_VARIANT}"
+      echo "      /bin/rm -r $SYS_PREFIXROOT/$SYS_PLATFORM/x86${SYS_PLATFORM_VARIANT}"
+      echo "      /bin/rm -r $SYS_PREFIXROOT/$SYS_PLATFORM/x86_64${SYS_PLATFORM_VARIANT}"
+      echo " **-----------------------------------------------------------------------**"
+    fi
+  fi
 fi
 
 # override the make argument

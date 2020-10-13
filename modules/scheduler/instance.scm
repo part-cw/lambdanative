@@ -41,6 +41,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (store:instance-set! store (string-append instance "#" name) val))
 (define (instance-refvar store instance name . fback)
   (apply store:instance-ref (append (list store (string-append instance "#" name)) fback)))
+(define (instance-timestamp store instance name)
+  (store:instance-timestamp store (string-append instance "#" name)))
 
 (define (instance:pluginname store instance)
   (instance-refvar store instance "PluginName" #f))

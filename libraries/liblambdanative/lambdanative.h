@@ -18,5 +18,8 @@ int system_cmdargc();
 char system_pathseparator(void);
 void system_init();
 
+// hook.c
+void lambdanative_exit(int code);
+
 #endif // __lambdanative_h__
 

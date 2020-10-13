@@ -61,11 +61,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (glCoreEnd)))
 
 (define (glgui:draw-linestrip data color . width)
-  (if (and (list? data) (fx> (length data) 1) (fx< (length data) 200)) (begin
-    (let loop ((pts data))
-      (if (< (length pts) 2) #t (begin
-        (apply glgui:draw-line (append (car pts) (cadr pts) (list color) width))
-        (loop (cdr pts))))))))
+  (if (and (pair? data) (fx< (length data) 200)) ;; FIXME: pass the length in as parameter
+      (let loop ((pts data))
+        (or (null? pts) ;; length 0
+            (null? (cdr pts)) ;; length 1
+            (begin
+              (apply glgui:draw-line (append (car pts) (cadr pts) (list color) width))
+              (loop (cdr pts)))))))
 
 ;; ----------
 ;; box
@@ -162,6 +164,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (glCoreColor color)
   (apply glCoreTextureDraw (append (list x y w h) (cddr img) (list 0.))))
 
+;;draw a pixmap centered inside a box bw x bh with size nw x nh. set nw x h to #f for no scaling or either one for original ratio
+(define (glgui:draw-pixmap-center-stretch x y bw bh nw nh img color)
+  (let* ((sw (car img))
+         (sh (cadr img))
+         (scx (if nw (/ nw sw) (if nh (/ nh sh) 1))) ;;scale 
+         (scy (if nh (/ nh sh) scx))
+         (iw (if nw nw (fix (* sw scx))))
+         (ih (if nh nh (fix (* sh scy))))
+         (x0 (+ x (* (- bw iw)  0.5)))
+         (y0 (+ y (* (- bh ih)  0.5))))
+  (glCoreColor color)
+  (apply glCoreTextureDraw (append (list x0 y0 iw ih) (cddr img) (list 0.)))))
+
 ;; ----------
 ;; strings (aka pixmap lists)
 
@@ -172,6 +187,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; support both legacy latex and new truetype rendering
 ;; eventually this should be stripped out for better performance
 (define (glgui:glyph-offsetx g)
+  ;; FIXME: avoid length in tight loops and frequently run code for
+  ;; being O(n), if at all possible.
   (if (fx= (length g) 5) (list-ref g 2) 0))
 (define (glgui:glyph-offsety g)
   (if (fx= (length g) 5) (list-ref g 4)
@@ -194,10 +211,81 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (glgui-utf8-set! #t)
 
+;;; BEGIN CODE TRANSITION
+;;;
+;;; Reducing the computational complexity of font operations improves
+;;; rendering time.
+
+(define-type ln-ttf:font
+  macros: prefix: macro-
+  desc ;; for now the legacy description of a font as a assoc-list
+  char->desc-table
+  )
+
+(define (ln-ttf:font? obj) (macro-ln-ttf:font? obj))
+
+(define find-font/desc)
+
+(define (ln-ttf:font-ref font char) ;; -> glyph
+  (cond
+    ((macro-ln-ttf:font? font) ;; TBD: leave this as the only case
+      (table-ref (macro-ln-ttf:font-char->desc-table font) char #f))
+    (else
+      (ln-ttf:font-ref (find-font font) char))))
+
+(define (make-ln-ttf:font/desc fnt)
+  (let ((font-table (list->table
+                     (let ((double-the-key (lambda (x) (cons (car x) x))))
+                       ;; TBD: get rid of the doubling - requires changes to call sites
+                       (map double-the-key fnt)))))
+    (macro-make-ln-ttf:font fnt font-table)))
+
+(define find-font
+  ;; TBD consider amount of fonts and decide on font cache data
+  ;; structure.  Now assq-list; good for rather short lists, which
+  ;; are in line with good user interface design.
+  (let ((by-desc '() #;(make-table hash: eq?-hash))
+        (assq assq))
+    (define (%find-font/desc fnt)
+      (let ((hit (assq fnt by-desc) #;(table-ref by-desc fnt #f)))
+        (if hit (cdr hit) #; hit
+            (let ((font (make-ln-ttf:font/desc fnt)))
+              #;(table-set! by-desc fnt font)
+              (set! by-desc (cons (cons fnt font) by-desc))
+              font))))
+    (define (find-font fnt)
+      (cond
+        ((macro-ln-ttf:font? fnt) ;; new style
+          ;; TBD: after transition phase warn if this case is hit.
+          fnt)
+        ((and (pair? fnt) (pair? (car fnt))) ;; likely a legacy font
+          (%find-font/desc fnt))
+        (else
+          (error "illegal font" fnt))))
+    (set! find-font/desc %find-font/desc)
+    find-font))
+
+(define (install-font-cache-backward-compatible-override!)
+  (let ((assoc.orig assoc))
+    ;; Backward compatibility: try to transparently hook into legacy lookups.
+    ;; TBD: 2020-08-23 This is an intermediate workaround to be removed ASAP.
+    (define (transparent-font-assoc k coll)
+      (cond
+        ((macro-ln-ttf:font? coll)
+          ;; TBD: after experimental phase warn if this case is hit.
+          (ln-ttf:font-ref coll k))
+       (else
+         ;; TBD: after transition phase error out if this case is hit.
+         (assoc.orig k coll))))
+    (set! assoc transparent-font-assoc)))
+
+(install-font-cache-backward-compatible-override!)
+;;; End OF TRANSITIONAL CODE
+
 (define (glgui:renderstring x y txt fnt color)
   (glCoreColor color)
-  (let loop ((x0 (flo x))(cs (glgui:string->glyphs txt)))
-    (if (fx> (length cs) 0)
+  (let loop ((x0 (flo x)) (cs (glgui:string->glyphs txt)))
+    (if (pair? cs)
       (let* ((charcode (car cs))
              (g (assoc charcode fnt))
              (i (if g (glgui:glyph-image g) #f))
@@ -216,32 +304,40 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            (cadr (cadr (car fnt)))))) h))
 
 (define (glgui:stringheight txt fnt)
-  (let loop ((above 0.)(below 0.)(cs (glgui:string->glyphs txt)))
-    (if (fx= (length cs) 0) (list above below)
-      (let* ((g (assoc (car cs) fnt))
+  (define font (find-font fnt))
+  (let loop ((above 0.) (below 0.) (cs (glgui:string->glyphs txt)))
+    (if (null? cs) (list above below)
+      (let* ((g (ln-ttf:font-ref font (car cs)))
              (i (if g (glgui:glyph-image g) #f))
              (gh (if i (flo (glgui:image-h i)) 0.))
              (goy (if g (flo (glgui:glyph-offsety g)) 0.)))
         (loop (flmax above goy)  (flmin below (fl- goy gh)) (cdr cs))))))
 
+; returns a fixnum width of the string, rounded up
 (define (glgui:stringwidth txt fnt)
-  (let loop ((x 0.)(cs (glgui:string->glyphs txt)))
-    (if (fx= (length cs) 0) (fix (ceiling x))
-      (let* ((glyph (assoc (car cs) fnt))
-             (ax (if glyph (flo (glgui:glyph-advancex glyph)) 0.)))
-        (loop (fl+ x ax) (cdr cs))))))
+  (let ((cs (glgui:string->glyphs txt))
+        (fnt (find-font fnt)))
+    (let loop ((x 0.) (cs cs))
+      (if (null? cs)
+          (fix (ceiling x))
+          (let* ((key (car cs))
+                 (glyph (ln-ttf:font-ref fnt key))
+                 (ax (if glyph (flo (glgui:glyph-advancex glyph)) 0.)))
+            (loop (fl+ x ax) (cdr cs)))))))
 
+; returns a list of floats widths of the glyphs in the string
 (define (glgui:stringwidth-lst txt fnt)
+  (define font (find-font fnt))
   (let loop ((cs (glgui:string->glyphs txt)) (ret '()))
-    (if (fx= (length cs) 0) ret
-      (let* ((glyph (assoc (car cs) fnt))
+    (if (null? cs) ret
+      (let* ((glyph (ln-ttf:font-ref font (car cs)))
              (ax (if glyph (flo (glgui:glyph-advancex glyph)) 0.)))
         (loop (cdr cs) (append ret (list ax)))))))
 
 (define (glgui:stringcliplist w0 txtlst fnt)
   (let ((w (flo w0)))
-    (let loop ((x 0.)(cs txtlst)(rs '()))
-      (if (or (fx= (length cs) 0) (fl> x w)) rs
+    (let loop ((x 0.) (cs txtlst) (rs '()))
+      (if (or (null? cs) (fl> x w)) rs
         (let* ((glyph (assoc (car cs) fnt))
                (ax (if glyph (flo (glgui:glyph-advancex glyph)) 0.)))
           (loop (fl+ x ax) (cdr cs) (append rs (if (fl<= (fl+ x ax) w) (list (car cs)) '()))))))))
@@ -270,32 +366,57 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (glgui:renderstring (fl+ (flo x) (flo w) (fl- strw)) centery label fnt color)))
 
 (define (glgui:draw-text-center x y w h label fnt color . clipright)
-  (let* ((strw (flo (glgui:stringwidth label fnt)))
+  ;; looks like a case of "premature optimization is the root of all evil"
+  (let* ((strw-raw (glgui:stringwidth label fnt)) ;; fixnum
+         ;; `strh` list instead of two values (top bottom) relative to baseline
          (strh (map flo (glgui:stringheight (string-append label "|") fnt)))
-         (centery (fl+ (flo y) (fl/ (if (fl> (flo h) 0.) (flo h) (fl- (car strh) (cadr strh))) 2.)
-                               (fl- (fl/ (fl+ (car strh) (cadr strh)) 2.))))
-         (clipper (if (and (fx= (length clipright) 1) (car clipright))
-           glgui:stringclipright glgui:stringclipleft)))
-    (glgui:renderstring (if (fl> strw (flo w)) x (fl+ (flo x) (fl/ (fl- (flo w) strw) 2.))) centery
-       (if (fl> strw (flo w)) (clipper w label fnt) label) fnt color)))
+         (first-char-height (car strh))
+         (second-char-height (cadr strh))
+         (h-flo (flo h))
+         (y-flo (flo y)) ;; just used once (so far) for symmetry
+         (centery ;; careful to have floating point only.
+          ;; This might be "premature optimization".  The contributes
+          ;; next to nothing to the cumulative time
+          ;; `draw-text-center` needs.
+          (fl+ y-flo
+               (fl/ (if (fl> h-flo 0.)
+                        h-flo
+                        (fl- first-char-height second-char-height))
+                    2.)
+               (fl- (fl/ (fl+ first-char-height second-char-height) 2.))))
+         (clipper
+          (let ((clipright (and (pair? clipright) (car clipright))))
+            (if clipright glgui:stringclipright glgui:stringclipleft))))
+    (let ((strw-flo (flo strw-raw))  ; with of the string
+          (w-flo (flo w)))
+      (glgui:renderstring
+       ;; FIXME: why enforce conversion to to flow in the first place?
+       (if (fl> strw-flo w-flo) ;; needs full width
+           x ;; start at left otherwise at half of empty space
+           (fl+ (flo x) (fl/ (fl- w-flo strw-flo) 2.)))
+       centery
+       (if (fl> strw-flo w-flo) (clipper w label fnt) label)
+       fnt color))))
+
 
 (define (string-split-width str w fnt)
   (if (string-contains str "\n")
     ;; If there is a new line in the text, call this procedure for each line - section separated by new lines
     (let lloop ((lines (string-split str #\newline)) (strlist (list)))
-      (if (fx= (length lines) 0) strlist
+      (if (null? lines) strlist
          ;; Get results of using this procedure on the line
          (let ((linelist (string-split-width (car lines) w fnt)))
            ;; Handle an empty list (two new lines in a row) by replacing with a list with an empty string
-           (lloop (cdr lines) (append strlist (if (fx= (length linelist) 0) '("") linelist))))))
+           (lloop (cdr lines) (append strlist (if (null? linelist) '("") linelist))))))
     ;; If no new line, proceed normally - determine words on each line
-    (let ((strsplit (string-split str #\ ))
-          (lastspace (and (fx> (string-length str) 0) (char=? (string-ref str (- (string-length str) 1)) #\ ))))
+    (let* ((strsplit (string-split str #\ ))
+           (strsplit-len (length strsplit))
+           (lastspace (and (fx> (string-length str) 0) (char=? (string-ref str (- (string-length str) 1)) #\ ))))
       (let loop ((i 0) (strlist (list)) (newstr "") (newstr_len 0))
-        (if (fx= i (length strsplit))
+        (if (fx= i strsplit-len)
           (if (fx> newstr_len 0) (append strlist (list newstr)) strlist)
-          (let* ((buildstr (string-append (list-ref strsplit i) (if (and (not lastspace) (fx= i (- (length strsplit) 1))) "" " ")))
-                 (buildstr_len (fix (glgui:stringwidth buildstr fnt)))
+          (let* ((buildstr (string-append (list-ref strsplit i) (if (and (not lastspace) (fx= i (- strsplit-len 1))) "" " ")))
+                 (buildstr_len (glgui:stringwidth buildstr fnt))
                  (wrap? (fx> (fx+ newstr_len buildstr_len) (fix w))))
             (if (and wrap? (fx> (fx+ buildstr_len) (fix w)))
               ;; Special case where a single word is too long to fit on a line, cut word up
@@ -304,7 +425,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                      (lastindex (- (length cutword) 1))
                      (lines (append prevline (list-head cutword lastindex)))
                      (nextstr (list-ref cutword lastindex)))
-                (loop (fx+ i 1) (append strlist lines) nextstr (fix (glgui:stringwidth nextstr fnt))))
+                (loop (fx+ i 1) (append strlist lines) nextstr (glgui:stringwidth nextstr fnt)))
               (loop (fx+ i 1) (append strlist (if wrap? (list (if (fx> (string-length newstr) 0) (string-append (substring newstr 0 (fx- (string-length newstr) 1)) "\n") "")) '()))
                   (string-append (if wrap? "" newstr) buildstr)
                   (fx+ buildstr_len (if wrap? 0 newstr_len))))))))
@@ -313,13 +434,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (string-split-width-break str w fnt)
   (let* ((ws (glgui:stringwidth-lst str fnt))
          (stindex (- (length ws) 1)))
-    (let loop ((wleft (sum (list-head ws stindex))) (i stindex))
-       (if (and (fx> (fix wleft) w) (fx> i 0))
+    (let loop ((wleft (sum ws)) (i stindex))
+       (if (and (fx> (fix (ceiling wleft)) w) (fx> i 0))
          (loop (- wleft (list-ref ws (- i 1))) (- i 1))
          (let* ((buildstr (substring str 0 i))
-                (buildstr_len (fix (glgui:stringwidth buildstr fnt)))
+                (buildstr_len (glgui:stringwidth buildstr fnt))
                 (nextstr (substring str i (string-length str)))
-                (nextstr_len (fix (glgui:stringwidth nextstr fnt))))
+                (nextstr_len (glgui:stringwidth nextstr fnt)))
            (append (list buildstr) (if (and (fx> nextstr_len w) (fx> (string-length nextstr) 1)) (string-split-width-break nextstr w fnt) (list nextstr)))))))
 )
 
@@ -327,11 +448,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (if (string-contains str "\n")
     ;; If there is a new line in the text, call this procedure for each line - section separated by new lines
     (let lloop ((lines (string-split str #\newline)) (strlist (list)))
-      (if (fx= (length lines) 0) strlist
+      (if (null? lines) strlist
          ;; Get results of using this procedure on the line
          (let ((linelist (string-split-width-rtl (car lines) w fnt)))
            ;; Handle an empty list (two new lines in a row) by replacing with a list with an empty string
-           (lloop (cdr lines) (append strlist (if (fx= (length linelist) 0) '("") linelist))))))
+           (lloop (cdr lines) (append strlist (if (null? linelist) '("") linelist))))))
     ;; If no new line, proceed normally - determine words on each line
     (let ((strsplit (string-split str #\ )))
       (let loop ((i (- (length strsplit) 1)) (strlist (list)) (newstr "") (newstr_len 0))
@@ -339,11 +460,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (if (fx> newstr_len 0) (append strlist (list newstr)) strlist)
                                            ;; Don't add a space, if it is the last word and there is no end space
           (let* ((buildstr (string-append (if (fx= i 0) "" " ") (list-ref strsplit i)))
-                 (buildstr_len (fix (glgui:stringwidth buildstr fnt)))
+                 (buildstr_len (glgui:stringwidth buildstr fnt))
                  (wrap? (fx> (fx+ newstr_len buildstr_len) (fix w))))
-            (loop (fx- i 1) (append strlist (if wrap? (list newstr) '()))
-                (string-append buildstr (if wrap? "" newstr))
-                (fx+ buildstr_len (if wrap? 0 newstr_len)))))))
+            (if (and wrap? (fx> (fx+ buildstr_len) (fix w)))
+              ;; Special case where a single word is too long to fit on a line, cut word up
+              (let* ((prevline (if (fx> (string-length newstr) 0) (list newstr) (list)))
+                     (cutword (string-split-width-break-rtl buildstr (fix w) fnt))
+                     (lastindex (- (length cutword) 1))
+                     (lines (append prevline (list-head cutword lastindex)))
+                     (nextstr (list-ref cutword lastindex)))
+                (loop (fx- i 1) (append strlist lines) nextstr (glgui:stringwidth nextstr fnt)))
+              (loop (fx- i 1) (append strlist (if wrap? (list newstr) '()))
+                  (string-append buildstr (if wrap? "" newstr))
+                  (fx+ buildstr_len (if wrap? 0 newstr_len))))))))
    ))
+
+(define (string-split-width-break-rtl str w fnt)
+  (let* ((ws (glgui:stringwidth-lst str fnt))
+         (stindex (- (length ws) 1)))
+    (let loop ((wright (sum ws)) (i 0))
+       (if (and (fx> (fix (ceiling wright)) w) (fx< i stindex))
+         (loop (- wright (list-ref ws i)) (+ i 1))
+         (let* ((buildstr (substring str i (string-length str)))
+                (buildstr_len (glgui:stringwidth buildstr fnt))
+                (nextstr (substring str 0 i))
+                (nextstr_len (glgui:stringwidth nextstr fnt)))
+           (append (list buildstr) (if (and (fx> nextstr_len w) (fx> (string-length nextstr) 1)) (string-split-width-break-rtl nextstr w fnt) (list nextstr)))))))
+)
 
 ;; eof

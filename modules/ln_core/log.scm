@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; logger
 
 ;; we are logging from different threads
-(define log:mutex (make-mutex))
+(define log:mutex (make-mutex 'log))
 (define (log:grab!) (mutex-lock! log:mutex))
 (define (log:release!) (mutex-unlock! log:mutex))
 
@@ -50,11 +50,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define log:path (string-append (system-directory) (system-pathseparator) "log"))
 
-(set! log:file (string-append log:path (system-pathseparator) "log_"
-    (time->string (current-time) "%Y%m%d_%H%M%S") ".txt"))
+(define log:file)
 
-;; 20101007: don't log if the directory doesn't exist
-(define log:on (not (or (not (file-exists? (system-directory))) (not (file-exists? log:path)))))
+(define log:on)
+
+;; log-reset! : re-test existence of log directory and switch to new log file
+(define (log-reset! #!optional (file #f)) ;; EXPORT
+  (set! log:file (if file
+                     (string-append log:path (system-pathseparator) file)
+                     (string-append log:path (system-pathseparator) "log_"
+                                    (time->string (current-time) "%Y%m%d_%H%M%S") ".txt")))
+  ;; 20101007: don't log if the directory doesn't exist
+  (set! log:on (not (or (not (file-exists? (system-directory))) (not (file-exists? log:path))))))
+
+(log-reset!) ;; initiate backward compatible logging.
 
 (define log:hook #f)
 
@@ -141,7 +150,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (string-mapconcat (reverse tmp) ": ")))
 
 (define (log:exception-handler e)
-  (log-error (thread-name (current-thread)) ": "(exception->string e))
+  (log-error (thread-name (current-thread)) ": " (exception->string e))
   (log-trace (current-thread))
   (log-error "HALT")
   (exit))
@@ -150,9 +159,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (current-exception-handler log:exception-handler)
 
 ;; catch exceptions in threads
-(define (make-safe-thread p . name)
-  (let ((p2 (lambda () (current-exception-handler log:exception-handler) (p))))
-    (make-thread p2 (if (fx= (length name) 1) (car name) 'unnamed_thread))))
+(define make-safe-thread
+  (let ((make-thread make-thread))
+    (lambda (p . name)
+      (let ((p2 (lambda () (current-exception-handler log:exception-handler) (p))))
+	(make-thread p2 (if (fx= (length name) 1) (car name) 'unnamed_thread))))))
+
+(set! make-thread make-safe-thread)
 
 ;; trim files in log directory
 (log-folder-cleanup)

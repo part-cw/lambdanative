@@ -38,8 +38,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; formatting of floating numbers
 
 (define (float->string x p)
-  (let* ((pe (flo (expt 10 (min 10 p))))
-         (s (number->string (fl/ (flfloor (fl+ (fl* (flo x) pe) 0.5)) pe)))
+  (let* ((pe (macro-flo (expt 10 (min 10 p))))
+         (s (number->string (fl/ (flfloor (fl+ (fl* (macro-flo x) pe) 0.5)) pe)))
          (sl (string-length s))
          (b (substring s 0 1))
          (e (substring s (- sl 1) sl)))
@@ -85,6 +85,6 @@ static char *double_to_choppedstring(double val, int precision)
 end-of-c-declare
 )
 
-(define (float->choppedstring v p) ((c-lambda (double int) char-string "double_to_choppedstring") (flo v) p))
+(define (float->choppedstring v p) ((c-lambda (double int) char-string "double_to_choppedstring") (macro-flo v) p))
 
 ;; eof

@@ -97,6 +97,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                  ;; Remove anything outside brackets first
                  (output (json-decode (substring str index (string-length str)))))
             (if (json-error? output) #f (vector->list output))))
+        ((and (string? str) (string-prefix? "{" str) (string-suffix? "}" str))
+          ;; Try adding square brackets around it
+          (redcap:jsonstr->list (string-append "[" str "]")))
         ((or (list? str) (and (string? str) (string-contains str "[]"))) '())
         (else #f)))
 
@@ -247,7 +250,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                      (cond
                        ((not (list? datalist))
                          ;; If no list returned, json not properly formatted
-                         (log-error "REDCap error: Incomplete json")
+                         (log-error "REDCap error: Incomplete json " output)
                          #f)
                        ((and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
                          ;; If the first entry is an error, then log it and return false
@@ -419,7 +422,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                           (cond
                             ((not (list? datalist))
                               ;; If no list returned, json not properly formatted
-                              (log-error "REDCap error: Incomplete json" msg)
+                              (log-error "REDCap error: Incomplete json " msg)
                               #f)
                             ((and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
                               ;; If the first entry is an error, then log it and return false
@@ -444,6 +447,56 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     )
   )
 )
+
+
+;; calls the export project to get fields such as project_id, project_title, creation_time, production_time, in_production, project_language, purpose, purpose_other, project_notes, custom_record_label, secondary_unique_field, is_longitudinal, has_repeating_instruments_or_events, surveys_enabled, scheduling_enabled, record_autonumbering_enabled, randomization_enabled, ddp_enabled, project_irb_number, project_grant_number, project_pi_firstname, project_pi_lastname, display_today_now_button, missing_data_codes, external_modules
+;; requires redcap v >10.0 to function
+
+(define (redcap-export-project-info host token . xargs)
+         ;; See if format was specified in xargs, use json by default
+  (let* ((format (redcap:arg 'format xargs "json"))
+         (request (string-append "format=" format "&returnFormat=json&content=project&token=" token))
+         (request-str (redcap:make-request-str host request)))
+    ;; Check if we have a valid connection before proceeding
+    (if (fx= (httpsclient-open host redcap:port) 1)
+      (begin
+        (httpsclient-send (string->u8vector request-str))
+        (redcap:data-clear!)
+        (let loop ((n #f))
+          (if (and n (fx<= n 0))
+            (begin
+              (httpsclient-close)
+              (let ((output (cadr (redcap:split-headerbody (redcap:data->string)))))
+                 (if (string=? format "json")
+                   ;; If format is json, turn into a list, otherwise just return output
+                   (let ((datalist (redcap:jsonstr->list output)))
+                     (cond
+                       ((not (list? datalist))
+                         ;; If no list returned, json not properly formatted
+                         (log-error "REDCap error: Incomplete json " output)
+                         #f)
+                       ((and (fx> (length datalist) 0) (string=? (caaar datalist) "error\""))
+                         ;; If the first entry is an error, then log it and return false
+                         (log-error "REDCap error: " (cdaar datalist))
+                          #f)
+                       (else datalist)))
+                   output))
+            ) (begin
+             (if (and n (> n 0))
+               (redcap:data-append! (subu8vector redcap:buf 0 n)))
+            (loop (httpsclient-recv redcap:buf))
+          ))
+        )
+      )
+      (begin
+        (log-warning "Cannot export from REDCap, no valid connection")
+        (httpsclient-close)
+        #f ;; Denote difference between no data and no connection
+      )
+    )
+  )
+)
+
 
 ;; Get the next instance index given a repeatable event or instrument
 ;; For events, supplying only the event name will suffice
@@ -488,7 +541,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                        (instrument (alist-ref row "redcap_repeat_instrument" #f))
                        (instance  (if (string? val) (string->number (string-remove-quotes val)) val)))
                       (if (not instrument) (log-warning "Exported REDcap instrument " (car forms) " is not repeatable"))
-                      (if (fx> instance maxinstance) (set! maxinstance instance))
+                      (if (and instance (fx> instance maxinstance)) (set! maxinstance instance))
                       (loop (cdr entries))))) (fx+ maxinstance 1))
            (begin (log-warning "Exported REDcap record has no repeated entry") 1))
        (begin (log-error "Cannot retrieve instance number from REDCap.") #f)))
@@ -598,6 +651,43 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
 )
 
+(define (redcap-delete-records host token records)
+ (let*  ((request  (string-append  "token=" token "&content=record&action=delete&returnFormat=json"))
+         (recordstr (if (pair? records)
+           (let loop ((i 0) (str ""))
+             (if (= i (length records)) str
+               (loop (+ i 1) (string-append str "&records%5B" (number->string i) "%5D=" (list-ref records i)))
+             ))
+           ""))
+         (request-str (redcap:make-request-str host (string-append request recordstr))))
+    ;; Check if we have a valid connection before proceeding
+    (if (fx= (httpsclient-open host redcap:port) 1)
+      (begin
+        (httpsclient-send (string->u8vector request-str))
+        (redcap:data-clear!)
+        (let loop ((n #f))
+          (if (and n (fx<= n 0))
+            (begin
+              (httpsclient-close)
+              (let ((msg (redcap:split-headerbody (redcap:data->string))))
+                (redcap:error-check msg))
+            )
+            (begin
+              (if (and n (> n 0))
+                (redcap:data-append! (subu8vector redcap:buf 0 n)))
+              (loop (httpsclient-recv redcap:buf))
+            )
+          )
+        )
+      )
+      (begin
+        (log-warning "Cannot delete record on REDCap, no valid connection")
+        (httpsclient-close)
+        #f
+      )
+    )
+  )
+)
 
 (define (redcap-import-file host token record field filename . xargs)
   (let* ((filesize (if (file-exists? filename) (file-info-size (file-info filename)) #f))
@@ -646,7 +736,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    ;; Check if we have a valid connection before proceeding
     (if (and filesize (fx= (httpsclient-open host redcap:port) 1))
       (let* ((fh (open-input-file filename))
-             (buflen 100000)
+             (buflen (if (or (string=? (system-platform) "android") (string=? (system-platform) "ios")) 50000 (if (string=? (system-platform) "linux") 100000 100000 )))
              (buf (make-u8vector buflen)))
         (httpsclient-send request-vector)
         (let loop ((start 0) (end (if (fx< filesize buflen) filesize buflen)))
@@ -659,6 +749,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 (httpsclient-send (subu8vector buf 0 len))
                 (httpsclient-send buf)
               )
+              (thread-sleep! 0.0001) ;;allow GUI to refresh
               (loop (fx+ start buflen) (if (fx> (fx+ start (fx* 2 buflen)) filesize) filesize (fx+ end buflen)))
             )
           )
@@ -726,7 +817,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 ))
             )
             (let ((count (httpsclient-recv redcap:buf)))
-              (if (> count 0) (redcap:data-append! redcap:buf))
+              (if (> count 0) (redcap:data-append! (subu8vector redcap:buf 0 count)))
               (loop count))
           )
         )

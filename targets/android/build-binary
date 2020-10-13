@@ -56,6 +56,14 @@ android_subst()
   ac_subst ANDROID_XML_RECEIVERS "@$d/ANDROID_xml_receivers"
   ac_subst ANDROID_XML_SERVICES "@$d/ANDROID_xml_services"
   ac_subst ANDROID_ACTIVITY_ATTRIBUTES "@$d/ANDROID_activity_attributes"
+  # This is a terrible hack to solve the problem with android:usesCleartextTraffic
+  # not being available for APIs <23, but being required above it.
+  if [ $SYS_ANDROIDAPI -lt 23 ]; then
+    ac_subst ANDROID_APPLICATION_ATTRIBUTES ""
+    vecho "WARNING: Removed ANDROID_APPLICATION_ATTRIBUTES substitutions for API levels <23"
+  else
+    ac_subst ANDROID_APPLICATION_ATTRIBUTES "@$d/ANDROID_application_attributes"
+  fi
 }
 android_subst loaders/android
 
@@ -70,6 +78,11 @@ for m in $modules; do
   fi
 done
 android_subst `locatedir apps/$SYS_APPNAME`
+
+if [ "X$ANDROIDSDK" = "X" ]; then
+  echo "ERROR: \$ANDROIDSDK is empty - ensure your SETUP file returns a valid sdk path."
+  exit
+fi
 
 use_android_tool=yes
 
@@ -112,15 +125,15 @@ fi
 mkdir -p "$tmpdir"
 
 if [ $use_android_tool = no ]; then
-  ANDROIDSDKTARGET=`$ANDROIDSDK/tools/bin/avdmanager list target | grep "^id:" | grep "android-$ANDROIDAPI" | cut -f 2 -d " "`
+  ANDROIDSDKTARGET=`$ANDROIDSDK/tools/bin/avdmanager list target | grep "^id:" | grep "android-$SYS_ANDROIDAPI" | cut -f 2 -d " "`
 else
-  ANDROIDSDKTARGET=`$ANDROIDSDK/tools/android list targets | grep "^id:" | grep "android-$ANDROIDAPI" | cut -f 2 -d " "`
+  ANDROIDSDKTARGET=`$ANDROIDSDK/tools/android list targets | grep "^id:" | grep "android-$SYS_ANDROIDAPI" | cut -f 2 -d " "`
 fi
 if [ "X$ANDROIDSDKTARGET" = "X" ]; then
-  echo "ERROR: API $ANDROIDAPI not a target."
+  echo "ERROR: API $SYS_ANDROIDAPI not a target."
   exit
 else
-  echo " => using target $ANDROIDSDKTARGET [API $ANDROIDAPI]"
+  echo " => using target $ANDROIDSDKTARGET [API $SYS_ANDROIDAPI]"
 fi
 
 if [ $use_android_tool = yes ]; then
@@ -200,7 +213,7 @@ for m in $modules; do
   for pubclass in $pubclasses; do
     pubclassfile="`basename $pubclass | sed 's/ANDROID_java_public_//'`.java"
     echo "    $pubclassfile.."
-    if [ `echo $pubclass | cut -d . -f 2` == "in" ]; then
+    if [ "`echo $pubclass | cut -d . -f 2`" = "in" ]; then
       pubclassfile=`echo $pubclassfile | sed 's/.in//'`
       ac_output $pubclass $appdir/$pubclassfile
     else
@@ -215,12 +228,34 @@ ac_output loaders/android/AndroidManifest.xml.in $SYS_TMPDIR/tmp.xml
 cat $SYS_TMPDIR/tmp.xml | sed '/^#/d' > "$tmpdir/AndroidManifest.xml"
 rmifexists $SYS_TMPDIR/tmp.xml
 
-
 echo " => creating payload module.."
 tmpmoddir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 mkdir $tmpmoddir/libpayload
 cp loaders/android/Android.mk.module $tmpmoddir/libpayload/Android.mk
-cp $SYS_PREFIX/lib/libpayload.a $tmpmoddir/libpayload
+
+# Loop over possible architectures and copy their precompiled files
+APP_ABIs=`echo $APP_ABIs | awk '{for (i=1;i<=NF;i++) if (!a[$i]++) printf("%s%s",$i,FS)}{printf("\n")}'`
+for abi in $APP_ABIs; do
+  case "$abi" in
+  armeabi-v7a)
+    arch=arm
+  ;;
+  arm64-v8a)
+    arch=arm64
+  ;;
+  x86)
+    arch=x86
+  ;;
+  x86_64)
+    arch=x86_64
+  ;;
+  esac
+  lib=$SYS_PREFIXROOT/android/${arch}${SYS_PLATFORM_VARIANT}/lib/libpayload.a
+  if [ -f $lib ]; then
+    mkdir $tmpmoddir/libpayload/$abi
+    cp $lib $tmpmoddir/libpayload/$abi
+  fi
+done
 
 echo " => preparing JNI.."
 mkdir $tmpdir/jni
@@ -229,29 +264,19 @@ cp $SYS_PREFIX/include/LNCONFIG.h $tmpdir/jni
 ac_output loaders/android/bootstrap.c.in $tmpdir/jni/bootstrap.c
 cd $tmpdir
 
-APP_ABI=armeabi-v7a
-case "X$ANDROIDARCH" in
-Xx86) 
-  APP_ABI=x86
-;;
-Xmips) 
-  APP_ABI=mips
-;;
-esac
-
 if [ $SYS_MODE = "debug" ]; then
   echo " => compiling payload module with debug options.."
-  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build APP_ABI=$APP_ABI NDK_LOG=1 NDK_DEBUG=1"
+  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build APP_ABI=\"$APP_ABIs\" NDK_LOG=1 NDK_DEBUG=1"
 else
   echo " => compiling payload module.."
-  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build --silent APP_ABI=$APP_ABI"
+  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build --silent APP_ABI=\"$APP_ABIs\""
 fi
 asserterror $?
 
 echo " => adding precompiled libaries.."
 for lib in $payload_libs; do
-  if [ -f "$SYS_PREFIXROOT/android/lib/$lib.jar" ]; then
-    cp $SYS_PREFIXROOT/android/lib/$lib.jar $tmpdir/libs/
+  if [ -f "$SYS_PREFIX/lib/$lib.jar" ]; then
+    cp $SYS_PREFIX/lib/$lib.jar $tmpdir/libs/
   fi
 done
 
@@ -315,7 +340,7 @@ pkgfile="$tmpdir/bin/$(echo $SYS_APPNAME)-release-unsigned.apk"
 assertfile "$pkgfile"
 
 echo " => transferring application.."
-fnlfile=$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-android.apk
+fnlfile="$SYS_PREFIXROOT/packages/$SYS_APPNAME-$SYS_APPVERSION-$SYS_PLATFORM${SYS_PLATFORM_VARIANT}.apk"
 cp $pkgfile $fnlfile
 assertfile $fnlfile
 
@@ -324,7 +349,8 @@ keystore=`locatefile PROFILE | sed 's/PROFILE$/android\.keystore/'`
 if [ ! -f "$keystore" ]; then
   keystore=$SYS_TMPDIR/android.keystore
 fi
-if [ ! -e $keystore ]; then
+keyerror=`keytool -list -keystore $keystore -alias $SYS_ORGDOMAIN_REVERSE_DOT -storepass "$SYS_ANDROIDPW" | grep "error"`
+if [ ! "X$keyerror" = "X" ]; then
   echo " => generating keystore [$keystore].."
   keytool -genkey -v -keystore $keystore -dname "CN=$SYS_ORGDOMAIN_REVERSE_DOT" -alias "$SYS_ORGDOMAIN_REVERSE_DOT" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$SYS_ANDROIDPW" -keypass "$SYS_ANDROIDPW"
   asserterror $?

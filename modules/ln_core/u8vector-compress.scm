@@ -904,7 +904,7 @@ end-of-c-declare
 (define (u8vector-compress inbuf)
   (if (u8vector? inbuf) 
   (let* ((inlen (u8vector-length inbuf))
-         (outlen (max 66 (fix (* 1.05 inlen))))
+         (outlen (max 66 (macro-fix (* 1.05 inlen))))
          (outbuf (make-u8vector outlen)))
     (if (fx< inlen 16) (u8vector-append (u8vector 0) inbuf) 
       (let ((retval ((c-lambda  (scheme-object int scheme-object) int

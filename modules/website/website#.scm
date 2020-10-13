@@ -8,6 +8,8 @@
   website-dataurl
   make-website
   website-getdb
+  website-addsubstitution
+  website-substitute
 ))
 
 ;; eof

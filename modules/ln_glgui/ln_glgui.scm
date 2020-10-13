@@ -36,6 +36,23 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
+(define-macro (define-cond-expand-feature-value v)
+  (let ((v (eval v)))
+    `(define-cond-expand-feature ,v)))
+
+(define-cond-expand-feature-value
+  (if (>= (system-version) 409002)
+      'gambit-4.9+
+      'gambit-4.7.9))
+
+(cond-expand
+ (gambit-4.7.9
+  (define-macro (when test expr . rest)
+    `(if ,test (begin ,expr ,@rest)))
+  (define-macro (unless test expr . rest)
+    `(if (not ,test) (begin ,expr ,@rest))))
+ (else))
+
 (include "glgui_button.scm")
 (include "glgui_keypad_delete.scm")
 (include "glgui_keypad_return.scm")

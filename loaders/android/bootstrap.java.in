@@ -87,6 +87,45 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     }
   };
 
+  private boolean ln_checkSelfPermission(String permission) {
+    @IF_ANDROIDAPI_GT_22@
+    if(getApplicationContext().checkSelfPermission(permission)
+       !=  android.content.pm.PackageManager.PERMISSION_GRANTED)
+      return false;
+    /* end of IF_ANDROIDAPI_GT_22 */
+    return true;
+  }
+
+  public boolean checkOrRequestPermission(String permission) {
+    @IF_ANDROIDAPI_GT_22@
+    if(!ln_checkSelfPermission(permission)) {
+      requestPermissions(new String[] { permission }, 1);
+      return ln_checkSelfPermission(permission);
+    }
+    /* end of IF_ANDROIDAPI_GT_22 */
+    return true;
+  }
+
+  @Override
+  public void startActivityForResult(Intent intent, int cont) {
+      try {
+          // System.err.println( "LN: startActivityForResult "  + " for intent " + intent);
+          /* TBD we might want to avoid some exceptions for
+           * resolveActivity see:
+           * https://developer.android.com/training/camera/photobasics
+           *
+           * if (intent.resolveActivity(getPackageManager()) != null) {...
+           */
+          super.startActivityForResult(intent, cont);
+          // System.err.println( "LN done: startActivityForResult "  + " for intent " + intent);
+          // This seems to be a good idea.  But apparently it is not:
+          // finishActivity(cont);
+      } catch (Exception e) {
+          System.err.print("startActivityForResult(Intent " + intent + ") Error: " + e);
+          e.printStackTrace(System.err);
+      }
+  }
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -111,13 +150,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     setContentView(mGLView);
     mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
 
-    @IF_ANDROIDAPI_GT_22@
-    if (getApplicationContext().checkCallingOrSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        !=  android.content.pm.PackageManager.PERMISSION_GRANTED) {
-        requestPermissions(new String[] { android.Manifest.permission.WRITE_EXTERNAL_STORAGE }, 1);
-        // startActivity(new Intent(android.provider.Settings.ACTION_MEMORY_CARD_SETTINGS).setData(Uri.parse("package:"+"@SYS_PACKAGE_DOT@")));
-    }
-    /* end of IF_ANDROIDAPI_GT_22 */
+    checkOrRequestPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
 
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONCREATE@
