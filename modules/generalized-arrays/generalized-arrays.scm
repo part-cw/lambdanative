@@ -2460,7 +2460,7 @@ OTHER DEALINGS IN THE SOFTWARE.
                                                   (else
                                                    (error "Arghh!"))))
                                           args))))
-             (include "generalized-arrays-include.scm")
+             (include "modules/generalized-arrays/generalized-arrays-include.scm")
 
              `(case n
                 ,@(map (lambda (k)
@@ -2601,7 +2601,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 (define-macro (setup-permuted-getters-and-setters)
 
-  (include "generalized-arrays-include.scm")
+  (include "modules/generalized-arrays/generalized-arrays-include.scm")
   
   (define (list-remove l i)
     ;; new list that removes (list-ref l i) from l
@@ -2720,7 +2720,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 (define-macro (setup-reversed-getters-and-setters)
 
-  (include "generalized-arrays-include.scm")
+  (include "modules/generalized-arrays/generalized-arrays-include.scm")
   
   (define (make-symbol . args)
     (string->symbol
@@ -2828,7 +2828,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 (define-macro (macro-generate-sample)
 
-  (include "generalized-arrays-include.scm")
+  (include "modules/generalized-arrays/generalized-arrays-include.scm")
   
   (define (make-symbol . args)
     (string->symbol
