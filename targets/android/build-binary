@@ -234,8 +234,8 @@ mkdir $tmpmoddir/libpayload
 cp loaders/android/Android.mk.module $tmpmoddir/libpayload/Android.mk
 
 # Loop over possible architectures and copy their precompiled files
-APP_ABIs=`echo $APP_ABIs | awk '{for (i=1;i<=NF;i++) if (!a[$i]++) printf("%s%s",$i,FS)}{printf("\n")}'`
-for abi in $APP_ABIs; do
+SYS_ANDROID_ABIs=`echo $SYS_ANDROID_ABIs | awk '{for (i=1;i<=NF;i++) if (!a[$i]++) printf("%s%s",$i,FS)}{printf("\n")}'`
+for abi in $SYS_ANDROID_ABIs; do
   case "$abi" in
   armeabi-v7a)
     arch=arm
@@ -266,10 +266,10 @@ cd $tmpdir
 
 if [ $SYS_MODE = "debug" ]; then
   echo " => compiling payload module with debug options.."
-  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build APP_ABI=\"$APP_ABIs\" NDK_LOG=1 NDK_DEBUG=1"
+  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build APP_ABI=\"$SYS_ANDROID_ABIs\" NDK_LOG=1 NDK_DEBUG=1"
 else
   echo " => compiling payload module.."
-  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build --silent APP_ABI=\"$APP_ABIs\""
+  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build --silent APP_ABI=\"$SYS_ANDROID_ABIs\""
 fi
 asserterror $?
 
@@ -298,7 +298,7 @@ if [ `has_module hybridapp-xwalk` = yes ]; then
   if [ -d $SYS_PREFIX/lib/libxwalk ]; then
     rmifexists "$SYS_TMPDIR/libxwalk"
     cp -R -f $SYS_PREFIX/lib/libxwalk $SYS_TMPDIR/
-    if [ ! -d $SYS_TMPDIR/libxwalk/libs/armeabi ] && [ $APP_ABI = armeabi ]; then
+    if [ ! -d $SYS_TMPDIR/libxwalk/libs/armeabi ] && [ $SYS_ANDROID_ABI = armeabi ]; then
       mv $SYS_TMPDIR/libxwalk/libs/armeabi-v7a $SYS_TMPDIR/libxwalk/libs/armeabi
     fi
     xwalk_here=`pwd`
