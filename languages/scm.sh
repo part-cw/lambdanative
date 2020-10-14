@@ -129,7 +129,11 @@ compile_payload_scm()
           gsc_processing=""
         fi
 	# if [ $SYS_VERBOSE ]; then gsc_processing="$gsc_processing -expansion"; fi
-        veval "$SYS_GSC -:~~tgt=${SYS_PREFIX} -prelude \"$scm_opts\" -c -o $scm_ctgt $gsc_processing $scm_hdr $scm_src"
+        (
+          # exported list of "well known" build parameters
+          export SYS_PREFIX SYS_ROOT SYS_PATH SYS_ANDROIDAPI SYS_ANDROID_ABI
+          veval "$SYS_GSC -:~~tgt=${SYS_PREFIX} -prelude \"$scm_opts\" -c -o $scm_ctgt $gsc_processing $scm_hdr $scm_src"
+        )
         if [ $veval_result != "0" ]; then rmifexists "$scm_ctgt"; fi
         assertfile "$scm_ctgt"
         rmifexists "$scm_otgt"
