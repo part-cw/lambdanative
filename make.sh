@@ -1003,7 +1003,7 @@ make_setup_target()
   #--------
   . $setup_target
   if [ ! "X$SYS_CPU" = "X" ]; then
-    SYS_PREFIX="$SYS_PREFIXROOT/$SYS_PLATFORM/$SYS_CPU"
+    SYS_PREFIX="$SYS_PREFIX/$SYS_CPU"
   fi
   if [ ! "X$SYS_PLATFORM_VARIANT" = "X" ]; then
     SYS_PREFIX="$SYS_PREFIX${SYS_PLATFORM_VARIANT}"
@@ -1410,7 +1410,9 @@ make_lntoolcheck()
         lntool_verbose=verbose
       fi
       tmp_sys_cpu=$SYS_CPU
+      tmp_sys_platform_variant=$SYS_PLATFORM_VARIANT
       SYS_CPU=
+      SYS_PLATFORM_VARIANT=
       SYS_PATH="$SYS_PATH" ./configure $tool $lntool_verbose > /dev/null
       . $SYS_TMPDIR/config.cache
       rmifexists $SYS_TMPDIR/tmp.subst
@@ -1420,6 +1422,7 @@ make_lntoolcheck()
       make_executable
       make_install_tool
       SYS_CPU=$tmp_sys_cpu
+      SYS_PLATFORM_VARIANT=$tmp_sys_platform_variant
     fi
   done 
   if [ -f $SYS_TMPDIR/tmp.config.cache ]; then
