@@ -792,6 +792,11 @@ add_items_int()
     idir=`locatedir $itemname/$newi silent`
     if [ ! "X$idir" = "X" ]; then
       isold=no
+      for oldi in $lasti; do
+        if [ $oldi = $newi ]; then
+          isold=yes
+        fi
+      done
       for oldi in $items; do
         if [ $oldi = $newi ]; then
           isold=yes
@@ -808,10 +813,6 @@ add_items_int()
           lasti=`echo $lasti | cut -d' ' -f2-`
         else
           items="$items $newi"
-          newi=`echo $lasti | cut -d' ' -f1`
-          if [ ! "X$newi" = "X" ] && [ ! "X$oldi" = "X" ] && [ $oldi = $newi ]; then
-            lasti=`echo $lasti | cut -d' ' -f2-`
-          fi
         fi 
       fi
     else
