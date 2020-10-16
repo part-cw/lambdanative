@@ -106,7 +106,9 @@ static int httpsclient_open(char *host, int port, int use_keys, char *cert, char
       struct pollfd tmp;
       tmp.fd = s;
       tmp.events = POLLOUT;
-      while (poll(&tmp,1,-1) == -1 ) {
+      int maxretry_ct=200;
+      while (maxretry_ct>0 && poll(&tmp,1,-1) == -1) {
+        maxretry_ct--;
         if (errno==EINTR) continue;
         return 0;
       }
