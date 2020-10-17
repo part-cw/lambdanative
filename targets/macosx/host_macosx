@@ -41,6 +41,10 @@ if [ "X$SYS_ABI" = "X" ]; then
 fi
 
 SYS_HOST_CC="gcc $SYS_DEBUGFLAG -DMACOSX -m$SYS_ABI"
+export MACOSX_DEPLOYMENT_TARGET=10.6
+if [ "$cflag_additions" == "${cflag_additions%mmacosx-version-min*}" ]; then
+  cflag_additions="$cflag_additions -mmacosx-version-min=10.6"
+fi
 
 SDKROOT=`ls -1d $SYS_PREFIXROOT/gcc/$SYS_HOSTPLATFORM/gcc-* 2> /dev/null`
 if [ -d "$SDKROOT" ]; then
