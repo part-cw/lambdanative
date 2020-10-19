@@ -58,9 +58,9 @@ void ffi_event(int t, int x, int y)
 {
   static int lambdanative_needsinit=1;
   if (lambdanative_needsinit) {
-      lambdanative_payload_setup();
       FFI_EVENT_INIT
       lambdanative_needsinit=0;
+      lambdanative_payload_setup();
   } 
   FFI_EVENT_LOCK
   if (!lambdanative_needsinit&&t) lambdanative_payload_event(t,x,y);
