@@ -111,7 +111,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                  (let* ((size-start (string-contains (car str) "Content-Length: "))
                         (size-rest (substring (car str) size-start (string-length (car str))))
                         (size-stop (string-contains size-rest "\n"))
-                        (size-only (string->number (substring size-rest 18 (- size-stop 1)))))
+                        (size-only (string->number (substring size-rest 16 (- size-stop 1)))))
                    (log-status "download:append: content length " size-only)
                    (set! download:size size-only)
                    (set! download:header 200)
@@ -241,7 +241,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((tmpsize (if (file-exists? download:tempfile) (file-size download:tempfile) 0.)))
     (if (file-exists? filepath)
       1.
-      (if (> download:size 0) (/ tmpsize download:size) 0.))
+      (if (> download:size 0) (/ (flo tmpsize) download:size) 0.))
   ))
 
 ;; eof
