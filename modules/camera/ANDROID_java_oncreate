@@ -1,2 +1,3 @@
 checkOrRequestPermission(android.Manifest.permission.CAMERA);
-//checkOrRequestPermission(android.Manifest.permission.RECORD_AUDIO);
+StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+StrictMode.setVmPolicy(builder.build());
