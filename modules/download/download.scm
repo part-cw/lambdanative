@@ -238,10 +238,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;returns percentage of filesize already downloaded; only works when destination file does not yet exist
 (define (download-status filepath)
-  (let ((tmpsize (if (file-exists? download:tempfile)  (file-size download:tempfile) 0.)))
+  (let ((tmpsize (if (file-exists? download:tempfile) (file-size download:tempfile) 0.)))
     (if (file-exists? filepath)
       1.
-      (if (> download:size 0) (/ (flo tmpsize)  download:size) 0.))
+      (if (> download:size 0) (/ (flo tmpsize) download:size) 0.))
   ))
 
 ;; eof
