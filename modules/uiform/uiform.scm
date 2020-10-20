@@ -1548,7 +1548,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (defaultvalue (glgui:uiform-arg args 'default (/ stepnum 2)))
          (value (xxget loc id #f))
          (boxcolor (glgui:uiform-arg args 'boxcolor (uiget 'color-default)))
-     	 (selcolor (glgui:uiform-arg args 'selcolor (uiget 'color-select)))) 
+     	 (selcolor (glgui:uiform-arg args 'selcolor (uiget 'color-select)))
+         (numcolor (glgui:uiform-arg args 'numbercolor (uiget 'color-low)))) 
      (uiset idvalues stepvalues)
      (if req
        (uiform-required-set id (abs (- (abs y) (uiget 'offset 0) h))))
@@ -1566,7 +1567,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (glgui:draw-box (+ x (* w 0.1)) (+ by (/ bh 4)) sw (/ bh 2) boxcolor) ;; Horizontal bar
          (glgui:draw-box bx by bw bh (if value selcolor boxcolor))  ;; Slider box
          (if (and shownumber value)
-           (glgui:draw-text-center bx by bw bh (number->string v) fnt boxcolor))
+           (glgui:draw-text-center bx by bw bh (number->string v) fnt numcolor))
          ;; draw labels if set
 	 (if (fx> (length labels) 1) (begin  
          (glgui:draw-text-left (+ x (* w 0.1)) (+ by (- h fnth)) (- (* w 0.8) bw) fnth (car labels) fnt White)
