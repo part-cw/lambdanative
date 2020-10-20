@@ -77,6 +77,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    ;; Button with action callback that returns the page you want to go to
    (button h 75 size header indent 0.05 rounded #t text "Go Back" action ,(lambda () 'main))
    (spacer)
+    ;; slider 
+   (slider id sliderval number #t min 0 max 100 default 50 labels ("min" "max"))
+   (spacer)
    (label text "For more features that you can include in a script see the LNhealth app \"Demo Widgets\". Look at the main.sx file in the sandbox folder which is located at https://github.com/part-cw/LNhealth/tree/master/apps/WidgetDemo" align left size small)
   )
   (about
