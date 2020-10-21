@@ -42,25 +42,43 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; Useful procedures for working with csv files.
 
 (define (csv-read file)
-  (let* ((raw0 (file->u8vector file))
-    (raw1 (u8vector->string raw0))
-    (raw2 (string-replace-substring raw1 "\r\n" "\n"))
-    (raw3 (string-replace-char raw2 #\return #\newline))
-    (rows (string-split raw3 #\newline))
-    (qcount 0) (qrow "") (idx 0)
-    (finalrows (make-vector (length rows))))
-      (for-each (lambda (row) 
-         (set! qcount (+ qcount (string-count row "\"")))
-         (set! qrow (string-append qrow (if (> (string-length qrow) 0) "\n" "") row))
-         (if (even? qcount) (begin
-           (vector-set! finalrows idx (csv:split qrow))
-           (set! idx (+ idx 1))
-           (set! qrow "") (set! qcount 0)
+  (let* ((raw (file->u8vector file))
+         (lraw (u8vector-length raw))
+         (rn? #f))
+     (let loop ((i 0))
+       (if (fx< i lraw) (begin
+         (if (fx= (u8vector-ref raw i) 13) (begin
+           (u8vector-set! raw i 10)
+           (if (and (fx< (fx+ i 1) lraw) (fx= (u8vector-ref raw (fx+ i 1)) 10))
+             (set! rn? #t)
+           )
+         ))
+         (loop (fx+ i 1)))))
+    (let* ((rawstr (u8vector->string raw))
+           (rows (string-split rawstr #\newline))
+           (qcount 0) (qrow "") (idx 0) (processrow? #t)
+           (finalrows (make-vector (length rows))))
+      (for-each (lambda (row)
+         (if rn?
+           (if (fx= (string-length row) 0)
+             (set! processrow? (not processrow?))
+             (set! processrow? #t)
+           )
+         )
+         (if processrow? (begin
+           (set! processrow? #t)
+           (set! qcount (+ qcount (string-count row "\"")))
+           (set! qrow (string-append qrow (if (> (string-length qrow) 0) "\n" "") row))
+           (if (even? qcount) (begin
+             (vector-set! finalrows idx (csv:split qrow))
+             (set! idx (+ idx 1))
+             (set! qrow "") (set! qcount 0)
+           ))
          ))) rows)
-      (if (> (string-length qrow) 0) (begin 
+      (if (> (string-length qrow) 0) (begin
         (vector-set! finalrows idx (csv:split qrow))
         (set! idx (+ idx 1))))
-      (vector->list (subvector finalrows 0 idx))))
+      (vector->list (subvector finalrows 0 idx)))))
 
 (define (csv:split str)
   ;; First, split the line normally on all commas
@@ -130,14 +148,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; 1. csv-write the given list
 ;; 2. csv-read it
-;; 3. compare 
+;; 3. compare
 (define (csv-unit-test-list testlist)
   (let ((f (string-append (system-directory) (system-pathseparator) "csvtest.csv")))
-      
+
       ;; Remove file if it exists
       (if (file-exists? f)
         (delete-file f))
-      
+
       ;; Write and then read
       (csv-write f testlist)
       (let ((output (csv-read f)))
@@ -183,30 +201,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
       ;; Do comparison
       (equal? loadedstring outputstring)))
-) 
-  
+)
+
 ;; 1. write the given string to a file
 ;; 2. csv-read it
 ;; 3. compare
 (define (csv-unit-test-read teststring testlist)
   (let ((f (string-append (system-directory) (system-pathseparator) "csvtest.csv")))
-    
+
      ;; Remove file if it exists
      (if (file-exists? f)
        (delete-file f))
-      
+
      (let ((fh (open-output-file f)))
 
        ;; Output to the file
        (display teststring fh)
        (close-output-port fh)
-    
+
        ;; Write and then read=
        (let ((output (csv-read f)))
          (delete-file f)
          (equal? testlist output))))
 )
-  
+
 (unit-test "csv-write-read" "Quotation marks and line feed"
   (lambda ()
     (csv-unit-test-list csv:test_line_feed))
@@ -218,20 +236,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 )
 
 (unit-test "csv-write-read" "Trend File 1"
-  (lambda () 
+  (lambda ()
     (csv-unit-test-string csv:test_trend_file1 csv:test_trend_file1))
 )
 
 (unit-test "csv-write-read" "Trend File 2 Write-Read"
-  (lambda () 
+  (lambda ()
     (csv-unit-test-list csv:test_trend_list))
 )
 
 (unit-test "csv-write-read" "Trend File 2 Read"
-  (lambda () 
+  (lambda ()
     (csv-unit-test-read csv:test_trend_file2 csv:test_trend_list))
 )
-      
+
 
 
 
