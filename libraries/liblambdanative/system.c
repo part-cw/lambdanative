@@ -149,11 +149,12 @@ static void find_directories()
 #endif
 #endif
 #if defined(ANDROID)
-// we put files on the sdcard, that's the only sane place (?)
   char path[1024];
   sprintf(path,"/sdcard/%s", SYS_APPNAME);
-  sys_appdir=strdup(path);
+  // we put files on the sdcard, that's the only sane place (?)
   sys_dir=strdup(path);
+  // Switching to getFilesDir() which is managed by Android
+  sys_appdir=android_getFilesDir();
 #endif
 #if defined(BB10) || defined(PLAYBOOK)
   char path[1024], cwd[1024];
