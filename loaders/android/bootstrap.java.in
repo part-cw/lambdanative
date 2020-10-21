@@ -87,10 +87,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     }
   };
 
-  public String ln_getFilesDir() {
-    return getFilesDir().toString();
-  }
-
   private boolean ln_checkSelfPermission(String permission) {
     @IF_ANDROIDAPI_GT_22@
     if(getApplicationContext().checkSelfPermission(permission)
@@ -162,7 +158,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     // start EVENT_IDLE 
     if(idle_tmScheduleRate > 0) idle_tm.scheduleAtFixedRate(idle_task, 0, idle_tmScheduleRate);
 
-    nativeInstanceInit(ln_getFilesDir());
+    nativeInstanceInit(getApplicationContext().getPackageCodePath().toString(), getFilesDir().toString());
   }
   @Override 
   protected void onDestroy() {
@@ -224,7 +220,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     }
   }
 
-  native void nativeInstanceInit(String filesDir);
+  native void nativeInstanceInit(String packageCodePath, String filesDir);
 }
 
 class  xGLSurfaceView extends GLSurfaceView {
