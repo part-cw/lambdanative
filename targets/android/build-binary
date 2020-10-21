@@ -144,8 +144,54 @@ else
 assert "### Gradle is not supported"
 fi
 
+# try to include support.v4 library
 if [ -f $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar ]; then
   cp -r $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar $tmpdir/libs
+  echo " => support-v4 library loaded"
+else
+  # look for support-v4 in alternate location
+  # special support for API 19
+  if [ $SYS_ANDROIDAPI -eq "19" ]; then
+    if [ -f $ANDROIDSDK/extras/android/m2repository/com/android/support/support-v4/19.1.0/support-v4-19.1.0.jar ]; then
+      cp -r $ANDROIDSDK/extras/android/m2repository/com/android/support/support-v4/19.1.0/support-v4-19.1.0.jar $tmpdir/libs
+      echo " => support-v4 library loaded (version 19)"
+    fi
+  else
+  # Find the directory containing the support-v4 AAR file
+  # Only folders from 20 - 23 have the full AAR file needed
+    supportv4version=$SYS_ANDROIDAPI
+    if [ $supportv4version -gt 23 ]; then
+      supportv4version="23"
+    fi
+    v4dir=""
+    while [ $supportv4version -gt "19" ]; do
+      v4dir=`find $ANDROIDSDK/extras/android/m2repository/com/android/support/support-v4 -name "$supportv4version*" | grep -v -e "alpha" -e "beta" | sort | tail -1`
+      if [ ! "X$v4dir" = "X" ]; then
+        break
+      fi
+      supportv4version=`expr ${supportv4version} - 1`
+    done
+    # If a directory is found, check if classes.jar has already been extracted. If not, extract it from the AAR
+    if [ ! "X$v4dir" = "X" ]; then
+      v4file=`find $v4dir -name classes.jar`
+      if [ ! -s "$v4file" ]; then
+        v4aar=`find $v4dir -name support-v4*.aar`
+        if [ -s "$v4aar" ]; then
+          unzip $v4aar classes.jar -d $v4dir > /dev/null
+          v4file=`find $v4dir -name classes.jar`
+        fi
+      fi
+      # If a classes.jar file has been found, copy it to libs
+      if [ -s "$v4file" ]; then
+        cp -r $v4file $tmpdir/libs
+        echo " => support-v4 library loaded (version $supportv4version)"
+      else
+        echo " => warning: support-v4 library not found"
+      fi
+    else
+      echo " => warning: support-v4 library not found"
+    fi
+  fi
 fi
 
 if [ "$NEED_GCM" = "yes" ]; then
@@ -185,7 +231,7 @@ if [ -d "$jarfilesdir" ]; then
   mkdir -p $tmpdir/libs/
   for jar in $jarfiles; do
     locajar=`basename $jar | tr A-Z a-z`
-    vecho " => coping jar file - $locajar ..."
+    vecho " => copying jar file - $locajar ..."
     cp $jar $tmpdir/libs/
   done
 fi
@@ -197,7 +243,7 @@ if [ -d "$xmlfilesdir" ]; then
   mkdir -p $tmpdir/res/xml/
   xmlfiles=`ls -1 $xmlfilesdir/*.xml 2> /dev/null`
   for xml in $xmlfiles; do
-    vecho " => coping xml file - $xml ..."
+    vecho " => copying xml file - $xml ..."
     cp $xml $tmpdir/res/xml/
   done
 fi
