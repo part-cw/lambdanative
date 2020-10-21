@@ -206,7 +206,7 @@ echo " => transferring java hook.."
 appdir=$tmpdir/src/$SYS_PACKAGE_SLASH
 ac_output loaders/android/bootstrap.java.in $appdir/$SYS_APPNAME.java
 
-echo " => transferring java public classes.."
+echo " => transferring java public classes and jars from modules.."
 for m in $modules; do
   modpath=`locatedir modules/$m silent`
   pubclasses=`ls -1 $modpath/ANDROID_java_public_* 2> /dev/null`
@@ -221,6 +221,11 @@ for m in $modules; do
       cat $pubclass >> $appdir/$pubclassfile
     fi
   done
+  if [ -d $modpath/android_jars ]; then
+    echo " => transferring jars.."
+    test -d $tmpdir/libs || mkdir -p $tmpdir/libs
+    cp $modpath/android_jars/*.jar $tmpdir/libs
+  fi
 done
 
 echo " => preparing manifest.."
