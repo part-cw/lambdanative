@@ -74,6 +74,11 @@ void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeInstanceInit(JNIEnv* env,
   (*env)->ReleaseStringUTFChars(env, codePath, NULL);
 }
 
+char* android_getFilesDir() { return (char*) app_directory_files; }
+char* android_getPackageCodePath() { return (char*) app_code_path; }
+
+char* android_getFilesDir_info_get() { return android_getFilesDir(); }
+
 jint JNI_OnLoad(JavaVM* vm, void* reserved){
   JNIEnv *env;
   s_vm=vm;
@@ -84,26 +89,40 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved){
 JNIEnv* GetJNIEnv(){
   int error=0;
   JNIEnv* env = NULL;
-  if (s_vm) error=(*s_vm)->AttachCurrentThread(s_vm, &env, NULL);
-  if (!error&&(*env)->ExceptionCheck(env)) return NULL;
+  /* static `env` does NOT work!  Once in a while we should ponder if
+     it still does not work or why.
+
+  if(env) {
+    if((*env)->ExceptionCheck(env)) (*env)->ExceptionClear(env);
+    return env;
+  }
+  */
+  if(s_vm) error=(*s_vm)->AttachCurrentThread(s_vm, &env, NULL);
+  //if(!error&&(*env)->ExceptionCheck(env)) return NULL;
+  if(!error) error = JNI_forward_exception_to_gambit(env);
   return (error?NULL:env);
+}
+
+int JNI_forward_exception_to_gambit(JNIEnv*env) {
+  // TBD: actually forward, not only clear!
+  if((*env)->ExceptionCheck(env)) {
+    (*env)->ExceptionClear(env);
+    return 1;
+  }
+  return 0;
 }
 
 // url launcher ffi
 void android_launch_url(char* urlstring){
   JNIEnv *env = GetJNIEnv();
-  jstring jurlstring = (*env)->NewStringUTF(env,urlstring);
   if (env&&globalObj) {
+    jstring jurlstring = (*env)->NewStringUTF(env, urlstring);
     jclass cls = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
-    jmethodID method = (*env)->GetMethodID(env, cls, "openURL", "(Ljava/lang/String;)V");
-    (*env)->CallVoidMethod(env, globalObj, method, jurlstring);
+    jmethodID method = cls ? (*env)->GetMethodID(env, cls, "openURL", "(Ljava/lang/String;)V") : NULL;
+    if(method) (*env)->CallVoidMethod(env, globalObj, method, jurlstring);
+    JNI_forward_exception_to_gambit(env);
   }
 }
-
-char* android_getFilesDir() { return (char*) app_directory_files; }
-char* android_getPackageCodePath() { return (char*) app_code_path; }
-
-char* android_getFilesDir_info_get() { return android_getFilesDir(); }
 
 // Add code here if needed for modules, such as GPS.
 @ANDROID_C_ADDITIONS@
