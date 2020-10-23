@@ -64,7 +64,7 @@ void ffi_event(int t, int x, int y)
   } 
   FFI_EVENT_LOCK
   if (!lambdanative_needsinit&&t) lambdanative_payload_event(t,x,y);
-  if (t==EVENT_TERMINATE) { lambdanative_payload_cleanup(); exit(0); }
+  if (t==EVENT_TERMINATE) { lambdanative_exit(0); }
   FFI_EVENT_UNLOCK
 }
 #endif // STANDALONE
