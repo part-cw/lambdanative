@@ -288,7 +288,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                           (integer->char (bitwise-ior #x80 (bitwise-and #x3F c)))))
                  (else (log-error "unicode->utf8string: illegal format")))
            ))
-        (else (apply string-append (map unicode->utf8string src)))
+        (else
+          (call-with-output-string (lambda (port)
+            (for-each (lambda (element) (display (unicode->utf8string element) port)) src))))
   ))
 
 ;;u8vectors that need unicode conversion
