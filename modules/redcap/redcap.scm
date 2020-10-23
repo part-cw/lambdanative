@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -51,7 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (u8vector-shrink! redcap:data 0))
 
 (define (redcap:data->string)
-  (let ((str (u8vector->string (subu8vector redcap:data 0 redcap:datalen))))
+  (let ((str (u8vector->utf8string (subu8vector redcap:data 0 redcap:datalen))))
     (redcap:data-clear!)
     str))
 
@@ -811,7 +811,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                              (string=? (substring (car fileout) 9 12) "200")))
                   fileout
                   ;; Display and log the REDCap error message, but return the error message as a string
-                  (let ((message (u8vector->string (cadr fileout))))
+                  (let ((message (u8vector->utf8string (cadr fileout))))
                     (log-error "REDCap:" message)
                     message)
                 ))
