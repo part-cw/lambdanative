@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -79,6 +79,54 @@ end-of-c-declare
          (if (= (string-length s) 0) res
            (loop (substring s 2 (string-length s))
              (append res (list (substring s 0 2)))))))))
+
+;;u8vectors that need unicode conversion
+(define (u8vector->unicode-vector invec)
+  (let* ((inveclen (u8vector-length invec))
+         (outvec (make-vector inveclen))
+         (outveclen 0)
+         (armed? #f))
+    (let loop ((i 0))
+      (if (fx= i inveclen)
+        (subvector outvec 0 outveclen)
+        (begin
+          (if armed?
+            (case (u8vector-ref invec i)
+              ((117)
+                (let loop ((k 0) (val 0))
+                  (if (fx= k 4)
+                    (begin
+                      (vector-set! outvec outveclen val)
+                      (set! outveclen (fx+ outveclen 1))
+                      (set! i (fx+ i 4))
+                    )
+                    (loop (fx+ k 1) (fx+ val (* (expt 16 (fx- 3 k))
+                      (let ((v (u8vector-ref invec (fx+ k i 1))))
+                        (if (fx>= v 97) (fx- v 87) (fx- v 48))))))
+                  )))
+               ((92)
+                 (vector-set! outvec outveclen (u8vector-ref invec i))
+                 (set! outveclen (fx+ outveclen 1))
+                 (vector-set! outvec outveclen (u8vector-ref invec i))
+                 (set! outveclen (fx+ outveclen 1))
+               )
+               (else
+                 (vector-set! outvec outveclen 92)
+                 (set! outveclen (fx+ outveclen 1))
+                 (vector-set! outvec outveclen (u8vector-ref invec i))
+                 (set! outveclen (fx+ outveclen 1))
+               )
+            )
+            (if (not (fx= (u8vector-ref invec i) 92)) (begin
+              (vector-set! outvec outveclen (u8vector-ref invec i))
+              (set! outveclen (fx+ outveclen 1))
+            ))
+          )
+          (set! armed? (fx= (u8vector-ref invec i) 92))
+          (loop (fx+ i 1))
+        )
+      )
+    )))
 
 ;;write a u8vector to a file
 (define (u8vector->file u8v filename)

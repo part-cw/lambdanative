@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -290,5 +290,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            ))
         (else (apply string-append (map unicode->utf8string src)))
   ))
+
+;;u8vectors that need unicode conversion
+(define (u8vector->utf8string vec)
+  (unicode->utf8string (vector->list (u8vector->unicode-vector (subu8vector vec 0
+    (let loop ((i 0))
+      (if (or (fx= i (u8vector-length vec)) (fx= (u8vector-ref vec i) 0)) i
+      (loop (+ i 1)))
+    ))))))
 
 ;; eof
