@@ -80,9 +80,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (for-each (lambda (l) (set! len (fx+ len (string-length l)))) lst)
   (let ((offset 0)
         (result (make-string len)))
-    (for-each (lambda (l)
-       (string-copy! result offset l)
-       (set! offset (fx+ offset (string-length l)))
+    (for-each (lambda (s)
+      (for-each (lambda (c) (string-set! result offset c) (set! offset (fx+ offset 1))) (string->list s))
     ) lst)
     result
   ))
