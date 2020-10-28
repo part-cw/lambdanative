@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define download:header #f)  ;;stores presence and type of header #f/200/300
 (define download:tempfile (string-append (system-directory) (system-pathseparator) "download.tmp"))
 (define download:size 0)
+(define download:datastep 0)
 
 ;; Helper function to split return string into header and body
 (define (download:split-headerbody str)
@@ -97,7 +98,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (tempfile download:tempfile)
          (fh (open-output-file (list path: tempfile append: #t))))
     (if download:header
-         (begin (write-subu8vector v 0 lv fh)  (close-output-port fh))
+         (begin (write-subu8vector v 0 lv fh) (set! download:datalen (+ download:datalen lv)) (close-output-port fh))
          (begin (download:data-append! v)
           ;;test for header presence
           (let* ((str (download:split-headerbody-vector  download:data))
@@ -222,8 +223,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 )
               )
             ))
-           (let ((count (httpsclient-recv download:buf)))
-             ;; (if (or (string=? (system-platform) "android") (string=? (system-platform) "ios")) (thread-sleep! 0.001)) ;;allow GUI to refresh
+           (let ((count (httpsclient-recv download:buf))
+                 (step  (fix (/ download:datalen 1000000))))
+            (if (and  (fx> step download:datastep) (or (string=? (system-platform) "android") (string=? (system-platform) "ios")))(begin (set! download:datastep step) (thread-sleep! 0.001))) ;;allow GUI to refresh on large files
              (if (> count 0)
                (if usebuffer
                  (download:data-append-local! (subu8vector download:buf 0 count))
