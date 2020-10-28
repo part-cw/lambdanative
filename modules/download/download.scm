@@ -168,6 +168,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (ret (httpsclient-open host)))
     (set! download:header #f)
     (set! download:size 0)
+    (set! download:datastep 0)
     (if (file-exists? download:tempfile) (delete-file download:tempfile))
     (if (> ret 0)
       (let* ((request (string-append "GET " path " HTTP/1.0\r\nHost: " host "\r\n\r\n"))
@@ -223,14 +224,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 )
               )
             ))
-           (let ((count (httpsclient-recv download:buf))
-                 (step  (fix (/ download:datalen 1000000))))
-            (if (and  (fx> step download:datastep) (or (string=? (system-platform) "android") (string=? (system-platform) "ios")))(begin (set! download:datastep step) (thread-sleep! 0.001))) ;;allow GUI to refresh on large files
-             (if (> count 0)
-               (if usebuffer
-                 (download:data-append-local! (subu8vector download:buf 0 count))
-                 (download:data-append! (subu8vector download:buf 0 count))))
-             (loop count))
+            (let ((count (httpsclient-recv download:buf)))
+              (if (or (string=? (system-platform) "android") (string=? (system-platform) "ios"))
+                (let ((step (fix (/ download:datalen 1000000))))
+                  (if (fx> step download:datastep) (begin
+                    (set! download:datastep step)
+                    (thread-sleep! 0.001)
+                  ))
+                )) ;;allow GUI to refresh on large files
+              (if (> count 0)
+                (if usebuffer
+                  (download:data-append-local! (subu8vector download:buf 0 count))
+                  (download:data-append! (subu8vector download:buf 0 count))
+                ))
+              (loop count))
           )
         )
       )
