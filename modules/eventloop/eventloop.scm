@@ -75,6 +75,7 @@ end-of-c-declare
 (define EVENT_BUTTON3DOWN ((c-lambda () int "___result = EVENT_BUTTON3DOWN;")))
 (define EVENT_CLOSE ((c-lambda () int "___result = EVENT_CLOSE;")))
 (define EVENT_REDRAW ((c-lambda () int "___result = EVENT_REDRAW;")))
+(define EVENT_JSCM_RESULT ((c-lambda () int "___result = EVENT_JSCM_RESULT;")))
 (define EVENT_INIT ((c-lambda () int "___result = EVENT_INIT;")))
 (define EVENT_TERMINATE ((c-lambda () int "___result = EVENT_TERMINATE;")))
 (define EVENT_BATTERY ((c-lambda () int "___result = EVENT_BATTERY;")))
@@ -179,7 +180,9 @@ end-of-c-declare
          ;; handle potential scaling (running stretched on a device)
          (hook:event t (if app:scale? (fix (* app:xscale x)) x)
                        (if app:scale? (fix (* app:yscale y)) y))
-      )
+         )
+      ((fx= t EVENT_JSCM_RESULT)
+       (if (function-exists? LNjScheme-result) (LNjScheme-result)))
       ((fx= t EVENT_INIT)
         ;; prevent multiple inits
         (if app:mustinit (begin

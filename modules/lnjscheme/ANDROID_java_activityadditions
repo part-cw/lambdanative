@@ -1,0 +1,160 @@
+/* LNjScheme -*- mode: java; c-basic-offset: 2; -*- */
+
+/* # Helper methods */
+
+java.text.SimpleDateFormat ln_log_date_formatter = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss ");
+
+String TAG = "@SYS_APPNAME@";
+
+public void ln_log(String msg) {
+  String m = ln_log_date_formatter.format(new java.util.Date()) + msg;
+  System.err.println(TAG + ": " + m);
+  Log.d(TAG, m);
+}
+
+private Object onBackPressedHandler = null;
+
+@Override
+public void onBackPressed() {
+  if(onBackPressedHandler!=null) {
+    LNjSchemeEvaluate(LNjScheme.Scheme.list(onBackPressedHandler));
+  }
+  else { super.onBackPressed(); }
+}
+
+
+/* LNjScheme_Set_OnClickListener: register a LNjScheme lambda to be called when the View is clicked.
+ *
+ * LNjScheme can not (yet) declare annonymous derived classes.  (Or at
+ * least I don't know how that could be done.)
+ *
+ * For the time being we get along with a little Java.
+ */
+private android.view.View.OnClickListener LNjScheme_OnClickListener(final Object proc) {
+  return new android.view.View.OnClickListener() {
+    public void onClick(android.view.View v) {
+      LNjSchemeEvaluate(new LNjScheme.Pair(proc, new LNjScheme.Pair(v, null)));
+    }
+  };
+}
+public void LNjScheme_Set_OnClickListener(android.view.View v, Object expr) {
+  v.setOnClickListener(LNjScheme_OnClickListener(expr));
+}
+
+/* # LNjScheme core */
+
+private static LNjScheme.Scheme LNjSchemeSession = null;
+
+private Object LNjSchemeEvaluateNoSync(Object expr) {
+  // NOT synchronized, be careful where to use it!
+  if(LNjSchemeSession != null) {
+    return LNjSchemeSession.eval(expr);
+  } else return null;
+}
+
+public Object LNjSchemeEvaluate(Object expr) {
+  // sync with the one and only evaluator supported so far.
+  if(LNjSchemeSession != null) {
+    synchronized(LNjSchemeSession) {
+      return LNjSchemeSession.eval(expr);
+    }
+  } else return null;
+}
+
+/* jschemeCall: evaluate `msg` in any Java thread and return result
+ *
+ * FIXME TBD CHECK: This was the initial implementation, but might be broken now.
+ */
+public String LNjSchemeCall(String msg) {
+  // BEWARE: Operations not safe to be called asynchronously from
+  // any thread, not safe to be called from various contexts (e.g.,
+  // within "onDrawFrame" which amounts to "while reacting to
+  // EVENT_REDRAW"), etc. MAY HANG here.
+  //
+  // If you need fast execution and know the call is safe use this
+  // one.  Otherwise use the two-phased version using
+  // `LNjSchemeSend` followed by a `LNjSchemeResult to dispatch the
+  // evaluation to `runOnUiThread` and wait for it to be eventually
+  // evaluated in a more-or-less safe context.
+  try {
+    LNjScheme.InputPort in = new LNjScheme.InputPort(new java.io.ByteArrayInputStream(msg.getBytes(java.nio.charset.Charset.forName("UTF-8"))));
+    Object expr = in.read();
+    if(in.isEOF(expr)) return "E\n\"invalid input\"";
+    Object result = LNjSchemeEvaluate(expr);
+    java.io.StringWriter buf = new java.io.StringWriter();
+    java.io.PrintWriter port = new java.io.PrintWriter(buf);
+    port.println("D");
+    LNjScheme.SchemeUtils.write(result, port, true);
+    return buf.toString();
+  } catch (Exception e) {
+    java.io.StringWriter buf = new java.io.StringWriter();
+    java.io.PrintWriter port = new java.io.PrintWriter(buf);
+    port.println("E");
+    LNjScheme.SchemeUtils.write(("" + e).toCharArray(), port, true);
+    return buf.toString();
+  }
+}
+
+/* LNjSchemeSend: send string for evaluation to Java app main thread.
+ *
+ * LNjSchemeResult: receive evaluation result from Java app main thread.
+ */
+
+private java.util.concurrent.FutureTask<Object> LNjSchemeJob = null;
+
+public void LNjSchemeSend(String msg) {
+  final LNjScheme.InputPort in = new LNjScheme.InputPort(new java.io.ByteArrayInputStream(msg.getBytes(java.nio.charset.Charset.forName("UTF-8"))));
+  final Object expr = in.read();
+  // Object result = LNjSchemeEvaluate(expr);
+  java.util.concurrent.FutureTask<Object> job = new java.util.concurrent.FutureTask<Object>
+    (new java.util.concurrent.Callable<Object>() {
+        @Override
+        public Object call() throws Exception {
+          // ln_log("invocation of " + this + " evaluating.");
+          if(in.isEOF(expr)) throw new Exception("invalid input");
+          return LNjSchemeEvaluate(expr); }
+      });
+  // ln_log("Sending to UI: " + job + " for: " + expr);
+  LNjSchemeJob = job;
+  new Thread() {
+    @Override
+    public void run() {
+      // ln_log("LNjScheme waiting for completion");
+      try {
+        LNjSchemeJob.get();
+      } catch (Exception e) { // InterruptedException java.util.concurrent.ExecutionException
+        // FIXME: Do something sensible here!
+      }
+      // ln_log("LNjScheme notifying result");
+      nativeEvent(126,0,0);
+    }
+  }.start();
+  runOnUiThread(job);
+}
+
+public String LNjSchemeResult() {
+  try {
+    Object result = LNjSchemeJob != null ? LNjSchemeJob.get() : null;
+    LNjSchemeJob = null;
+    // ln_log("got result from UI");
+    java.io.StringWriter buf = new java.io.StringWriter();
+    java.io.PrintWriter port = new java.io.PrintWriter(buf);
+    port.println("D");
+    LNjScheme.SchemeUtils.write(result, port, true);
+    return buf.toString();
+  } catch (java.util.concurrent.ExecutionException e) {
+    // ln_log("got error from call");
+    java.io.StringWriter buf = new java.io.StringWriter();
+    java.io.PrintWriter port = new java.io.PrintWriter(buf);
+    port.println("E");
+    LNjScheme.SchemeUtils.write(("" + e.getCause()).toCharArray(), port, true);
+    return buf.toString();
+  } catch (Exception e) {
+    // ln_log("got exception from call");
+    java.io.StringWriter buf = new java.io.StringWriter();
+    java.io.PrintWriter port = new java.io.PrintWriter(buf);
+    port.println("E");
+    LNjScheme.SchemeUtils.write(("LNjScheme unexpected exception: " + e).toCharArray(), port, true);
+    return buf.toString();
+  }
+}

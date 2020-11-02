@@ -1,0 +1,16 @@
+/*-*-java -*-*/
+class LNMethod extends LNjScheme.Procedure {
+
+    String name = null;
+
+    /** Make a method from an exported wrapper, body, and environment. **/
+    public LNMethod (String sym) {
+        name = sym;
+    }
+
+
+    /** Apply to a list of arguments.  **/
+    public Object apply(LNjScheme.Scheme interpreter, Object args) {
+	return null; // return interpreter.eval(body, new Environment(parms, args, env));
+    }
+}
