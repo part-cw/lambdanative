@@ -7,11 +7,12 @@ Thumbs.db
 tmp.*
 *.core
 *.o
+*.class
+*.jar
 *.o2
 *.a
 *.old*
 *.bak*
-*.org*
 *.orig*
 xx_*
 SETUP
