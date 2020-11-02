@@ -109,6 +109,7 @@ end-of-c-declare
 
 ;; Gain access to Android app_directory_files and app_code_path
 (define android-get-filesdir (c-lambda () char-string "android_getFilesDir"))
+(c-declare "extern char* android_getPackageCodePath();")
 (define android-get-codepath (c-lambda () char-string "android_getPackageCodePath"))
 
 ;; eof
