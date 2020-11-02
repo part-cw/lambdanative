@@ -87,7 +87,7 @@ if [ `is_standalone_app` = "yes" ]; then
 else
   if [ `is_gui_app` = yes ]; then
     veval "$SYS_CC -I$SYS_PREFIX/include \
-      $cflag_additions -mwindows win32_microgl.c main.c icon.o -o $tgt \
+      $cflag_additions -mwindows -fpermissive win32_microgl.c main.c icon.o -o $tgt \
       -L$SYS_PREFIX/lib $ldflag_additions -lpayload -lglu32 -lopengl32 -lgdi32 -lwinmm -lwsock32 -lws2_32 -lrpcrt4 -lcrypt32 -lm"
   else
     veval "$SYS_CC -I$SYS_PREFIX/include \
