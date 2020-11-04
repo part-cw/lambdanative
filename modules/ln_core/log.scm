@@ -128,6 +128,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (log-error "Thread \"" (thread-name (current-thread)) "\": " (exception->string e))
   (log-error
    (call-with-output-string
+    '()
     (lambda (port)
       (continuation-capture
        (lambda (cont)
