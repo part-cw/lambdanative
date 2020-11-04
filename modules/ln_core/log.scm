@@ -119,31 +119,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (log:release!)
   )))
 
-;; try to output location of continuation
-;; this only works if debug information is available
-(define (trace:identify cont)
-  (let ((locat (##continuation-locat cont)))
-    (if locat
-        (let* ((container (##locat-container locat))
-               (path (##container->path container)))
-          (if path
-            (let* ((filepos (##position->filepos (##locat-position locat)))
-                     (line (fx+ (##filepos-line filepos) 1))
-                     (col (fx+ (##filepos-col filepos) 1)))
-                (log-error "trace: " path " line=" line " col=" col))
-              #f))
-        #f)))
-
-(define (log-trace thread)
-  (let* ((capture (##thread-continuation-capture thread)))
-    (let loop ((cont (##continuation-first-frame capture #f))(n 0))
-      (if cont (begin
-        (if (> n 1) (trace:identify cont))
-        (loop (##continuation-next-frame cont #f)(fx+ n 1))
-      ))
-    )
- ))
-
 (define (exception->string e)
   (let* ((str (with-output-to-string '() (lambda () (display-exception e (current-output-port)))))
          (tmp (string-split str #\newline)))
@@ -151,14 +126,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (log:exception-handler e)
   (log-error "Thread \"" (thread-name (current-thread)) "\": " (exception->string e))
-  (cond-expand
-    (gambit-c (log-trace (current-thread)))
-    (else
-      (unless (deadlock-exception? e)
-        ;; gambit ___cleanup(); re-enters with a deadlock-exception here
-        ;; while printing the trace
-        (log-trace (current-thread)))
-    ))
+  (log-error
+   (call-with-output-string
+    '()
+    (lambda (port)
+      (continuation-capture
+       (lambda (cont)
+         (display-exception-in-context e cont port)
+         (display-continuation-backtrace cont port))))))
   (log-error "HALT pid " ((c-lambda () int "getpid")))
   (exit 70))
 
