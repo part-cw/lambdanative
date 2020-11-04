@@ -149,9 +149,29 @@ end-of-c-declare
 (define (event-push t x y)
   (set! event:fifo (append event:fifo (list (list t x y)))))
 (define (event-pop)
-  (if (fx> (length event:fifo) 0)
-     (let ((ret (car event:fifo)))
-        (set! event:fifo (cdr event:fifo)) ret) #f))
+  (if (null? event:fifo) #f
+      (let ((ret (car event:fifo)))
+        (set! event:fifo (cdr event:fifo)) ret)))
+
+(define on-jscm-result
+  (let ((mux (make-mutex 'on-jscm-result)))
+    (mutex-specific-set! mux #f)
+    (lambda args
+      (cond
+       ((null? args) ;; return receiver procedure
+        (lambda (t x y)
+          (let ((proc (mutex-specific mux)))
+            (when proc
+              (mutex-specific-set! mux #f)
+              (proc t x y)
+              (mutex-unlock! mux)))))
+       ((let ((proc (car args))) (and (procedure? proc) proc)) =>
+        ;; set `proc` as inner receiver
+        (lambda (proc)
+          (mutex-lock! mux)
+          (mutex-specific-set! mux proc)
+          #t))
+       (else (log-error "illegal arguments" on-jscm-result args))))))
 
 (define eventloop:mutex (make-mutex 'eventloop))
 (define (eventloop:grab!) (mutex-lock! eventloop:mutex))
@@ -181,8 +201,7 @@ end-of-c-declare
          (hook:event t (if app:scale? (fix (* app:xscale x)) x)
                        (if app:scale? (fix (* app:yscale y)) y))
          )
-      ((fx= t EVENT_JSCM_RESULT)
-       (if (function-exists? LNjScheme-result) (LNjScheme-result)))
+      ((fx= t EVENT_JSCM_RESULT) ((on-jscm-result) t x y))
       ((fx= t EVENT_INIT)
         ;; prevent multiple inits
         (if app:mustinit (begin

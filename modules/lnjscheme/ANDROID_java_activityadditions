@@ -127,6 +127,7 @@ public void LNjSchemeSend(String msg) {
       }
       // ln_log("LNjScheme notifying result");
       nativeEvent(126,0,0);
+      // ln_log("LNjScheme native event 126 done.");
     }
   }.start();
   runOnUiThread(job);

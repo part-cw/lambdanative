@@ -6,55 +6,23 @@
          (log-error "android-app-class: called in non-Android context")
          "android-app-class")))
 
-(define lnjscheme-eval
-  ;; Not sure that we need a mutex here.  But what if the java side
-  ;; manages to call into gambit?
-  (let ((mutex (make-mutex 'lnjscheme)))
-    (define lnjscheme-invoke/s2s
-      (c-lambda (char-string) char-string "
-#ifdef ANDROID
-extern const char *lnjscheme_eval(const char *);
-#endif
-___result=
-#ifdef ANDROID
-(char*) lnjscheme_eval(___arg1);
-#else
-NULL;
-#endif
-"))
-    (define (lnjscheme-call obj)
-      (let* ((s (let ((req (object->string obj)))
-                  (mutex-lock! mutex)
-                  (cond-expand
-                   (android (lnjscheme-invoke/s2s req))
-                   (else (error "lnjscheme-call: not availible on platform" (system-platform))))))
-             (r0 (begin
-                   (mutex-unlock! mutex)
-                   (if (string? s)
-                       (call-with-input-string s
-                        (lambda (port)
-                          (let* ((key (read port))
-                                 (value
-                                  (with-exception-catcher
-                                   (lambda (exn) (raise (string-append "lnjscheme-call: unreadable result: " s)))
-                                   (lambda () (read port)))))
-                            (case key
-                              ((D) value)
-                              ((E) (raise value))
-                              (else (error "lnjscheme-call: unexpected reply " s))))))
-                       (error "lnjscheme-call: unexpected reply " s)))))
-        (cond
-         ;; Numbers are always printed as inexacts by jscheme.
-         ((integer? r0) (inexact->exact r0))
-         (else r0))))
-  lnjscheme-call))
-
-(define LNjScheme-result #f)
-
-(define lnjscheme-future
-  ;; Not sure that we need a mutex here.  But what if the java side
-  ;; manages to call into gambit?
-  (let ((mutex (make-mutex 'LNjScheme)))
+(define call-with-lnjscheme-result
+  ;; SIGNATURE (NAME S-EXPR #!optional (RECEIVER force))
+  ;;
+  ;; S-EXPR: Scheme s-expression in JSCM dialect
+  ;;
+  ;; RECEIVER: 1-ary procedure signature copatible to `force`
+  ;;
+  ;; Note: On the RECEIVERs descrection the result could be `forced`ed
+  ;; with, e.g., exception handlers in place, another threads context.
+  ;; The default is to fail as early as possible: on the events
+  ;; reception.  However delaying the failure into the RECEIVERs
+  ;; context has the advantage of more focused failure location while
+  ;; risking to mask failures in background processing.
+  ;;
+  ;; Ergo: fail immeditately when testing or in background.  RECEIVER,
+  ;; if provided, may override.
+  (let ()
     (define jscheme-send
       (c-lambda (char-string) void "
 #ifdef ANDROID
@@ -74,44 +42,59 @@ ___result=
 NULL;
 #endif
 "))
-    (define (noresult) #f)
-    (define (reset!) (set! LNjScheme-result noresult))
-    (define (jscheme-call obj)
+    (define (jscheme-read-reply obj)
+      (if (string? obj)
+          (call-with-input-string
+           obj
+           (lambda (port)
+             (let* ((key (read port))
+                    (value
+                     (with-exception-catcher
+                      (lambda (exn) (raise (string-append "jscheme-call: unreadable result: " obj)))
+                      (lambda () (read port)))))
+               (case key
+                 ((D) value)
+                 ((E) (raise value))
+                 (else (error "jscheme-call: unexpected reply " obj))))))
+          (error "jscheme-call: unexpected reply " obj)))
+    (define (jscheme-refine-result obj)
+      (cond
+       ;; Numbers are always printed as inexacts by jscheme.
+       ((integer? obj) (inexact->exact obj))
+       (else obj)))
+    (define (jscheme-call obj #!optional (receiver force))
       (cond-expand
        (android)
-       (else (error "jscheme-call: not availible on platform" (system-platform))))
-      (mutex-lock! mutex)
-      (let ((resm (make-mutex obj)))
-        (mutex-lock! resm)
-        (set! LNjScheme-result
-              (lambda ()
-                (reset!)
-                (mutex-specific-set! resm (jscheme-receive))
-                (mutex-unlock! mutex)
-                (mutex-unlock! resm)))
+       (else (log-error "jscheme-call: not availible on platform" (system-platform))))
+      (on-jscm-result
+       (lambda (t x y)
+         (let* ((reply (jscheme-receive)) ;; extract the result from Java
+                ;; delay evalutation
+                (promise (delay (jscheme-refine-result (jscheme-read-reply reply)))))
+           ;; The optional receiver MAY either dispatch to
+           ;; asynchroneous forcing the promise catching exceptions
+           ;; etc. by default force it expection the application to
+           ;; abort on any exception.
+           (receiver promise))))
         (jscheme-send (object->string obj))
-        (delay
-          (let* ((s (begin
-                      (mutex-lock! resm #f #f)
-                      (mutex-specific resm)))
-                 (r0 (begin
-                       (if (string? s)
-                           (call-with-input-string
-                            s
-                            (lambda (port)
-                              (let* ((key (read port))
-                                     (value
-                                      (with-exception-catcher
-                                       (lambda (exn) (raise (string-append "jscheme-call: unreadable result: " s)))
-                                       (lambda () (read port)))))
-                                (case key
-                                  ((D) value)
-                                  ((E) (raise value))
-                                  (else (error "jscheme-call: unexpected reply " s))))))
-                           (error "jscheme-call: unexpected reply " s)))))
-            (cond
-             ;; Numbers are always printed as inexacts by jscheme.
-             ((integer? r0) (inexact->exact r0))
-             (else r0))))))
-  (reset!)
+        (thread-yield!))
   jscheme-call))
+
+(define (lnjscheme-future obj)
+  ;; a promise waiting for the evaluation of OBJ
+  (let ((result (make-mutex obj)))
+    (mutex-lock! result #f #f)
+    (call-with-lnjscheme-result
+     obj
+     (lambda (promise)
+       (mutex-specific-set! result promise)
+       (mutex-unlock! result)))
+    (delay
+      (begin
+        (mutex-lock! result #f #f)
+        (force (mutex-specific result))))))
+
+(define (lnjscheme-eval obj)
+  ;; BEWARE: This blocks the current thread.  WILL deadlock NOT when
+  ;; run in event handler thread.
+  (force (lnjscheme-future obj)))
