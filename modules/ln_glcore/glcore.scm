@@ -243,7 +243,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let* ((oldlist glcore:cliplist)
          (newcoords
           (if (fx= (length coords) 4)
-              (map lambdanative#flo
+              (map flo
                    (list (min (car coords) (caddr coords))
                          (min (cadr coords) (cadddr coords))
                          (max (car coords) (caddr coords))
