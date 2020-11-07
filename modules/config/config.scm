@@ -94,4 +94,18 @@ end-of-c-declare
  (gambit-c (if (string=? (system-platform) "android") (##heartbeat-interval-set! -1.)))
  (else (if (string=? (system-platform) "android") (##set-heartbeat-interval! -1.))))
 
+(cond-expand
+ (android
+  (c-declare #<<EOF
+extern char* android_getFilesDir_info_get();
+char* android_getFilesDir_info()
+{
+ return android_getFilesDir_info_get();
+}
+extern char* android_getPackageCodePath();
+EOF
+)
+  (define (android-PackageCodePath) ((c-lambda () char-string "android_getPackageCodePath"))))
+ (else #!void))
+
 ;; eof
