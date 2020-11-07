@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -136,7 +136,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (ty (cond
               ((not txx) 0.5)
               ((let ((r (cdr xtra)))
-                 (and (pair? r) (car r))))
+                (and (pair? r) (car r))))
               (else 0.5))))
     (let ((x (flo x0)) (y (flo y0)))
       (f32vector-set! glCore:varray (fx+ glCore:vindex 0) x)
@@ -151,7 +151,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (u8vector-set! glCore:carray (fx+ glCore:cindex 3) glCore:alpha)
       (set! glCore:cindex (fx+ glCore:cindex 4))
       (set! glCore:use3D #f)
-      )))
+    )))
 
 ;; ------------------------------------------
 ;; 3D rendering
@@ -242,22 +242,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glCoreClipPush . coords)
   (let* ((oldlist glcore:cliplist)
          (newcoords
-          (if (fx= (length coords) 4)
-              (map flo
-                   (list (min (car coords) (caddr coords))
-                         (min (cadr coords) (cadddr coords))
-                         (max (car coords) (caddr coords))
-                         (max (cadr coords) (cadddr coords))))
-              #f))
+           (if (fx= (length coords) 4)
+             (map flo
+               (list (min (car coords) (caddr coords))
+                     (min (cadr coords) (cadddr coords))
+                     (max (car coords) (caddr coords))
+                     (max (cadr coords) (cadddr coords))))
+             #f))
          (newlist (if newcoords
-                      (append (list newcoords) oldlist)
-                      (if (null? oldlist) oldlist (cdr oldlist)))))
+                    (append (list newcoords) oldlist)
+                    (if (null? oldlist) oldlist (cdr oldlist)))))
     (if (not (null? newlist))
-        (begin
-          (set! glcore:clipx1 (car (car newlist)))
-          (set! glcore:clipy1 (cadr (car newlist)))
-          (set! glcore:clipx2 (caddr (car newlist)))
-          (set! glcore:clipy2 (cadddr (car newlist)))))
+      (begin
+        (set! glcore:clipx1 (car (car newlist)))
+        (set! glcore:clipy1 (cadr (car newlist)))
+        (set! glcore:clipx2 (caddr (car newlist)))
+        (set! glcore:clipy2 (cadddr (car newlist)))))
     (set! glcore:cliplist newlist)))
 
 (define glCoreClipPop glCoreClipPush)
@@ -270,22 +270,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (glCoreTextureDraw x y w0 h0 t x1 y1 x2 y2 r . colors)
   (let ((entry (table-ref glCore:textures t #f)))
     (if entry  
-        (let ((w (flo (if (fx= (fix w0) 0) (vector-ref entry 2) w0)))
-              (h (flo (if (fx= (fix h0) 0) (vector-ref entry 3) h0))))
-          (if (null? glcore:cliplist)
-              (if (pair? colors)
-                  (glCore:TextureDrawUnClipped
-                   (flo x) (flo y) w h t (flo x1) (flo y1) (flo x2) (flo y2) (flo r)
-                   (car colors))
-                  (glCore:TextureDrawUnClipped
-                   (flo x) (flo y) w h t (flo x1) (flo y1) (flo x2) (flo y2) (flo r)))
-              (if (pair? colors)
-                  (glCore:TextureDrawClipped
-                   (flo x) (flo y) w h t (flo x1) (flo y1) (flo x2) (flo y2) (flo r)
-                   (car colors))
-                  (glCore:TextureDrawClipped
-                   (flo x) (flo y) w h t (flo x1) (flo y1) (flo x2) (flo y2) (flo r)))))
-        (log-error "glCoreTextureDraw: unbound index " t))))
+      (let ((w (flo (if (fx= (fix w0) 0) (vector-ref entry 2) w0)))
+            (h (flo (if (fx= (fix h0) 0) (vector-ref entry 3) h0))))
+        (if (null? glcore:cliplist)
+          (if (pair? colors)
+            (glCore:TextureDrawUnClipped
+              (flo x) (flo y) w h t (flo x1) (flo y1) (flo x2) (flo y2) (flo r)
+              (car colors))
+            (glCore:TextureDrawUnClipped
+              (flo x) (flo y) w h t (flo x1) (flo y1) (flo x2) (flo y2) (flo r)))
+          (if (pair? colors)
+            (glCore:TextureDrawClipped
+               (flo x) (flo y) w h t (flo x1) (flo y1) (flo x2) (flo y2) (flo r)
+               (car colors))
+            (glCore:TextureDrawClipped
+               (flo x) (flo y) w h t (flo x1) (flo y1) (flo x2) (flo y2) (flo r)))))
+      (log-error "glCoreTextureDraw: unbound index " t))))
 
 (define (glCore:TextureDrawUnClipped x y w h t @x1 @y1 @x2 @y2 r . colors)
   (glcore:log 5 "glCoreTextureDrawUnclipped enter")
@@ -337,23 +337,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (_glCoreTextureBind t)
         (glCoreBegin GL_TRIANGLE_STRIP)
         (if (null? colors)
-            (begin
-              (glCoreVertex2f (fl- cw2) ch2 c@x1 c@y2)
-              (glCoreVertex2f cw2 ch2 c@x2 c@y2)
-              (glCoreVertex2f (fl- cw2) (fl- ch2) c@x1 c@y1)
-              (glCoreVertex2f cw2 (fl- ch2) c@x2 c@y1)
-              )
-            (let ((colors (list->vector colors)))
-              ;; TODO: color interpolation here!
-              (glCoreColor (vector-ref colors 0))
-              (glCoreVertex2f (fl- cw2) ch2 c@x1 c@y2)
-              (glCoreColor (vector-ref colors 1))
-              (glCoreVertex2f cw2 ch2 c@x2 c@y2)
-              (glCoreColor (vector-ref colors 2))
-              (glCoreVertex2f (fl- cw2) (fl- ch2) c@x1 c@y1)
-              (glCoreColor (vector-ref colors 3))
-              (glCoreVertex2f cw2 (fl- ch2) c@x2 c@y1)
-              ))
+          (begin
+            (glCoreVertex2f (fl- cw2) ch2 c@x1 c@y2)
+            (glCoreVertex2f cw2 ch2 c@x2 c@y2)
+            (glCoreVertex2f (fl- cw2) (fl- ch2) c@x1 c@y1)
+            (glCoreVertex2f cw2 (fl- ch2) c@x2 c@y1)
+          )
+          (let ((colors (list->vector colors)))
+            ;; TODO: color interpolation here!
+            (glCoreColor (vector-ref colors 0))
+            (glCoreVertex2f (fl- cw2) ch2 c@x1 c@y2)
+            (glCoreColor (vector-ref colors 1))
+            (glCoreVertex2f cw2 ch2 c@x2 c@y2)
+            (glCoreColor (vector-ref colors 2))
+            (glCoreVertex2f (fl- cw2) (fl- ch2) c@x1 c@y1)
+            (glCoreColor (vector-ref colors 3))
+            (glCoreVertex2f cw2 (fl- ch2) c@x2 c@y1)
+          ))
         (glCoreEnd)
         (glPopMatrix)
   )))
@@ -367,26 +367,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (glcore:log 5 "glCoreTexturePolygonDraw")
   (let ((entry (table-ref glCore:textures t #f)))
     (if entry
-        (let* ((cx (flo _cx)) (cy (flo _cy))
-               (r (flo _r)))
-          (glPushMatrix)
-          (glTranslatef cx cy 0.)
-          (glRotatef r 0. 0. 1.)
-          (_glCoreTextureBind t)
-          (glCoreBegin GL_TRIANGLE_STRIP)
-          (for-each
-           (lambda (p)
-             ;; TBD: should accept vectoralikes as point
-             (let* ((p (list->vector p))
-                    (x (fl- (vector-ref p 0) cx))
-                    (y (fl- (vector-ref p 1) cy))
-                    (tx (vector-ref p 2))
-                    (ty (vector-ref p 3)))
-               (glCoreVertex2f x y tx ty)))
-           points)
-          (glCoreEnd)
-          (glPopMatrix))
-        (log-error "glCoreTexturePolygonDraw: unbound index " t))))
+      (let* ((cx (flo _cx)) (cy (flo _cy)) (r (flo _r)))
+        (glPushMatrix)
+        (glTranslatef cx cy 0.)
+        (glRotatef r 0. 0. 1.)
+        (_glCoreTextureBind t)
+        (glCoreBegin GL_TRIANGLE_STRIP)
+        (for-each
+          (lambda (p)
+            ;; TBD: should accept vectoralikes as point
+            (let* ((p (list->vector p))
+                   (x (fl- (vector-ref p 0) cx))
+                   (y (fl- (vector-ref p 1) cy))
+                   (tx (vector-ref p 2))
+                   (ty (vector-ref p 3)))
+              (glCoreVertex2f x y tx ty)))
+            points)
+        (glCoreEnd)
+        (glPopMatrix))
+      (log-error "glCoreTexturePolygonDraw: unbound index " t))))
 
 ;; update texture data (for dynamic textures)
 ;; to use this, first modify data returned with glCoreTextureData..
