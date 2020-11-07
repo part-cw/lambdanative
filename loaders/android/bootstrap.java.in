@@ -106,6 +106,17 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     return true;
   }
 
+  @IF_ANDROIDAPI_GT_22@
+  @Override
+  public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+      super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+      //Must do something with results data or app will hang
+      int rc = requestCode;
+      String p = permissions[0];
+      int gr = grantResults[0];
+  }
+  /* end of IF_ANDROIDAPI_GT_22 */
+
   @Override
   public void startActivityForResult(Intent intent, int cont) {
       try {

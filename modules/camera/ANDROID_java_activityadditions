@@ -14,7 +14,14 @@ private void startCamera(String fnl_name, String tmp_name) {
   Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
   File f = new File(camera_tmp);
   if (f != null) {
-    intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f));
+    Uri imageUri = FileProvider.getUriForFile(this,
+            "@SYS_PACKAGE_DOT@.provider",
+            f);
+    intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+    if (@SYS_ANDROIDAPI@ <= 22) {
+      intent.setClipData(ClipData.newRawUri("", imageUri));
+      intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION|Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    }
 //    intent.putExtra(android.provider.MediaStore.EXTRA_SCREEN_ORIENTATION,ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
     startActivityForResult(intent, REQUEST_IMAGE_CAPTURE);
   }
@@ -26,7 +33,14 @@ private void startVidCamera(String fnl_name, String tmp_name, int maxlength) {
   Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
   File f = new File(vid_tmp);
   if (f != null) {
-    intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f));
+    Uri vidUri = FileProvider.getUriForFile(this,
+            "@SYS_PACKAGE_DOT@.provider",
+            f);
+    intent.putExtra(MediaStore.EXTRA_OUTPUT, vidUri);
+    if (@SYS_ANDROIDAPI@ <= 22) {
+      intent.setClipData(ClipData.newRawUri("", vidUri));
+      intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION|Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    }
     if (maxlength > 0) {
       intent.putExtra(MediaStore.EXTRA_DURATION_LIMIT, maxlength);
     }

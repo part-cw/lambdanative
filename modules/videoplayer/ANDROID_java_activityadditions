@@ -2,8 +2,12 @@
 private void startVideoPlayer(String mov_name, int orientation) {
   File f = new File(mov_name);
   if (f != null) { 
-    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.fromFile(f));
-    intent.setDataAndType(Uri.fromFile(f), "video/*");
+    Uri vidUri = FileProvider.getUriForFile(this,
+          "@SYS_PACKAGE_DOT@.provider",
+          f);
+    Intent intent = new Intent(Intent.ACTION_VIEW, vidUri);
+    intent.setDataAndType(vidUri, "video/*");
+    intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
     if (orientation == 1) {
       orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
     } else if (orientation == 2) {
