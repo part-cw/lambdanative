@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -131,44 +131,54 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 )
 
 (define (glCoreVertex2f x0 y0 . xtra)
-  (let ((x (flo x0)) (y (flo y0))
-        (tx (if (fx= (length xtra) 2) (flo (car xtra)) 0.5))
-        (ty (if (fx= (length xtra) 2) (flo (cadr xtra)) 0.5)))
-    (f32vector-set! glCore:varray (fx+ glCore:vindex 0) x)
-    (f32vector-set! glCore:varray (fx+ glCore:vindex 1) y)
-    (set! glCore:vindex (fx+ glCore:vindex 2))
-    (f32vector-set! glCore:tarray (fx+ glCore:tindex 0) tx)
-    (f32vector-set! glCore:tarray (fx+ glCore:tindex 1) ty)
-    (set! glCore:tindex (fx+ glCore:tindex 2))
-    (u8vector-set! glCore:carray (fx+ glCore:cindex 0) glCore:red)
-    (u8vector-set! glCore:carray (fx+ glCore:cindex 1) glCore:green)
-    (u8vector-set! glCore:carray (fx+ glCore:cindex 2) glCore:blue)
-    (u8vector-set! glCore:carray (fx+ glCore:cindex 3) glCore:alpha) 
-    (set! glCore:cindex (fx+ glCore:cindex 4))
-    (set! glCore:use3D #f)
-  ))
+  (let* ((txx (pair? xtra))
+         (tx (if txx (flo (car xtra)) 0.5))
+         (ty (cond
+              ((not txx) 0.5)
+              ((let ((r (cdr xtra)))
+                (and (pair? r) (car r))))
+              (else 0.5))))
+    (let ((x (flo x0)) (y (flo y0)))
+      (f32vector-set! glCore:varray (fx+ glCore:vindex 0) x)
+      (f32vector-set! glCore:varray (fx+ glCore:vindex 1) y)
+      (set! glCore:vindex (fx+ glCore:vindex 2))
+      (f32vector-set! glCore:tarray (fx+ glCore:tindex 0) tx)
+      (f32vector-set! glCore:tarray (fx+ glCore:tindex 1) ty)
+      (set! glCore:tindex (fx+ glCore:tindex 2))
+      (u8vector-set! glCore:carray (fx+ glCore:cindex 0) glCore:red)
+      (u8vector-set! glCore:carray (fx+ glCore:cindex 1) glCore:green)
+      (u8vector-set! glCore:carray (fx+ glCore:cindex 2) glCore:blue)
+      (u8vector-set! glCore:carray (fx+ glCore:cindex 3) glCore:alpha)
+      (set! glCore:cindex (fx+ glCore:cindex 4))
+      (set! glCore:use3D #f)
+    )))
 
 ;; ------------------------------------------
 ;; 3D rendering
 
 (define (glCoreVertex3f x0 y0 z0 . xtra)
-  (let ((x (flo x0)) (y (flo y0)) (z (flo z0))
-        (tx (if (fx= (length xtra) 2) (flo (car xtra)) 0.5))
-        (ty (if (fx= (length xtra) 2) (flo (cadr xtra)) 0.5)))
-    (f32vector-set! glCore:varray3D (fx+ glCore:vindex 0) x)
-    (f32vector-set! glCore:varray3D (fx+ glCore:vindex 1) y)
-    (f32vector-set! glCore:varray3D (fx+ glCore:vindex 2) z)
-    (set! glCore:vindex (fx+ glCore:vindex 3))
-    (f32vector-set! glCore:tarray (fx+ glCore:tindex 0) tx)
-    (f32vector-set! glCore:tarray (fx+ glCore:tindex 1) ty)
-    (set! glCore:tindex (fx+ glCore:tindex 2))
-    (u8vector-set! glCore:carray (fx+ glCore:cindex 0) glCore:red)
-    (u8vector-set! glCore:carray (fx+ glCore:cindex 1) glCore:green)
-    (u8vector-set! glCore:carray (fx+ glCore:cindex 2) glCore:blue)
-    (u8vector-set! glCore:carray (fx+ glCore:cindex 3) glCore:alpha)
-    (set! glCore:cindex (fx+ glCore:cindex 4))
-    (set! glCore:use3D #t)
-  ))
+  (let* ((txx (pair? xtra))
+         (tx (if txx (flo (car xtra)) 0.5))
+         (ty (cond
+              ((not txx) 0.5)
+              ((let ((r (cdr xtra)))
+                 (and (pair? r) (car r))))
+              (else 0.5))))
+    (let ((x (flo x0)) (y (flo y0)) (z (flo z0)))
+      (f32vector-set! glCore:varray3D (fx+ glCore:vindex 0) x)
+      (f32vector-set! glCore:varray3D (fx+ glCore:vindex 1) y)
+      (f32vector-set! glCore:varray3D (fx+ glCore:vindex 2) z)
+      (set! glCore:vindex (fx+ glCore:vindex 3))
+      (f32vector-set! glCore:tarray (fx+ glCore:tindex 0) tx)
+      (f32vector-set! glCore:tarray (fx+ glCore:tindex 1) ty)
+      (set! glCore:tindex (fx+ glCore:tindex 2))
+      (u8vector-set! glCore:carray (fx+ glCore:cindex 0) glCore:red)
+      (u8vector-set! glCore:carray (fx+ glCore:cindex 1) glCore:green)
+      (u8vector-set! glCore:carray (fx+ glCore:cindex 2) glCore:blue)
+      (u8vector-set! glCore:carray (fx+ glCore:cindex 3) glCore:alpha)
+      (set! glCore:cindex (fx+ glCore:cindex 4))
+      (set! glCore:use3D #t)
+      )))
 
 ;; ----------------------------------
 ;; textures 
@@ -180,18 +190,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (glCoreTextureCreate w h data . aux)
   (glcore:log 5 "glCoreTextureCreate")
-  (let ((idx glCore:tidx)
-        (pixeltype (cond 
-          ((fx= (u8vector-length data) (* w h)) GL_ALPHA)
-          ((fx= (u8vector-length data) (* 3 w h)) GL_RGB)
-          ((fx= (u8vector-length data) (* 4 w h)) GL_RGBA)
-          (else (log-error "glCoreTextureCreate: Invalid data range") #f)))
-        (interpolation (if (>= (length aux) 1) (car aux) GL_LINEAR))
-        (wrap (if (>= (length aux) 2) (cadr aux) GL_CLAMP)))
-    (table-set! glCore:textures idx (##still-copy 
-       (vector #f (u32vector 0) w h (##still-copy data) pixeltype interpolation wrap)))
-    (set! glCore:tidx (fx+ glCore:tidx 1))
-    idx))
+  (let* ((o1x (pair? aux))
+         (o2 (and o1x (cdr aux))))
+    (let ((idx glCore:tidx)
+          (pixeltype
+            (cond
+              ((fx= (u8vector-length data) (* w h)) GL_ALPHA)
+              ((fx= (u8vector-length data) (* 3 w h)) GL_RGB)
+              ((fx= (u8vector-length data) (* 4 w h)) GL_RGBA)
+              (else (log-error "glCoreTextureCreate: Invalid data range") #f)))
+          (interpolation (if o1x (car aux) GL_LINEAR))
+          (wrap (if (pair? o2) (car o2) GL_CLAMP)))
+      (table-set! glCore:textures idx
+        (##still-copy (vector #f (u32vector 0) w h (##still-copy data) pixeltype interpolation wrap)))
+      (set! glCore:tidx (fx+ glCore:tidx 1))
+      idx)))
 
 ;; return texture width
 (define (glCoreTextureWidth t)
@@ -226,19 +239,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; (glCoreClipPush x1 y1 x2 y2)
 (define (glCoreClipPush . coords)
   (let* ((oldlist glcore:cliplist)
-         (newcoords (if (fx= (length coords) 4) (map flo
-           (list (min (car coords) (caddr coords)) (min (cadr coords) (cadddr coords))
-                 (max (car coords) (caddr coords)) (max (cadr coords) (cadddr coords)))) #f))
-         (newlist (if newcoords (append (list newcoords) oldlist)
-            (if (null? oldlist) oldlist (cdr oldlist))))) 
-  (if (not (null? newlist)) (begin
-    (set! glcore:clipx1 (car (car newlist)))
-    (set! glcore:clipy1 (cadr (car newlist)))
-    (set! glcore:clipx2 (caddr (car newlist)))
-    (set! glcore:clipy2 (cadddr (car newlist)))
-  ))  
-  (set! glcore:cliplist newlist)
- ))
+         (newcoords
+           (if (fx= (length coords) 4)
+             (map flo
+               (list (min (car coords) (caddr coords))
+                     (min (cadr coords) (cadddr coords))
+                     (max (car coords) (caddr coords))
+                     (max (cadr coords) (cadddr coords))))
+             #f))
+         (newlist (if newcoords
+                    (append (list newcoords) oldlist)
+                    (if (null? oldlist) oldlist (cdr oldlist)))))
+    (if (not (null? newlist))
+      (begin
+        (set! glcore:clipx1 (car (car newlist)))
+        (set! glcore:clipy1 (cadr (car newlist)))
+        (set! glcore:clipx2 (caddr (car newlist)))
+        (set! glcore:clipy2 (cadddr (car newlist)))))
+    (set! glcore:cliplist newlist)))
 
 (define glCoreClipPop glCoreClipPush)
 
@@ -252,13 +270,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (if entry  
       (let ((w (flo (if (fx= (fix w0) 0) (vector-ref entry 2) w0)))
             (h (flo (if (fx= (fix h0) 0) (vector-ref entry 3) h0))))
-      (if (null? glcore:cliplist) 
-         (apply glCore:TextureDrawUnClipped (append (list (flo x) (flo y) w h t (flo x1) (flo y1) (flo x2) (flo y2) (flo r)) 
-           (if (null? colors) '() (car colors))))
-         (apply glCore:TextureDrawClipped (append (list (flo x) (flo y) w h t (flo x1) (flo y1) (flo x2) (flo y2) (flo r)) 
-           (if (null? colors) '() (car colors)))))
-      ) (log-error "glCoreTextureDraw: unbound index " t))
-  ))
+        (if (null? glcore:cliplist)
+          (if (pair? colors)
+            (glCore:TextureDrawUnClipped
+              (flo x) (flo y) w h t (flo x1) (flo y1) (flo x2) (flo y2) (flo r)
+              (car colors))
+            (glCore:TextureDrawUnClipped
+              (flo x) (flo y) w h t (flo x1) (flo y1) (flo x2) (flo y2) (flo r)))
+          (if (pair? colors)
+            (glCore:TextureDrawClipped
+               (flo x) (flo y) w h t (flo x1) (flo y1) (flo x2) (flo y2) (flo r)
+               (car colors))
+            (glCore:TextureDrawClipped
+               (flo x) (flo y) w h t (flo x1) (flo y1) (flo x2) (flo y2) (flo r)))))
+      (log-error "glCoreTextureDraw: unbound index " t))))
 
 (define (glCore:TextureDrawUnClipped x y w h t @x1 @y1 @x2 @y2 r . colors)
   (glcore:log 5 "glCoreTextureDrawUnclipped enter")
@@ -309,22 +334,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (glRotatef r 0. 0. 1.)
         (_glCoreTextureBind t)
         (glCoreBegin GL_TRIANGLE_STRIP)
-        (if (null? colors) (begin
-          (glCoreVertex2f (fl- cw2) ch2 c@x1 c@y2)
-          (glCoreVertex2f cw2 ch2 c@x2 c@y2)
-          (glCoreVertex2f (fl- cw2) (fl- ch2) c@x1 c@y1)
-          (glCoreVertex2f cw2 (fl- ch2) c@x2 c@y1)
-        ) (begin
-          ;; TODO: color interpolation here!
-          (glCoreColor (car colors))
-          (glCoreVertex2f (fl- cw2) ch2 c@x1 c@y2)
-          (glCoreColor (cadr colors))
-          (glCoreVertex2f cw2 ch2 c@x2 c@y2)
-          (glCoreColor (caddr colors))
-          (glCoreVertex2f (fl- cw2) (fl- ch2) c@x1 c@y1)
-          (glCoreColor (cadddr colors))
-          (glCoreVertex2f cw2 (fl- ch2) c@x2 c@y1)
-        ))
+        (if (null? colors)
+          (begin
+            (glCoreVertex2f (fl- cw2) ch2 c@x1 c@y2)
+            (glCoreVertex2f cw2 ch2 c@x2 c@y2)
+            (glCoreVertex2f (fl- cw2) (fl- ch2) c@x1 c@y1)
+            (glCoreVertex2f cw2 (fl- ch2) c@x2 c@y1)
+          )
+          (let ((colors (list->vector colors)))
+            ;; TODO: color interpolation here!
+            (glCoreColor (vector-ref colors 0))
+            (glCoreVertex2f (fl- cw2) ch2 c@x1 c@y2)
+            (glCoreColor (vector-ref colors 1))
+            (glCoreVertex2f cw2 ch2 c@x2 c@y2)
+            (glCoreColor (vector-ref colors 2))
+            (glCoreVertex2f (fl- cw2) (fl- ch2) c@x1 c@y1)
+            (glCoreColor (vector-ref colors 3))
+            (glCoreVertex2f cw2 (fl- ch2) c@x2 c@y1)
+          ))
         (glCoreEnd)
         (glPopMatrix)
   )))
@@ -338,24 +365,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (glcore:log 5 "glCoreTexturePolygonDraw")
   (let ((entry (table-ref glCore:textures t #f)))
     (if entry
-      (let* ((cx (flo _cx)) (cy (flo _cy))
-             (r (flo _r)))     
+      (let* ((cx (flo _cx)) (cy (flo _cy)) (r (flo _r)))
         (glPushMatrix)
         (glTranslatef cx cy 0.)
         (glRotatef r 0. 0. 1.)
         (_glCoreTextureBind t)
         (glCoreBegin GL_TRIANGLE_STRIP)
-        (for-each (lambda (p) 
-            (let* ((x (fl- (car p) cx))
-                   (y (fl- (cadr p) cy))
-                   (tx (caddr p))
-                   (ty (cadddr p)))
+        (for-each
+          (lambda (p)
+            ;; TBD: should accept vectoralikes as point
+            (let* ((p (list->vector p))
+                   (x (fl- (vector-ref p 0) cx))
+                   (y (fl- (vector-ref p 1) cy))
+                   (tx (vector-ref p 2))
+                   (ty (vector-ref p 3)))
               (glCoreVertex2f x y tx ty)))
-           points)
-      (glCoreEnd)
-      (glPopMatrix)
-     ) (log-error "glCoreTexturePolygonDraw: unbound index " t))
-  ))
+            points)
+        (glCoreEnd)
+        (glPopMatrix))
+      (log-error "glCoreTexturePolygonDraw: unbound index " t))))
 
 ;; update texture data (for dynamic textures)
 ;; to use this, first modify data returned with glCoreTextureData..
