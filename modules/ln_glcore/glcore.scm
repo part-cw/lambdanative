@@ -194,17 +194,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (o2 (and o1x (cdr aux))))
     (let ((idx glCore:tidx)
           (pixeltype
-           (cond
-            ((fx= (u8vector-length data) (* w h)) GL_ALPHA)
-            ((fx= (u8vector-length data) (* 3 w h)) GL_RGB)
-            ((fx= (u8vector-length data) (* 4 w h)) GL_RGBA)
-            (else (log-error "glCoreTextureCreate: Invalid data range") #f)))
+            (cond
+              ((fx= (u8vector-length data) (* w h)) GL_ALPHA)
+              ((fx= (u8vector-length data) (* 3 w h)) GL_RGB)
+              ((fx= (u8vector-length data) (* 4 w h)) GL_RGBA)
+              (else (log-error "glCoreTextureCreate: Invalid data range") #f)))
           (interpolation (if o1x (car aux) GL_LINEAR))
           (wrap (if (pair? o2) (car o2) GL_CLAMP)))
-      (table-set!
-       glCore:textures idx
-       (##still-copy
-        (vector #f (u32vector 0) w h (##still-copy data) pixeltype interpolation wrap)))
+      (table-set! glCore:textures idx
+        (##still-copy (vector #f (u32vector 0) w h (##still-copy data) pixeltype interpolation wrap)))
       (set! glCore:tidx (fx+ glCore:tidx 1))
       idx)))
 
