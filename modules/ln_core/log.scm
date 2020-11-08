@@ -37,6 +37,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 ;; logger
 
+(c-declare  #<<end-of-c-declare
+#include <unistd.h>
+end-of-c-declare
+)
+
 ;; we are logging from different threads
 (define log:mutex (make-mutex 'log))
 (define (log:grab!) (mutex-lock! log:mutex))
