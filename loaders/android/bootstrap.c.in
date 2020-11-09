@@ -1,6 +1,6 @@
 /*
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -62,9 +62,22 @@ void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeEvent(JNIEnv* e, jobject 
 // JNI Hooks and Global Objects
 static jobject globalObj=NULL;
 static JavaVM* s_vm = NULL;
+static const char* app_directory_files = NULL;
+static const char* app_code_path = NULL;
 
-void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeInstanceInit(JNIEnv* env, jobject thiz){
-  globalObj = (*env)->NewGlobalRef(env,thiz); 
+void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeInstanceInit(JNIEnv* env, jobject thiz, jstring codePath, jstring directoryFiles){
+  globalObj = (*env)->NewGlobalRef(env,thiz);
+  app_directory_files  = strdup((*env)->GetStringUTFChars(env, directoryFiles, 0));
+  (*env)->ReleaseStringUTFChars(env, directoryFiles, NULL);
+  app_code_path = strdup((*env)->GetStringUTFChars(env, codePath, 0));
+  (*env)->ReleaseStringUTFChars(env, codePath, NULL);
+}
+
+char* android_getFilesDir() {
+  return (char*) app_directory_files;
+}
+char* android_getPackageCodePath() {
+  return (char*) app_code_path;
 }
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved){

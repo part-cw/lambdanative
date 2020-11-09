@@ -1,6 +1,6 @@
 /*
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2015, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -150,10 +150,11 @@ static void find_directories()
 #endif
 #if defined(ANDROID)
 // we put files on the sdcard, that's the only sane place (?)
+  extern char* android_getFilesDir();
   char path[1024];
   sprintf(path,"/sdcard/%s", SYS_APPNAME);
-  sys_appdir=strdup(path);
   sys_dir=strdup(path);
+  sys_appdir=android_getFilesDir();
 #endif
 #if defined(BB10) || defined(PLAYBOOK)
   char path[1024], cwd[1024];

@@ -42,8 +42,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (c-declare  #<<end-of-c-declare
 
 #include "LNCONFIG.h"
-
 #include "lambdanative.h"
+
+#ifdef ANDROID
+  extern char* android_getFilesDir();
+  extern char* android_getPackageCodePath();
+#else
+  char* android_getFilesDir(){
+    char* buf="";
+    return buf;
+  }
+  char* android_getPackageCodePath(){
+    char* buf="";
+    return buf;
+  }
+#endif
 
 void force_terminate()
 {
@@ -93,5 +106,9 @@ end-of-c-declare
 (cond-expand
  (gambit-c (if (string=? (system-platform) "android") (##heartbeat-interval-set! -1.)))
  (else (if (string=? (system-platform) "android") (##set-heartbeat-interval! -1.))))
+
+;; Gain access to Android app_directory_files and app_code_path
+(define android-get-filesdir (c-lambda () char-string "android_getFilesDir"))
+(define android-get-codepath (c-lambda () char-string "android_getPackageCodePath"))
 
 ;; eof

@@ -182,7 +182,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     mGLView = new xGLSurfaceView(this);
     // This may better before other pieces
-    nativeInstanceInit();
+    nativeInstanceInit(getApplicationContext().getPackageCodePath().toString(), getFilesDir().toString());
 
     mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
     checkOrRequestPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
@@ -257,7 +257,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     }
   }
 
-  native void nativeInstanceInit();
+  native void nativeInstanceInit(String packageCodePath, String filesDir);
 }
 
 class  xGLSurfaceView extends GLSurfaceView {
