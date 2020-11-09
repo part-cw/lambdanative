@@ -67,10 +67,10 @@ static const char* app_code_path = NULL;
 
 void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeInstanceInit(JNIEnv* env, jobject thiz, jstring codePath, jstring directoryFiles){
   globalObj = (*env)->NewGlobalRef(env,thiz);
-  app_directory_files  = strdup((*env)->GetStringUTFChars(env, directoryFiles, 0));
-  (*env)->ReleaseStringUTFChars(env, directoryFiles, NULL);
+  app_directory_files = strdup((*env)->GetStringUTFChars(env, directoryFiles, 0));
+  (*env)->ReleaseStringUTFChars(env, directoryFiles, app_directory_files);
   app_code_path = strdup((*env)->GetStringUTFChars(env, codePath, 0));
-  (*env)->ReleaseStringUTFChars(env, codePath, NULL);
+  (*env)->ReleaseStringUTFChars(env, codePath, app_code_path);
 }
 
 char* android_getFilesDir() {
