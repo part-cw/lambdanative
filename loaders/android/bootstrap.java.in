@@ -1,6 +1,6 @@
 /*
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -71,6 +71,7 @@ import android.hardware.SensorManager;
 @ANDROID_JAVA_ADDITIONS@
 
 public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@ SensorEventListener{
+  private android.view.View current_ContentView = null;
   private SensorManager mSensorManager;
   //Variable declarations needed for modules, e.g. gps
   @ANDROID_JAVA_VARIABLES@
@@ -138,7 +139,29 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   }
 
   @Override
+  public void setContentView(android.view.View view) {
+    if(current_ContentView != view) {
+      if(current_ContentView instanceof android.opengl.GLSurfaceView) {
+        ((android.opengl.GLSurfaceView)current_ContentView).onPause();
+      }
+      android.view.ViewParent parent0 = view.getParent();
+      if(parent0 instanceof android.view.ViewGroup) {
+        android.view.ViewGroup parent = (android.view.ViewGroup) parent0;
+        if(parent!=null) {
+          parent.removeView(current_ContentView);
+        }
+      }
+      current_ContentView = view;
+      super.setContentView(current_ContentView);
+      if(current_ContentView instanceof android.opengl.GLSurfaceView) {
+        ((android.opengl.GLSurfaceView)current_ContentView).onResume();
+      }
+    }
+  }
+
+  @Override
   protected void onCreate(Bundle savedInstanceState) {
+    current_ContentView = null;
     super.onCreate(savedInstanceState);
     Thread.setDefaultUncaughtExceptionHandler(
       new Thread.UncaughtExceptionHandler() {
@@ -158,21 +181,22 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     // prevent sleep
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     mGLView = new xGLSurfaceView(this);
-    setContentView(mGLView);
-    mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+    // This may better before other pieces
+    nativeInstanceInit();
 
+    mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
     checkOrRequestPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+    setContentView(mGLView); // MUST NOT run before nativeInstanceInit completed
 
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONCREATE@
 
     // start EVENT_IDLE 
     if(idle_tmScheduleRate > 0) idle_tm.scheduleAtFixedRate(idle_task, 0, idle_tmScheduleRate);
-
-    nativeInstanceInit();
   }
   @Override 
   protected void onDestroy() {
+    setContentView(mGLView);
     @ANDROID_JAVA_ONDESTROY@
     nativeEvent(14,0,0); // EVENT_CLOSE
     nativeEvent(127,0,0); // EVENT_TERMINATE
@@ -184,19 +208,21 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   }
   @Override
   protected void onPause() {
-    super.onPause();
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONPAUSE@
-    if (!isFinishing()) {
+    if (!isFinishing() && current_ContentView==mGLView) {
       mGLView.onPause();
     }
+    super.onPause();
   }
   @Override
   protected void onResume() {
     super.onResume();
+    if(current_ContentView==mGLView) {
+      mGLView.onResume();
+    }
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONRESUME@
-    mGLView.onResume();
   }
   @Override
   public void onAccuracyChanged(Sensor sensor, int accuracy) {
