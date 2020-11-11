@@ -87,6 +87,15 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved){
   return JNI_VERSION_1_4;
 }
 
+int JNI_forward_exception_to_gambit(JNIEnv*env) {
+  // TBD: actually forward, not only clear!
+  if((*env)->ExceptionCheck(env)) {
+    (*env)->ExceptionClear(env);
+    return 1;
+  }
+  return 0;
+}
+
 JNIEnv* GetJNIEnv(){
   int error=0;
   JNIEnv* env = NULL;
@@ -101,15 +110,6 @@ JNIEnv* GetJNIEnv(){
   if(s_vm) error=(*s_vm)->AttachCurrentThread(s_vm, &env, NULL);
   if(!error) error = JNI_forward_exception_to_gambit(env);
   return (error?NULL:env);
-}
-
-int JNI_forward_exception_to_gambit(JNIEnv*env) {
-  // TBD: actually forward, not only clear!
-  if((*env)->ExceptionCheck(env)) {
-    (*env)->ExceptionClear(env);
-    return 1;
-  }
-  return 0;
 }
 
 // url launcher ffi
