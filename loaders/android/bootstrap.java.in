@@ -107,17 +107,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     return true;
   }
 
-  @IF_ANDROIDAPI_GT_22@
-  @Override
-  public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-      super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-      //Must do something with results data or app will hang
-      int rc = requestCode;
-      String p = permissions[0];
-      int gr = grantResults[0];
-  }
-  /* end of IF_ANDROIDAPI_GT_22 */
-
   @Override
   public void startActivityForResult(Intent intent, int cont) {
       try {
@@ -185,11 +174,12 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     nativeInstanceInit(getApplicationContext().getPackageCodePath().toString(), getFilesDir().toString());
 
     mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
-    checkOrRequestPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
-    setContentView(mGLView); // MUST NOT run before nativeInstanceInit completed
 
-    // Additions needed by modules, e.g. gps
+    checkOrRequestPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+    // Additions and permissions needed by modules, e.g. gps
     @ANDROID_JAVA_ONCREATE@
+
+    setContentView(mGLView); // MUST NOT run before nativeInstanceInit completed
 
     // start EVENT_IDLE 
     if(idle_tmScheduleRate > 0) idle_tm.scheduleAtFixedRate(idle_task, 0, idle_tmScheduleRate);
