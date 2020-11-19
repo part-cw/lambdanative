@@ -170,6 +170,19 @@ static void find_directories()
 #endif
 
 #endif
+#if 0
+  sprintf(path,"%s/system", android_getFilesDir());
+  sys_dir=strdup(path);
+  sprintf(path,"%s/data", android_getFilesDir());
+  sys_appdir=strdup(path);
+#endif
+#if 1
+  sprintf(path,"/sdcard/%s", SYS_APPNAME);
+  sys_dir=strdup(path);
+  sys_appdir=android_getFilesDir();
+#endif
+
+#endif
 #if defined(BB10) || defined(PLAYBOOK)
   char path[1024], cwd[1024];
   getcwd(cwd,1023);

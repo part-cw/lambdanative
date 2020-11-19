@@ -1,3 +1,4 @@
+/* LN bootstrap -*- mode: jave; c-basic-offset: 2; -*- */
 /*
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2020, University of British Columbia
@@ -139,26 +140,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   }
 
   private android.view.View current_ContentView = null;
-  @Override
-  public void setContentView(android.view.View view) {
-    if(current_ContentView != view) {
-      // Note: this is a bit brain deas as it ONLY handles GLSurfaceView
-      if(current_ContentView instanceof android.opengl.GLSurfaceView) {
-        ((android.opengl.GLSurfaceView)current_ContentView).onPause();
-      }
-      android.view.ViewParent parent0 = view.getParent();
-      if(parent0 instanceof android.view.ViewGroup) {
-        android.view.ViewGroup parent = (android.view.ViewGroup) parent0;
-        if(parent!=null) { parent.removeView(current_ContentView); }
-      }
-      current_ContentView = view;
-      super.setContentView(current_ContentView);
-      if(current_ContentView instanceof android.opengl.GLSurfaceView) {
-        ((android.opengl.GLSurfaceView)current_ContentView).onResume();
-      }
-    }
-  }
-
   @Override
   public void setContentView(android.view.View view) {
     if(current_ContentView != view) {
