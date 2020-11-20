@@ -148,7 +148,7 @@ compile_payload_scm()
     scm_lctgt=`echo "$scm_ctgt" | sed 's/\.c$/\_\.c/'`
     scm_lotgt=`echo "$scm_lctgt" | sed 's/c$/o/'`
     if [ $scm_link_dirty = yes ] || [ ! -f $scm_lotgt ]; then
-      vecho "$SYS_GSC -link $scm_csrcs"
+      vecho "$SYS_GSC -warnings -link $scm_csrcs"
       scm_link_here=`pwd`
       cd `dirname $scm_lctgt`
       $SYS_GSC -link $scm_csrcs
