@@ -109,16 +109,12 @@ end-of-c-declare
 
 (cond-expand
  (android
-  (c-declare #<<EOF
-extern char* android_getFilesDir_info_get();
-char* android_getFilesDir_info()
-{
- return android_getFilesDir_info_get();
-}
-extern char* android_getPackageCodePath();
-EOF
-)
+  (c-declare "extern char* android_getPackageCodePath();")
   (define (android-PackageCodePath) ((c-lambda () char-string "android_getPackageCodePath"))))
  (else #!void))
+
+;; Gain access to Android app_directory_files and app_code_path
+(define android-get-filesdir (c-lambda () char-string "android_getFilesDir"))
+(define android-get-codepath (c-lambda () char-string "android_getPackageCodePath"))
 
 ;; eof
