@@ -56,6 +56,7 @@ compile_payload_scm()
     # prep the compiler options
     if [ $SYS_MODE = "debug" ]; then
       scm_opts="(declare (standard-bindings)(extended-bindings)(debug)(debug-location))"
+      scm_opts="${scm_opts}(define-cond-expand-feature debug)"
       payload_cdefs="$payload_cdefs -D___LIBRARY -D___PRIMAL"
     else
       scm_opts="(declare (block)(not safe)(standard-bindings)(extended-bindings))"
