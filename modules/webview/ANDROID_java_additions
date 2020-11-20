@@ -1,0 +1,158 @@
+/* webview -*- mode: java; c-basic-offset: 2; -*- */
+class SchemeWebView extends android.webkit.WebView {
+
+  LNjScheme.Scheme interpreter = null;
+  SchemeWebViewClient client = null;
+
+  public void ln_log(String msg) {
+    interpreter.eval(LNjScheme.Scheme.list(LNjScheme.Scheme.sym("log-message"), msg.toCharArray()));
+  }
+
+  private Object iapply(Object fn, Object arg1, Object args) {
+    return interpreter.eval(LNjScheme.Scheme.cons(fn, LNjScheme.Scheme.cons(arg1, args)));
+  }
+
+  private Object iapply(Object fn, Object arg1) { return iapply(fn, arg1, null); }
+
+  class SchemeWebViewClient extends android.webkit.WebViewClient {
+
+    public Object onloadresource = null;
+    public Object onpagefinished = null;
+    public Object onpagecomplete = null;
+
+    // LNjScheme.Scheme interpreter = null;
+    /*
+    SchemeWebViewClient(LNjScheme.Scheme interp) {
+      interpreter = interp;
+    }
+    */
+    public Object eval(Object expr) { return interpreter.eval(expr); }
+
+    public void onLoadResource(final android.webkit.WebView view, final String url) {
+      Object fn = onloadresource;
+      if(fn!=null) { iapply(fn, view, LNjScheme.Scheme.list(url.toCharArray())); }
+    }
+
+    public void onPageFinished(final android.webkit.WebView view, final String url) {
+      Object fn = onpagefinished;
+      if(fn!=null) { iapply(fn, view, LNjScheme.Scheme.list(url.toCharArray())); }
+      @IF_ANDROIDAPI_GT_22@
+      if(onpagecomplete!=null) {
+        view.postVisualStateCallback
+          (0,
+           new android.webkit.WebView.VisualStateCallback() {
+             public void onComplete(long requestId) {
+               interpreter.eval
+                 (LNjScheme.Scheme.cons
+                  (onpagecomplete,
+                   (LNjScheme.Scheme.list (view, url.toCharArray()))));
+             }});
+      }
+      /* end of IF_ANDROIDAPI_GT_22 */
+    }
+
+    public boolean shouldOverrideUrlLoading(final android.webkit.WebView view, String url) {
+      return false;
+    }
+
+    //*  These suppress the "favicon.ico" request
+    @Override
+    public android.webkit.WebResourceResponse shouldInterceptRequest(android.webkit.WebView view, String url) {
+      if(url.toLowerCase().contains("/favicon.ico")) {
+        return new android.webkit.WebResourceResponse("image/png", null, null);
+      }
+      return null;
+    }
+
+    @IF_ANDROIDAPI_GT_22@
+    @Override
+    public android.webkit.WebResourceResponse shouldInterceptRequest(android.webkit.WebView view, android.webkit.WebResourceRequest request) {
+      if(!request.isForMainFrame() && request.getUrl().getPath().endsWith("/favicon.ico")) {
+        return new android.webkit.WebResourceResponse("image/png", null, null);
+      }
+      return null;
+    }
+    /* end of IF_ANDROIDAPI_GT_22 */
+    // end of suppressing the "favicon.ico" request */
+  }
+
+  public SchemeWebView(android.content.Context context, LNjScheme.Scheme interp) {
+    super(context);
+    interpreter = interp;
+    client = new SchemeWebViewClient();
+    String http_proxy=java.lang.System.getenv("http_proxy");
+    String https_proxy=java.lang.System.getenv("https_proxy");
+    if(http_proxy!=null || https_proxy!=null) {
+      try {
+      ln_log("webview setting proxy to " + http_proxy /* + " and " + https_proxy*/);
+      int i = http_proxy.indexOf(':', 7);
+      String host = http_proxy.substring(7, i);
+      int port = Integer.parseInt(http_proxy.substring(i+1, http_proxy.length()));
+      if(!ProxySettings.setProxy(context, host, port)) {
+        ln_log("webview setting proxy FAILED");
+      }
+      /*
+      androidx.webkit.ProxyConfig.Builder pcb = new androidx.webkit.ProxyConfig.Builder();
+      if(http_proxy!=null) { pcb.addProxyRule(http_proxy); }
+      if(https_proxy!=null) { pcb.addProxyRule(https_proxy); }
+      // pcb.addDirect(); // if desired as fallback
+      */
+      } catch (Exception e) {
+        ln_log("Setting proxy failed: " + e);
+      }
+    }
+    setWebViewClient(client);
+  }
+
+  public Object SchemeSetProxy(Object args) {
+    return true; //NYI
+  }
+
+  public Object apply(LNjScheme.Scheme interpreter, Object args) {
+    Object key0 = LNjScheme.Scheme.first(args);
+    String key = null;
+    if(key0 instanceof String) { key = (String)key0; }
+    if(key == null) {
+      return LNjScheme.Scheme.error("webview: dispatch key missing");
+    } else if( key == "load" ) {
+      setVisibility(android.view.View.VISIBLE);
+      Object a1 = LNjScheme.Scheme.second(args);
+      if(a1 instanceof char[]) { loadUrl(new String((char[])a1)); return true; }
+      else { return LNjScheme.Scheme.error("webview: not a URL " + a1); }
+    } else if( key == "redraw" ) {
+      ln_log("webview redraw");
+      setVisibility(android.view.View.VISIBLE); //onResume();// onDraw(); // that might have to be something else!
+      onPause();
+      onResume();
+      return true;
+    } else if( key == "setproxy" ) {
+      return SchemeSetProxy(LNjScheme.Scheme.rest(args));
+    } else if( key == "onloadresource" ) {
+      client.onloadresource = LNjScheme.Scheme.second(args);
+      return true;
+    } else if( key=="onpagecomplete" ) {
+      client.onpagecomplete = LNjScheme.Scheme.second(args);
+      return true;
+    } else if( key=="onpagefinished" ) {
+      client.onpagefinished = LNjScheme.Scheme.second(args);
+      return true;
+    } else {
+      return LNjScheme.Scheme.error("webview: unknown key: " + key);
+    }
+  }
+
+  private static LNMethod lnmethod = new LNMethod("webview!") {
+      public Object apply(LNjScheme.Scheme interpreter, Object args) {
+        if(args instanceof LNjScheme.Pair) {
+          Object a1 = LNjScheme.Scheme.first(args);
+          if(a1 instanceof SchemeWebView) {
+            SchemeWebView obj = (SchemeWebView)a1;
+            return obj.apply(obj.interpreter, LNjScheme.Scheme.rest(args));
+          } else {
+            return LNjScheme.Scheme.error("webview: not a webview " + a1);
+          }
+        } else { return LNjScheme.Scheme.error("webview: mising arguments"); }
+      }};
+
+  public static LNMethod proc() { return lnmethod; }
+}

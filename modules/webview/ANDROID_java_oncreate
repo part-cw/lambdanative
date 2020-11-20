@@ -1,0 +1,42 @@
+LNjSchemeEvaluate
+    (LNjScheme.Scheme.cons
+     (LNjScheme.Scheme.sym("define"),
+      LNjScheme.Scheme.list
+      (LNjScheme.Scheme.sym("webview!"), SchemeWebView.proc())));
+
+LNjSchemeEvaluate
+    (LNjScheme.Scheme.cons
+     (LNjScheme.Scheme.sym("define"),
+      LNjScheme.Scheme.list
+      (LNjScheme.Scheme.sym("make-webview"),
+       new LNMethod("make-webview") {
+           public Object apply(LNjScheme.Scheme interpreter, Object args) {
+               if(args instanceof LNjScheme.Pair) {
+                   Object a1 = null;
+                   a1 = LNjScheme.Scheme.first(args);
+                   if(a1 instanceof android.content.Context) {
+                       return new SchemeWebView((android.content.Context)a1, LNjSchemeSession);
+                   }
+               }
+               return LNjScheme.Scheme.error("make-webview" + args);
+           }}
+       )));
+
+LNjSchemeEvaluate
+// Dummy
+    (LNjScheme.Scheme.cons
+     (LNjScheme.Scheme.sym("define"),
+      LNjScheme.Scheme.list
+      (LNjScheme.Scheme.sym("webview-set-proxy!"), LNjScheme.Scheme.sym("list"))));
+
+/*
+    (lnjscheme-eval
+          `(let ((String (lambda (x) (new "java.lang.String" x)))
+                 (setProperty (method "setProperty" "java.lang.System" "java.lang.String" "java.lang.String")))
+             (let ((host (String ,(if (= v 0) "" "127.0.0.1")))
+                   (port (String ,(if (= v 0) "" (number->string v)))))
+               (setProperty (String "http.ProxyHost") host)
+               (setProperty (String "http.ProxyPort") port)
+               (setProperty (String "https.ProxyHost") host)
+               (setProperty (String "https.ProxyPort") port))))
+*/
