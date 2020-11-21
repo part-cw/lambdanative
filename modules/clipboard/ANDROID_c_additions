@@ -12,7 +12,7 @@ int android_clipboard_copy(char *str){
   return 0;
 }
 
-char *android_clipboard_paste(){
+const char *android_clipboard_paste(){
   JNIEnv *env = GetJNIEnv();
   jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
   if (env&&globalObj){
