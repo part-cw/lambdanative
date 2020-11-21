@@ -177,8 +177,15 @@ else
       if [ ! -s "$v4file" ]; then
         v4aar=`find $v4dir -name support-v4*.aar`
         if [ -s "$v4aar" ]; then
-          unzip $v4aar classes.jar -d $v4dir > /dev/null
-          v4file=`find $v4dir -name classes.jar`
+          if [ -w $v4dir ]; then
+            echo "WARNING: extracting classes from" $v4aar " in directory $v4dir"
+            unzip $v4aar classes.jar -d $v4dir > /dev/null
+            v4file=`find $v4dir -name classes.jar`
+          else
+            echo Directory $v4dir "is not writable, please run the follwong manually:"
+            echo '"' unzip $v4aar classes.jar -d $v4dir "'"
+            exit 1
+          fi
         fi
       fi
       # If a classes.jar file has been found, copy it to libs
@@ -434,5 +441,11 @@ if [ -d  $ANDROIDSDK/tools.gradle ]; then
   rm $ANDROIDSDK/tools
   ln -s $ANDROIDSDK/tools.gradle $ANDROIDSDK/tools
 fi
+
+# Local Variables:
+# mode: shell-script
+# sh-basic-offset: 2
+# comment-column: 0
+# End:
 
 #eof
