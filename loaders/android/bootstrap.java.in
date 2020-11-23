@@ -144,9 +144,9 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
       }
       current_ContentView = view;
       super.setContentView(current_ContentView);
-      if(current_ContentView instanceof android.opengl.GLSurfaceView) {
-        ((android.opengl.GLSurfaceView)current_ContentView).onResume();
-      }
+    }
+    if(current_ContentView instanceof android.opengl.GLSurfaceView) {
+      ((android.opengl.GLSurfaceView)current_ContentView).onResume();
     }
   }
 
@@ -171,17 +171,18 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     WindowManager.LayoutParams.FLAG_FULLSCREEN);
     // prevent sleep
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-    mGLView = new xGLSurfaceView(this);
-    // This may better before other pieces
-    nativeInstanceInit(getApplicationContext().getPackageCodePath().toString(), getFilesDir().toString());
+    if(mGLView==null) { // once only!
+      mGLView = new xGLSurfaceView(this);
+      // This may better before other pieces
+      nativeInstanceInit(getApplicationContext().getPackageCodePath().toString(), getFilesDir().toString());
+      setContentView(mGLView); // MUST NOT run before nativeInstanceInit completed
+    }
 
     mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
 
     checkOrRequestPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
     // Additions and permissions needed by modules, e.g. gps
     @ANDROID_JAVA_ONCREATE@
-
-    setContentView(mGLView); // MUST NOT run before nativeInstanceInit completed
 
     // start EVENT_IDLE
     if(idle_tmScheduleRate > 0) idle_tm.scheduleAtFixedRate(idle_task, 0, idle_tmScheduleRate);
@@ -234,7 +235,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   @ANDROID_JAVA_ACTIVITYADDITIONS@
 
   // Native event bindings
-  GLSurfaceView mGLView;
+  static GLSurfaceView mGLView = null;
   native void nativeEvent(int t, int x, int y);
   static { System.loadLibrary("payloadshared"); }
   // OpenURL code
