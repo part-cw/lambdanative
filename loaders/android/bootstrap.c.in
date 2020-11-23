@@ -46,6 +46,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <LNCONFIG.h>
 
+#define LAMBDANATIVE_JNI_VERSION JNI_VERSION_1_4
+
 @ANDROID_C_DEFINES@
 
 // event hook
@@ -84,7 +86,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved){
   JNIEnv *env;
   s_vm=vm;
 //  if ((*s_vm)->GetEnv(s_vm,(void**) &env, JNI_VERSION_1_4) != JNI_OK) return -1;
-  return JNI_VERSION_1_4;
+  return LAMBDANATIVE_JNI_VERSION;
 }
 
 int JNI_forward_exception_to_gambit(JNIEnv*env) {
@@ -97,7 +99,7 @@ int JNI_forward_exception_to_gambit(JNIEnv*env) {
 }
 
 JNIEnv* GetJNIEnv(){
-  int error=0;
+  jint error=0;
   JNIEnv* env = NULL;
   /* static `env` does NOT work!  Once in a while we should ponder if
      it still does not work or why.
@@ -107,9 +109,20 @@ JNIEnv* GetJNIEnv(){
     return env;
   }
   */
-  if(s_vm) error=(*s_vm)->AttachCurrentThread(s_vm, &env, NULL);
-  if(!error) error = JNI_forward_exception_to_gambit(env);
-  return (error?NULL:env);
+  if(s_vm) {
+    // some say that despite AttachCurrentThread being a no-op, one
+    // may save overhead when checking first via GetEnv, so we do.
+    error = (*s_vm)->GetEnv(s_vm, &env, LAMBDANATIVE_JNI_VERSION);
+    if(error==JNI_EDETACHED) {
+      error=(*s_vm)->AttachCurrentThreadAsDaemon(s_vm, &env, NULL);
+    }
+  }
+  if(error!=JNI_OK) {
+    JNI_forward_exception_to_gambit(env);
+    return NULL;
+  } else {
+    return env;
+  }
 }
 
 // url launcher ffi
