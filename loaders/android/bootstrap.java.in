@@ -71,7 +71,7 @@ import android.hardware.SensorManager;
 @ANDROID_JAVA_ADDITIONS@
 
 public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@ SensorEventListener{
-  private android.view.View current_ContentView = null;
+  private static android.view.View current_ContentView = null;
   private SensorManager mSensorManager;
   //Variable declarations needed for modules, e.g. gps
   @ANDROID_JAVA_VARIABLES@
@@ -141,16 +141,15 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
         }
       }
       current_ContentView = view;
-      super.setContentView(current_ContentView);
-      if(current_ContentView instanceof android.opengl.GLSurfaceView) {
-        ((android.opengl.GLSurfaceView)current_ContentView).onResume();
-      }
+    }
+    super.setContentView(current_ContentView);
+    if(current_ContentView instanceof android.opengl.GLSurfaceView) {
+      ((android.opengl.GLSurfaceView)current_ContentView).onResume();
     }
   }
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-    current_ContentView = null;
     super.onCreate(savedInstanceState);
     Thread.setDefaultUncaughtExceptionHandler(
       new Thread.UncaughtExceptionHandler() {
@@ -169,9 +168,11 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     WindowManager.LayoutParams.FLAG_FULLSCREEN);
     // prevent sleep
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-    mGLView = new xGLSurfaceView(this);
-    // This may better before other pieces
-    nativeInstanceInit(getApplicationContext().getPackageCodePath().toString(), getFilesDir().toString());
+    if(mGLView==null) { // once only!
+      mGLView = new xGLSurfaceView(this);
+      // This may better before other pieces
+      nativeInstanceInit(getApplicationContext().getPackageCodePath().toString(), getFilesDir().toString());
+    }
 
     mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
 
@@ -179,8 +180,9 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     // Additions and permissions needed by modules, e.g. gps
     @ANDROID_JAVA_ONCREATE@
 
-    setContentView(mGLView); // MUST NOT run before nativeInstanceInit completed
-
+    // MUST NOT run before nativeInstanceInit completed
+    // and MUST NOT run before permission checks
+    setContentView(current_ContentView==null ? mGLView : current_ContentView);
     // start EVENT_IDLE 
     if(idle_tmScheduleRate > 0) idle_tm.scheduleAtFixedRate(idle_task, 0, idle_tmScheduleRate);
   }
@@ -192,23 +194,28 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     nativeEvent(127,0,0); // EVENT_TERMINATE
     super.onDestroy();
   }
+  private void onPauseOrStop() {
+    // Additions needed by modules, e.g. gps
+    @ANDROID_JAVA_ONPAUSE@
+    if (!isFinishing() && current_ContentView==mGLView && mGLView!=null) {
+      mGLView.onPause();
+    }
+  }
   @Override
   protected void onStop() {
+    Log.e("@SYS_PACKAGE_DOT@", "onStop");
+    onPauseOrStop();
     super.onStop();
   }
   @Override
   protected void onPause() {
-    // Additions needed by modules, e.g. gps
-    @ANDROID_JAVA_ONPAUSE@
-    if (!isFinishing() && current_ContentView==mGLView) {
-      mGLView.onPause();
-    }
+    onPauseOrStop();
     super.onPause();
   }
   @Override
   protected void onResume() {
     super.onResume();
-    if(current_ContentView==mGLView) {
+    if(current_ContentView==mGLView && mGLView!=null) {
       mGLView.onResume();
     }
     // Additions needed by modules, e.g. gps
@@ -232,7 +239,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   @ANDROID_JAVA_ACTIVITYADDITIONS@
 
   // Native event bindings
-  GLSurfaceView mGLView;
+  static GLSurfaceView mGLView = null;
   native void nativeEvent(int t, int x, int y);
   static { System.loadLibrary("payloadshared"); }
   // OpenURL code
@@ -259,6 +266,7 @@ class  xGLSurfaceView extends GLSurfaceView {
     setRenderer(renderer);
   }
   public boolean onTouchEvent(final MotionEvent event) {
+    super.onTouchEvent(event);
     t=0;
     x=(int)event.getX(); y=(int)event.getY();
     switch (event.getAction()&MotionEvent.ACTION_MASK) {
