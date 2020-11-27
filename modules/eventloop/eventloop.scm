@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2016, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -75,6 +75,7 @@ end-of-c-declare
 (define EVENT_BUTTON3DOWN ((c-lambda () int "___result = EVENT_BUTTON3DOWN;")))
 (define EVENT_CLOSE ((c-lambda () int "___result = EVENT_CLOSE;")))
 (define EVENT_REDRAW ((c-lambda () int "___result = EVENT_REDRAW;")))
+(define EVENT_JSCM_RESULT ((c-lambda () int "___result = EVENT_JSCM_RESULT;")))
 (define EVENT_INIT ((c-lambda () int "___result = EVENT_INIT;")))
 (define EVENT_TERMINATE ((c-lambda () int "___result = EVENT_TERMINATE;")))
 (define EVENT_BATTERY ((c-lambda () int "___result = EVENT_BATTERY;")))
@@ -148,9 +149,35 @@ end-of-c-declare
 (define (event-push t x y)
   (set! event:fifo (append event:fifo (list (list t x y)))))
 (define (event-pop)
-  (if (fx> (length event:fifo) 0)
-     (let ((ret (car event:fifo)))
-        (set! event:fifo (cdr event:fifo)) ret) #f))
+  (if (null? event:fifo)
+    #f
+    (let ((ret (car event:fifo)))
+      (set! event:fifo (cdr event:fifo))
+      ret)))
+
+(define on-jscm-result
+  (let ((mux (make-mutex 'on-jscm-result)))
+    (mutex-specific-set! mux #f)
+    (lambda args
+      (cond
+        ((null? args)
+          ;; return receiver procedure
+          (lambda (t x y)
+            (let ((proc (mutex-specific mux)))
+              (when proc
+                (mutex-specific-set! mux #f)
+                (proc t x y)
+                (mutex-unlock! mux)))))
+        ;; (<test> => <recipient>) is a clause, where if <test> evaluates to #t,
+        ;;    <recipient> is evaluated as (<recipient> <result of test>)
+        ((let ((proc (car args))) (and (procedure? proc) proc))
+         =>
+         ;;set 'proc' as inner receiver
+         (lambda (proc)
+           (mutex-lock! mux)
+           (mutex-specific-set! mux proc)
+           #t))
+        (else (log-error "illegal arguments" on-jscm-result args))))))
 
 (define eventloop:mutex (make-mutex 'eventloop))
 (define (eventloop:grab!) (mutex-lock! eventloop:mutex))
@@ -180,6 +207,8 @@ end-of-c-declare
          (hook:event t (if app:scale? (fix (* app:xscale x)) x)
                        (if app:scale? (fix (* app:yscale y)) y))
       )
+      ((fx= t EVENT_JSCM_RESULT)
+        ((on-jscm-result) t x y))
       ((fx= t EVENT_INIT)
         ;; prevent multiple inits
         (if app:mustinit (begin
