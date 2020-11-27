@@ -12,54 +12,41 @@
   )
  (else))
 
-(define test-file-name "lnjstest.scm")
-(define test-path-name (string-append (system-directory) (system-pathseparator) test-file-name))
-
-(include "lnjscheme.scm")
-
-(define (exception-->printable exc)
-  (if (os-exception? exc)
-      (list 'OS-EXCEPTION (os-exception-procedure exc)
-	    (os-exception-arguments exc)
-	    (os-exception-code exc)
-	    (err-code->string (os-exception-code exc))
-	    (os-exception-message exc))
-      exc))
-
 (define (try-LNjScheme)
-  (cond-expand
-   (android
-    (define (evl expr) (force (lnjscheme-future expr))))
-   (else (define evl eval)))
-  (define exprs '())
   (define (try-expr expr)
     (display "Input:\n")
     (pretty-print expr)
-    (newline)
+      (let ((result (lnjscheme-eval expr)))
+      (display "Result: ")
+      (pretty-print result)))
+  (define (try-exprs exprs)
     (with-exception-catcher
      (lambda (exn)
        (display "EXN: ")
-       (display (exception-->printable exn))
+       (display-exception exn)
        (newline))
-     (lambda ()
-       (let ((result (evl expr)))
-         (display "Result: ")
-         (write result)
-         (newline)))))
-  ;; Important: We need to return from the button's action
-  ;; immediately, hence running the actual change in background
-  ;; thread.
-  (thread-start!
-   (make-thread
-    (lambda ()
-      (try-expr `(define (android-app-class) ,(android-app-class)))
-      (let ((fn test-path-name))
-        (if (file-exists? fn) (set! exprs (call-with-input-file fn read-all)) (set! exprs (list "failed to find" fn)))
-        (dbset
-         'testresults
-         (with-output-to-string (lambda () (for-each try-expr exprs))))))
-    'LNjScheme-worker))
+     (lambda () (for-each try-expr (force exprs)))))
+  (define (file-result fn)
+    (with-output-to-string
+      (lambda ()
+        (try-exprs
+         (delay
+           (let ((exprs (call-with-input-file fn read-all))) ;; 1st read them all
+             ;; FIXME: Do we need this here?
+             (set! exprs (cons `(define (android-app-class) ,(android-app-class)) exprs))
+             exprs))))))
+  (define (try-file! fn)
+    (thread-start! (make-thread (lambda () (dbset 'testresults (file-result fn))) fn)))
+  (let ((fn test-path-name))
+    ;; Important: We must return from the button's action immediately,
+    ;; hence running the actual change in background thread.
+    (if (file-exists? fn)
+        (try-file! fn)
+        (dbset 'testresults (string-append "failed to find file: " fn))))
   #f)
+
+(define test-file-name "lnjstest.scm")
+(define test-path-name (string-append (system-directory) (system-pathseparator) test-file-name))
 
 (define (make-uiforms)
   `(
@@ -67,6 +54,11 @@
     "LNjScheme"
     #f
     #f
+    (button
+     text "Try Webview" action
+     ,(lambda ()
+        (webview-launch! "http://www.lambdanative.org" via: 'webview)
+        #f))
     (spacer)
     (label text ,(string-append "Push Button to load '" test-path-name "'"))
     (spacer)
@@ -111,9 +103,6 @@
    (##thread-heartbeat!)
    (thread-yield!)
    (cond
-    ;; EVENT #126: retrieve and dispatch LNjScheme result.
-    ;; TBD: move this out of the application into LN core.
-    ((eq? t 126) (LNjScheme-result))
     ((= t EVENT_KEYPRESS) (if (= x EVENT_KEYESCAPE) (terminate)))
     (else (glgui-event gui t x y))))
  ;; termination

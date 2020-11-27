@@ -1,0 +1,122 @@
+LNjSchemeSession = new LNjScheme.Scheme(new String[0]){
+  String TAG = "calculator";
+
+  public void ln_log(String msg) {
+    String m = ln_log_date_formatter.format(new java.util.Date()) + msg;
+    System.err.println(TAG + ": " + m);
+    Log.d(TAG, m);
+  }
+};
+
+LNjSchemeEvaluateNoSync
+  (LNjScheme.Scheme.cons
+   (LNjScheme.Scheme.sym("define"),
+    LNjScheme.Scheme.list
+    (LNjScheme.Scheme.sym("ln-this"),
+     this
+     )));
+
+LNjSchemeEvaluateNoSync
+  (LNjScheme.Scheme.cons
+   (LNjScheme.Scheme.sym("define"),
+    LNjScheme.Scheme.list
+    (LNjScheme.Scheme.sym("ln-mglview"),
+     mGLView
+     )));
+
+LNjSchemeEvaluateNoSync
+  (LNjScheme.Scheme.cons
+   (LNjScheme.Scheme.sym("define"),
+    LNjScheme.Scheme.list
+    (LNjScheme.Scheme.sym("log-message"),
+     new LNMethod("log-message") {
+       public Object apply(LNjScheme.Scheme interpreter, Object args) {
+         String str = null;
+         if(args instanceof LNjScheme.Pair) {
+           Object a1 = null;
+           a1 = LNjScheme.Scheme.first(args);
+           if(a1 instanceof String) { str = (String)a1; }
+           else if(a1 instanceof char[]) { str = new String((char[])a1); }
+           else { str = "log-message: message not convertible"; }
+         } else {
+           str = "log-message: args not a list";
+         }
+         ln_log(str);
+         return null;
+       }}
+     )));
+
+LNjSchemeEvaluateNoSync
+  (LNjScheme.Scheme.cons
+   (LNjScheme.Scheme.sym("define"),
+    LNjScheme.Scheme.list
+    (LNjScheme.Scheme.sym("bound?"),
+     new LNMethod("bound?") {
+       public Object apply(LNjScheme.Scheme interpreter, Object args) {
+         if(args instanceof LNjScheme.Pair) {
+           Object a1 = null;
+           a1 = LNjScheme.Scheme.first(args);
+           if(a1 instanceof String) {
+             String sym = (String)a1;
+             try {
+               Object val = interpreter.eval(sym);
+               return true;
+             } catch (RuntimeException e) { return false; }
+           } else {
+             return LNjScheme.Scheme.error("bound? : not a symbol " + a1);
+           }
+         } else {
+           return LNjScheme.Scheme.error("bound? : missing argument");
+         }
+       }}
+     )));
+
+LNjSchemeEvaluateNoSync
+  (LNjScheme.Scheme.cons
+   (LNjScheme.Scheme.sym("define"),
+    LNjScheme.Scheme.list
+    (LNjScheme.Scheme.sym("send-event!"),
+     new LNMethod("send-event!") {
+       public Object apply(LNjScheme.Scheme interpreter, Object args) {
+         String str = null;
+         if(args instanceof LNjScheme.Pair) {
+           Object a1 = null, a2 = null, a3 = null;;
+           a1 = LNjScheme.Scheme.first(args);
+           a2 = LNjScheme.Scheme.rest(args);
+           a3 = LNjScheme.Scheme.rest(a2);
+           a2 = LNjScheme.Scheme.first(a2);
+           a3 = LNjScheme.Scheme.first(a3);
+           // Maybe we should accept symbolic event names too?
+           int ia1 = (a1 instanceof Number) ? (int)LNjScheme.Scheme.num(a1) : 21;
+           int ia2 = (a2 instanceof Number) ? (int)LNjScheme.Scheme.num(a2) : 0;
+           int ia3 = (a3 instanceof Number) ? (int)LNjScheme.Scheme.num(a3) : 0;
+           nativeEvent(ia1, ia2, ia3);
+           return LNjScheme.Scheme.TRUE;
+         } else {
+           nativeEvent(64, 0, 0); // debug
+           return LNjScheme.Scheme.TRUE;
+         }
+       }}
+     )));
+
+LNjSchemeEvaluateNoSync
+  (LNjScheme.Scheme.cons
+   (LNjScheme.Scheme.sym("define"),
+    LNjScheme.Scheme.list
+    (LNjScheme.Scheme.sym("on-back-pressed"),
+     new LNMethod("on-back-pressed") {
+       public Object apply(LNjScheme.Scheme interpreter, Object args) {
+         String str = null;
+         if(args instanceof LNjScheme.Pair) {
+           Object a1 = null;
+           a1 = LNjScheme.Scheme.first(args);
+           if(a1 instanceof LNjScheme.Procedure) { onBackPressedHandler = (LNjScheme.Procedure)a1; }
+           else if(!LNjScheme.Scheme.truth(a1)) { onBackPressedHandler = null; }
+           else { LNjScheme.Scheme.error("on-back-pressed: argument not a procedure or #f"); }
+           return LNjScheme.Scheme.TRUE;
+         } else {
+           if(onBackPressedHandler==null) { return LNjScheme.Scheme.FALSE; }
+           else { return onBackPressedHandler; }
+         }
+       }}
+     )));

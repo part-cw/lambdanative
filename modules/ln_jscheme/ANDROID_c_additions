@@ -1,0 +1,78 @@
+const char* android_app_class() { return "@SYS_PACKAGE_DOT@.@SYS_APPNAME@"; } // for jscheme
+
+/* lnjscheme_eval
+ *
+ * Evaluate input and return result.  Due to Android limitations
+ * wrt. thread and evaluation context, calls might fail.  E.g., Views
+ * may only be changed by the Java thread which created them.  Use the
+ * asynchronous version in those cases.
+ */
+const char* lnjscheme_eval(const char* input){
+  static const char *str = NULL;
+  static jstring jstr = NULL;
+  JNIEnv *env = GetJNIEnv();
+  if (env&&globalObj){
+    jstring jin = (*env)->NewStringUTF(env,input);
+    jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
+    jmethodID method = main_class ? (*env)->GetMethodID(env, main_class, "LNjSchemeCall", "(Ljava/lang/String;)Ljava/lang/String;") : NULL;
+    if(main_class) (*env)->DeleteLocalRef(env, main_class);
+    if(!method) {
+      JNI_forward_exception_to_gambit(env);
+      return "E \"JNI: method LNjSchemeCall not found\"";
+    }
+    if(jstr) { (*env)->ReleaseStringUTFChars(env, jstr, str); jstr = NULL; }
+    jstr = (jstring) (*env)->CallObjectMethod(env, globalObj, method, jin);
+    (*env)->DeleteLocalRef(env, method);
+    (*env)->DeleteLocalRef(env, jin);
+    str  = jstr ? (*env)->GetStringUTFChars(env, jstr, 0) : NULL;
+    // (*env)->ReleaseStringUTFChars(env, jstr, str);  // we do it upon next call
+    JNI_forward_exception_to_gambit(env);
+  }
+  return str;
+}
+
+void lnjscheme_eval_send(const char* input){
+  JNIEnv *env = GetJNIEnv();
+  if (env&&globalObj){
+    jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
+    jmethodID method = main_class ? (*env)->GetMethodID(env, main_class, "LNjSchemeSend", "(Ljava/lang/String;)V") : NULL;
+    if(main_class) (*env)->DeleteLocalRef(env, main_class);
+    if(!method) {
+      JNI_forward_exception_to_gambit(env);
+      return; // "E \"JNI: method LNjSchemeSend not found\"";
+    } else {
+      jstring jin = (*env)->NewStringUTF(env,input);
+      (*env)->CallVoidMethod(env, globalObj, method, jin);
+      (*env)->DeleteLocalRef(env, method);
+      (*env)->DeleteLocalRef(env, jin);
+      JNI_forward_exception_to_gambit(env);
+    }
+  }
+}
+
+// There is likely a way to do this better using only a Java->C call
+// to deposit the result in a global variable.  I just don't know yet
+// how to do this.
+const char* lnjscheme_eval_receive_result()
+{
+  static const char *str = NULL;
+  static jstring jstr = NULL;
+  JNIEnv *env = GetJNIEnv();
+  if (env&&globalObj){
+    if(jstr) { (*env)->ReleaseStringUTFChars(env, jstr, str); jstr = NULL; }
+    jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
+    jmethodID method = main_class ? (*env)->GetMethodID(env, main_class, "LNjSchemeResult", "()Ljava/lang/String;") : NULL;
+    if(main_class) (*env)->DeleteLocalRef(env, main_class);
+    if(!method) {
+      JNI_forward_exception_to_gambit(env);
+      return "E \"JNI: method LNjSchemeResult not found\"";
+    } else {
+      jstr = (jstring) (*env)->CallObjectMethod(env, globalObj, method);
+      str  = jstr ? (*env)->GetStringUTFChars(env, jstr, 0) : NULL;
+      // (*env)->ReleaseStringUTFChars(env, jstr, str);  // we do it upon next call
+      (*env)->DeleteLocalRef(env, method);
+      JNI_forward_exception_to_gambit(env);
+    }
+  }
+  return str;
+}
