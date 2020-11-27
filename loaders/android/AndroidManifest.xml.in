@@ -21,7 +21,7 @@
     @ANDROID_XML_RECEIVERS@
     @ANDROID_XML_SERVICES@
   </application>
-@ANDROID_XML_PERMISSIONS@
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+@ANDROID_XML_PERMISSIONS@
 </manifest> 
 # eof

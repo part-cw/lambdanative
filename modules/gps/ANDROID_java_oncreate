@@ -2,11 +2,9 @@ locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
 Criteria criteria = new Criteria();
 if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)){ 
   criteria.setAccuracy(Criteria.ACCURACY_FINE);
-  checkOrRequestPermission(android.Manifest.permission.ACCESS_FINE_LOCATION);
 } else {
   criteria.setPowerRequirement(Criteria.POWER_LOW);
   criteria.setAccuracy(Criteria.ACCURACY_COARSE);
-  checkOrRequestPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION);
 }
 provider = locationManager.getBestProvider(criteria, false);
 Location location = locationManager.getLastKnownLocation(provider);

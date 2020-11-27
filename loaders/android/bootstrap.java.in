@@ -45,6 +45,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.BroadcastReceiver;
 import android.content.res.Configuration;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageInfo;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.PowerManager;
@@ -102,6 +104,29 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     if(!ln_checkSelfPermission(permission)) {
       requestPermissions(new String[] { permission }, 1);
       return ln_checkSelfPermission(permission);
+    }
+    /* end of IF_ANDROIDAPI_GT_22 */
+    return true;
+  }
+
+  public boolean requestAllPermissions() {
+    @IF_ANDROIDAPI_GT_22@
+    PackageManager pm = getPackageManager();
+    try
+    {
+        PackageInfo packageInfo = pm.getPackageInfo(getPackageName(), PackageManager.GET_PERMISSIONS);
+        String[] requestedPermissions = null;
+        if (packageInfo != null)
+            requestedPermissions = packageInfo.requestedPermissions;
+
+        if (requestedPermissions != null && requestedPermissions.length > 0)
+          requestPermissions(requestedPermissions, 1);
+    }
+    catch (PackageManager.NameNotFoundException e)
+    {
+        System.err.print("requestAllPermissions error: " + e);
+        e.printStackTrace(System.err);
+        return false;
     }
     /* end of IF_ANDROIDAPI_GT_22 */
     return true;
@@ -176,16 +201,19 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
 
     mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
 
-    checkOrRequestPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
-    // Additions and permissions needed by modules, e.g. gps
-    @ANDROID_JAVA_ONCREATE@
+    requestAllPermissions();
 
     // MUST NOT run before nativeInstanceInit completed
     // and MUST NOT run before permission checks
     setContentView(current_ContentView==null ? mGLView : current_ContentView);
+
+    // Additions needed by modules, e.g. gps
+    @ANDROID_JAVA_ONCREATE@
+
     // start EVENT_IDLE 
     if(idle_tmScheduleRate > 0) idle_tm.scheduleAtFixedRate(idle_task, 0, idle_tmScheduleRate);
   }
+
   @Override 
   protected void onDestroy() {
     setContentView(mGLView);
