@@ -1,3 +1,4 @@
+/* LN bootstrap -*- mode: java; c-basic-offset: 2; -*- */
 /*
 LambdaNative - a cross-platform Scheme framework
 Copyright (c) 2009-2020, University of British Columbia
@@ -154,19 +155,17 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
 
   @Override
   public void setContentView(android.view.View view) {
-    if(current_ContentView != view) {
-      if(current_ContentView instanceof android.opengl.GLSurfaceView) {
-        ((android.opengl.GLSurfaceView)current_ContentView).onPause();
-      }
-      android.view.ViewParent parent0 = view.getParent();
-      if(parent0 instanceof android.view.ViewGroup) {
-        android.view.ViewGroup parent = (android.view.ViewGroup) parent0;
-        if(parent!=null) {
-          parent.removeView(current_ContentView);
-        }
-      }
-      current_ContentView = view;
+    if(current_ContentView instanceof android.opengl.GLSurfaceView) {
+      ((android.opengl.GLSurfaceView)current_ContentView).onPause();
     }
+    android.view.ViewParent parent0 = view.getParent();
+    if(parent0 instanceof android.view.ViewGroup) {
+      android.view.ViewGroup parent = (android.view.ViewGroup) parent0;
+      if(parent!=null) {
+        parent.removeView(current_ContentView);
+      }
+    }
+    current_ContentView = view;
     super.setContentView(current_ContentView);
     if(current_ContentView instanceof android.opengl.GLSurfaceView) {
       ((android.opengl.GLSurfaceView)current_ContentView).onResume();
@@ -180,13 +179,13 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
       new Thread.UncaughtExceptionHandler() {
         public void uncaughtException(Thread t, Throwable e) {
           final String TAG = "@SYS_PACKAGE_DOT@";
-          Log.e(TAG, e.toString()); 
+          Log.e(TAG, e.toString());
           try { Thread.sleep(1000); } catch (Exception ex) { }
           System.exit(1);
         }
       });
     setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-    this.requestWindowFeature(Window.FEATURE_NO_TITLE); 
+    this.requestWindowFeature(Window.FEATURE_NO_TITLE);
     // make sure volume controls control media
     this.setVolumeControlStream(AudioManager.STREAM_MUSIC);
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
@@ -210,11 +209,11 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONCREATE@
 
-    // start EVENT_IDLE 
+    // start EVENT_IDLE
     if(idle_tmScheduleRate > 0) idle_tm.scheduleAtFixedRate(idle_task, 0, idle_tmScheduleRate);
   }
 
-  @Override 
+  @Override
   protected void onDestroy() {
     setContentView(mGLView);
     @ANDROID_JAVA_ONDESTROY@
@@ -288,7 +287,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
 class  xGLSurfaceView extends GLSurfaceView {
   public xGLSurfaceView(Context context) {
     super(context);
-    setFocusable(true); 
+    setFocusable(true);
     setFocusableInTouchMode(true);
     renderer = new myRenderer();
     setRenderer(renderer);
@@ -304,23 +303,23 @@ class  xGLSurfaceView extends GLSurfaceView {
       case MotionEvent.ACTION_UP:  		t=4; break;
       case MotionEvent.ACTION_POINTER_UP:    	t=4; break;
     }
-    if (t>0) { 
+    if (t>0) {
       final int n=event.getPointerCount();
       final int t0=t;
       final int id0=event.getPointerId(0);
       final int x0=(int)event.getX(0);
       final int y0=(int)event.getY(0);
       if (n>1) { // MultiTouch
-        queueEvent(new Runnable(){ public void run() { renderer.pointerEvent(18,id0,0); }}); 
+        queueEvent(new Runnable(){ public void run() { renderer.pointerEvent(18,id0,0); }});
       }
-      queueEvent(new Runnable(){ public void run() { renderer.pointerEvent(t0,x0,y0); }}); 
+      queueEvent(new Runnable(){ public void run() { renderer.pointerEvent(t0,x0,y0); }});
       if (n>1) {  // MultiTouch
         final int id1=event.getPointerId(1);
         final int x1=(int)event.getX(1);
         final int y1=(int)event.getY(1);
-        queueEvent(new Runnable(){ public void run() { renderer.pointerEvent(18,id1,0); }}); 
-        queueEvent(new Runnable(){ public void run() { renderer.pointerEvent(t0,x1,y1); }}); 
-      } 
+        queueEvent(new Runnable(){ public void run() { renderer.pointerEvent(18,id1,0); }});
+        queueEvent(new Runnable(){ public void run() { renderer.pointerEvent(t0,x1,y1); }});
+      }
     }
     return true;
   }
@@ -358,7 +357,7 @@ class  xGLSurfaceView extends GLSurfaceView {
     }
     if (t>0) {
       queueEvent(new Runnable(){ public void run() {
-        renderer.nativeEvent(t,x,y); }}); 
+        renderer.nativeEvent(t,x,y); }});
     }
     return true;
   }
@@ -374,15 +373,15 @@ class  xGLSurfaceView extends GLSurfaceView {
   myRenderer renderer;
 }
 class myRenderer implements GLSurfaceView.Renderer {
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) { 
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
     }
     public void onSurfaceChanged(GL10 gl, int w, int h) {
       gl.glViewport(0, 0, w, h);
       width=(float)w; height=(float)h;
       nativeEvent(127,w,h); // EVENT_INIT
     }
-   public void onDrawFrame(GL10 gl) { 
-     nativeEvent(15,0,0);   // EVENT_REDRAW 
+   public void onDrawFrame(GL10 gl) {
+     nativeEvent(15,0,0);   // EVENT_REDRAW
    }
    public void pointerEvent(int t, int x, int y) { nativeEvent(t,x,(int)height-y); }
    public float width,height;
