@@ -1,3 +1,4 @@
+/* LNjScheme -*- mode: java; c-basic-offset: 2; -*- */
 LNjSchemeSession = new LNjScheme.Scheme(new String[0]){
   String TAG = "calculator";
 
@@ -120,3 +121,4 @@ LNjSchemeEvaluateNoSync
          }
        }}
      )));
+// eof: LNjScheme

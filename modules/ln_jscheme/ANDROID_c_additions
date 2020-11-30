@@ -1,3 +1,4 @@
+/* -*-C-*- */
 const char* android_app_class() { return "@SYS_PACKAGE_DOT@.@SYS_APPNAME@"; } // for jscheme
 
 /* lnjscheme_eval

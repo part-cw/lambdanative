@@ -1,5 +1,6 @@
-/* # Helper methods */
+/* LNjScheme -*- mode: java; c-basic-offset: 2; -*- */
 
+/* # Helper methods */
 java.text.SimpleDateFormat ln_log_date_formatter = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss ");
 
 String TAG = "@SYS_APPNAME@";
@@ -156,3 +157,4 @@ public String LNjSchemeResult() {
     return buf.toString();
   }
 }
+// eof: LNjScheme

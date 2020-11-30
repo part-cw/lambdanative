@@ -1,3 +1,4 @@
+/*-*-java -*-*/
 class LNMethod extends LNjScheme.Procedure {
   String name = null;
 
@@ -11,3 +12,4 @@ class LNMethod extends LNjScheme.Procedure {
     return null; // return interpreter.eval(body, new Environment(parms, args, env));
   }
 }
+// eof: LNjScheme
