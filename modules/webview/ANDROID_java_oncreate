@@ -1,33 +1,35 @@
-LNjSchemeEvaluate
-    (LNjScheme.Scheme.cons
-     (LNjScheme.Scheme.sym("define"),
-      LNjScheme.Scheme.list
-      (LNjScheme.Scheme.sym("webview!"), SchemeWebView.proc())));
+/* webview onCreate -*- mode: java; c-basic-offset: 2; -*- */
 
 LNjSchemeEvaluate
-    (LNjScheme.Scheme.cons
-     (LNjScheme.Scheme.sym("define"),
-      LNjScheme.Scheme.list
-      (LNjScheme.Scheme.sym("make-webview"),
-       new LNMethod("make-webview") {
-           public Object apply(LNjScheme.Scheme interpreter, Object args) {
-               if(args instanceof LNjScheme.Pair) {
-                   Object a1 = null;
-                   a1 = LNjScheme.Scheme.first(args);
-                   if(a1 instanceof android.content.Context) {
-                       return new SchemeWebView((android.content.Context)a1, LNjSchemeSession);
-                   }
-               }
-               return LNjScheme.Scheme.error("make-webview" + args);
-           }}
-       )));
+  (LNjScheme.Scheme.cons
+   (LNjScheme.Scheme.sym("define"),
+    LNjScheme.Scheme.list
+    (LNjScheme.Scheme.sym("webview!"), SchemeWebView.proc())));
+
+LNjSchemeEvaluate
+  (LNjScheme.Scheme.cons
+   (LNjScheme.Scheme.sym("define"),
+    LNjScheme.Scheme.list
+    (LNjScheme.Scheme.sym("make-webview"),
+     new LNMethod("make-webview") {
+       public Object apply(LNjScheme.Scheme interpreter, Object args) {
+         if(args instanceof LNjScheme.Pair) {
+           Object a1 = null;
+           a1 = LNjScheme.Scheme.first(args);
+           if(a1 instanceof android.content.Context) {
+             return new SchemeWebView((android.content.Context)a1, LNjSchemeSession);
+           }
+         }
+         return LNjScheme.Scheme.error("make-webview: " + args);
+       }}
+     )));
 
 LNjSchemeEvaluate
 // Dummy
-    (LNjScheme.Scheme.cons
-     (LNjScheme.Scheme.sym("define"),
-      LNjScheme.Scheme.list
-      (LNjScheme.Scheme.sym("webview-set-proxy!"), LNjScheme.Scheme.sym("list"))));
+  (LNjScheme.Scheme.cons
+   (LNjScheme.Scheme.sym("define"),
+    LNjScheme.Scheme.list
+    (LNjScheme.Scheme.sym("webview-set-proxy!"), LNjScheme.Scheme.sym("list"))));
 
 /*
     (lnjscheme-eval
@@ -40,3 +42,5 @@ LNjSchemeEvaluate
                (setProperty (String "https.ProxyHost") host)
                (setProperty (String "https.ProxyPort") port))))
 */
+
+/* EOF webview onCreate */
