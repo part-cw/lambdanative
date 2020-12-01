@@ -122,7 +122,12 @@ void android_launch_url(char* urlstring){
     jstring jurlstring = (*env)->NewStringUTF(env,urlstring);
     jclass cls = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
     jmethodID method = cls ? (*env)->GetMethodID(env, cls, "openURL", "(Ljava/lang/String;)V") : NULL;
-    if (method) (*env)->CallVoidMethod(env, globalObj, method, jurlstring);
+    if(method) {
+      (*env)->CallVoidMethod(env, globalObj, method, jurlstring);
+      (*env)->DeleteLocalRef(env, method);
+    }
+    if(jurlstring) (*env)->DeleteLocalRef(env, jurlstring);
+    if(cls) (*env)->DeleteLocalRef(env, cls);
     JNI_forward_exception_to_gambit(env);
   }
 }
