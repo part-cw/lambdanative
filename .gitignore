@@ -8,6 +8,8 @@ tmp.*
 *.core
 *.o
 *.o2
+*.class
+#*.jar
 *.a
 *.old*
 *.bak*
