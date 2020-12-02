@@ -37,9 +37,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 ;; list related extras
 
-;; Check for empty lists - this one is better than using pair? for it!
-(define (list-notempty? lst) (and (list? lst) (not (null? lst))))
-
 ;; Make a list of length n, where each element is set to elem
 (define (make-list n #!optional (elem 0))
   (if (zero? n) '()
