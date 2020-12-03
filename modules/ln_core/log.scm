@@ -138,7 +138,13 @@ end-of-c-declare
       (continuation-capture
        (lambda (cont)
          (display-exception-in-context e cont port)
-         (display-continuation-backtrace cont port))))))
+         (let ((all-frames #t)  ;; gambit default: #f
+               (display-env #t) ;; gambit default: #f
+               (max-head 10)    ;; gambit default: 10
+               (max-tail 4)     ;; gambit default: 4
+               (offset -2)      ;; gambit default: 0 -- nesting level of this expression
+               )
+           (display-continuation-backtrace cont port all-frames display-env max-head max-tail offset)))))))
   (log-error "HALT pid " ((c-lambda () int "getpid")))
   (exit 70))
 
