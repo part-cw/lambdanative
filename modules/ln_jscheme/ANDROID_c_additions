@@ -1,4 +1,5 @@
-/* -*-C-*- */
+/* ln_jscheme -*-C-*- */
+
 const char* android_app_class() { return "@SYS_PACKAGE_DOT@.@SYS_APPNAME@"; } // for jscheme
 
 /* lnjscheme_eval
@@ -77,3 +78,5 @@ const char* lnjscheme_eval_receive_result()
   }
   return str;
 }
+
+/* EOF ln_jscheme */

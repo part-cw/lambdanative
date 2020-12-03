@@ -11,7 +11,7 @@ public void ln_log(String msg) {
   Log.d(TAG, m);
 }
 
-private Object onBackPressedHandler = null;
+private static Object onBackPressedHandler = null;
 
 @Override
 public void onBackPressed() {

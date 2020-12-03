@@ -1,7 +1,5 @@
 # LNjScheme
 
-This directory contains an app to demo how to use LNjScheme from LN.
-
 LNjScheme allows to call any Java/Android method from
 lambdanative/gambit without additional JNI code.  Either directly or
 within the UI thread (dispatched asynchronously via `runOnUiThread`).
@@ -9,6 +7,34 @@ within the UI thread (dispatched asynchronously via `runOnUiThread`).
 ## Build
 
 call `make -f Makefile` in this directory to create `android_jars/LNjScheme.jar`.
+
+## Usage
+
+### Procedures
+
+#### (`android-app-class`)
+
+Returns a *string* naming the Android application class.
+
+#### (`lnjscheme-future` *OBJ*)
+
+Returns a `promise` for an (asynchronous evaluated) result of *OBJ* -
+which must be a *S-expression* valid within jScheme.
+
+This is the general way to call jScheme.  The *S-expression* is
+evaluated via `runOnUiThread` in Android.  The caller is expected to
+wait for the result in a Scheme thread.  The calling procedure (i.e.,
+event handler) **MUST** return to allow Android to dispatch the
+request **before** the returned *promise* is `force`d.
+
+#### (`call-with-lnjscheme-result` *OBJ* **[** *RECEIVER* **]**)
+
+Send *OBJ* to jScheme for evaluation.  *RECEIVER* is a 1ari procedure,
+`force`by default, expecting a *promise*, which is invoked (from
+another callback into lambdanative in the event loop) when the result
+is available.
+
+NOTE: This is a low level procedure, which *MAY* change.
 
 # History
 
@@ -21,12 +47,15 @@ Jscheme version 1.4, the last version that I released (in April
 (NB: There is another thing going by the name Jscheme, which was
 extented by a community until 2006.  This version grew beyond the
 features, complexity and size which make the Peter Norvigs version
-interesting as a strating point.)
+interesting as a starting point.)
 
 Jscheme 1.4 however lacks a few features, notably the ability supply
 arguments to constructors.  Therefore a derivative was required for
 LN.  In accordance with the stated license for Jscheme it got a new
 name.
+
+Jörg F. Wittenberger (a.k.a. 08/15 -- known als 0-8-15 on githug)
+initially added those features (C) 2019.
 
 ## Changes
 

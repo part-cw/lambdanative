@@ -73,7 +73,7 @@ NULL;
                 (promise (delay (jscheme-refine-result (jscheme-read-reply reply)))))
            ;; The optional receiver MAY either dispatch to
            ;; asynchroneous forcing the promise catching exceptions
-           ;; etc. by default force it expection the application to
+           ;; etc. by default force it expecting the application to
            ;; abort on any exception.
            (receiver promise))))
         (jscheme-send (object->string obj))
