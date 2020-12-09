@@ -37,7 +37,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 ;; list related extras
 
-;; Check for empty lists - this one is better than using pair? for it!
+;; Check for empty lists - this one might be safer than using pair?
+;; However, it might not be optimal from a performance perspective
+;; see issue #405.
 (define (list-notempty? lst) (and (list? lst) (not (null? lst))))
 
 ;; Make a list of length n, where each element is set to elem
