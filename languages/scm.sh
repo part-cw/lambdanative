@@ -26,7 +26,7 @@ compile_payload_scm()
     done
     # -------
     # generate list of source (scheme) files
-    scm_coremodules=" syntax-case config eventloop ln_core ln_glcore "
+    scm_coremodules=" syntax-case config eventloop ln_core ln_glcore ln_glgui "
     scm_coresrcs=
     scm_auxsrcs=
     for m in $modules; do
