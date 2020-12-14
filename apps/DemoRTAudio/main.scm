@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2020, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -41,30 +41,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <math.h>
 
-void rtaudio_register(void (*)(int), void (*)(float), void (*)(float*,float*));
+void rtaudio_register(void (*)(int), void (*)(float), void (*)(float*,float*),void (*)(void));
 
 int mode=0;
 double srate=0;
 
 float buffer;
 
-void my_realtime_init(int samplerate) { srate=(double)samplerate; buffer=0; }  
+void my_realtime_init(int samplerate) { srate=(double)samplerate; buffer=0; }
 
 #define RINGSZE 10000
 static float ring[RINGSZE];
 int ring_in=0, ring_out=0;
 
-void my_realtime_input(float v) 
-{ 
+void my_realtime_input(float v)
+{
   if (mode!=0) {
-    buffer=v; 
+    buffer=v;
     ring[ring_in++]=v;
     if (ring_in==RINGSZE) ring_in=0;
   }
-}  
+}
 
-void my_realtime_output(float *v1,float *v2) 
-{ 
+void my_realtime_output(float *v1,float *v2)
+{
   static double t=0;
   if (mode==0) {
     buffer = 0.95*sin(2*M_PI*440.*t);
@@ -74,12 +74,17 @@ void my_realtime_output(float *v1,float *v2)
     if (ring_out==RINGSZE) ring_out=0;
   }
   t+=1/srate;
-} 
+}
+
+void my_realtime_close()
+{
+  buffer=0;
+}
 
 end-of-c-declare
 )
 
-(c-initialize "rtaudio_register(my_realtime_init,my_realtime_input,my_realtime_output);")
+(c-initialize "rtaudio_register(my_realtime_init,my_realtime_input,my_realtime_output,my_realtime_close);")
 
 (define rtdemo-mode (c-lambda (int) void "mode=___arg1;"))
 (define rtdemo-buffer (c-lambda () double "___result=buffer;"))
@@ -104,14 +109,23 @@ end-of-c-declare
         (lambda (g w t x y)
           (let ((mode (glgui-widget-get g w 'value)))
             (rtdemo-mode mode))))
-    ) 
+      (glgui-button-string gui (/ w 4) (/ h 3) (/ w 2) 32 '("Start" "Stop") ascii_18.fnt
+        (lambda (g w t x y)
+          (let ((mode (glgui-widget-get g w 'value)))
+            (if (fx= mode 1)
+              (rtaudio-stop)
+              (rtaudio-start 8000 0.5)
+            )
+          )
+        ))
+    )
     (rtaudio-start 8000 0.5)
     (let ((logdir (string-append (system-directory) "/log")))
      (if (not (file-exists? logdir)) (create-directory logdir)))
   )
 ;; events
-  (lambda (t x y) 
-    (if (= t EVENT_KEYPRESS) (begin 
+  (lambda (t x y)
+    (if (= t EVENT_KEYPRESS) (begin
       (if (= x EVENT_KEYESCAPE) (terminate))))
     (glgui-widget-set! gui mybox 'color (color-shade Red (abs (rtdemo-buffer))))
     (glgui-event gui t x y))
