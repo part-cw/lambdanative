@@ -175,15 +175,20 @@ else
     if [ ! "X$v4dir" = "X" ]; then
       v4file=`find $v4dir -name classes.jar`
       if [ ! -s "$v4file" ]; then
+        if [ -d $SYS_PREFIXROOT/android/support ]; then
+          v4file=`find $SYS_PREFIXROOT/android/support -name $supportv4version-classes.jar`
+        fi
+      fi
+      if [ ! -s "$v4file" ]; then
         v4aar=`find $v4dir -name support-v4*.aar`
         if [ -s "$v4aar" ]; then
-          unzip $v4aar classes.jar -d $v4dir > /dev/null
-          v4file=`find $v4dir -name classes.jar`
+          unzip $v4aar classes.jar -d $SYS_PREFIXROOT/android/support > /dev/null && mv $SYS_PREFIXROOT/android/support/classes.jar $SYS_PREFIXROOT/android/support/$supportv4version-classes.jar
+          v4file=`find $SYS_PREFIXROOT/android/support -name $supportv4version-classes.jar`
         fi
       fi
       # If a classes.jar file has been found, copy it to libs
       if [ -s "$v4file" ]; then
-        cp -r $v4file $tmpdir/libs
+        cp -r $v4file $tmpdir/libs/classes.jar
         echo " => support-v4 library loaded (version $supportv4version)"
       else
         echo " => warning: support-v4 library not found"
