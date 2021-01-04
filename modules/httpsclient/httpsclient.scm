@@ -97,7 +97,16 @@ static int httpsclient_open(char *host, int port, int use_keys, char *cert, char
     return 0;
   }
   if (addr == NULL) { return 0; }
+
   s = socket(addr->ai_family, SOCK_STREAM, 0);
+
+  #ifndef WIN32
+  struct timeval timeout;
+  timeout.tv_sec  = 3;
+  timeout.tv_usec = 0;
+  setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+  #endif
+
   if (s < 0) { return 0; }
   if (connect(s, addr->ai_addr, (int)addr->ai_addrlen) != 0) {
     if (errno==EINTR) {
