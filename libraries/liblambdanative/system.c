@@ -68,15 +68,8 @@ extern char* iphone_directory;
 
 #endif // !USECONSOLE
 
-#ifdef USECONSOLE
-extern 
-#endif
-char **cmd_argv;
-
-#ifdef USECONSOLE
-extern 
-#endif
-int cmd_argc;
+extern char **cmd_argv;
+extern int cmd_argc;
 
 static char *sys_appdir=0;
 static char *sys_dir=0;

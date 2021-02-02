@@ -83,9 +83,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (force-output fh)
         ))
 |#
-      (if (and fh (fx> (length data) 0)) (begin
-        (for-each (lambda (s) (display s fh) (display ",\n" fh)) (list-head data (fx- (length data) 1)))
-        (for-each (lambda (s) (display s fh)) (list (car (list-tail data (fx- (length data) 1))) "," ##now "\n"))
+      (if (and fh (pair? data)) (begin
+        (for-each (lambda (s) (display s fh) (display ",\n" fh)) (reverse (cdr (reverse data))))
+        (for-each (lambda (s) (display s fh)) (list (last data) "," ##now "\n"))
         (force-output fh)
       ))
   ))

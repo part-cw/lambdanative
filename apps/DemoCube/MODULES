@@ -1,1 +1,1 @@
-config eventloop ln_core ln_glcore ln_glgui
+config eventloop ln_core scheduler ln_glcore ln_glgui

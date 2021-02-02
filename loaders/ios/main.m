@@ -48,6 +48,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif // USE_HYBRID
 
 const char *iphone_directory;
+int cmd_argc=0;
+char **cmd_argv;
 
 // there are two places to save files on a jailed iphone:
 // the application support directory and Documents directory

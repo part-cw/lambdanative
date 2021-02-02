@@ -5,6 +5,8 @@
 # the LAMBDANATIVE environment variable to this script.
 : ${LAMBDANATIVE:=}
 
+LAMBDANATIVE=/Users/mg/Documents/Programming/lambdanative
+
 if [ "X$LAMBDANATIVE" = "X" ]; then
   echo "ERROR: this script has not been configured."
   echo "Either configure this variable in this script"

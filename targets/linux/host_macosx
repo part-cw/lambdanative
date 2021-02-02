@@ -1,6 +1,6 @@
 #!/bin/sh
 # LambdaNative - a cross-platform Scheme framework
-# Copyright (c) 2009-2020, University of British Columbia
+# Copyright (c) 2009-2021, University of British Columbia
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or
@@ -41,8 +41,8 @@ linux_cross=`ls -1 ${LINUXSDK}/bin/*-gcc | head -n 1 | sed 's/gcc$//'`
 if [ "X$SYS_DEBUGFLAG" = "X" ]; then
   SYS_DEBUGFLAG="-O3"
 fi
-SYS_CC=$linux_cross"gcc $SYS_DEBUGFLAG -isysroot $linux_sysroot -DLINUX $cflag_additions"
-SYS_CXX=$linux_cross"g++ $SYS_DEBUGFLAG -isysroot $linux_sysroot -DLINUX $cflag_additions"
+SYS_CC=$linux_cross"gcc $SYS_DEBUGFLAG -isysroot $linux_sysroot -DLINUX -fcommon $cflag_additions"
+SYS_CXX=$linux_cross"g++ $SYS_DEBUGFLAG -isysroot $linux_sysroot -DLINUX -fcommon $cflag_additions"
 SYS_AR=$linux_cross"ar"
 SYS_NM=$linux_cross"nm"
 SYS_RANLIB=$linux_cross"ranlib"

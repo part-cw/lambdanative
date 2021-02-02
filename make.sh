@@ -1003,6 +1003,9 @@ make_setup_target()
   ac_subst LDFLAG_ADDITIONS "$ldflag_additions"
   #--------
   . $setup_target
+  if [ "X$SYS_MODE" = "Xdebug" ]; then
+    SYS_PREFIX="${SYS_PREFIX}-debug"
+  fi
   if [ ! "X$SYS_CPU" = "X" ]; then
     SYS_PREFIX="$SYS_PREFIX/$SYS_CPU"
   fi

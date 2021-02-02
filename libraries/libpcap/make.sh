@@ -15,6 +15,7 @@ else
   PKGHASH=9c9710aab68be58ed1d41b5c36dc2599419a80e0
 
 package_download $PKGURL $PKGHASH
+package_patch
 
 case $SYS_PLATFORM in
 ios)

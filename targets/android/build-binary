@@ -306,7 +306,11 @@ for abi in $SYS_ANDROID_ABIs; do
     arch=x86_64
   ;;
   esac
-  lib=$SYS_PREFIXROOT/android/${arch}${SYS_PLATFORM_VARIANT}/lib/libpayload.a
+  if [ "X$SYS_MODE" = "Xdebug" ]; then
+    lib=$SYS_PREFIXROOT/android-debug/${arch}${SYS_PLATFORM_VARIANT}/lib/libpayload.a
+  else
+    lib=$SYS_PREFIXROOT/android/${arch}${SYS_PLATFORM_VARIANT}/lib/libpayload.a
+  fi
   if [ -f $lib ]; then
     mkdir $tmpmoddir/libpayload/$abi
     cp $lib $tmpmoddir/libpayload/$abi

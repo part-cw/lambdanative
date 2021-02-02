@@ -77,9 +77,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     CAEAGLLayer *eaglLayer = (CAEAGLLayer *)self.layer;
     eaglLayer.opaque = YES;
     eaglLayer.drawableProperties = [NSDictionary dictionaryWithObjectsAndKeys:
-    [NSNumber numberWithBool:NO], 
-    kEAGLDrawablePropertyRetainedBacking, 
-    kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat, nil];
+                                     [NSNumber numberWithBool:YES],
+                                     kEAGLDrawablePropertyRetainedBacking,
+                                     kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat,
+                                     nil];
     context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES1];
     if (!context || ![EAGLContext setCurrentContext:context]) {
       [self release];
@@ -177,6 +178,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   glFramebufferRenderbufferOES(GL_FRAMEBUFFER_OES, GL_COLOR_ATTACHMENT0_OES, GL_RENDERBUFFER_OES, viewRenderbuffer);
   glGetRenderbufferParameterivOES(GL_RENDERBUFFER_OES, GL_RENDERBUFFER_WIDTH_OES, &backingWidth);
   glGetRenderbufferParameterivOES(GL_RENDERBUFFER_OES, GL_RENDERBUFFER_HEIGHT_OES, &backingHeight);
+   NSLog(@"   * layer-backed: {w = %i, h = %i}", backingWidth, backingHeight);
   if (USE_DEPTH_BUFFER) {
     glGenRenderbuffersOES(1, &depthRenderbuffer);
     glBindRenderbufferOES(GL_RENDERBUFFER_OES, depthRenderbuffer);
