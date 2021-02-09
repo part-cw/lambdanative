@@ -9,7 +9,7 @@ SET(CMAKE_OSX_SYSROOT @SYS_IOSSDK@)
 SET (CMAKE_OSX_ARCHITECTURES "$(ARCHS_STANDARD_INCLUDING_64_BIT)")
 set (CMAKE_C_FLAGS "@CFLAG_ADDITIONS@")
 set (CMAKE_CXX_FLAGS "-fvisibility=hidden -fvisibility-inlines-hidden @CFLAG_ADDITIONS@ @IOS_FRAMEWORK_SEARCHPATH@")
-set(CMAKE_EXE_LINKER_FLAGS "@LDFLAG_ADDITIONS@ @IOS_FRAMEWORK_SEARCHPATH@ @IOS_FRAMEWORK_ADDITIONS@ -framework CoreFoundation -framework Foundation -framework UIKIt -framework AVFoundation -framework OpenGLES -framework QuartzCore -framework MediaPlayer -framework CoreLocation -framework CoreAudio -framework CoreGraphics -framework AssetsLibrary -framework AudioToolbox -framework CoreMotion -framework Accelerate"
+set(CMAKE_EXE_LINKER_FLAGS "@LDFLAG_ADDITIONS@ @IOS_FRAMEWORK_SEARCHPATH@ @IOS_FRAMEWORK_ADDITIONS@ -framework CoreFoundation -framework Foundation -framework UIKIt -framework AVFoundation -framework AVKit -framework OpenGLES -framework QuartzCore -framework MediaPlayer -framework CoreLocation -framework CoreAudio -framework CoreGraphics -framework AssetsLibrary -framework AudioToolbox -framework CoreMotion -framework Accelerate"
 )
 link_directories(@SYS_PREFIX@/lib)
 include_directories (@SYS_PREFIX@/include)

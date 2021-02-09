@@ -1,60 +1,44 @@
 
 #import <UIKit/UIKit.h>
-#import <MediaPlayer/MediaPlayer.h>
+#import <AVKit/AVKit.h>
+#import <AVFoundation/AVFoundation.h>
 #import <LNCONFIG.h>
 
-@interface PlayerDelegate : UIViewController<UINavigationControllerDelegate> {
-  MPMoviePlayerViewController *moviePlayer;
-  char *img_filename;
+@interface ViewController : UIViewController {
+  NSURL *movieURL;
 };
 
-@property (retain)MPMoviePlayerViewController *movieController;
-@property (assign)char *img_filename;
-
--(id)init;
--(void)dealloc;
--(void)playbackDidFinish:(NSNotification*)notification;
-
+@property (strong, nonatomic) AVPlayerViewController *playerViewController;
+@property (assign)NSURL *movieURL;
+- (id)actionPlayVideo;
+- (void)playbackDidFinish:(NSNotification*)notification;
 @end
 
-@implementation PlayerDelegate;
 
--(id)init
-{
-  NSString *moviePath = [NSString stringWithUTF8String: img_filename];
-  NSURL *movieURL = [NSURL fileURLWithPath:moviePath];
-  movieController = [[MPMoviePlayerViewController alloc] initWithContentURL:movieURL];
-  [[NSNotificationCenter defaultCenter] removeObserver:movieController
-                                        name:MPMoviePlayerPlaybackDidFinishNotification
-                                        object:movieController.moviePlayer];
-  [[NSNotificationCenter defaultCenter] addObserver:self
-                                        selector:@selector(playbackDidFinish:)
-                                        name:MPMoviePlayerPlaybackDidFinishNotification
-                                        object:movieController.moviePlayer];
-  [self presentMoviePlayerViewControllerAnimated:movieController];
-  [movieController.moviePlayer play];
-  return [super init];
+@implementation ViewController
+@synthesize playerViewController;
+@synthesize movieURL;
+
+- (id)actionPlayVideo {
+  AVPlayerItem* playerItem = [AVPlayerItem playerItemWithURL:movieURL];
+  AVPlayer* playVideo = [[AVPlayer alloc] initWithPlayerItem:playerItem];
+  playerViewController = [[AVPlayerViewController alloc] init];
+  playerViewController.player = playVideo;
+//  playerViewController.player.volume = 0;
+  playerViewController.view.frame = self.view.bounds;
+  [self.view addSubview:playerViewController.view];
+  [playVideo play];
 }
 
--(void)dealloc
-{
-  [movieController release];
-  movieController = nil;
-  [super dealloc];
-}
-
--(void)playbackDidFinish:(NSNotification*)notification {
+-(void)playbackDidFinish:(NSNotification *) notification {
   NSNumber *value = [NSNumber numberWithInt:UIInterfaceOrientationPortrait];
   [[UIDevice currentDevice] setValue:value forKey:@"orientation"];
-  [[UIApplication sharedApplication].keyWindow.rootViewController dismissViewControllerAnimated:NO completion:NULL];
+//  [playerViewController dismissViewControllerAnimated:false completion:nil];
 }
-
-@synthesize movieController;
-@synthesize img_filename;
 
 @end
 
-static PlayerDelegate* playerDele = NULL;
+static ViewController *vc = NULL;
 
 #import "EAGLView.h"
 #import "GLViewController.h"
@@ -72,11 +56,13 @@ extern "C" void ios_videoplayer(char *img_filename, int orientation)
   }
   NSNumber *value = [NSNumber numberWithInt:orientation];
   [[UIDevice currentDevice] setValue:value forKey:@"orientation"];
-  [[UIApplication sharedApplication].keyWindow.rootViewController dismissViewControllerAnimated:NO completion:NULL];
-  if (playerDele==NULL) playerDele=[PlayerDelegate alloc];
-  playerDele.img_filename = strdup(img_filename);
-  [playerDele init];
-  [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:playerDele.movieController animated:NO completion:NULL];
+  NSString *moviePath = [NSString stringWithUTF8String: img_filename];
+  NSURL *movieURL = [NSURL fileURLWithPath:moviePath];
+  if (vc==NULL)
+    vc=[ViewController alloc];
+  vc.movieURL=movieURL;
+  [vc actionPlayVideo];
+  [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:vc.playerViewController animated:NO completion:NULL];
 }
 
 // eof
