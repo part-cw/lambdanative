@@ -15,4 +15,4 @@
 # 1.0.13: arm64 android, macOS codesigning, IPv6, OpenGL bugfixes
 # 1.1: android multiple api support, major ln_glgui renderloop timing change
 # 1.1.1: Bug fixes, better android support, ln_jScheme module
-1.0.13
+1.0.10

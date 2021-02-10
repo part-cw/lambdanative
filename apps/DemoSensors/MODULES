@@ -1,1 +1,1 @@
-config eventloop ln_core ln_glcore ln_glgui accelerometer gyro gps magnetometer rotation
+config eventloop ln_core ln_glcore ln_glgui accelerometer gyro gps

@@ -46,8 +46,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <LNCONFIG.h>
 
-int cmd_argc=0;
-char **cmd_argv;
 @ANDROID_C_DEFINES@
 
 // event hook

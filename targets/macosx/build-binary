@@ -115,7 +115,7 @@ else
   fi
 fi
 
-if [ 1 ]; then #"X$SYS_MODE" = "Xdebug" ]; then
+if [ "X$SYS_MODE" = "Xdebug" ]; then
   echo " => not signing application to allow debugger to attach.."
 else
   identity=`security find-identity -v -p codesigning | grep "Developer ID Application" | cut -d\  -f5-`

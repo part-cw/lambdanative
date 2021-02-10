@@ -46,7 +46,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (button-callback g w t x y)
   (let ((oldcolor (glgui-widget-get g w 'color)))
     (if ahooga (audiofile-play ahooga))
-    (log-error "AAAAAAA" "AAAAAAA")
     (glgui-widget-set! g w 'color (if (= oldcolor White) Red White))
   )
 )
@@ -54,8 +53,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (main
 ;; initialization
   (lambda (w h)
-    (let ((logdir (string-append (system-directory) (system-pathseparator) "log")))
-      (if (not (file-exists? logdir)) (create-directory logdir)))
     (make-window 320 480)
     (glgui-orientation-set! GUI_PORTRAIT)
     (set! gui (make-glgui))
@@ -75,8 +72,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (set! ahooga (audiofile-load "ahooga"))
   )
 ;; events
-  (lambda (t x y)
-    (if (= t EVENT_KEYPRESS) (begin
+  (lambda (t x y) 
+    (if (= t EVENT_KEYPRESS) (begin 
       (if (= x EVENT_KEYESCAPE) (terminate))))
     (glgui-event gui t x y))
 ;; termination

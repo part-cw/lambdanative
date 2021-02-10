@@ -37,8 +37,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
 ;; The server part, supporting APN and GCM
-(define pushnotification:apn-host "gateway.sandbox.push.apple.com")
-;;(define pushnotification:apn-host "gateway.push.apple.com")
+;;(define pushnotification:apn-host "gateway.sandbox.push.apple.com")
+(define pushnotification:apn-host "gateway.push.apple.com")
 (define pushnotification:apn-port 2195)
 (define pushnotification:gcm-host "android.googleapis.com")
 (define pushnotification:gcm-port 443)

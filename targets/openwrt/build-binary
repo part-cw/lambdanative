@@ -40,12 +40,12 @@ pkgfile=$OPENWRTSDK/bin/$archname/packages/$(echo $SYS_APPNAME)_$(echo $SYS_APPV
 fnlpkgfile=$SYS_PREFIXROOT/packages/$(echo $SYS_APPNAME)-$(echo $SYS_APPVERSION)-openwrt-$archname.ipk
 tmpdir=$OPENWRTSDK/package/$SYS_APPNAME
 mkdir -p $tmpdir/src
-cp $SYS_PREFIX/lib/libgambit.a $tmpdir/src/libgambit.a
+cp $SYS_PREFIX/lib/libgambc.a $tmpdir/src/libgambc.a
 cp $SYS_PREFIX/lib/libpayload.a $tmpdir/src/libpayload.a
 echo " => compiling application.."
 cat > $tmpdir/src/Makefile  << _EOF
 $SYS_APPNAME:
-	\$(CC) \$(LDFLAGS) $cflag_additions -o $SYS_APPNAME libpayload.a libgambit.a $ldflag_additions -lutil -ldl -lm
+	\$(CC) \$(LDFLAGS) $cflag_additions -o $SYS_APPNAME libpayload.a libgambc.a $ldflag_additions -lutil -ldl -lm
 _EOF
 cat > $tmpdir/Makefile  << _EOF
 include \$(TOPDIR)/rules.mk
