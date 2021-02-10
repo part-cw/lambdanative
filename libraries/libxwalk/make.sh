@@ -16,7 +16,7 @@ fi
 
 echo " => configuring source..."
 cd xwalk_core_library
-veval "$SYS_ANDROIDSDK/tools/android update lib-project -p . --target android-$ANDROIDAPI"
+veval "$SYS_ANDROIDSDK/tools/android update lib-project -p . --target android-$SYS_ANDROIDAPI"
 asserterror $?
 cp -R ./* $XWALKLIBPATH
 cd ..

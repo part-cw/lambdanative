@@ -13,6 +13,9 @@ if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
   EXTRACONF=--host=$SYS_ARCH
 fi
 
+LIBTOOL=`which libtool`
+cp $LIBTOOL .
+
 package_configure $EXTRACONF --disable-shared --enable-static 
 asserterror $? "configuration failed"
 
