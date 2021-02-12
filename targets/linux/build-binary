@@ -56,6 +56,13 @@ make_sounds make_soundfile_linux
 echo " => compiling application.."
 tgt=$apptgtdir/$SYS_APPNAME$SYS_EXEFIX
 
+if echo $ldflag_additions | grep -q c++ ; then
+    # a slightly bad trick to switch the compiler
+    echo WARNING: SWITCHING TO C-PLUS-PLUS
+    SYS_CC=$SYS_CXX
+    cflag_additions="$cflag_additions -fpermissive"
+fi
+
 if [ "$SYS_MODE" = "debug" ]; then
   # enable profiling
   cflag_additions="$cflag_additions -pg"
