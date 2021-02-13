@@ -95,6 +95,8 @@ static int _microgl_key(WPARAM wParam, LPARAM lParam, int modifier, int action)
     case VK_DOWN:   return EVENT_KEYDOWN;
     case VK_HOME:   return EVENT_KEYHOME;
     case VK_END:    return EVENT_KEYEND;
+    case VK_PRIOR:  return 0xff55;
+    case VK_NEXT:   return 0xff56;
     default:
       // if CTRL is down, ToAscii puts ^A to ^Z (0x01 to 0x1a) in char_buf
       // if ALT  is down, ToAscii puts  a to  z (lowercase)    in char_buf
