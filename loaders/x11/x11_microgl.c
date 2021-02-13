@@ -140,6 +140,9 @@ int _microgl_key( XKeyEvent *event )
     case XK_Right:        return EVENT_KEYRIGHT;
     case XK_Down:         return EVENT_KEYDOWN;
     case XK_Up:           return EVENT_KEYUP;
+    case XK_Page_Up: /* 0xff55 */
+    case XK_Page_Down: /* 0xff56 */
+      return keysym;
   }
   // Printable chars (Latin 1)
   if( (keysym >= 0x0020 && keysym <= 0x007e) || // Basic Latin 1 charset
