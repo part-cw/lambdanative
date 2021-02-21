@@ -111,6 +111,7 @@ void microgl_refresh()
   event.type       = Expose;
   event.xany.window     = win.Win;
   XSendEvent(Dpy, win.Win, False, Expose, &event);
+  XSync(Dpy, 0);
 }
 
 // https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html
