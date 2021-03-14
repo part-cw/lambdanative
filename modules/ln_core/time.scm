@@ -258,9 +258,10 @@ end-of-c-declare
 ;; thanks, Martin Gasbichler ...
 
 (define (copy-time time)
-  (make-srfi19:time (srfi19:time-type time)
-	     (srfi19:time-second time)
-	     (srfi19:time-nanosecond time)))
+  (make-srfi19:time
+   (srfi19:time-type time)
+   (srfi19:time-nanosecond time)
+   (srfi19:time-second time)))
 
 
 ;;; current-time
