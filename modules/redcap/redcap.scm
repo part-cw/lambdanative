@@ -148,7 +148,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                        (fieldname (if (string? field) field (symbol->string field)))
                        (values    (cdr lpair))
                        (itemize   (lambda (v)
-                                    (let ((value (if (number? v) (number->string v) v)))
+                                    (let ((value (if (number? v) (number->string v) (if (string? v) v "NA"))))
                                       (string-append
                                         "<item>"
                                         "<record>" record "</record>"
