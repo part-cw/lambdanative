@@ -1,0 +1,50 @@
+From e529b1d6d5b7bae2fcc3e9cd8e7f3e11a1318193 Mon Sep 17 00:00:00 2001
+From: Marc Feeley <feeley@iro.umontreal.ca>
+Date: Sun, 28 Mar 2021 19:29:54 -0400
+Subject: [PATCH] Fix incorrect space allocation report by time special form
+
+---
+ lib/_kernel.scm | 6 ++++--
+ lib/mem.c       | 3 ++-
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/lib/_kernel.scm b/lib/_kernel.scm
+index 59b9e41..2d827dd 100644
+--- lib/_kernel.scm
++++ lib/_kernel.scm
+@@ -4346,7 +4346,9 @@ end-of-code
+
+     if (!___FIXNUMP(result))
+     {
+-      n = ___bytes_allocated (___PSPNC) - n;
++      ___F64 ba = ___bytes_allocated (___PSPNC);
++
++      n = ba - n;
+
+       ___process_times (&user, &sys, &real);
+       ___vm_stats (&minflt, &majflt);
+@@ -4358,7 +4360,7 @@ end-of-code
+       ___F64VECTORSET(result,___FIX(4),___vms->mem.gc_sys_time_)
+       ___F64VECTORSET(result,___FIX(5),___vms->mem.gc_real_time_)
+       ___F64VECTORSET(result,___FIX(6),___vms->mem.nb_gcs_)
+-      ___F64VECTORSET(result,___FIX(7),___bytes_allocated (___PSPNC))
++      ___F64VECTORSET(result,___FIX(7),ba)
+       ___F64VECTORSET(result,___FIX(8),(2*(1+2)<<___LWS))
+       ___F64VECTORSET(result,___FIX(9),n)
+       ___F64VECTORSET(result,___FIX(10),minflt)
+diff --git a/lib/mem.c b/lib/mem.c
+index 2c6cafd..9223da1 100755
+--- lib/mem.c
++++ lib/mem.c
+@@ -7080,7 +7080,8 @@ ___PSDKR)
+   alloc_stack_ptr = ___ps->fp;
+   alloc_heap_ptr  = ___ps->hp;
+
+-  return bytes_allocated_minus_occupied + bytes_occupied(___ps);
++  return bytes_allocated_minus_occupied + bytes_occupied(___ps) +
++         ___CAST(___F64,occupied_words_still) * ___WS;
+ }
+
+
+--
+2.20.1
