@@ -1,11 +1,10 @@
 private String getClipboardContent(){
   if (!(mClipboardManager.hasPrimaryClip())) {
     return "";
-  } else if (mClipboardManager.getPrimaryClipDescription().hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN)) {
+  } else /* if (mClipboardManager.getPrimaryClipDescription().hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN)) */ {
     ClipData.Item item = mClipboardManager.getPrimaryClip().getItemAt(0);
-    return item.getText().toString(); 
+    return item.coerceToText(this).toString();
   }
-  return "";
 }
 
 private int setClipboardContent(String str){
