@@ -52,6 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define use-symbols? #f) ;; how to encode JS true, false and null
 (define use-tables? #f)  ;; how to encode JS objects
+(define use-symbols-for-keys? #f) ;; how to encode JS object slot names
 
 (define debug? #f)
 
@@ -63,6 +64,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              (if (table? obj)
                  (cons 'TABLE (table->list obj))
                  obj)))))
+
+(define (json-set-options! #!key (symbols #f) (tables #f) (keys #f))
+  (set! use-symbols? symbols)
+  (set! use-tables? tables)
+  (set! use-symbols-for-keys? keys))
+
+(define-macro (->string obj)
+  `(cond
+    ((symbol? ,obj) (symbol->string ,obj))
+    (else ,obj)))
 
 (define (json-decode str)
   (call-with-input-string str json-read))
@@ -175,7 +186,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                           (if (json-error? val)
                               val
                               (let ((new-rev-elements
-                                     (cons (cons str val) rev-elements)))
+                                     (cons (cons (if use-symbols-for-keys?
+                                                     (string->symbol str)
+                                                     str) val)
+                                           rev-elements)))
                                 (space)
                                 (let ((c (pk)))
                                   (cond ((eqv? c #\})
@@ -350,7 +364,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (display #\" port)))))
 
   (define (wr-prop prop)
-    (wr-string (car prop))
+    (wr-string (->string (car prop)))
     (display ":" port)
     (wr (cdr prop)))
 

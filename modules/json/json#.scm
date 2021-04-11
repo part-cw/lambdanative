@@ -42,6 +42,7 @@ json-read
 json-write
 json-error
 json-error?
+json-set-options!
 
 ))
 
