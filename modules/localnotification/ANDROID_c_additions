@@ -7,7 +7,6 @@ int android_localnotification_schedule(char* msg, double ts, int repeat, char* s
   JNIEnv *env = GetJNIEnv();
   jstring jmsg = (*env)->NewStringUTF(env,msg);
   jstring jsound = (*env)->NewStringUTF(env,sound);
-  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
   if (env&&globalObj){
     jmethodID method = (*env)->GetMethodID(env, main_class, "scheduleNotification", "(Ljava/lang/String;DILjava/lang/String;)I");
     return (*env)->CallIntMethod(env, globalObj, method, jmsg, ts, repeat, jsound);
@@ -24,7 +23,6 @@ int android_localnotification_schedule_batch(char* text[], double* time, int* re
 
 int android_localnotification_cancel(int id){
   JNIEnv *env = GetJNIEnv();
-  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
   if (env&&globalObj){
     jmethodID method = (*env)->GetMethodID(env, main_class, "notification_cancel", "(I)I");
     return (*env)->CallIntMethod(env, globalObj, method, id);
@@ -33,7 +31,6 @@ int android_localnotification_cancel(int id){
 
 int android_localnotification_cancelall(){
   JNIEnv *env = GetJNIEnv();
-  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
   if (env&&globalObj){
     jmethodID method = (*env)->GetMethodID(env, main_class, "notification_cancelall", "()I");
     return (*env)->CallIntMethod(env, globalObj, method);

@@ -1,6 +1,7 @@
+// TBD: untested, maybe we need to pass global references
+
 void android_vibrate(){
   JNIEnv *env = GetJNIEnv();
-  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
   if (env&&globalObj){
     jmethodID method = (*env)->GetMethodID(env, main_class, "vibrate", "()V");
     (*env)->CallVoidMethod(env, globalObj, method);
@@ -9,7 +10,6 @@ void android_vibrate(){
 
 void android_timed_vibrate(int milli){
   JNIEnv *env = GetJNIEnv();
-  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
   if (env&&globalObj){
     jmethodID method = (*env)->GetMethodID(env, main_class, "timedVibrate", "(I)V");
     (*env)->CallVoidMethod(env, globalObj, method, milli);

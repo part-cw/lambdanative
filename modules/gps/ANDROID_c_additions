@@ -16,7 +16,6 @@ void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_satelliteEvent(JNIEnv* e, jobje
 
 void android_location_toggleGPS(int status){
   JNIEnv *env = GetJNIEnv();
-  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
   if (env&&globalObj){
     jmethodID method = (*env)->GetMethodID(env, main_class, "toggleGPS", "(I)V");
     (*env)->CallVoidMethod(env, globalObj, method, status);
@@ -25,7 +24,6 @@ void android_location_toggleGPS(int status){
 
 int android_location_service(){
   JNIEnv *env = GetJNIEnv();
-  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
   if (env&&globalObj){
     jmethodID method = (*env)->GetMethodID(env, main_class, "isLocationServiceEnabled", "()I");
     return (int)(*env)->CallIntMethod(env,globalObj,method);
