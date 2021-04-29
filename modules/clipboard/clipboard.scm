@@ -36,6 +36,8 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
 
+(c-declare "#include <stdio.h>") ;; debug
+
 (c-declare  #<<end-of-c-declare
 
 #ifdef IOS
@@ -99,16 +101,23 @@ int clipboard_copy(char *str, int len){
   Window window = microgl_getWindow();
   Atom selection = XInternAtom(display, "CLIPBOARD", 0);
   XSetSelectionOwner (display, selection, window, 0);
-  if (XGetSelectionOwner (display, selection) != window)
+  if( XGetSelectionOwner(display, selection) != window ) {
+    fprintf(stderr, "QUESTION: Why fail here in `clipboard_copy`?\n");
     return 0;
+  }
   microgl_setCopiedString(str, len);
-  return 0;
+  return 1;
 #endif
   return 0;
 }
 
 // Clipboard pasting
-char *clipboard_paste(){
+
+#ifdef LINUX
+static void* clipboard_data = NULL;
+#endif
+
+char* clipboard_paste(){
 #ifdef ANDROID
   return android_clipboard_paste();
 #endif
@@ -152,44 +161,54 @@ char *clipboard_paste(){
   Window window = microgl_getWindow();
   Atom selection = XInternAtom(display, "CLIPBOARD", 0);
   Window owner = XGetSelectionOwner(display, selection);
-  if (owner == window) {
+  if( clipboard_data != NULL ) {
+    log_c("usage error fixed: clipboard_data was not freed!\n");
+    XFree(clipboard_data);
+    clipboard_data = NULL;
+  }
+  if( owner == window ) {
     microgl_getCopiedString(&str);
     return str;
-  }
+  } else {
 
-  Atom type = XInternAtom(display, "STRING", 0);
-  Atom propid = XInternAtom(display, "XSEL_DATA", 0);
-  Atom incrid = XInternAtom(display, "INCR", 0);
-  XEvent event;
+    Atom type = XInternAtom(display, "STRING", 0);
+    Atom propid = XInternAtom(display, "XSEL_DATA", 0);
+    Atom incrid = XInternAtom(display, "INCR", 0);
+    XEvent event;
 
-  XConvertSelection(display, selection, type, propid, window, CurrentTime);
-  do {
-    XNextEvent(display, &event);
-  } while (event.type != SelectionNotify || event.xselection.selection != selection);
+    XConvertSelection(display, selection, type, propid, window, CurrentTime);
+    XSync(display, 0);
+    do {
+      XNextEvent(display, &event);
+    } while (event.type != SelectionNotify || event.xselection.selection != selection);
 
-  if (event.xselection.property){
-    unsigned long ressize, restail;
-    int resbits;
-    XGetWindowProperty(display, window, propid, 0, LONG_MAX/4, 0, AnyPropertyType,
-        &type, &resbits, &ressize, &restail, (unsigned char**)&str);
+    if( event.xselection.property ) {
+      unsigned long ressize, restail;
+      int resbits;
+      XGetWindowProperty(display, window, propid, 0, LONG_MAX/4, 0, AnyPropertyType,
+          &type, &resbits, &ressize, &restail, (unsigned char**)&clipboard_data);
 
-    if (type == incrid){
-      log_c("Buffer is too large");
-      str="";
+      if( type == incrid ) {
+        log_c("Buffer is too large");
+      }
     }
-  }else{
-    str="";
-  }
-  return str;
+    return (char*)clipboard_data;
+ }
 #endif
-  char* buf="";
-  return buf;
+  /* Not implemented on this platform - return the same as it was empty */
+  return NULL;
 }
 
 // Releases reference to string fetched during paste
 void clipboard_release(){
 #ifdef ANDROID
   android_clipboard_release();
+#endif
+#ifdef LINUX
+  if( clipboard_data != NULL ) {
+    XFree(clipboard_data);
+    clipboard_data = NULL;
+  }
 #endif
 }
 
@@ -240,13 +259,13 @@ end-of-c-declare
 ;; Function prototypes/bindings
 (define clipboard-clear (c-lambda (char-string) bool "clipboard_clear"))
 (define (clipboard-copy str)
-  ((c-lambda (char-string int) bool "___result=
-    clipboard_copy(___arg1,___arg2);")
-    str (string-length str)))
+  ((c-lambda (char-string int) bool "clipboard_copy")
+   str (string-length str)))
 (define (clipboard-paste)
-  (let ((str ((c-lambda () char-string "___result=clipboard_paste();"))))
-    ((c-lambda () void "clipboard_release();"))
+  (declare (not interrupts-enabled)) ;; important! no thread switch here
+  (let ((str ((c-lambda () char-string "clipboard_paste"))))
+    ((c-lambda () void "clipboard_release"))
     str))
-(define clipboard-hascontent (c-lambda () bool "___result=clipboard_hascontent();"))
+(define clipboard-hascontent (c-lambda () bool "clipboard_hascontent"))
 
 ;; eof
