@@ -184,7 +184,7 @@ void _microgl_sendCopyStringEvent(XSelectionRequestEvent* selReqEv) {
     .time      = CurrentTime
   };
   if (copiedString && selReqEv->target == format && selReqEv->property != None) {
-    XChangeProperty(Dpy, selReqEv->requestor, selReqEv->property, format, 8, PropModeReplace, copiedString, copiedStringLen + 1);
+    XChangeProperty(Dpy, selReqEv->requestor, selReqEv->property, format, 8, PropModeReplace, copiedString, copiedStringLen);
   } else {
     selEv.property = None;
   }
