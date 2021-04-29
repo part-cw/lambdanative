@@ -48,7 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define LAMBDANATIVE_JNI_VERSION JNI_VERSION_1_4
 
-#define DEBUG 1 // FIXME: The DEBUG flag is currently not passed when compiling this file!
+#define DEBUG 0 // FIXME: The DEBUG flag is currently not passed when compiling this file!
 
 #ifdef DEBUG
 // naming convention LOGX=>log level, LOGXN=> as LOGX N hints at level
