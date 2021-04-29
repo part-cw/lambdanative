@@ -37,6 +37,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 // microgl based main loop
 
+#if defined(LINUX)
+// new code path
+#define LEGACY_2021 0
+#else
+#define LEGACY_2021 1
+#endif
+
 #include "LNCONFIG.h"
 
 #include <stdio.h>
