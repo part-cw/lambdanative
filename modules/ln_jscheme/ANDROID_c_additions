@@ -1,5 +1,16 @@
 /* ln_jscheme -*-C-*- */
 
+#if DEBUG
+#define LOGJSC(...) ((void)__android_log_print(ANDROID_LOG_ERROR, "@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_jScheme", __VA_ARGS__))
+#else
+#define LOGJSC(...)
+#endif
+
+// No idea whether ot not global references are required when the
+// called site switiches threads.  For flexibility both ways are
+// encoded here. (TBD: complete)
+#define LNJSCHEME_PASS_INPUT_AS_GLOBAL_REF 1
+
 const char* android_app_class() { return "@SYS_PACKAGE_DOT@.@SYS_APPNAME@"; } // for jscheme
 
 /* lnjscheme_eval
@@ -9,23 +20,31 @@ const char* android_app_class() { return "@SYS_PACKAGE_DOT@.@SYS_APPNAME@"; } //
  * may only be changed by the Java thread which created them.  Use the
  * asynchronous version in those cases.
  */
-const char* lnjscheme_eval(const char* input){
+const char* lnjscheme_eval(const char* input)
+{
   static const char *str = NULL;
   static jstring jstr = NULL;
+  static jmethodID method = 0;
   JNIEnv *env = GetJNIEnv();
+  LOGJSC("eval enter env: %p app: %p", env, globalObj);
   if (env&&globalObj){
     jstring jin = (*env)->NewStringUTF(env,input);
-    jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
-    jmethodID method = main_class ? (*env)->GetMethodID(env, main_class, "LNjSchemeCall", "(Ljava/lang/String;)Ljava/lang/String;") : NULL;
-    if(main_class) (*env)->DeleteLocalRef(env, main_class);
-    if(!method) {
-      JNI_forward_exception_to_gambit(env);
-      return "E \"JNI: method LNjSchemeCall not found\"";
+    // NOW cached global jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
+    if(method==0) {
+      method = (*env)->GetMethodID(env, main_class, "LNjSchemeCall", "(Ljava/lang/String;)Ljava/lang/String;");
+      if(!method) {
+        LOGJSC("ERROR no LNjSchemeCall");
+        JNI_forward_exception_to_gambit(env);
+        return "E \"JNI: method LNjSchemeCall not found\"";
+      }
     }
+    /* if(main_class) (*env)->DeleteLocalRef(env, main_class); */
     if(jstr) { (*env)->ReleaseStringUTFChars(env, jstr, str); jstr = NULL; }
     jstr = (jstring) (*env)->CallObjectMethod(env, globalObj, method, jin);
+    /*
     (*env)->DeleteLocalRef(env, method);
     (*env)->DeleteLocalRef(env, jin);
+    */
     str  = jstr ? (*env)->GetStringUTFChars(env, jstr, 0) : NULL;
     // (*env)->ReleaseStringUTFChars(env, jstr, str);  // we do it upon next call
     JNI_forward_exception_to_gambit(env);
@@ -33,22 +52,35 @@ const char* lnjscheme_eval(const char* input){
   return str;
 }
 
-void lnjscheme_eval_send(const char* input){
+void lnjscheme_eval_send(const char* input)
+{
   JNIEnv *env = GetJNIEnv();
-  if (env&&globalObj){
-    jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
-    jmethodID method = main_class ? (*env)->GetMethodID(env, main_class, "LNjSchemeSend", "(Ljava/lang/String;)V") : NULL;
-    if(main_class) (*env)->DeleteLocalRef(env, main_class);
+  static jmethodID method = 0;
+  if (env) {
+#ifdef DEBUG
+    if(!globalObj) (*env)->FatalError(env, "@SYS_PACKAGE_UNDERSCORE@ lnjscheme_eval_send no global object!");
+#endif
     if(!method) {
-      JNI_forward_exception_to_gambit(env);
-      return; // "E \"JNI: method LNjSchemeSend not found\"";
-    } else {
-      jstring jin = (*env)->NewStringUTF(env,input);
-      (*env)->CallVoidMethod(env, globalObj, method, jin);
+      method = (*env)->GetMethodID(env, main_class, "LNjSchemeSend", "(Ljava/lang/String;)V");
+      if(!method) {
+        LOGE("lnjscheme_eval_send LNjSchemeSend not found; main_class: %p", main_class);
+        JNI_forward_exception_to_gambit(env);
+        return; // "E \"JNI: method LNjSchemeSend not found\"";
+      }
+    }
+    jstring jin = (*env)->NewStringUTF(env, input);
+#if LNJSCHEME_PASS_INPUT_AS_GLOBAL_REF
+    jin = (*env)->NewGlobalRef(env, jin);
+#endif
+    (*env)->CallVoidMethod(env, globalObj, method, jin);
+#if LNJSCHEME_PASS_INPUT_AS_GLOBAL_REF
+    (*env)->DeleteGlobalRef(env, jin);
+#endif
+    /*
       (*env)->DeleteLocalRef(env, method);
       (*env)->DeleteLocalRef(env, jin);
-      JNI_forward_exception_to_gambit(env);
-    }
+    */
+    JNI_forward_exception_to_gambit(env);
   }
 }
 
@@ -59,22 +91,23 @@ const char* lnjscheme_eval_receive_result()
 {
   static const char *str = NULL;
   static jstring jstr = NULL;
+  static jmethodID method = 0;
   JNIEnv *env = GetJNIEnv();
-  if (env&&globalObj){
+  if (env) {
     if(jstr) { (*env)->ReleaseStringUTFChars(env, jstr, str); jstr = NULL; }
-    jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
-    jmethodID method = main_class ? (*env)->GetMethodID(env, main_class, "LNjSchemeResult", "()Ljava/lang/String;") : NULL;
-    if(main_class) (*env)->DeleteLocalRef(env, main_class);
     if(!method) {
-      JNI_forward_exception_to_gambit(env);
-      return "E \"JNI: method LNjSchemeResult not found\"";
-    } else {
-      jstr = (jstring) (*env)->CallObjectMethod(env, globalObj, method);
-      str  = jstr ? (*env)->GetStringUTFChars(env, jstr, 0) : NULL;
-      // (*env)->ReleaseStringUTFChars(env, jstr, str);  // we do it upon next call
-      (*env)->DeleteLocalRef(env, method);
-      JNI_forward_exception_to_gambit(env);
+      method = (*env)->GetMethodID(env, main_class, "LNjSchemeResult", "()Ljava/lang/String;");
+      if(!method) {
+        LOGE("lnjscheme_eval_receive_result LNjSchemeResult not found; main_class: %p", main_class);
+        JNI_forward_exception_to_gambit(env);
+        return "E \"JNI: method LNjSchemeResult not found\"";
+      }
     }
+    jstr = (jstring) (*env)->CallObjectMethod(env, globalObj, method);
+    str  = jstr ? (*env)->GetStringUTFChars(env, jstr, 0) : NULL;
+    // (*env)->ReleaseStringUTFChars(env, jstr, str);  // we do it upon next call
+    /* (*env)->DeleteLocalRef(env, method); */
+    JNI_forward_exception_to_gambit(env);
   }
   return str;
 }

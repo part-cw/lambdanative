@@ -87,6 +87,48 @@ end-of-c-declare
 
 (define force-terminate (c-lambda () void "force_terminate"))
 
+(define microgl-swapbuffers
+  (c-lambda
+   () void "
+#if !defined(STANDALONE)
+ microgl_swapbuffers();
+#endif
+"))
+
+(define microgl-window
+  (c-lambda
+   (int int) void "
+#if !defined(STANDALONE)
+ microgl_window(___arg1, ___arg2);
+#endif
+"))
+
+(define microgl-fullscreen
+  (c-lambda
+   (int int) void "
+#if !defined(STANDALONE)
+ microgl_fullscreen(___arg1, ___arg2);
+#endif
+"))
+
+(c-declare
+ #<<end-of-decl
+#define MICROGL_REDRAW_PERIOD 250000 // micro seconds
+unsigned int microgl_redraw_period(unsigned int arg) {
+ // microgl_check_period is for the C side to query.
+ static unsigned int x = MICROGL_REDRAW_PERIOD;
+  // if arg is zero, return current value only
+  if( arg > 0 ) x = arg;
+  return x;
+}
+end-of-decl
+)
+
+(define (microgl-redraw-period . arg)
+  (cond
+   ((null? arg) ((c-lambda (unsigned-int) unsigned-int "microgl_redraw_period") 0))
+   (else ((c-lambda (unsigned-int) unsigned-int "microgl_redraw_period") (car arg)))))
+
 ;; Cleanup and exit with given exit code.  (Unlike force-terminate,
 ;; which always exists with zero.)
 ;;
@@ -99,13 +141,6 @@ end-of-c-declare
 (if (not (file-exists? (system-directory)))
   (with-exception-catcher (lambda (e) #f)
     (lambda () (create-directory (system-directory)))))
-
-;; Disable the android heartbeat as it causes problems. Note that for 4.7.9 this
-;; has to be below the definition of system-platform to avoid an (#!unbound2)
-;; *** ERROR IN test# -- Operator is not a PROCEDURE
-(cond-expand
- (gambit-c (if (string=? (system-platform) "android") (##heartbeat-interval-set! -1.)))
- (else (if (string=? (system-platform) "android") (##set-heartbeat-interval! -1.))))
 
 ;; Gain access to Android app_directory_files and app_code_path
 (define android-get-filesdir (c-lambda () char-string "android_getFilesDir"))

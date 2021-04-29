@@ -48,7 +48,6 @@ import android.content.BroadcastReceiver;
 import android.content.res.Configuration;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageInfo;
-import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.Handler;
@@ -74,7 +73,19 @@ import android.hardware.SensorManager;
 @ANDROID_JAVA_ADDITIONS@
 
 public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@ SensorEventListener{
-  private static android.view.View current_ContentView = null;
+  private final static boolean LOG_LAYOUT = false;
+  /*
+   * To cache IDs when the activity class is loaded we use a class
+   * initializer to allow the native code to cache some field
+   * offsets. This native function looks up and caches interesting
+   * class/field/method IDs. Throws on failure, preventing start.
+   */
+  private static native void nativeClassInit();
+  static {
+    // NOT FOUND: WHY???: nativeClassInit();
+  }
+  /*
+   */
   private SensorManager mSensorManager;
   //Variable declarations needed for modules, e.g. gps
   @ANDROID_JAVA_VARIABLES@
@@ -153,25 +164,76 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
       }
   }
 
-  @Override
-  public void setContentView(android.view.View view) {
-    if(current_ContentView instanceof android.opengl.GLSurfaceView) {
-      ((android.opengl.GLSurfaceView)current_ContentView).onPause();
+  static android.view.ViewGroup topLayout = null; // used for setContentView
+  static NativeGLSurfaceView mGLView = null; // native opengl
+  // current_ContentView is what's exposed to the user, not (no
+  // longer) what's being fed to setcontentVeiw
+  private static android.view.View current_ContentView = null;
+  private void buildTopLayout() {
+    // Compose this layout; once only call; factored out
+    if(topLayout==null) {
+      if(LOG_LAYOUT) Log.i(TAG, "buildTopLayout building new");
+      topLayout = new android.widget.LinearLayout(this);
+      topLayout.setLayoutParams
+        (new android.view.ViewGroup.LayoutParams
+         (android.view.ViewGroup.LayoutParams.FILL_PARENT,
+          android.view.ViewGroup.LayoutParams.FILL_PARENT));
+      super.setContentView(topLayout);
     }
-    android.view.ViewParent parent0 = view.getParent();
-    if(parent0 instanceof android.view.ViewGroup) {
-      android.view.ViewGroup parent = (android.view.ViewGroup) parent0;
-      if(parent!=null) {
-        parent.removeView(current_ContentView);
-      }
+    if(mGLView==null) {
+      if(LOG_LAYOUT) Log.i(TAG, "Init GL");
+      mGLView = new xGLSurfaceView(this);
+      if(LOG_LAYOUT) Log.i(TAG, "Adding mGLView");
+      topLayout.addView(mGLView);
     }
-    current_ContentView = view;
-    super.setContentView(current_ContentView);
-    if(current_ContentView instanceof android.opengl.GLSurfaceView) {
-      ((android.opengl.GLSurfaceView)current_ContentView).onResume();
+    if(current_ContentView==null) {
+      current_ContentView=mGLView;
     }
+    if(LOG_LAYOUT) Log.i(TAG, "buildTopLayout completed");
   }
 
+  @Override
+  public void setContentView(android.view.View view) {
+    // This setContentView manipulates private topLayout.
+    //
+    // Reason: deparenting the NativeGLSurfaceView causes lolcat "E
+    // SurfaceFlinger: Failed to find layer (SurfaceView -
+    // class.path.to.app) in layer parent (no-parent)."
+    //
+    // For mGLView we pause and set it invisible, others are added and
+    // removed instead.
+    if(LOG_LAYOUT) Log.i(TAG, "setContentView changing to " + view);
+    if(current_ContentView==mGLView) {
+      if(LOG_LAYOUT) Log.i(TAG, "setContentView pausing " + current_ContentView);
+      ((NativeGLSurfaceView)current_ContentView).onPause();
+      current_ContentView.setVisibility(android.view.View.GONE);
+    } else {
+      topLayout.removeView(current_ContentView);
+    }
+    if(view!=null && view!=mGLView) {
+      if(LOG_LAYOUT) Log.i(TAG, "setContentView clearing " + view);
+      android.view.ViewParent parent0 = view.getParent();
+      if(parent0 instanceof android.view.ViewGroup) {
+        android.view.ViewGroup parent = (android.view.ViewGroup) parent0;
+        if(parent!=null) {
+          parent.removeView(current_ContentView);
+        }
+      } else if(parent0 != null) {
+        Log.e(TAG, "setContentView view " + view + " has unhandled parent " + parent0);
+      }
+      topLayout.addView(view);
+    }
+    current_ContentView = view;
+    // TBD: chances are that other classes might need a resume call too.
+    if(current_ContentView==mGLView) {
+      if(LOG_LAYOUT) Log.i(TAG, "setContentView resuming " + current_ContentView);
+      current_ContentView.setVisibility(android.view.View.VISIBLE);
+      ((NativeGLSurfaceView)current_ContentView).onResume();
+    }
+    if(LOG_LAYOUT) Log.i(TAG, "setContentView now " + current_ContentView);
+  }
+
+  private static boolean native_instance_is_up = false;
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -192,19 +254,23 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     WindowManager.LayoutParams.FLAG_FULLSCREEN);
     // prevent sleep
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-    if(mGLView==null) { // once only!
-      mGLView = new xGLSurfaceView(this);
-      // This may better before other pieces
+    // get the permissions the `nativeInstanceInit` may require any
+    requestAllPermissions();
+    if(!native_instance_is_up) {
+      native_instance_is_up=true;
+      // Log.i(TAG, "Init native, files: " + getFilesDir().toString());
       nativeInstanceInit(getApplicationContext().getPackageCodePath().toString(), getFilesDir().toString());
+      // Log.i(TAG, "Init native done");
     }
 
     mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
 
-    requestAllPermissions();
-
     // MUST NOT run before nativeInstanceInit completed
     // and MUST NOT run before permission checks
-    setContentView(current_ContentView==null ? mGLView : current_ContentView);
+    if(LOG_LAYOUT) Log.i(TAG, "Setting content view");
+    buildTopLayout();
+    setContentView(current_ContentView);
+    if(LOG_LAYOUT) Log.i(TAG, "Set content view");
 
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONCREATE@
@@ -217,34 +283,30 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   protected void onDestroy() {
     setContentView(mGLView);
     @ANDROID_JAVA_ONDESTROY@
-    nativeEvent(14,0,0); // EVENT_CLOSE
-    nativeEvent(127,0,0); // EVENT_TERMINATE
+    nativeEvent(14, 0, 0); // EVENT_CLOSE
+    nativeEvent(128, 0, 0); // EVENT_TERMINATE
     super.onDestroy();
-  }
-  private void onPauseOrStop() {
-    // Additions needed by modules, e.g. gps
-    @ANDROID_JAVA_ONPAUSE@
-    if (!isFinishing() && current_ContentView==mGLView && mGLView!=null) {
-      mGLView.onPause();
-    }
   }
   @Override
   protected void onStop() {
     Log.e("@SYS_PACKAGE_DOT@", "onStop");
-    onPauseOrStop();
     super.onStop();
   }
   @Override
   protected void onPause() {
-    onPauseOrStop();
+    // Additions needed by modules, e.g. gps
+    @ANDROID_JAVA_ONPAUSE@
+    if (!isFinishing() && mGLView!=null) {
+      mGLView.onPause();
+    }
     super.onPause();
   }
   @Override
   protected void onResume() {
-    super.onResume();
-    if(current_ContentView==mGLView && mGLView!=null) {
+    if(current_ContentView==mGLView) {
       mGLView.onResume();
     }
+    super.onResume();
     // Additions needed by modules, e.g. gps
     @ANDROID_JAVA_ONRESUME@
   }
@@ -266,8 +328,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   @ANDROID_JAVA_ACTIVITYADDITIONS@
 
   // Native event bindings
-  static GLSurfaceView mGLView = null;
-  native void nativeEvent(int t, int x, int y);
+  public native void nativeEvent(int t, int x, int y);
   static { System.loadLibrary("payloadshared"); }
   // OpenURL code
   void openURL(String url) {
@@ -284,16 +345,24 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
   native void nativeInstanceInit(String packageCodePath, String filesDir);
 }
 
-class  xGLSurfaceView extends GLSurfaceView {
-  public xGLSurfaceView(Context context) {
+class  xGLSurfaceView extends NativeGLSurfaceView {
+  public xGLSurfaceView(Activity context) {
     super(context);
     setFocusable(true);
     setFocusableInTouchMode(true);
-    renderer = new myRenderer();
+    renderer = new myRenderer(context);
     setRenderer(renderer);
+  }
+  public void queueNativeEvent(Runnable r) {
+    r.run();
+  }
+  public void requestRender() {
+    // super.requestRender();
+    renderer.nativeEvent(15, 0, 0); // EVENT_REDRAW
   }
   public boolean onTouchEvent(final MotionEvent event) {
     super.onTouchEvent(event);
+    // Log.i("xGLSurfaceView", "onTouchEvent " + event);
     t=0;
     x=(int)event.getX(); y=(int)event.getY();
     switch (event.getAction()&MotionEvent.ACTION_MASK) {
@@ -310,15 +379,15 @@ class  xGLSurfaceView extends GLSurfaceView {
       final int x0=(int)event.getX(0);
       final int y0=(int)event.getY(0);
       if (n>1) { // MultiTouch
-        queueEvent(new Runnable(){ public void run() { renderer.pointerEvent(18,id0,0); }});
+        renderer.pointerEvent(18,id0,0);
       }
-      queueEvent(new Runnable(){ public void run() { renderer.pointerEvent(t0,x0,y0); }});
+      renderer.pointerEvent(t0,x0,y0);
       if (n>1) {  // MultiTouch
         final int id1=event.getPointerId(1);
         final int x1=(int)event.getX(1);
         final int y1=(int)event.getY(1);
-        queueEvent(new Runnable(){ public void run() { renderer.pointerEvent(18,id1,0); }});
-        queueEvent(new Runnable(){ public void run() { renderer.pointerEvent(t0,x1,y1); }});
+        renderer.pointerEvent(18, id1, 0);
+        renderer.pointerEvent(t0, x1, y1);
       }
     }
     return true;
@@ -336,8 +405,7 @@ class  xGLSurfaceView extends GLSurfaceView {
     if (asciiKey > 0) {
       t=type;
       x=asciiKey;
-      queueEvent(new Runnable(){ public void run() {
-        renderer.nativeEvent(t,x,y); }});
+      renderer.nativeEvent(t, x, y);
       return true;
     }
     // Get everything else
@@ -356,34 +424,60 @@ class  xGLSurfaceView extends GLSurfaceView {
       case KeyEvent.KEYCODE_SOFT_LEFT:   return true;
     }
     if (t>0) {
-      queueEvent(new Runnable(){ public void run() {
-        renderer.nativeEvent(t,x,y); }});
+      renderer.nativeEvent(t, x, y);
     }
     return true;
   }
-  public void onPause() {
-    super.onPause();
-    renderer.nativeEvent(16,0,0); // EVENT_SUSPEND
-  }
-  public void onResume() {
-    super.onResume();
-    renderer.nativeEvent(17,0,0);  // EVENT_RESUME
-  }
-  int t,x,y;
+  int t, x, y;
   myRenderer renderer;
 }
-class myRenderer implements GLSurfaceView.Renderer {
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+class myRenderer implements NativeGLSurfaceView.Renderer {
+  final String TAG = "@SYS_PACKAGE_DOT@/NativeGLSurfaceView.Renderer";
+  private Activity mContext = null;
+  public myRenderer(Activity context) {
+    mContext = context;
+  }
+  public void queueNativeEvent(Runnable r) { mContext.runOnUiThread(r); }
+  public void start() {
+    // Note the exception: MUST wait for native thread to attach.
+    nativeEvent(127, 0, 0); // EVENT_INIT
+  }
+  public void onPause() {
+    nativeEvent(16, 0, 0); // EVENT_SUSPEND
+  }
+  public void onResume() {
+    nativeEvent(17, 0, 0); // EVENT_RESUME
+  }
+  public void onWindowResize(int w, int h) {
+    // Log.i(TAG, "onWindowResize sending EVENT_INIT");
+    nativeEvent(127, w, h); // EVENT_INIT
+    // Log.i(TAG, "onWindowResize sending EVENT_REDRAW");
+    nativeEvent(15, 0, 0);   // EVENT_REDRAW
+    // Log.i(TAG, "onWindowResize completed");
+  }
+  public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+    // Log.i(TAG, "surfaceCreated");
+    if(gl==null && config==null) {
+      // Log.i(TAG, "surfaceCreated sending EVENT_RESUME");
+      nativeEvent(17, 0, 0); // EVENT_RESUME
     }
-    public void onSurfaceChanged(GL10 gl, int w, int h) {
-      gl.glViewport(0, 0, w, h);
-      width=(float)w; height=(float)h;
-      nativeEvent(127,w,h); // EVENT_INIT
-    }
-   public void onDrawFrame(GL10 gl) {
-     nativeEvent(15,0,0);   // EVENT_REDRAW
-   }
-   public void pointerEvent(int t, int x, int y) { nativeEvent(t,x,(int)height-y); }
-   public float width,height;
-   native void nativeEvent(int t,int x,int y);
+  }
+  public void onSurfaceChanged(GL10 gl, final int w, final int h) {
+    gl.glViewport(0, 0, w, h);
+    width=(float)w; height=(float)h;
+    queueNativeEvent(new Runnable(){ public void run() {
+      nativeEvent(127, w, h); // EVENT_INIT
+    }});
+  }
+  public void onDrawFrame(GL10 gl) {
+    // nativeEvent(15, 0, 0);   // EVENT_REDRAW
+  }
+  public void onRedrawNeeded() {
+    nativeEvent(15, 0, 0);   // EVENT_REDRAW
+  }
+  public void pointerEvent(final int t, final int x, final int y) {
+    nativeEvent(t, x, (int)height-y);
+  }
+  public float width,height;
+  native void nativeEvent(int t,int x,int y);
 }

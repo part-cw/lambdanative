@@ -1,1 +1,2 @@
+// Log.i(TAG, "mClipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE)");
   mClipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);

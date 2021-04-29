@@ -6,7 +6,7 @@
        (lambda (expr)
          (cond-expand
           (android
-           ;; (log-debug "jScheme EVAL:" 1 expr)
+           (log-debug "jScheme EVAL:" 1 expr)
            (call-with-lnjscheme-result
             expr
             (lambda (promise)
@@ -19,7 +19,9 @@
                      (pretty-print expr port)
                      (display "EXN: " port)
                      (display-exception exn port)))))
-               (lambda () (success (force promise)))))))
+               (cond
+                ((procedure? promise) (lambda () (success (promise))))
+                (else (lambda () (success (force promise)))))))))
           (else #f)))
        body))
     'jscheme-worker))
@@ -45,6 +47,7 @@
            (onclick-set! (method "LNjScheme_Set_OnClickListener" app "android.view.View" "java.lang.Object"))
            (checkOrRequestPermission (method "checkOrRequestPermission" app "java.lang.String"))
            (loadUrl (method "loadUrl" "android.webkit.WebView" "java.lang.String"))
+           (getUrl (method "getUrl" "android.webkit.WebView"))
            (wv-can-go-back? (method "canGoBack" "android.webkit.WebView"))
            (wv-goBack! (method "goBack" "android.webkit.WebView"))
            (wv-setClient! (method "setWebViewClient" "android.webkit.WebView" "android.webkit.WebViewClient"))
@@ -67,11 +70,12 @@
              (back-pressed-h #f)
              (reload (new "android.widget.Button" this))
              (Button3 (new "android.widget.Button" this))
+             (Bcopy (new "android.widget.Button" this))
              )
          (define (switch-back-to-glgui! v)
            (on-back-pressed back-pressed-h)
            (set! back-pressed-h #f)
-           (setContentView this ln-mglview))
+           (setContentView this (lambdanative-glview)))
          (define (back-pressed)
            (if (wv-can-go-back? wv) (wv-goBack! wv) (switch-back-to-glgui! frame)))
          ;; (webview! wv 'onpagecomplete (lambda (view url) (log-message "webview post visual state")))
@@ -86,20 +90,23 @@
            (begin
              (setText Button3 (String "JS+-"))
              (onclick-set! this Button3 js+-))
+           (begin
+             (setText Bcopy (String "COPY"))
+             (onclick-set! this Bcopy (lambda _ (setClipboardContent (getUrl wv)))))
            (wvs-zoom-support-set! wvs #t)
            (wvs-zoom-builtin-set! wvs #t)
            (wvs-zoom-builtin-controls-set! wvs #f))
-         (arrange-in-order! navigation (list back reload Button3))
+         (arrange-in-order! navigation (list back reload Button3 Bcopy))
          (setText back (String "Back"))
          (setText reload (String "Reload"))
          (onclick-set! this back switch-back-to-glgui!)
          (onclick-set! this reload (lambda (v) ((method "reload" "android.webkit.WebView") wv)))
          (set-layout-vertical! frame)
-         (set-layout-vertical! frame)
          (arrange-in-order! frame (list navigation wv))
          (lambda (cmd arg)
            (case cmd
              ((load) (webview! wv cmd arg))
+             ((getURL) (getUrl wv))
              (else
               (if (not back-pressed-h)
                   (begin
@@ -120,6 +127,7 @@
                (cond
                 ((eq? a1 #t) '(webview #t #t))
                 ((string? a1) `(webview 'load ,a1))
+                ((eq? a1 'getURL) `(webview 'getURL #t))
                 (else (otherwise))))))))
         (webview-running #f))
     (lambda args

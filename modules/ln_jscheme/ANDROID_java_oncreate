@@ -1,6 +1,4 @@
 /* LNjScheme -*- mode: java; c-basic-offset: 2; -*- */
-LNjSchemeSession = new LNjScheme.Scheme(new String[0]){
-  String TAG = "calculator";
 
 if(LNjSchemeSession==null) {
 
@@ -125,7 +123,11 @@ LNjSchemeEvaluateNoSync
   (LNjScheme.Scheme.cons
    (LNjScheme.Scheme.sym("define"),
     LNjScheme.Scheme.list
-    (LNjScheme.Scheme.sym("ln-mglview"),
-     mGLView
+    (LNjScheme.Scheme.sym("lambdanative-glview"),
+       new LNMethod("lambdanative-glview") {
+         public Object apply(LNjScheme.Scheme interpreter, Object args) {
+           return mGLView;
+         }}
      )));
+
 // eof: LNjScheme

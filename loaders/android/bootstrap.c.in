@@ -46,34 +46,89 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <LNCONFIG.h>
 
+#define LAMBDANATIVE_JNI_VERSION JNI_VERSION_1_4
+
+#define DEBUG 1 // FIXME: The DEBUG flag is currently not passed when compiling this file!
+
+#ifdef DEBUG
+// naming convention LOGX=>log level, LOGXN=> as LOGX N hints at level
+// order, LOGXXX*=>level is internal/restricted/deprecated
+// see also <android/log.h>
+#define LOGUNKNOWN(...) ((void)__android_log_print(ANDROID_LOG_UNKNOWN, "@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@", __VA_ARGS__))
+/** The default priority, for internal use only.  */
+#define LOGDFL(...) ((void)__android_log_print(ANDROID_LOG_DEFAULT, "@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@", __VA_ARGS__))
+/** Verbose logging. Should typically be disabled for a release apk. */
+#define LOGV(...) ((void)__android_log_print(ANDROID_LOG_VERBOSE, "@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@", __VA_ARGS__))
+/** Debug logging. Should typically be disabled for a release apk. */
+#define LOGD(...) ((void)__android_log_print(ANDROID_LOG_DEBUG, "@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@", __VA_ARGS__))
+/** Informational logging. Should typically be disabled for a release apk. */
+#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@", __VA_ARGS__))
+/** Warning logging. For use with recoverable failures. */
+#define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@", __VA_ARGS__))
+/** Error logging. For use with unrecoverable failures. */
+#define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, "@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@", __VA_ARGS__))
+/** Fatal logging. For use when aborting. */
+#define LOGF(...) ((void)__android_log_print(ANDROID_LOG_FATAL, "@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@", __VA_ARGS__))
+#define LOGSILENT(...) ((void)__android_log_print(ANDROID_LOG_SILENT, "@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@", __VA_ARGS__))
+#else // log levels which should be active in release apk
+// uncomment the next line to ensure DEBUG mode is actually active.
+#error "NOT IN DEBUG MODE"
+#define LOGUNKNOWN(...)
+#define LOGDFL(...)
+#define LOGV(...)
+#define LOGD(...)
+#define LOGI(...)
+#define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@", __VA_ARGS__))
+#define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, "@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@", __VA_ARGS__))
+#define LOGF(...) ((void)__android_log_print(ANDROID_LOG_FATAL, "@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@", __VA_ARGS__))
+#define LOGSILENT(...)
+#endif
+
 @ANDROID_C_DEFINES@
 
 // event hook
 void Java_@SYS_PACKAGE_UNDERSCORE@_myRenderer_nativeEvent(JNIEnv* e, jobject o, jint t, jint x, jint y){
    if ((*e)->ExceptionCheck(e)) return;
-   ffi_event((int)t,(int)x,(int)y); 
+   ffi_event((int)t,(int)x,(int)y);
 }
 
 void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeEvent(JNIEnv* e, jobject o, jint t, jint x, jint y){
   if ((*e)->ExceptionCheck(e)) return;
-  ffi_event((int)t,(int)x,(int)y); 
+  ffi_event((int)t,(int)x,(int)y);
 }
 
 // JNI Hooks and Global Objects
-static jobject globalObj=NULL;
-static JavaVM* s_vm = NULL;
+static JavaVM* s_vm = NULL; // The JVM instance this code runs in.
+static jclass main_class = NULL; // required to look up methods by components
+static jobject globalObj = NULL; // The (only one) `Activity` object of `main_class`.
 static const char* app_directory_files = NULL;
 static const char* app_code_path = NULL;
 
-void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeInstanceInit(JNIEnv* env, jobject thiz, jstring codePath, jstring directoryFiles){
+void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeClassInit(JNIEnv* env, jclass class_object) {
+  main_class = (*env)->NewGlobalRef(env, class_object);
+  LOGD("Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeClassInit main_class %p", main_class);
+}
+
+jint JNI_OnLoad(JavaVM* vm, void* reserved) {
+  // FIXME: This was better done from _nativeClassInit above!
+  JNIEnv *env;
+  s_vm=vm;
+  //  if ((*s_vm)->GetEnv(s_vm,(void**) &env, JNI_VERSION_1_4) != JNI_OK) return -1;
+  return LAMBDANATIVE_JNI_VERSION;
+}
+
+void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeInstanceInit(JNIEnv* env, jobject activity, jstring codePath, jstring directoryFiles){
   const char* tmp;
-  globalObj = (*env)->NewGlobalRef(env,thiz);
   tmp = (*env)->GetStringUTFChars(env, directoryFiles, 0);
   app_directory_files = strdup(tmp);
   (*env)->ReleaseStringUTFChars(env, directoryFiles, tmp);
   tmp = (*env)->GetStringUTFChars(env, codePath, 0);
   app_code_path = strdup(tmp);
   (*env)->ReleaseStringUTFChars(env, codePath, tmp);
+  globalObj = (*env)->NewGlobalRef(env, activity);
+  // FIXME: next line should be replaced by nativeClassInit, which magically is not found!
+  main_class = (*env)->NewGlobalRef(env, (*env)->GetObjectClass(env, globalObj));
+  LOGD("Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeInstanceInit globalObj %p main_class %p", globalObj, main_class);
 }
 
 char* android_getFilesDir() {
@@ -83,55 +138,193 @@ char* android_getPackageCodePath() {
   return (char*) app_code_path;
 }
 
-jint JNI_OnLoad(JavaVM* vm, void* reserved){
-  JNIEnv *env;
-  s_vm=vm;
-//  if ((*s_vm)->GetEnv(s_vm,(void**) &env, JNI_VERSION_1_4) != JNI_OK) return -1;
-  return JNI_VERSION_1_4;
+// # JNI Untilities
+
+int JNI_forward_exception_to_gambit(JNIEnv*env) {
+  // TBD: actually forward, not only clear!
+  //
+  // TBD: Add location hint to API
+  if((*env)->ExceptionCheck(env)) {
+    LOGI("JNI_forward_exception_to_gambit");
+    jthrowable ex = (*env)->ExceptionOccurred(env);
+    jclass cls = (*env)->GetObjectClass(env, ex);
+    jmethodID getMessage = (*env)->GetMethodID(env, cls, "getMessage","()Ljava/lang/String;");
+    jstring message = (jstring)(*env)->CallObjectMethod(env, ex, getMessage);
+    const char *str = (*env)->GetStringUTFChars(env, message, NULL);
+
+    // (*env)->ExceptionDescribe(env);
+    (*env)->ExceptionClear(env); // clears the exception in JVM
+
+    // USE str WHILE VALID
+
+    LOGE("JNI_forward_exception_to_gambit: %s", str);
+
+    //* Release JNI resources
+    (*env)->ReleaseStringUTFChars(env, message, str);
+    (*env)->DeleteLocalRef(env, message);
+    (*env)->DeleteLocalRef(env, cls);
+    (*env)->DeleteLocalRef(env, ex);
+    //*/
+
+    return 1;
+  }
+  return 0;
 }
 
-JNIEnv* GetJNIEnv(){
-  int error=0;
+JNIEnv* GetJNIEnv() {
+  // TBD: Add location hint to API
+  jint error=0;
   JNIEnv* env = NULL;
-  /* static `env` does NOT work!  Once in a while we should ponder if
-     it still does not work or why.
+  /* TBD: static `env` does NOT work!  Once in a while we should
+     ponder if it still does not work or why.  As to the 'why': Gambit
+     was run from multiple threads before, which is at least tricky,
+     if not bound to fail.
 
   if(env) {
     if((*env)->ExceptionCheck(env)) (*env)->ExceptionClear(env);
     return env;
   }
   */
-  if(s_vm) error=(*s_vm)->AttachCurrentThread(s_vm, &env, NULL);
-  if(!error) error = JNI_forward_exception_to_gambit(env);
-  return (error?NULL:env);
+  if(s_vm) {
+    // LOGI("GetJniEnv: check attached.");
+    // some say that despite AttachCurrentThread being a no-op, one
+    // may save overhead when checking first via GetEnv, so we do.
+    error = (*s_vm)->GetEnv(s_vm, (void**)&env, LAMBDANATIVE_JNI_VERSION);
+    if(error==JNI_EDETACHED) {
+      LOGI("Attaching thread to JVM\n");
+      // error=(*s_vm)->AttachCurrentThreadAsDaemon(s_vm, &env, NULL);
+      error=(*s_vm)->AttachCurrentThread(s_vm, &env, NULL);
+    }
+  }
+  if(error!=JNI_OK) {
+    LOGE("GetJniEnv: failed to attach error %d.\n", error);
+    JNI_forward_exception_to_gambit(env);
+    return NULL;
+  } else {
+    return env;
+  }
 }
 
-int JNI_forward_exception_to_gambit(JNIEnv*env) {
-  // TBD: actually forward, not only clear!
-  if((*env)->ExceptionCheck(env)) {
-    (*env)->ExceptionClear(env);
-    return 1;
+// # OpenGL drawn from/within native thread.
+
+static jobject current_gl_state_object = NULL; // current, i.e., volatile
+static int gl_state_start_required = 1;
+static jmethodID gl_state_start = NULL;
+static jmethodID gl_state_draw_init = NULL;
+static jmethodID gl_state_on_draw_frame = NULL;
+static jmethodID gl_state_swap_buffers = NULL;
+
+void Java_@SYS_PACKAGE_UNDERSCORE@_GLState_nativeInit(JNIEnv* env, jobject gl_state_class) {
+  // free old references
+  if(gl_state_start!=NULL) {
+    (*env)->DeleteGlobalRef(env, gl_state_start);
+    gl_state_start = NULL;
   }
-  return 0;
+  if(gl_state_draw_init!=NULL) {
+    (*env)->DeleteGlobalRef(env, gl_state_draw_init);
+    gl_state_draw_init = NULL;
+  }
+  if(gl_state_on_draw_frame!=NULL) {
+    (*env)->DeleteGlobalRef(env, gl_state_on_draw_frame);
+    gl_state_on_draw_frame = NULL;
+  }
+  if(gl_state_swap_buffers!=NULL) {
+    (*env)->DeleteGlobalRef(env, gl_state_swap_buffers);
+    gl_state_swap_buffers = NULL;
+  }
+  // rebuild
+  gl_state_start = (*env)->GetMethodID(env, gl_state_class, "fromNativeStart", "()V");
+  LOGI("Java_@SYS_PACKAGE_UNDERSCORE@_GLState_nativeInit");
+  if(gl_state_start==NULL) {
+    LOGE("Java_@SYS_PACKAGE_UNDERSCORE@_GLState_nativeInit failed to find fromNativeStart");
+    // FatalError does not return
+    (*env)->FatalError(env, "@SYS_PACKAGE_UNDERSCORE@_GLState_nativeInit failed to find fromNativeStart");
+  }
+  gl_state_draw_init = (*env)->GetMethodID(env, gl_state_class, "fromNativeInitDraw", "()V");
+  if(gl_state_draw_init==NULL) {
+    (*env)->FatalError(env, "@SYS_PACKAGE_UNDERSCORE@_GLState_nativeInit failed to find fromNativeInitDraw");
+  }
+  gl_state_on_draw_frame = (*env)->GetMethodID(env, gl_state_class, "fromNativeOnDrawFrame", "()V");
+  if(gl_state_on_draw_frame==NULL) {
+    (*env)->FatalError(env, "@SYS_PACKAGE_UNDERSCORE@_GLState_nativeInit failed to find fromNativeOnDrawFrame");
+  }
+  gl_state_swap_buffers = (*env)->GetMethodID(env, gl_state_class, "fromNativeSwapBuffers", "()V");
+  if(gl_state_swap_buffers==NULL) {
+    (*env)->FatalError(env, "@SYS_PACKAGE_UNDERSCORE@_GLState_nativeInit failed to find fromNativeSwapBuffers");
+  }
+}
+
+void Java_@SYS_PACKAGE_UNDERSCORE@_GLState_nativeOnNewObject(JNIEnv* env, jobject obj) {
+  if(current_gl_state_object!=NULL) {
+    (*env)->DeleteGlobalRef(env, current_gl_state_object);
+    current_gl_state_object=NULL;
+  }
+  gl_state_start_required = 1;
+  current_gl_state_object = (*env)->NewGlobalRef(env, obj);
+}
+
+void android_GLState_start() {
+  // LOGI("android_GLState_start");
+  if(current_gl_state_object && gl_state_start_required) {
+    JNIEnv *env = GetJNIEnv();
+    gl_state_start_required = 0;
+    (*env)->CallVoidMethod(env, current_gl_state_object, gl_state_start);
+    if(JNI_forward_exception_to_gambit(env)) {
+      LOGE("android_GLState_start gl_state_start failed");
+    }
+  } else {
+    // LOGI("android_GLState_start already started");
+  }
+}
+
+void microgl_draw_before() {
+  // LOGI("microgl_draw_before.\n");
+  JNIEnv *env = GetJNIEnv();
+  if(env && current_gl_state_object && gl_state_draw_init) {
+    if(gl_state_start_required) {
+      gl_state_start_required = 0;
+      (*env)->CallVoidMethod(env, current_gl_state_object, gl_state_start);
+      if(JNI_forward_exception_to_gambit(env)) {
+        LOGE("microgl_draw_before gl_state_start failed");
+        return;
+      }
+    }
+    (*env)->CallVoidMethod(env, current_gl_state_object, gl_state_draw_init);
+    // LOGI("microgl_draw_before returned");
+    JNI_forward_exception_to_gambit(env);
+  }
+}
+
+void microgl_swapbuffers() {
+  JNIEnv *env = GetJNIEnv();
+  if(env && current_gl_state_object && gl_state_swap_buffers) {
+    // LOGI("microgl_swapbuffers do.\n");
+    (*env)->CallVoidMethod(env, current_gl_state_object, gl_state_swap_buffers);
+    JNI_forward_exception_to_gambit(env);
+  }
+}
+
+int microgl_fullscreen(int x, int y) {
+  JNIEnv *env = GetJNIEnv();
+  return 1; // SUCCESS
+}
+
+int microgl_window(int x, int y) {
+  return microgl_fullscreen(x, y);
 }
 
 // url launcher ffi
 void android_launch_url(char* urlstring){
   JNIEnv *env = GetJNIEnv();
   if (env&&globalObj) {
-    jstring jurlstring = (*env)->NewStringUTF(env,urlstring);
-    jclass cls = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
+    jstring jurlstring = (*env)->NewStringUTF(env, urlstring);
+    jclass cls = main_class;
     jmethodID method = cls ? (*env)->GetMethodID(env, cls, "openURL", "(Ljava/lang/String;)V") : NULL;
-    if(method) {
-      (*env)->CallVoidMethod(env, globalObj, method, jurlstring);
-      (*env)->DeleteLocalRef(env, method);
-    }
-    if(jurlstring) (*env)->DeleteLocalRef(env, jurlstring);
-    if(cls) (*env)->DeleteLocalRef(env, cls);
+    if(method) (*env)->CallVoidMethod(env, globalObj, method, jurlstring);
     JNI_forward_exception_to_gambit(env);
   }
 }
 
-// Add code here if needed for modules, such as GPS.
+// # Add code here if needed for modules, such as GPS.
 @ANDROID_C_ADDITIONS@
 

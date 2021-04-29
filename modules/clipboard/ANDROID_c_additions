@@ -1,12 +1,20 @@
+/* clipboard -*-C-*- */
+
 jstring jstr;
 const char *str = NULL;
 
-int android_clipboard_copy(char *str){
+int android_clipboard_copy(char *str) {
   JNIEnv *env = GetJNIEnv();
   jstring jstr = (*env)->NewStringUTF(env,str);
-  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
-  if (env&&globalObj){
-    jmethodID method = (*env)->GetMethodID(env, main_class, "setClipboardContent", "(Ljava/lang/String;)I");
+  static jmethodID method = 0;
+  if(env) {
+    if(!method) {
+      method = (*env)->GetMethodID(env, main_class, "setClipboardContent", "(Ljava/lang/String;)I");
+      if(!method) {
+        JNI_forward_exception_to_gambit(env);
+        return 0;
+      }
+    }
     return (*env)->CallIntMethod(env, globalObj, method, jstr);
   }
   return 0;
@@ -14,18 +22,25 @@ int android_clipboard_copy(char *str){
 
 const char *android_clipboard_paste(){
   JNIEnv *env = GetJNIEnv();
-  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
-  if (env&&globalObj){
-    jmethodID method = (*env)->GetMethodID(env, main_class, "getClipboardContent", "()Ljava/lang/String;");
-    jstr = (jstring) (*env)->CallObjectMethod(env, globalObj, method, jstr);
-    str  = (*env)->GetStringUTFChars(env, jstr, 0);
+  static jmethodID method = 0;
+  if(!main_class) (*env)->FatalError(env, "android_clipboard_paste: no main_class");
+  if(env) {
+    if(!method) {
+      method = (*env)->GetMethodID(env, main_class, "getClipboardContent", "()Ljava/lang/String;");
+      if(!method) {
+        JNI_forward_exception_to_gambit(env);
+        return "";
+      }
+      jstr = (jstring) (*env)->CallObjectMethod(env, globalObj, method, jstr);
+      str  = (*env)->GetStringUTFChars(env, jstr, 0);
+    }
     // (*env)->ReleaseStringUTFChars(env, jstr, str);
     return str;
   }
   return "";
 }
 
-void android_clipboard_release(){
+void android_clipboard_release() {
   if (str) {
     JNIEnv *env = GetJNIEnv();
     (*env)->ReleaseStringUTFChars(env, jstr, str);
@@ -38,12 +53,18 @@ int android_clipboard_clear(){
   return 0;
 }
 
-int android_clipboard_hascontent(){
+int android_clipboard_hascontent() {
   JNIEnv *env = GetJNIEnv();
-  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
-  if (env&&globalObj){
+  static jmethodID method = 0;
+  if(env) {
+    if(!method) {
     jmethodID method = (*env)->GetMethodID(env, main_class, "checkClipboardContent", "()I");
+    if(!method) {
+      JNI_forward_exception_to_gambit(env);
+      return 0;
+    }
     return (*env)->CallIntMethod(env, globalObj, method);
+    }
   }
   return 0;
 }

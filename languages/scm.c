@@ -42,6 +42,9 @@ void lambdanative_payload_setup()
   setup_params.debug_settings = debug_settings;
   lambdanative_exit_call_count = 0;
   ___setup(&setup_params);
+ /*  Runing from a single thread should fix the race conditions, which
+     lead to the following mitigation.  Should be ready to be removed.
+
   #if defined(ANDROID)
     #if (___VERSION < 409002)
       ___disable_heartbeat_interrupts();
@@ -49,6 +52,7 @@ void lambdanative_payload_setup()
       ___cleanup_heartbeat_interrupt_handling();
     #endif
   #endif
+ */
 }
 
 void lambdanative_payload_cleanup()

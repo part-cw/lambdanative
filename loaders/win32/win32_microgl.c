@@ -37,6 +37,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 // simple win32 GL window interface
 
+// FIXME 2021-04-25: As Windows are bound to the thread, which created
+// it, the microgl_pollevents would needs to be called from the
+// eventloop and the microgl_hook under Windows simply needs to report
+// the events.  Eventually that's going to be a bit tricky, as it puts
+// us back into the situation, where we are already in a
+// Scheme-C-Scheme calling situation, which is better avoided under
+// Gambit.
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
@@ -125,7 +133,7 @@ static int _microgl_key(WPARAM wParam, LPARAM lParam, int modifier, int action)
 
 // timer callback
 static VOID CALLBACK event_timer_callback(HWND hWnd, UINT uMsg, UINT idTimer, DWORD dwTime){
-  ffi_event(EVENT_IDLE,0,0);
+  //ffi_event(EVENT_IDLE,0,0);
 }
 
 // window event callback
@@ -239,7 +247,7 @@ void microgl_init(void)
   // 20100729: we need to fix this icon business...
   // 20100729: note that the app dies mysteriously without the icon???
   wc.hIcon = LoadIcon(microglInstance, MAKEINTRESOURCE(AppIcon));
-  wc.hIconSm = LoadImage(microglInstance,MAKEINTRESOURCE(AppIcon),IMAGE_ICON,16,16, LR_DEFAULTCOLOR);
+  wc.hIconSm = (HICON)LoadImage(microglInstance, MAKEINTRESOURCE(AppIcon), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
 
 //  wc.hIcon = LoadIcon( NULL, IDI_APPLICATION);
 //  wc.hIconSm = LoadIcon( NULL, IDI_APPLICATION);
@@ -355,10 +363,21 @@ void microgl_close()
 void microgl_pollevents(void)
 {
   MSG Msg;
-  while( PeekMessage( &Msg, NULL, 0, 0, PM_REMOVE ) ) { DispatchMessage( &Msg ); }
-//  if (GetMessage(&Msg, NULL, 0, 0) > 0) {
-//    TranslateMessage(&Msg); DispatchMessage(&Msg);
-//  }
+  #if 1
+  // PeekMessage does not block for message
+  while( PeekMessage( &Msg, NULL, 0, 0, PM_REMOVE ) ) {
+    DispatchMessage( &Msg );
+  }
+  microgl_refresh();
+  ffi_event(EVENT_IDLE, 0, 0);
+  // SleepEx(25, 1); // milliseconds
+  #else
+  // GetMessage waits until a message is received
+  if( GetMessage(&Msg, NULL, 0, 0) > 0 ) {
+    TranslateMessage(&Msg);
+    DispatchMessage(&Msg);
+  }
+  #endif
 }
 
 int microgl_screenwidth()

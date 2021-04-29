@@ -159,7 +159,7 @@ static int soundfile_load(char *fname)
 static int soundfile_play(int id)
 {
   char *fname=(char*)id;
-  PlaySound(fname, NULL, SND_FILENAME | SND_ASYNC);
+  PlaySound(fname, NULL, SND_FILENAME | SND_ASYNC); // This | just fixes highlighting
 }
 
 #endif
@@ -256,8 +256,7 @@ static void portaudio_stop(void){
 // %%%%%%%%%%%%%%%%%%%%%%
 
 #ifdef USE_ANDROID_NATIVE
-void android_audio_init(void);
-int android_audio_loadfile(const char*, int);
+int android_audio_loadfile(int, const char*, int);
 int android_audio_playfile(int, float, float, int, int, float);
 int android_audio_stopfile(int);
 int android_audio_stop();
@@ -275,9 +274,6 @@ int android_audio_setvolume(float vol){ return 0;}
 // %%%%%%%%%%%%%%%%%%%%%%
 
 void audiofile_init(void) {
-#ifdef USE_ANDROID_NATIVE
-  android_audio_init();
-#endif
 #ifdef USE_PORTAUDIO
   portaudio_init();
 #endif
@@ -286,10 +282,10 @@ void audiofile_init(void) {
 #endif
 }
 
-int audiofile_load(char *name)
+int audiofile_load(int id, char *name)
 {
   #ifdef USE_ANDROID_NATIVE
-  return android_audio_loadfile(name, 0);
+  return android_audio_loadfile(id, name, 0);
   #endif
   #ifdef USE_APPLE_NATIVE
   SystemSoundID sid;
@@ -396,7 +392,17 @@ end-of-c-declare
 
 (define audiofile-init (c-lambda () void "audiofile_init"))
 
-(define audiofile:load (c-lambda (char-string) int "audiofile_load"))
+(define audiofile:load
+  (cond-expand
+   (android
+    (lambda (fn)
+      (let* ((result (eventloop-open-channel))
+             (reply-id (mutex-specific result)))
+        ((c-lambda (int char-string) int "audiofile_load") reply-id fn)
+        (eventloop-await-channel result))))
+   (else
+    (lambda (fn)
+      ((c-lambda (int char-string) int "audiofile_load") 0 fn)))))
 
 (define (audiofile-load name)
   (define (autoext name)

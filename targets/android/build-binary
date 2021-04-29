@@ -256,6 +256,8 @@ fi
 echo " => transferring java hook.."
 appdir=$tmpdir/src/$SYS_PACKAGE_SLASH
 ac_output loaders/android/bootstrap.java.in $appdir/$SYS_APPNAME.java
+ac_output loaders/android/NativeGLSurfaceView.java.in $appdir/NativeGLSurfaceView.java
+ac_output loaders/android/GLState.java.in $appdir/GLState.java
 
 echo " => transferring java public classes and jars from modules.."
 for m in $modules; do
@@ -365,7 +367,7 @@ if [ `has_module hybridapp-xwalk` = yes ]; then
     cd $tmpdir
     if [ $use_android_tool = yes ]; then
       $ANDROIDSDK/tools/android --silent update project --target $ANDROIDSDKTARGET --path $tmpdir --library ../libxwalk
-    else 
+    else
       assert "## gradle is not supported"
     fi
     cd "$xwalk_here"
@@ -377,7 +379,7 @@ cat > $tmpdir/res/layout/main.xml << __EOF
 </org.xwalk.core.XWalkView>
 __EOF
   else
-    assert "crosswalk library not found?" 
+    assert "crosswalk library not found?"
   fi
 fi
 
@@ -443,5 +445,11 @@ if [ -d  $ANDROIDSDK/tools.gradle ]; then
   rm $ANDROIDSDK/tools
   ln -s $ANDROIDSDK/tools.gradle $ANDROIDSDK/tools
 fi
+
+# Local Variables:
+# mode: shell-script
+# sh-basic-offset: 2
+# comment-column: 0
+# End:
 
 #eof
