@@ -63,7 +63,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (if (pair? res) (car res) fallback)
         )
       )
-      #f
+      (begin
+        (log-error "store:instance-ref: unknown store " store " " (store-list))
+        fallback
+      )
     )))
 
 (define (store:instance-clear! store id)
