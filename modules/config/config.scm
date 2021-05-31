@@ -98,7 +98,7 @@ end-of-c-declare
 (define microgl-window
   (c-lambda
    (int int) void "
-#if !defined(STANDALONE)
+#if !defined(STANDALONE) && !defined(USECONSOLE)
  microgl_window(___arg1, ___arg2);
 #endif
 "))
@@ -106,7 +106,7 @@ end-of-c-declare
 (define microgl-fullscreen
   (c-lambda
    (int int) void "
-#if !defined(STANDALONE)
+#if !defined(STANDALONE) && !defined(USECONSOLE)
  microgl_fullscreen(___arg1, ___arg2);
 #endif
 "))
