@@ -39,10 +39,10 @@ rmifexists "$apptgtdir"
 mkdir "$apptgtdir"
 tmpdir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 if [ `is_gui_app` = yes ]; then
-  cp loaders/x11/x11_microgl.c $tmpdir 
+  cp loaders/x11/x11_microgl.c $tmpdir
 fi
 if [ `is_standalone_app` = "no" ]; then
-  cp loaders/common/main.c $tmpdir
+  ac_output loaders/common/main.c $tmpdir/main.c
 fi
 cd $tmpdir
 

@@ -97,9 +97,35 @@ void microgl_hook(int t, int x, int y)
 int cmd_argc=0;
 char **cmd_argv;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+@MAIN_c_additions@
+#ifdef __cplusplus
+}
+#endif
+typedef struct subcommand_def {
+  const char* name;
+  void (*main)(int, const char*argv[]);
+} subcommand_def_t;
 int main(int argc, char *argv[])
 {
   int w=0,h=0;
+  subcommand_def_t subcmd[] =
+    {
+     @MAIN_subcommand_defines@
+     {NULL, NULL}
+    };
+
+  if(argc>2 && strcmp(argv[1], "-s")==0) {
+    int i=0;
+    for(;subcmd[i].name!=NULL; ++i) {
+      if(strcmp(argv[2], subcmd[i].name)==0) {
+        subcmd[i].main(argc-2, argv+2);
+        exit(23); // subcmd SHOULD NOT return
+      }
+    }
+  }
 
   cmd_argc=argc; cmd_argv=argv;
 

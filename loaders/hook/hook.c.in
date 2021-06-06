@@ -24,12 +24,41 @@ void lambdanative_exit(int code)
   lambdanative_payload_cleanup();
   exit(code);
 }
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+@MAIN_c_additions@
+#ifdef __cplusplus
+}
+#endif
+typedef struct subcommand_def {
+  const char* name;
+  void (*main)(int, const char*argv[]);
+} subcommand_def_t;
+
 #ifdef STANDALONE
 // standalone setup
 char **cmd_argv;
 int cmd_argc=0;
 int main(int argc, char *argv[])
 {
+  subcommand_def_t subcmd[] =
+    {
+     @MAIN_subcommand_defines@
+     {NULL, NULL}
+    };
+
+  if(argc>2 && strcmp(argv[1], "-s")==0) {
+    int i=0;
+    for(;subcmd[i].name!=NULL; ++i) {
+      if(strcmp(argv[2], subcmd[i].name)==0) {
+        subcmd[i].main(argc-2, argv+2);
+        exit(23); // subcmd SHOULD NOT return
+      }
+    }
+  }
+
   cmd_argc=argc; cmd_argv=argv;
   lambdanative_payload_setup();
   lambdanative_payload_cleanup();

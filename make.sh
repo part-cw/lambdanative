@@ -340,6 +340,13 @@ filter_entries()
 ###########################
 # general compiler functions
 
+startup_subst()
+{
+    d=$1
+    ac_subst MAIN_c_additions "@$d/MAIN_c_additions"
+    ac_subst MAIN_subcommand_defines "@$d/MAIN_subcommand_defines"
+}
+
 compile_payload()
 {
   dmsg_make "entering compile_payload [$@]"
@@ -379,7 +386,12 @@ compile_payload()
   hctgt="$SYS_PREFIX/build/$hookhash.c"
   hotgt=`echo "$hctgt" | sed 's/c$/o/'`
   rmifexists "$hotgt"
-  cp loaders/hook/hook.c "$hctgt"
+  for m in $modules; do
+      modpath=`locatedir modules/$m silent`
+      startup_subst $modpath
+  done
+  startup_subst `locatedir apps/$SYS_APPNAME`
+  ac_output loaders/hook/hook.c "$hctgt"
   veval "$SYS_ENV $SYS_CC $payload_cdefs $languages_def -c -o $hotgt $hctgt -I$SYS_PREFIX/include"
   assertfile $hotgt
   payload_objs="$payload_objs $hotgt"

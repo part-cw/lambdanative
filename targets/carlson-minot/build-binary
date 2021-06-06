@@ -49,7 +49,7 @@ rmifexists "$apptgtdir"
 mkdir "$apptgtdir"
 tmpdir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 if [ `is_standalone_app` = "no" ]; then
-  cp loaders/common/main.c $tmpdir
+  ac_output loaders/common/main.c.in $tmpdir/main.c
 fi
 cd $tmpdir
 

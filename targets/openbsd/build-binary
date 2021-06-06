@@ -42,7 +42,7 @@ if [ `is_gui_app` = yes ]; then
   cp loaders/x11/x11_microgl.c $tmpdir 
 fi
 if [ `is_standalone_app` = "no" ]; then
-  cp loaders/common/main.c $tmpdir
+  ac_output loaders/common/main.c.in $tmpdir/main.c
 fi
 cd $tmpdir
 
