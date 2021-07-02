@@ -53,6 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define use-symbols? #f) ;; how to encode JS true, false and null
 (define use-tables? #f)  ;; how to encode JS objects
 (define use-symbols-for-keys? #f) ;; how to encode JS object slot names
+(define use-newlines? #f) ;; vertical layout
 
 (define debug? #f)
 
@@ -65,10 +66,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                  (cons 'TABLE (table->list obj))
                  obj)))))
 
-(define (json-set-options! #!key (symbols #f) (tables #f) (keys #f))
+(define (json-set-options! #!key (symbols #f) (tables #f) (keys #f) (newlines #f))
   (set! use-symbols? symbols)
   (set! use-tables? tables)
-  (set! use-symbols-for-keys? keys))
+  (set! use-symbols-for-keys? keys)
+  (set! use-newlines? newlines))
 
 (define-macro (->string obj)
   `(cond
@@ -379,7 +381,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (let loop ((lst (cdr lst)))
             (if (pair? lst)
                 (begin
-                  (display "," port)
+                  (display (if use-newlines? ",\n" ",") port)
                   (wr-prop (car lst))
                   (loop (cdr lst)))))))
     (display "}" port))
