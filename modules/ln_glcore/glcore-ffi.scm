@@ -169,6 +169,16 @@ ___result = GL_CLAMP_TO_EDGE;
   ((c-lambda (float float float) void "glTranslatef") 
      (flo a) (flo b) (flo c)))
 
+(define glTranslatef//checks (c-lambda (float float float) void "glTranslatef"))
+
+
+(define glTranslatef/f32vector//checks
+  ;; call site argument checks are supposed to ensure type and length
+  (c-lambda
+   (scheme-object) void "
+___F32* args = ___CAST(___F32*, ___BODY_AS(___arg1, ___tSUBTYPED));
+glTranslatef(args[0], args[1], args[2]);"))
+
 (define (glScalef a b c) 
   ((c-lambda (float float float) void "glScalef") 
      (flo a) (flo b) (flo c)))

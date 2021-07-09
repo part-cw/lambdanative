@@ -267,73 +267,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;        (set! last-frame-time next)
 ;;        (seconds->time next)))))
 
-(define glgui-timings-set!)
+(define (glgui-timings-set! . _)
+  (log-error "glgui-timings-set! is outdated and ignored"))
 
 ;; glgui-wakeup! - a thunk, which when called will immediately unblock
 ;; the thread waiting in glgui-event.  Should be called if other
 ;; threads notice the event loop should proceed.  Immediately resets
 ;; frame-period to frame-period-min.
-(define glgui-wakeup!)
+(define (glgui-wakeup!) (log-error "glgui-wakeup! was a mitigation, gone for the better."))
 
 ;; process an input event
 ;; 20100519: allow multiple guis
 ;; 20100804: support gui offset
 
-(define glgui-event
-  (let ((frame-period-max-value 0.5) ;; How long to sleep at most in redraw.
-        (step 0.05) ;; delay increase
-        (consecutive-redraw-count 1)
-        (customized-moment #f) ;; may be a procedure returning the wait time/moment
-        (wait-mutex (make-mutex 'glgui-event))
-        (wait-cv (make-condition-variable 'glgui-event)))
-    (define (timings-set! #!key (frame-period-max #f) (frame-period-min #f) (frame-period-custom #f))
-      (define (legal? x) (and (number? x) (positive? x)))
-      (if (legal? frame-period-max) (set! frame-period-max-value frame-period-max))
-      (if (legal? frame-period-min) (set! step frame-period-min))
-      (if (or (not frame-period-custom) (procedure? frame-period-custom))
-          (set! customized-moment frame-period-custom)))
-    (define (wakeup!)
-      (condition-variable-signal! wait-cv))
-    (define (reset-wait!)
-      (set! consecutive-redraw-count 1))
-    (define (wait-for-time-or-signal!)
-      ;; wait for delay or signal from other thread
-      (if (let ((moment (if customized-moment
-                            (customized-moment consecutive-redraw-count)
-                            (min frame-period-max-value (* consecutive-redraw-count step)))))
-              (mutex-unlock! wait-mutex wait-cv moment))
-          (reset-wait!)
-          (set! consecutive-redraw-count (fx+ consecutive-redraw-count 1))))
-    (define (glgui-event guis t x0 y0)
-      (if (and glgui:active app:width app:height)
-          (let ((gs (if (list? guis) guis (list guis))))
-            (if (fx= t EVENT_REDRAW)
-                (when (mutex-lock! wait-mutex 0)
-                  (apply glgui:render gs)
-                  (wait-for-time-or-signal!))
-                (begin
-                  (reset-wait!)
-                  (apply glgui:inputloop (append (list t x0 y0) gs)))))
-          (if (fx= t EVENT_REDRAW)
-              (wait-for-time-or-signal!)
-              (if customized-moment
-                  (thread-sleep! (customized-moment 1))
-                  (begin
-                    (thread-sleep! step)
-                    (reset-wait!))))))
-    (set! glgui-wakeup! wakeup!)
-    (set! glgui-timings-set! timings-set!)
-    glgui-event))
+(define (glgui-event guis t x0 y0)
+  (if (and glgui:active app:width app:height)
+      (let ((gs (if (list? guis) guis (list guis))))
+        (if (eqv? t EVENT_REDRAW)
+            (when (not app:suspended)
+              (apply glgui:render gs)
+              (microgl-swapbuffers))
+            (apply glgui:inputloop (append (list t x0 y0) gs))))))
 
 (define (glgui-timings-at-sec! sec)
-  (define (wait-for-sec _) (seconds->time (+ ##now sec)))
-  (define (no-wait _) 0)
-  (cond-expand
-   ((or android ios)
-    ;; TBD: convey the time value to signaling code.
-    ;; switch delays to zero
-    (glgui-timings-set! frame-period-custom: no-wait))
-   (else (glgui-timings-set! frame-period-custom: wait-for-sec))))
+  (log-error "glgui-timings-at-sec! is outdated and ignored"))
 
 (define (glgui-timings-at-10msec!) (glgui-timings-at-sec! 0.01))
 

@@ -62,7 +62,7 @@ static int run_flag=1;
 static int int_flag=0;
 
 // signal handler
-void signal_hook()
+void signal_hook(int sig)
 {
   run_flag=0;
   int_flag=1;
@@ -82,17 +82,6 @@ void signal_hook()
 void microgl_hook(int t, int x, int y)
 {
   switch (t) {
-    case EVENT_REDRAW:
-      glClearColor(0.0, 0.0, 0.0, 0.0);
-      glMatrixMode(GL_PROJECTION);
-      glLoadIdentity();
-      glOrtho(0.,scm_width(),0.,scm_height(),-1.,1.);
-      glMatrixMode(GL_MODELVIEW);
-      glLoadIdentity();
-      glClear(GL_COLOR_BUFFER_BIT);
-      ffi_event(EVENT_REDRAW,0,0);
-      microgl_swapbuffers();
-      break;
     case EVENT_CLOSE:
       ffi_event(EVENT_CLOSE,0,0);
       run_flag=0;
@@ -116,18 +105,19 @@ int main(int argc, char *argv[])
 
 // fork to release terminal (for starting processes on embedded systems)
 #if defined(USECONSOLE) && defined(OPENBSD)
- signal(SIGHUP,SIG_IGN);
- signal(SIGTERM,SIG_IGN);
- signal(SIGCHLD,SIG_IGN);
+ signal(SIGHUP, SIG_IGN);
+ signal(SIGTERM, SIG_IGN);
+ signal(SIGCHLD, SIG_IGN);
  if(fork() != 0) return 0;
  chdir("/"); setsid(); umask(0);
  if(fork() != 0) return 0;
- { int fd = open("/tmp/stdin",O_RDONLY|O_CREAT);
-   dup2(fd,STDIN_FILENO);
-   fd = open("/tmp/stdout",O_WRONLY|O_CREAT);
-   dup2(fd,STDOUT_FILENO);
-   fd = open("/tmp/stderr",O_WRONLY|O_CREAT);
-   dup2(fd,STDERR_FILENO);
+ { int fd = open("/tmp/stdin", O_RDONLY|O_CREAT);
+   dup2(fd, STDIN_FILENO);
+   fd = open("/tmp/stdout", O_WRONLY|O_CREAT);
+   dup2(fd, STDOUT_FILENO);
+   fd = open("/tmp/stderr", O_WRONLY|O_CREAT);
+   dup2(fd, STDERR_FILENO);
+   close(fd);
  }
 #endif
 
@@ -151,17 +141,6 @@ int main(int argc, char *argv[])
   signal(SIGTERM,signal_hook);
   signal(SIGINT,signal_hook);
 
-#ifndef USECONSOLE
-
-  // open a window
-  if ((w==scm_width()&&h==scm_height())||scm_forcefullscreen()) {
-    microgl_fullscreen(w,h);
-  } else {
-    microgl_window(scm_width(),scm_height());
-  }
-
-#endif // USECONSOLE
-
   while (run_flag) {
     // check for application exit
     if (run_flag) run_flag=scm_runflag();
@@ -170,8 +149,6 @@ int main(int argc, char *argv[])
 
     // check for events
     microgl_pollevents();
-    // ask for a redraw
-    microgl_refresh();
 
 #else
 

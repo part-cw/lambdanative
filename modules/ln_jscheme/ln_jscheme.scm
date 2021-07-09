@@ -1,10 +1,10 @@
 (cond-expand
-  (android
-    (c-declare "extern const char* android_app_class();")
-    (define android-app-class (c-lambda () char-string "android_app_class")))
-  (else (define (android-app-class)
-          (log-error "android-app-class: called in non-Android context")
-          "android-app-class")))
+ (android
+  (c-declare "extern const char* android_app_class();")
+  (define android-app-class (c-lambda () char-string "android_app_class")))
+ (else (define (android-app-class)
+         (log-error "android-app-class: called in non-Android context")
+         "android-app-class")))
 
 (define call-with-lnjscheme-result
   ;; SIGNATURE (NAME S-EXPR #!optional (RECEIVER force))
@@ -76,9 +76,8 @@ NULL;
            ;; etc. by default force it expecting the application to
            ;; abort on any exception.
            (receiver promise))))
-        (jscheme-send (object->string obj))
-        (thread-yield!))
-  jscheme-call))
+      (jscheme-send (object->string obj)))
+    jscheme-call))
 
 (define (lnjscheme-future obj)
   ;; a promise waiting for the evaluation of OBJ

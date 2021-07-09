@@ -1,47 +1,72 @@
-// AudioHelper ffi
-static jobject audiohelper_object=NULL;
-static jclass audiohelper_class=NULL;
-static jmethodID s_load=NULL;
-static jmethodID s_play=NULL;
-static jmethodID s_stop=NULL;
-static jmethodID s_stopfile=NULL;
-static jmethodID s_unload=NULL;
-static jmethodID s_setvolume=NULL;
+/* modules/audio/ANDROID_c_additions -*-C-*- */
 
-void android_audio_init(){
-  static int needsinit=1;
-  if (needsinit) {
-    JNIEnv *env = GetJNIEnv();
-    if (env) {
-      audiohelper_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/AudioHelper");
-      if (audiohelper_class) {
-        jmethodID getInstance = (*env)->GetStaticMethodID(env,audiohelper_class, "getInstance", 
-           "()L@SYS_PACKAGE_SLASH@/AudioHelper;");
-        s_load = (*env)->GetMethodID(env,audiohelper_class, "LoadSound", "(Ljava/lang/String;I)I");
-        s_play = (*env)->GetMethodID(env,audiohelper_class, "PlaySound", "(IFFIIF)I");
-        s_stop = (*env)->GetMethodID(env,audiohelper_class, "StopAll", "()I");
-        s_stopfile = (*env)->GetMethodID(env,audiohelper_class, "StopSound", "(I)I");
-        s_unload = (*env)->GetMethodID(env,audiohelper_class, "UnloadSound", "(I)Z");
-        s_setvolume = (*env)->GetMethodID(env,audiohelper_class, "SetVolume", "(F)Z");
-        if (getInstance) {
-          jobject thiz = (*env)->CallStaticObjectMethod(env,audiohelper_class, getInstance);
-          audiohelper_object = (*env)->NewGlobalRef(env,thiz);
-        }
-      }
-    } else {
-      audiohelper_object=NULL;
-    }
-    needsinit=0;
+/*
+ * # Heritage
+ *
+ * `(*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/AudioHelper")` worked
+ * before, but minor changes elsewhere broke it.
+ *
+ * This change uses "textbook solution".
+ */
+
+// AudioHelper ffi
+// TBD: Try harder to avoid conflicts over generic global names!
+static jobject audiohelper_object = NULL;
+static jmethodID s_load = NULL;
+static jmethodID s_play = NULL;
+static jmethodID s_stop = NULL;
+static jmethodID s_stopfile = NULL;
+static jmethodID s_unload = NULL;
+static jmethodID s_setvolume = NULL;
+
+void Java_@SYS_PACKAGE_UNDERSCORE@_AudioHelper_nativeInit(JNIEnv* env, jobject audiohelper_class) {
+  // note btw: the advantage of using static class initializers over
+  // manual maintained re-initialisation is that the JVM will call
+  // class initialisers exactly whenever the class is (re)loaded.
+  s_load = (*env)->GetMethodID(env, audiohelper_class, "fromNativeLoadSound", "(ILjava/lang/String;I)V");
+  if(s_load == NULL) {
+    LOGE("AudioHelper_nativeInit LoadSound not found");
+    JNI_forward_exception_to_gambit(env);
+    return;
+  }
+  // TBD: fatal error when any did not load - unlikely
+  s_play = (*env)->GetMethodID(env, audiohelper_class, "PlaySound", "(IFFIIF)I");
+  s_stop = (*env)->GetMethodID(env, audiohelper_class, "StopAll", "()I");
+  s_stopfile = (*env)->GetMethodID(env, audiohelper_class, "StopSound", "(I)I");
+  s_unload = (*env)->GetMethodID(env, audiohelper_class, "UnloadSound", "(I)Z");
+  s_setvolume = (*env)->GetMethodID(env, audiohelper_class, "SetVolume", "(F)Z");
+  if(s_play == NULL) {
+    LOGE("AudioHelper_nativeInit PlaySound not found");
+    JNI_forward_exception_to_gambit(env);
+    return;
   }
 }
 
-int android_audio_loadfile(const char *FileName, int Priority){
+void Java_@SYS_PACKAGE_UNDERSCORE@_AudioHelper_nativeSetInstance(JNIEnv* env, jobject obj) {
+  if(audiohelper_object != NULL) {
+    LOGW("AudioHelper_nativeSetInstance replacing global object");
+    (*env)->DeleteGlobalRef(env, audiohelper_object);
+    audiohelper_object = NULL;
+  }
+  audiohelper_object = (*env)->NewGlobalRef(env, obj);
+  if(audiohelper_object == NULL) {
+    LOGE("AudioHelper_nativeSetInstance cache object failed");
+    JNI_forward_exception_to_gambit(env);
+    (*env)->FatalError(env, "AudioHelper_nativeSetInstance cache object failed");
+  } else {
+    LOGI("AudioHelper_nativeSetInstance %p\n", audiohelper_object);
+  }
+}
+
+int android_audio_loadfile(int ReplyID, const char *FileName, int Priority){
   int SoundID=-1;
   JNIEnv *env = GetJNIEnv();
   if (env&&audiohelper_object) {
     jstring s = (*env)->NewStringUTF(env,FileName);
-    SoundID = (*env)->CallIntMethod(env,audiohelper_object, s_load, s, Priority);
-    (*env)->DeleteLocalRef(env,(jobject)s);
+    jstring sg = (*env)->NewGlobalRef(env, s); // AudioHelper runs on different thread
+    SoundID = (*env)->CallIntMethod(env, audiohelper_object, s_load, ReplyID, sg, Priority);
+    JNI_forward_exception_to_gambit(env);
+    (*env)->DeleteGlobalRef(env, (jobject)sg); // better feed it global ref's
   }
   return SoundID;
 }
@@ -49,7 +74,7 @@ int android_audio_loadfile(const char *FileName, int Priority){
 int android_audio_playfile(int SoundID, float LeftVolume, float RightVolume, int Priority, int Loop, float Rate){
   JNIEnv *env = GetJNIEnv();
   if (env&&audiohelper_object) {
-    return (*env)->CallIntMethod(env,audiohelper_object, s_play, SoundID, LeftVolume, RightVolume, Priority, Loop, Rate);
+    return (*env)->CallIntMethod(env, audiohelper_object, s_play, SoundID, LeftVolume, RightVolume, Priority, Loop, Rate);
   } else {
     return -1;
   }

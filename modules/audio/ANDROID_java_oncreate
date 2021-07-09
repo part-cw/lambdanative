@@ -1,1 +1,9 @@
-AudioHelper.getInstance().setContext(this, new MediaPlayer());
+/* AudioHelper onCreate -*-C-*- */
+AudioHelper.createInstance(this).setContext(this, new MediaPlayer());
+/* DEBUG check it works
+Log.i(TAG, "AudioHelper playing test sound");
+int thatsit = AudioHelper.getInstance().LoadSound("thatsit", 0);
+Log.i(TAG, "AudioHelper that sit " + thatsit);
+AudioHelper.getInstance().PlaySound(thatsit, (float)1.0, (float)1.0, 0, 0, (float)1.0);
+Log.i(TAG, "AudioHelper test completed");
+// DEBUG check end: AudioHelper */

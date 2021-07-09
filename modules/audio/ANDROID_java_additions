@@ -1,3 +1,5 @@
+/* modules/audio/ANDROID_java_additions -*- mode: java; c-basic-offset: 2; -*- */
+
 class AudioHelper {
   final static String TAG = "@SYS_PACKAGE_DOT@";
   private static class MediaPlayerHelper {
@@ -68,12 +70,25 @@ class AudioHelper {
   private MediaPlayer mediaPlayer = null;
   private List<MediaPlayerHelper> mediaPlayers = null;
   private AudioManager audioManager = null;
-  private AudioHelper(){  
+  /*
+   * To cache IDs when a class is loaded, and automatically re-cache
+   * them if the class is ever unloaded and reloaded: use a class
+   * initializer to allow the native code to cache some field
+   * offsets. This native function looks up and caches interesting
+   * class/field/method IDs. Throws on failure.
+   */
+  private static native void nativeInit();
+  static {
+    nativeInit();
   }
-  void Initialise(){      
+  private native void nativeSetInstance();
+  private @SYS_APPNAME@ mActivity = null;
+  private AudioHelper(@SYS_APPNAME@ forActivity) {
+    mActivity = forActivity;
     mediaPlayers = new ArrayList<MediaPlayerHelper>();
-  } 
-  public void finalize(){   
+    nativeSetInstance();
+  }
+  public void finalize() {
     for(MediaPlayerHelper mp : mediaPlayers){
       if(mp!=null){
         mp.release();
@@ -83,16 +98,21 @@ class AudioHelper {
   public void setContext(Context context, MediaPlayer mediaPlayer){
     this.context = context;
     this.audioManager = (AudioManager) context.getSystemService(Activity.AUDIO_SERVICE);
-    this.mediaPlayer = mediaPlayer; 
+    this.mediaPlayer = mediaPlayer;
   }
-  public static AudioHelper getInstance(){
+  public static AudioHelper createInstance(@SYS_APPNAME@ forActivity){
     if (instance == null){
-      instance = new AudioHelper();
-      instance.Initialise();        
+      instance = new AudioHelper(forActivity);
     }
     return instance;
   }
-  public int LoadSound(String filename, int Priority) {
+  public static AudioHelper getInstance() {
+    if (instance == null){
+      Log.e(TAG, "AudioHelper_getInstance get before create");
+    }
+    return instance;
+  }
+  private int doLoadSound(String filename, int Priority) {
     String s = ResourceLocation + filename;
     int resID = context.getResources().getIdentifier(s, null, null);
     Log.d(TAG,"Entered load sound method.");
@@ -102,39 +122,95 @@ class AudioHelper {
     }
     MediaPlayerHelper localMediaPlayer = new MediaPlayerHelper(context, resID);
     mediaPlayers.add(localMediaPlayer);
+    Log.e(TAG, "Sound " + filename + " is # " + mediaPlayers.size());
+    System.err.println(TAG + ": Sound " + filename + " is # " + mediaPlayers.size());
     return mediaPlayers.size();
-  } 
-  public int PlaySound(int SoundID, float lv, float rv, int priority, int loop, float rate) {
+  }
+  public int LoadSound(final String filename, final int Priority) {
+    java.util.concurrent.FutureTask<Integer> job = new java.util.concurrent.FutureTask<Integer>
+      (new java.util.concurrent.Callable<Integer>() {
+        @Override
+        public Integer call() throws Exception {
+          return doLoadSound(filename, Priority); }
+      });
+    mActivity.runOnUiThread(job);
+    try {
+      return job.get().intValue();
+    } catch (Exception e) {
+      return 0; // FIXME, should we retry?
+    }
+  }
+  private void fromNativeLoadSound(final int replyID, final String filename, final int Priority) {
+    // We can NOT call LoadSound from a native thread in a situation
+    // which MUST NOT block.  The job done within the Java environment
+    // by FutureTask above needs to be replicated between Java Threads and
+    // corresponding Gambit threads.
+    mActivity.runOnUiThread(new Runnable() {
+        public void run() {
+          mActivity.nativeEvent(126, replyID, doLoadSound(filename, Priority));
+        }});
+  }
+  private int doPlaySound(int SoundID, float lv, float rv, int priority, int loop, float rate) {
     MediaPlayerHelper localMediaPlayer = mediaPlayers.get(SoundID-1);
     if(localMediaPlayer!=null){
       localMediaPlayer.start(lv, rv, loop);
     }
     return SoundID;
   }
-  public int StopSound(int SoundID) {
-    MediaPlayerHelper localMediaPlayer = mediaPlayers.get(SoundID-1);
-    if(localMediaPlayer!=null){
-      localMediaPlayer.stop();
-    }
+  public int PlaySound(final int SoundID, final float lv, final float rv,
+                       final int priority, final int loop, final float rate) {
+    mActivity.runOnUiThread(new Runnable() {
+        public void run() {
+          doPlaySound(SoundID, lv, rv, priority, loop, rate);
+        }
+      });
+    return SoundID;
+  }
+  public int StopSound(final int SoundID) {
+    mActivity.runOnUiThread(new Runnable() {
+        public void run() {
+          MediaPlayerHelper localMediaPlayer = mediaPlayers.get(SoundID-1);
+          if(localMediaPlayer!=null) {
+            localMediaPlayer.stop();
+          }
+        }
+        });
     return SoundID;
   }
   public int StopAll() {
-    int ct=0;
-    for(MediaPlayerHelper player : this.mediaPlayers){
-      if(player!=null){
-        player.stop();
-        ct++;
-      }
+    final AudioHelper here = this;
+    // FIXME: bad example
+    java.util.concurrent.FutureTask<Integer> job = new java.util.concurrent.FutureTask<Integer>
+      (new java.util.concurrent.Callable<Integer>() {
+          @Override
+          public Integer call() throws Exception {
+            int ct=0;
+            for(MediaPlayerHelper player : here.mediaPlayers){
+              if(player!=null){
+                player.stop();
+                ct++;
+              }
+            }
+            return ct;
+          }
+        });
+    mActivity.runOnUiThread(job);
+    try {
+      return job.get();
+    } catch (Exception e) {
+      return 0; // FIXME, should we retry?
     }
-    return ct;
   }
-  public boolean UnloadSound(int SoundID) {
+  public boolean UnloadSound(final int SoundID) {
     // We null out removed sounds - we have to null check sounds
     // later but this simplifies the representation of sounds by
     // their offset index.
-    MediaPlayerHelper toRemove = mediaPlayers.get(SoundID-1);
-    toRemove.release();
-    mediaPlayers.set(SoundID-1,null);
+    mActivity.runOnUiThread(new Runnable() {
+        public void run() {
+          MediaPlayerHelper toRemove = mediaPlayers.get(SoundID-1);
+          toRemove.release();
+          mediaPlayers.set(SoundID-1, null);
+        }});
     return true;
   }
   public void onPause(){
@@ -151,7 +227,7 @@ class AudioHelper {
       }
     }
   }
-  public boolean SetVolume(float volume){
+  public boolean SetVolume(final float volume){
     float systemMaxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
     float systemVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)/systemMaxVolume;
     if (Math.abs(systemVolume-volume)*100 >= 1) {
@@ -161,4 +237,4 @@ class AudioHelper {
     return true;
   }
 }
-// eof AudioHelper 
+// eof AudioHelper

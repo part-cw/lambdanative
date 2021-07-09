@@ -1,3 +1,4 @@
+// TBD: untested, maybe we need to pass global references
 
 void android_camera_start(char* fnl_name, char *tmp_name)
 {
@@ -5,8 +6,7 @@ void android_camera_start(char* fnl_name, char *tmp_name)
   if (env&&globalObj){
     jstring jfnl = (*env)->NewStringUTF(env,fnl_name);
     jstring jtmp = (*env)->NewStringUTF(env,tmp_name);
-    jclass cls = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
-    jmethodID method = cls ? (*env)->GetMethodID(env, cls, "startCamera", "(Ljava/lang/String;Ljava/lang/String;)V") : NULL;
+    jmethodID method = (*env)->GetMethodID(env, main_class, "startCamera", "(Ljava/lang/String;Ljava/lang/String;)V");
     if(method) (*env)->CallVoidMethod(env, globalObj, method, jfnl, jtmp);
   }
 }
@@ -17,8 +17,7 @@ void android_videocamera_start(char* fnl_name, char *tmp_name, int *maxlength)
   if (env&&globalObj){
     jstring jfnl = (*env)->NewStringUTF(env,fnl_name);
     jstring jtmp = (*env)->NewStringUTF(env,tmp_name);
-    jclass cls = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
-    jmethodID method = cls ? (*env)->GetMethodID(env, cls, "startVidCamera", "(Ljava/lang/String;Ljava/lang/String;I)V"): NULL;
+    jmethodID method = (*env)->GetMethodID(env, main_class, "startVidCamera", "(Ljava/lang/String;Ljava/lang/String;I)V");
     if(method) (*env)->CallVoidMethod(env, globalObj, method, jfnl, jtmp, maxlength);
   }
 }

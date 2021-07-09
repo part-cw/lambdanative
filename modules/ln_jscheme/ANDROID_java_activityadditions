@@ -1,9 +1,12 @@
 /* LNjScheme -*- mode: java; c-basic-offset: 2; -*- */
 
 /* # Helper methods */
+
 java.text.SimpleDateFormat ln_log_date_formatter = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss ");
 
 String TAG = "@SYS_APPNAME@";
+
+private final static boolean ANDROID_LOG_LN_JSCHEME = true; // default: false; for debug
 
 public void ln_log(String msg) {
   String m = ln_log_date_formatter.format(new java.util.Date()) + msg;
@@ -109,23 +112,25 @@ public void LNjSchemeSend(String msg) {
     (new java.util.concurrent.Callable<Object>() {
         @Override
         public Object call() throws Exception {
-          // ln_log("invocation of " + this + " evaluating.");
+          if(ANDROID_LOG_LN_JSCHEME) ln_log("invocation of " + this + " evaluating");
           if(in.isEOF(expr)) throw new Exception("invalid input");
           return LNjSchemeEvaluate(expr); }
       });
-  // ln_log("Sending to UI: " + job + " for: " + expr);
+  if(ANDROID_LOG_LN_JSCHEME)  ln_log("Sending to UI: " + job + " for: " + expr);
   LNjSchemeJob = job;
+  // TBD: There should be no need for this being a threadof it's own, is it?
   new Thread() {
     @Override
     public void run() {
-      // ln_log("LNjScheme waiting for completion");
+      if(ANDROID_LOG_LN_JSCHEME) ln_log("LNjScheme waiting for completion");
       try {
         LNjSchemeJob.get();
       } catch (Exception e) { // InterruptedException java.util.concurrent.ExecutionException
         // FIXME: Do something sensible here!
       }
-      // ln_log("LNjScheme notifying result");
+      if(ANDROID_LOG_LN_JSCHEME) ln_log("LNjScheme notifying result");
       nativeEvent(126,0,0);
+      if(ANDROID_LOG_LN_JSCHEME) ln_log("LNjScheme native event 126 done.");
     }
   }.start();
   runOnUiThread(job);
@@ -135,21 +140,21 @@ public String LNjSchemeResult() {
   try {
     Object result = LNjSchemeJob != null ? LNjSchemeJob.get() : null;
     LNjSchemeJob = null;
-    // ln_log("got result from UI");
+    if(ANDROID_LOG_LN_JSCHEME) ln_log("got result from UI");
     java.io.StringWriter buf = new java.io.StringWriter();
     java.io.PrintWriter port = new java.io.PrintWriter(buf);
     port.println("D");
     LNjScheme.SchemeUtils.write(result, port, true);
     return buf.toString();
   } catch (java.util.concurrent.ExecutionException e) {
-    // ln_log("got error from call");
+    if(ANDROID_LOG_LN_JSCHEME) ln_log("got error from call");
     java.io.StringWriter buf = new java.io.StringWriter();
     java.io.PrintWriter port = new java.io.PrintWriter(buf);
     port.println("E");
     LNjScheme.SchemeUtils.write(("" + e.getCause()).toCharArray(), port, true);
     return buf.toString();
   } catch (Exception e) {
-    // ln_log("got exception from call");
+    if(ANDROID_LOG_LN_JSCHEME) ln_log("got exception from call");
     java.io.StringWriter buf = new java.io.StringWriter();
     java.io.PrintWriter port = new java.io.PrintWriter(buf);
     port.println("E");

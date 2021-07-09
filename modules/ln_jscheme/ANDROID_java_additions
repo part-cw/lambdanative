@@ -1,4 +1,5 @@
-/*-*-java -*-*/
+/* LNjScheme -*- mode: java; c-basic-offset: 2; -*- */
+
 class LNMethod extends LNjScheme.Procedure {
   String name = null;
 

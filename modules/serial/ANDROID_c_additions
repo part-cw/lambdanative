@@ -1,3 +1,6 @@
+// TBD: untested, maybe we need to pass global references
+// TBD FIXME: unlikely to work at all.  Test case required.
+
 static int needs_init=1;
 static jobject serial_object=NULL;
 static jclass serial_class=NULL;
@@ -15,7 +18,6 @@ int serial_init(){
   JNIEnv *env = GetJNIEnv();
   if (env) {
     serial_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/RS232Manager");
-    jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
     if (serial_class && main_class) {
       jmethodID getRS232Instance = (*env)->GetStaticMethodID(env,main_class, "getRS232Instance","()L@SYS_PACKAGE_SLASH@/RS232Manager;");
       s_serial_open = (*env)->GetMethodID(env,serial_class, "open", "(Ljava/lang/String;IIII)I");

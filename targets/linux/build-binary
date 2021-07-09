@@ -61,6 +61,9 @@ if [ "$SYS_MODE" = "debug" ]; then
   cflag_additions="$cflag_additions -pg"
 fi
 
+## Links REALLY static
+#cflag_additions="$cflag_additions -static"
+
 if [ `is_standalone_app` = "yes" ]; then
   veval "$SYS_CC -I$SYS_PREFIX/include \
     $cflag_additions -DUSECONSOLE -o $tgt \

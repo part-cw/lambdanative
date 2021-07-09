@@ -2,7 +2,6 @@ extern void scm_mediascanner_callback();
 
 void ln_android_finish(){
   JNIEnv *env = GetJNIEnv();
-  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
   if (env&&globalObj){
     jmethodID method = (*env)->GetMethodID(env, main_class, "ln_finish", "()V");
     (*env)->CallVoidMethod(env, globalObj, method);
@@ -13,8 +12,7 @@ void ln_android_finish(){
 void ln_android_run_mediascanner(){
   JNIEnv *env = GetJNIEnv();
   if (env&&globalObj) {
-    jclass cls = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
-    jmethodID method = (*env)->GetMethodID(env, cls, "runMediaScanner", "()V");
+    jmethodID method = (*env)->GetMethodID(env, main_class, "runMediaScanner", "()V");
     (*env)->CallVoidMethod(env, globalObj, method);
   }
 }

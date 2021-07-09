@@ -117,10 +117,19 @@ int  scm_screenheight();
 
 // hook prototype (performs scheme init)
 void ffi_event(int,int,int);
+void ln_gambit_unlock();
+typedef struct {
+  int t;
+  int x;
+  int y;
+  int fd[2];
+} ffi_event_params_t;
+extern ffi_event_params_t ffi_event_params;
 
 // C prototypes
 // these are used by the desktop platforms
 void microgl_hook(int,int,int);
+void microgl_draw_before();
 void microgl_swapbuffers();
 void microgl_close();
 void microgl_init();
@@ -130,6 +139,7 @@ void microgl_pollevents();
 void microgl_refresh();
 int microgl_screenwidth();
 int microgl_screenheight();
+unsigned int microgl_redraw_period(unsigned int);
 
 #endif // STANDALONE
 
