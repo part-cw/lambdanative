@@ -34,7 +34,18 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; History
-;;
+;; 0.9.10: 2021/07/06 - fixes for submatches under kleene star, empty seqs
+;;                     in alternations, and bol in folds for backtracking
+;;                     matcher (thanks John Clements and snan for reporting
+;;                     and Peter Bex for fixing)
+;; 0.9.9: 2021/05/14 - more comprehensive fix for repeated empty matches
+;; 0.9.8: 2020/07/13 - fix irregex-replace/all with look-behind patterns
+;; 0.9.7: 2019/12/31 - more intuitive handling of empty matches in -fold,
+;;                     -replace and -split
+;; 0.9.6: 2016/12/05 - fixed exponential memory use of + in compilation
+;;                     of backtracking matcher (CVE-2016-9954).
+;; 0.9.5: 2016/09/10 - fixed a bug in irregex-fold handling of bow
+;; 0.9.4: 2015/12/14 - performance improvement for {n,m} matches
 ;; 0.9.3: 2014/07/01 - R7RS library
 ;; 0.9.2: 2012/11/29 - fixed a bug in -fold on conditional bos patterns
 ;; 0.9.1: 2012/11/27 - various accumulated bugfixes
@@ -2131,12 +2142,18 @@
                                         (chunk&position (cons src (+ i 1))))
                                     (vector-set! slot (car s) chunk&position)))
                                 (cdr cmds))
-                      (for-each (lambda (c)
-                                  (let* ((tag (vector-ref c 0))
-                                         (ss (vector-ref memory (vector-ref c 1)))
-                                         (ds (vector-ref memory (vector-ref c 2))))
-                                    (vector-set! ds tag (vector-ref ss tag))))
-                                (car cmds)))))
+                      ;; Reassigning commands may be in an order which
+                      ;; causes memory cells to be clobbered before
+                      ;; they're read out.  Make 2 passes to maintain
+                      ;; old values by copying them into a closure.
+                      (for-each (lambda (execute!) (execute!))
+                                (map (lambda (c)
+                                       (let* ((tag (vector-ref c 0))
+                                              (ss (vector-ref memory (vector-ref c 1)))
+                                              (ds (vector-ref memory (vector-ref c 2)))
+                                              (value-from (vector-ref ss tag)))
+                                         (lambda () (vector-set! ds tag value-from))))
+                                     (car cmds))))))
                   (if new-finalizer
                       (lp2 (+ i 1) next src (+ i 1) new-finalizer)
                       (lp2 (+ i 1) next res-src res-index #f))))
@@ -2453,7 +2470,7 @@
                                            flags
                                            next))))
                           (and a
-                               (let ((c (add-state! (new-state-number a)
+                               (let ((c (add-state! (new-state-number (max a b))
                                                     '())))
                                  (nfa-add-epsilon! buf c a #f)
                                  (nfa-add-epsilon! buf c b #f)
@@ -3357,9 +3374,10 @@
                (fail))))
         ((bol)
          (lambda (cnk init src str i end matches fail)
-           (if (or (and (eq? src (car init)) (eqv? i (cdr init)))
-                   (and (> i ((chunker-get-start cnk) src))
-                        (eqv? #\newline (string-ref str (- i 1)))))
+           (if (let ((ch (if (> i ((chunker-get-start cnk) src))
+                             (string-ref str (- i 1))
+                             (chunker-prev-char cnk init src))))
+                 (or (not ch) (eqv? #\newline ch)))
                (next cnk init src str i end matches fail)
                (fail))))
         ((bow)
@@ -3753,19 +3771,19 @@
                     i
                     matches)))
             (if (not m)
-                (finish i acc)
-                (let ((j (%irregex-match-end-index m 0)))
-                  (if (= j i)
-                      ;; skip one char forward if we match the empty string
-                      (lp (list str (+ j 1) end) (+ j 1) acc)
-                      (let ((acc (kons i m acc)))
-                        (irregex-reset-matches! matches)
-                        ;; no need to continue looping if this is a
-                        ;; searcher - it's already consumed the only
-                        ;; available match
-                        (if (flag-set? (irregex-flags irx) ~searcher?)
-                            (finish j acc)
-                            (lp (list str j end) j acc)))))))))))
+                (finish from acc)
+                (let ((j-start (%irregex-match-start-index m 0))
+                      (j (%irregex-match-end-index m 0))
+                      (acc (kons from m acc)))
+                  (irregex-reset-matches! matches)
+                  (cond
+                   ((flag-set? (irregex-flags irx) ~consumer?)
+                    (finish j acc))
+                   ((= j j-start)
+                    ;; skip one char forward if we match the empty string
+                    (lp (list str j end) j (+ j 1) acc))
+                   (else
+                    (lp (list str j end) j j acc))))))))))
 
 (define (irregex-fold irx kons . args)
   (if (not (procedure? kons)) (error "irregex-fold: not a procedure" kons))
