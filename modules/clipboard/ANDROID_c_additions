@@ -31,9 +31,9 @@ const char *android_clipboard_paste(){
         JNI_forward_exception_to_gambit(env);
         return "";
       }
-      jstr = (jstring) (*env)->CallObjectMethod(env, globalObj, method, jstr);
-      str  = (*env)->GetStringUTFChars(env, jstr, 0);
     }
+    jstr = (jstring) (*env)->CallObjectMethod(env, globalObj, method, jstr);
+    str  = (*env)->GetStringUTFChars(env, jstr, 0);
     // (*env)->ReleaseStringUTFChars(env, jstr, str);
     return str;
   }

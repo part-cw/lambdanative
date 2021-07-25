@@ -257,7 +257,7 @@ end-of-c-declare
 )
 
 ;; Function prototypes/bindings
-(define clipboard-clear (c-lambda (char-string) bool "clipboard_clear"))
+(define clipboard-clear (c-lambda () bool "clipboard_clear"))
 (define (clipboard-copy str)
   ((c-lambda (char-string int) bool "clipboard_copy")
    str (string-length str)))
