@@ -190,8 +190,6 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     this.setVolumeControlStream(AudioManager.STREAM_MUSIC);
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
     WindowManager.LayoutParams.FLAG_FULLSCREEN);
-    // prevent sleep
-    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     if(mGLView==null) { // once only!
       mGLView = new xGLSurfaceView(this);
       // This may better before other pieces

@@ -1,0 +1,3 @@
+// This is an example of when you might want the screen to stay on
+// The following line sets the appropriate flag
+getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
