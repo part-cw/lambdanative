@@ -1413,7 +1413,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          (mergedselections (let loop ((es mergedentries)(res '()))
            (if (= (length es) 0) res (loop (cdr es) (append res (if (member (car es) actualentries) '(#t) '(#f)))))))
          (noentries (length mergedentries))
-         (boxcolor (glgui:uiform-arg args 'boxcolor (uiget 'color-default))))
+         (boxcolor (glgui:uiform-arg args 'boxcolor (uiget 'color-default)))
+         (selcolor (glgui:uiform-arg args 'selcolor (uiget 'color-select))))
      (uiset idmerged mergedentries)
      (uiset idvalues defaultvalues)
      (if req  (uiform-required-set id  (abs (- (abs y) (uiget 'offset 0) h )) ))
@@ -1434,7 +1435,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                  (wrappedtext (string-split-width text (fix (- (* 0.8 w) bw)) fnt))
                  (numlines (length wrappedtext))
                  (ypos (- (+ y dy) (* h 0.1 numlines))))
-             (if (car ss) (glgui:draw-box (+ x (* w 0.1)) (+ y dy 1) (* w 0.8) (- h 2) (color-fade boxcolor 0.5))  (glgui:draw-box (+ x (* w 0.1)) (+ y dy 1) (* w 0.8) (- h 2) boxcolor))
+             (if (car ss) (glgui:draw-box (+ x (* w 0.1)) (+ y dy 1) (* w 0.8) (- h 2) selcolor )  (glgui:draw-box (+ x (* w 0.1)) (+ y dy 1) (* w 0.8) (- h 2) boxcolor))
              (if radio
                  (glgui:draw-pixmap-center bx by bw bh circle.img (color-fade White 0.3))
                  (glgui:draw-box bx by bw bh (color-fade White 0.3)))
