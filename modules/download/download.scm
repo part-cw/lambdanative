@@ -180,22 +180,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (begin
               (httpsclient-close)
               (if usebuffer
-                (if (fx= download:header 200)
-		  (begin
-                    (rename-file download:tempfile (string-append (system-directory) (system-pathseparator) filename))
-                    (log-status "download: local succeeded")
-                    #t
-                  )
-                  (if (fx= download:header 300)
-                     (let* ((fileout (download:split-headerbody-vector (download:data->u8vector)))
-                            (location-start (string-contains (car fileout) "Location: "))
-                            (location-rest (substring (car fileout) location-start (string-length (car fileout))))
-                            (location-stop (string-contains location-rest "\n"))
-                            (location-only (substring location-rest 18 (- location-stop 1)))
-                            (host (substring location-only 0 (string-contains location-only "/")))
-                            (path (substring location-only (string-contains location-only "/") (string-length location-only))))
-                        (download-getfile host path filename #t))
-                  (begin (log-status "download: could not retrieve header") #f)))
+                (if download:header
+                  (if (fx= download:header 200)
+  		              (begin
+                      (rename-file download:tempfile (string-append (system-directory) (system-pathseparator) filename))
+                      (log-status "download: local succeeded")
+                      #t
+                    )
+                    (if (fx= download:header 300)
+                       (let* ((fileout (download:split-headerbody-vector (download:data->u8vector)))
+                              (location-start (string-contains (car fileout) "Location: "))
+                              (location-rest (substring (car fileout) location-start (string-length (car fileout))))
+                              (location-stop (string-contains location-rest "\n"))
+                              (location-only (substring location-rest 18 (- location-stop 1)))
+                              (host (substring location-only 0 (string-contains location-only "/")))
+                              (path (substring location-only (string-contains location-only "/") (string-length location-only))))
+                          (download-getfile host path filename #t))
+                    (begin (log-warning "download: unkown header" download:header) #f)))
+                  (begin (log-warning "download: could not retrieve header") #f))
               (let ((fileout (download:split-headerbody-vector (download:data->u8vector))))
                 ;; Status is Success, save file
                 (if (and (string? (car fileout)) (fx> (string-length (car fileout)) 12)
@@ -219,7 +221,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                            (path (substring location-only (string-contains location-only "/") (string-length location-only))))
                       (download-getfile host path filename))
                     ;; Status is unknown, return false
-                    (begin (log-status "download: status unknown" fileout) #f)
+                    (begin (log-warning "download: status unknown" fileout) #f)
                   )
                 )
               )
@@ -241,7 +243,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           )
         )
       )
-      (begin (log-status "download: could not open host " host) #f)
+      (begin (log-warning "download: could not open host " host) #f)
     )
 ))
 
