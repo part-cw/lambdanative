@@ -1,6 +1,5 @@
-
-PKGURL=http://www.corpit.ru/mjt/tinycdb/tinycdb-0.78.tar.gz
-PKGHASH=ade42ee1e7c56f66a63cb933206c089b9983adba
+PKGURL=http://archive.ubuntu.com/ubuntu/pool/main/t/tinycdb/tinycdb_0.78build1.tar.gz
+PKGHASH=32350cf3ac2b6ab5ea671702df8e90ee1837c5af
 
 package_download $PKGURL $PKGHASH
 
