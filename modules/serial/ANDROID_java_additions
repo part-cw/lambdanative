@@ -120,7 +120,9 @@ class RS232Manager implements Runnable{
         Log.i("RS232Manager","Opened "+Integer.toString(mSerialDriver.getDevice().getDeviceId()));
         return mSerialDriver.getDevice().getDeviceId();
       } catch (IOException e){
-        Log.d("RS232Manager","Exception: "+e);
+        Log.d("RS232Manager","IOException: "+e);
+      } catch (NullPointerException e) {
+        Log.d("RS232Manager","NullPointerException: "+e);
       }
     }
     Log.i("RS232Manager","USBSerialProber found no device");
