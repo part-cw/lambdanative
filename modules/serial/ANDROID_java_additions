@@ -35,15 +35,22 @@ class RS232Manager implements Runnable{
       mState = State.RUNNING;
       if (DEBUG) Log.d("RS232Manager","Starting");
     }
+    int newConnection = 1;
     while (true) {
       try {
         if (getState() != State.RUNNING){
           break;
         }
         if ( mSerialPort == null) {
+          newConnection = 1;
           continue;
         }
         error_flag=false;
+        // If just connected, pause a moment to make sure everything is setup - connection open
+        if ( newConnection == 1 ) {
+          newConnection = 0;
+          Thread.sleep(5);
+        }
         // Handle incoming data.
         int len = mSerialPort.read(tmpInBuffer.array(), READ_WAIT_MILLIS);
         if (len > 0) {
