@@ -16,6 +16,11 @@ fi
 LIBTOOL=`which libtool`
 cp $LIBTOOL .
 
+if [ "$SYS_PLATFORM" = "win32" ]; then
+  cp configure configure.tmp
+  cat configure.tmp | sed 's/test -s conftest/test -s conftest.exe/g' > configure
+fi
+
 package_configure $EXTRACONF --disable-shared --enable-static 
 asserterror $? "configuration failed"
 
