@@ -39,6 +39,12 @@ if [ $SYS_HOSTPLATFORM = openbsd ]; then
   EXTRACONF="--without-alsa --without-oss"
 fi
 
+if [ "$SYS_PLATFORM" = "win32" ]; then
+  if grep microsoft /proc/version -i -q; then
+    EXTRACONF="$EXTRACONF --build=x86_64-unknown-linux-gnu"
+  fi
+fi
+
 package_configure $EXTRACONF --enable-static --disable-shared --without-jack
 
 mv Makefile tmp

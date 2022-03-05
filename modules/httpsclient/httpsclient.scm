@@ -66,7 +66,7 @@ static int check_chain=0;
 static char chainfile[256];
 
 #ifdef WIN32
-#include <Ws2tcpip.h>
+#include <ws2tcpip.h>
 #define bzero(a, b) memset(a, 0x0, b)
 #define bcopy(a, b, c) memmove(b, a, c)
 #endif
