@@ -7,6 +7,12 @@ if [ ! "$SYS_PLATFORM" = "$SYS_HOSTPLATFORM" ]; then
   EXTRACONF=--host=`echo "${SYS_ARCH}-" | cut -f 1 -d "-"`
 fi
 
+if [ "$SYS_PLATFORM" = "win32" ]; then
+  if grep microsoft /proc/version -i -q; then
+    EXTRACONF="$EXTRACONF --build=x86_64-unknown-linux-gnu"
+  fi
+fi
+
 # the shipping config.guess is out of date, fix that
 cp $SYS_ROOT/config.guess .
 package_configure $EXTRACONF --disable-shared --enable-static
