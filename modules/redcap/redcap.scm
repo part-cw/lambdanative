@@ -274,6 +274,68 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )
 )
 
+(define (redcap-export-report host token report . xargs)
+         ;; See if format was specified in xargs, use json by default
+  (let* ((format (redcap:arg 'format xargs "json"))
+         ;; Similarly, use lists (not tables) by default
+         (use-tables? (redcap:arg 'tables xargs #f))
+         (request (string-append
+          "format=" format
+          "&content=report&token=" token
+          "&report_id=" report
+          "&csvDelimiter="
+          "&rawOrLabel=raw"
+          "&rawOrLabelHeaders=raw"
+          "&exportCheckboxLabel=false"
+          "&returnFormat=json"))
+         (request-str (redcap:make-request-str host request)))
+    ;; Check if we have a valid connection before proceeding
+    (if (fx= (httpsclient-open host redcap:port) 1)
+      (begin
+        (httpsclient-send (string->u8vector request-str))
+        (redcap:data-clear!)
+        (let loop ((n #f))
+          (if (and n (fx<= n 0))
+            (begin
+              (httpsclient-close)
+              (let ((output (cadr (redcap:split-headerbody (redcap:data->string)))))
+                 (if (string=? format "json")
+                   ;; If format is json, turn into a list, otherwise just return output
+                   (let ((datalist (redcap:jsonstr->list output)))
+                     (cond
+                       ((not (list? datalist))
+                         ;; If no list returned, json not properly formatted
+                         (log-error "REDCap error: Incomplete json " output)
+                         #f)
+                       ((and (not use-tables?)
+                             (fx> (length datalist) 0)
+                             (string=? (caaar datalist) "error"))
+                         ;; If the first entry is an error, then log it and return false
+                         (log-error "REDCap error: " (cdaar datalist))
+                          #f)
+                       ((and use-tables?
+                             (fx> (length datalist) 0)
+                             (table-ref (car datalist) "error" #f))
+                         (log-error "REDCap error: " (table-ref (car datalist) "error" ""))
+                         #f)
+                       (else datalist)))
+                   output))
+            ) (begin
+             (if (and n (> n 0))
+               (redcap:data-append! (subu8vector redcap:buf 0 n)))
+            (loop (httpsclient-recv redcap:buf))
+          ))
+        )
+      )
+      (begin
+        (log-warning "Cannot export from REDCap, no valid connection")
+        (httpsclient-close)
+        #f ;; Denote difference between no data and no connection
+      )
+    )
+  )
+)
+
 (define (redcap-import-record host token record data . xargs)
  (let*  ((event (redcap:arg 'event xargs ""))
         (instance (redcap:arg 'instance xargs #f))
