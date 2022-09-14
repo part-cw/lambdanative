@@ -160,9 +160,9 @@ end-of-c-declare
 (define (tm:time-error caller type value)
   (if (member type tm:time-error-types)
       (if value
-	  (error caller "TIME-ERROR type ~S: ~S" type value)
-	  (error caller "TIME-ERROR type ~S" type))
-      (error caller "TIME-ERROR unsupported error type ~S" type)))
+	  (error caller (string-format "TIME-ERROR type ~a: ~a" type value))
+	  (error caller (string-format "TIME-ERROR type ~a" type)))
+      (error caller (string-format "TIME-ERROR unsupported error type ~a" type))))
 
 
 ;; A table of leap seconds
