@@ -51,5 +51,5 @@ public void onGpsStatusChanged(int event) {
 
 public int isLocationServiceEnabled(){
   String provider = Settings.Secure.getString(getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
-  return provider.equals("") ? 0 : 1;
+  return (provider == null || provider.equals("")) ? 0 : 1;
 }

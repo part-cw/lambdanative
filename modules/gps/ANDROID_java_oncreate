@@ -10,7 +10,7 @@ provider = locationManager.getBestProvider(criteria, false);
 Location location = locationManager.getLastKnownLocation(provider);
 
 String provider = Settings.Secure.getString(getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
-if(provider.equals("")){
+if(provider == null || provider.equals("")){
   //~ Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
   //~ startActivity(intent);
 }
