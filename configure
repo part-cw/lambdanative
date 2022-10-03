@@ -127,7 +127,7 @@ case "$hostsys" in
 *-linux-gnu*)
   SYS_HOSTPLATFORM="linux"
 ;;
-x86_64-apple-darwin*)
+*-apple-darwin*)
   SYS_HOSTPLATFORM="macosx"
 ;;
 *-openbsd*)
