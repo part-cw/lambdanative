@@ -1,12 +1,8 @@
-PKGURL=http://www.portaudio.com/archives/pa_stable_v190600_20161030.tgz
-PKGHASH=56c596bba820d90df7d057d8f6a0ec6bf9ab82e8
+PKGURL=https://github.com/PortAudio/portaudio/archive/refs/tags/v19.7.0.tar.gz
+PKGHASH=90676f9b7856bf100b396d8f14cc95bbfb91fa40
 
 package_download $PKGURL $PKGHASH
 
-# Restrict patching to two platforms
-if [ $SYS_HOSTPLATFORM = openbsd ] || [ $SYS_HOSTPLATFORM = macosx ]; then
-  package_patch
-fi
 rmifexists $SYS_PREFIX/include/portaudio.h
 
 # openbsd needs this
