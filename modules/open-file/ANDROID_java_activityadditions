@@ -1,0 +1,24 @@
+
+private void openFile(String filepath, String filetype, int orientation) {
+  File f = new File(filepath);
+  if (f != null) { 
+    Uri filepathUri = FileProvider.getUriForFile(this,
+          "@SYS_PACKAGE_DOT@.provider",
+          f);
+    Intent intent = new Intent(Intent.ACTION_VIEW, filepathUri);
+    intent.setDataAndType(filepathUri, filetype);
+    intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    if (orientation == 1) {
+      orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+    } else if (orientation == 2) {
+      orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+    } else if (orientation == 3) {
+      orientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+    } else if (orientation == 4) {
+      orientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+    }
+    intent.putExtra(android.provider.MediaStore.EXTRA_SCREEN_ORIENTATION,orientation);
+    startActivity(intent);
+  }
+}
+

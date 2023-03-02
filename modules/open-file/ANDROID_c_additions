@@ -1,0 +1,13 @@
+
+void android_open_file(char* filepath, char* filetype, int orientation)
+{
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jstring jfilepath = (*env)->NewStringUTF(env, filepath);
+    jstring jfiletype = (*env)->NewStringUTF(env, filetype);
+    jmethodID method = (*env)->GetMethodID(env, main_class, "openFile", "(Ljava/lang/String;Ljava/lang/String;I)V");
+    (*env)->CallVoidMethod(env, globalObj, method, jfilepath, jfiletype, orientation);
+  }
+}
+
