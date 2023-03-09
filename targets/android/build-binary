@@ -415,9 +415,6 @@ if [ ! "X$keyerror" = "X" ]; then
   keytool -genkey -v -keystore $keystore -dname "CN=$SYS_ORGDOMAIN_REVERSE_DOT" -alias "$SYS_ORGDOMAIN_REVERSE_DOT" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$SYS_ANDROIDPW" -keypass "$SYS_ANDROIDPW"
   asserterror $?
 fi
-echo " => signing application with keystore $keystore"
-jarsigner -tsa http://zeitstempel.dfn.de -sigalg SHA1withRSA -digestalg SHA1 -keystore $keystore -keypass "$SYS_ANDROIDPW" -storepass "$SYS_ANDROIDPW" $fnlfile $SYS_ORGDOMAIN_REVERSE_DOT
-asserterror $?
 
 echo " => zipaligning.."
 assertfile $fnlfile
@@ -429,6 +426,10 @@ else
 fi
 asserterror $?
 rmifexists $SYS_TMPDIR/tmp.apk
+
+echo " => signing application with keystore $keystore"
+$ANDROIDSDK/build-tools/*/apksigner sign -v --ks $keystore --ks-key-alias "$SYS_ORGDOMAIN_REVERSE_DOT" --ks-pass pass:"$SYS_ANDROIDPW" --v2-signing-enabled true $fnlfile
+asserterror $?
 
 echo " => cleaning up.."
 rm -rf $tmpmoddir
