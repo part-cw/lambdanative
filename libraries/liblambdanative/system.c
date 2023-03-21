@@ -151,10 +151,15 @@ static void find_directories()
 #if defined(ANDROID)
 // we put files on the sdcard, that's the only sane place (?)
   extern char* android_getFilesDir();
+  extern char* android_getExternalFilesDir();
+  extern char* android_getPackageCodePath();
   char path[1024];
   sprintf(path,"/sdcard/%s", SYS_APPNAME);
   sys_dir=strdup(path);
+// The previous location doesn't work with API 31+ anymore, so we can't get to /sdcard
+  sys_dir=android_getExternalFilesDir();
   sys_appdir=android_getFilesDir();
+  //sys_appdir=android_getPackageCodePath(); // This would be closer to iOS use
 #endif
 #if defined(BB10) || defined(PLAYBOOK)
   char path[1024], cwd[1024];
