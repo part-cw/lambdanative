@@ -1,0 +1,3 @@
+This application does not collect or store personal data. It is part of the https://github.com/part-cw/lambdanative/ framework, and the source code is available at https://github.com/part-cw/lambdanative/tree/master/apps/uSquish
+
+If you installed this application from Google Play, then Google Play collects some personal data. Please see the privacy policy for Google Play Services here: https://policies.google.com/privacy.
