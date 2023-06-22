@@ -160,6 +160,10 @@ static int httpsclient_open(char *host, int port, int use_keys, char *cert, char
   if ( ssl == NULL ){ return 0; }
   ret = SSL_set_fd(ssl, s);
   if ( ret == 0 ){ return 0; }
+  if (check_chain == 1) {
+    ret = SSL_set_tlsext_host_name(ssl,host);
+    if (!ret) { return 0; }
+  }
 
   RAND_poll();
   while ( RAND_status() == 0 ){
