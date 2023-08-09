@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2020, University of British Columbia
+Copyright (c) 2009-2023, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -154,9 +154,11 @@ end-of-c-declare
 ;; catch exceptions in threads
 (define make-safe-thread
   (let ((make-thread make-thread))
-    (lambda (p . name)
+    (lambda (p #!optional (name 'unnamed_thread) tgroup)
       (let ((p2 (lambda () (current-exception-handler log:exception-handler) (p))))
-	(make-thread p2 (if (fx= (length name) 1) (car name) 'unnamed_thread))))))
+        (if tgroup
+          (make-thread p2 name tgroup)
+          (make-thread p2 name))))))
 
 (set! make-thread make-safe-thread)
 
