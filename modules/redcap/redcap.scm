@@ -153,7 +153,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                         "<item>"
                                         "<record>" record "</record>"
                                         repeat
-                                        "<redcap_event_name>" event "</redcap_event_name>"
+                                        ;; Only add event if it is non-blank
+                                        (if (string=? event "")
+                                          ""
+                                          (string-append "<redcap_event_name>" event "</redcap_event_name>"))
                                         "<field_name>" fieldname "</field_name>"
                                         "<value>" value "</value>"
                                         "</item>" "\r\n")))))
