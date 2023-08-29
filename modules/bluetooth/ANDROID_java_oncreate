@@ -1,0 +1,6 @@
+
+bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+if(bluetoothAdapter == null){
+  return;
+}
+bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();

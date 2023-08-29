@@ -1,0 +1,24 @@
+
+native void scanEvent(List<ScanResult> resultList);
+
+public void startScan(){
+  System.out.println("LOGIT : Starting Scan");
+  List<ScanResult> scanResults = new ArrayList<>();
+
+  ScanCallback scanCallback = new ScanCallback() {
+      @Override
+      public void onScanResult(int callbackType, ScanResult result) {
+          super.onScanResult(callbackType, result);
+          // String macAddress = result.getDevice().getAddress();
+          scanResults.add(result);
+          System.out.println("LOGIT : Scan Result");
+          scanEvent(scanResults);
+      }
+  };
+
+  bluetoothLeScanner.startScan(scanCallback);
+}
+
+public void printJava(int line){
+  System.out.println("LOGIT : GOT TO " + line);
+}
