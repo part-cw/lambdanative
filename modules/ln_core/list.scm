@@ -47,6 +47,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (if (zero? n) '()
       (cons elem (make-list (- n 1) elem))))
 
+;; Similar to map in the sense that proc is applied to each element of lst, but
+;; the result is #f if any application of proc produces #f, in which case proc is not applied to later elements of the lst; or
+;; the result is #t
+(define (list-andmap proc lst)
+  (if (null? lst)
+    #t
+    (and (proc (car lst)) (list-andmap proc (cdr lst)))))
+
 ;; mar 2010: changed implementation
 ;;(define (list-head l n)
 ;;  (let ((len (length l)))
