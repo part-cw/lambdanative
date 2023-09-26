@@ -8,10 +8,29 @@ public void startScan(){
   ScanCallback scanCallback = new ScanCallback() {
       @Override
       public void onScanResult(int callbackType, ScanResult result) {
-          super.onScanResult(callbackType, result);
-          // String macAddress = result.getDevice().getAddress();
-          scanResults.add(result);
           System.out.println("LOGIT : Scan Result");
+          super.onScanResult(callbackType, result);
+          String macAddress = result.getDevice().getAddress();
+          //if(!macAddress.equals("F0:18:98:2B:4C:0C"))
+          //  return;
+          // Check if a result with the same macAddress already exists
+          boolean found = false;
+          for (int i = 0; i < scanResults.size(); i++) {
+              ScanResult existingResult = scanResults.get(i);
+              String existingMacAddress = existingResult.getDevice().getAddress();
+              if (macAddress.equals(existingMacAddress)) {
+                  // Replace the existing result with the new one
+                  scanResults.set(i, result);
+                  found = true;
+                  break;
+              }
+          }
+          // If not found, add the result to the list
+          if (!found) {
+              scanResults.add(result);
+          }
+          if(scanResults.size() > 10)
+            scanResults.remove(0);
           scanEvent(scanResults);
       }
   };

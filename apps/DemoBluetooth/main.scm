@@ -42,8 +42,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define scan-results '())
 (define NUM-RESULTS 10)
 
+(define scanning #f)
+
+(define refresh-rate 1)
+
+(define prv 0)
+(define now 0)
+
 (define (result-init gui x y w h)
-  (let ((w (glgui-label gui x y w h "Hi" ascii_18.fnt White)))
+  (let ((w (glgui-label gui x y w h "" ascii_18.fnt White)))
     (glgui-widget-set! gui w 'align GUI_ALIGNCENTER)
     (set! scan-results (append scan-results (list w)))))
 
@@ -57,15 +64,33 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     lst
     (pad-strlist (append lst (list "")) len)))
 
-(define (results-btn-cb g w t x y)
-  (let ((results (btle-scanresults)))
-    (log-system results)
+(define (print-result result)
+  (let ((mac_address (btle-get-macaddress result))
+      (rssi (btle-get-rssi result)))
+  (if mac_address
+    (string-append
+      mac_address " (" (number->string rssi) ")")
+    "")))
+
+(define (result-sort-proc r1 r2)
+  (fx> (btle-get-rssi r1) (btle-get-rssi r2)))
+
+(define (refresh-results)
+  (let* ((results-ptr (btle-get-scanresults))
+      (num-results (btle-get-numresults))
+      (results (map (lambda (n) (btle-scanresults-ref results-ptr n))
+        (make-list-natural 0 num-results)))
+      ; (results-sorted (sort results result-sort-proc))
+      (result-strs (map print-result results)))
+    (log-system result-strs)
     (for-each
       (lambda (w res) (glgui-widget-set! gui w 'label res))
-      scan-results (pad-strlist results NUM-RESULTS))))
+      scan-results (pad-strlist result-strs NUM-RESULTS)))
+)
 
 (define (scan-btn-cb g w t x y)
-  (btle-startscan))
+  (btle-startscan)
+  (set! scanning #t))
 
 (main
 ;; initialization
@@ -90,6 +115,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (lambda (t x y) 
     (if (= t EVENT_KEYPRESS) (begin 
       (if (= x EVENT_KEYESCAPE) (terminate))))
+    (if scanning (begin
+      (set! now (time->seconds (current-time)))
+      (if (> (- now prv) refresh-rate) (begin
+        (set! prv now)
+        (refresh-results)))))
     (glgui-event gui t x y))
 ;; termination
   (lambda () #t)

@@ -1,13 +1,55 @@
 
-struct ScanResult {
+typedef struct ScanResult {
   char* mac_address;
   int rssi;
-};
+} ScanResult;
 
-typedef struct ScanResult ScanResult;
+typedef struct DemoStruct {
+  int x;
+  int y;
+  char* s;
+} DemoStruct;
 
-static char** android_scanresults;
-static int num_results;
+void scheme_release_ds(void* ds){
+  DemoStruct* result = (DemoStruct*)ds;
+  free(result->s);
+}
+
+DemoStruct* getDemoStruct(){
+  DemoStruct* ds = malloc(sizeof(DemoStruct));
+  ds->x = 2;
+  ds->y = 3;
+  ds->s = malloc(3 * sizeof(char));
+  ds->s[0] = 'h';
+  ds->s[1] = 'i';
+  ds->s[2] = '\0';
+  return ds;
+}
+
+DemoStruct** getDemoList(){
+  DemoStruct** ds = malloc(3 * sizeof(DemoStruct*));
+  ds[0] = getDemoStruct();
+  ds[1] = getDemoStruct();
+  ds[1]->x = 5;
+  ds[2] = getDemoStruct();
+  ds[2]->x = 7;
+  return ds;
+}
+
+int getDemoX(DemoStruct* demo){
+  return demo->x;
+}
+
+int getDemoXAt(DemoStruct** ds, int i){
+  return getDemoX(ds[i]);
+}
+
+char* getDemoSAt(DemoStruct** ds, int i){
+  return ds[i]->s;
+}
+
+ScanResult* android_scanresults;
+int num_results = 0;
 
 void print_java(int line){
   JNIEnv *env = GetJNIEnv();
@@ -18,61 +60,67 @@ void print_java(int line){
   }
 }
 
+// void scheme_release_scanresult(void* result){
+//   free_scanresult((ScanResult*)result);
+// }
+
+void free_scanresult(ScanResult result){
+  free(result.mac_address);
+}
+
 void free_scanresults(){
   for(int i = 0; i < num_results; i++)
-    free(android_scanresults[i]);
+    free_scanresult(android_scanresults[i]);
   free(android_scanresults);
 }
 
 void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_scanEvent(JNIEnv* env, jobject obj, jobject resultList) {
-
-  print_java(29);
 
   // Get the class and method IDs for List and its methods
   jclass listClass = (*env)->FindClass(env, "java/util/List");
   jmethodID listGet = (*env)->GetMethodID(env, listClass, "get", "(I)Ljava/lang/Object;");
   jmethodID listSize = (*env)->GetMethodID(env, listClass, "size", "()I");
 
-  print_java(36);
-
   // Get the class and method IDs for ScanResult
   jclass scanResultClass = (*env)->FindClass(env, "android/bluetooth/le/ScanResult");
+  jmethodID getRssiMethod = (*env)->GetMethodID(env, scanResultClass, "getRssi", "()I");
   jclass btDeviceClass = (*env)->FindClass(env, "android/bluetooth/BluetoothDevice");
   jmethodID getDeviceMethod = (*env)->GetMethodID(env, scanResultClass, "getDevice", "()Landroid/bluetooth/BluetoothDevice;");
   jmethodID getAddressMethod = (*env)->GetMethodID(env, btDeviceClass, "getAddress", "()Ljava/lang/String;");
-
-  print_java(44);
 
   // Get the class and method IDs for String
   jclass stringClass = (*env)->FindClass(env, "java/lang/String");
   jmethodID stringGetBytes = (*env)->GetMethodID(env, stringClass, "getBytes", "()[B");
 
-  print_java(50);
-
   // Free the old results
-  free_scanresults();
+  // free_scanresults();
 
   // Get the input list size
   num_results = (*env)->CallIntMethod(env, resultList, listSize);
 
-  print_java(58);
-
   // Allocate memory for the char** array
-  android_scanresults = (char**)malloc(sizeof(char*) * (num_results + 1));
+  android_scanresults = (ScanResult*)malloc(sizeof(ScanResult) * num_results);
 
   // Iterate through the input list and convert strings
   for (int i = 0; i < num_results; i++) {
     jobject result = (*env)->CallObjectMethod(env, resultList, listGet, i);
+    jbyte rssi = (jint)(*env)->CallObjectMethod(env, result, getRssiMethod);
     jobject device = (*env)->CallObjectMethod(env, result, getDeviceMethod);
     jstring address = (jstring)(*env)->CallObjectMethod(env, device, getAddressMethod);
     jbyteArray byteArray = (jbyteArray)(*env)->CallObjectMethod(env, address, stringGetBytes);
     jbyte* bytes = (*env)->GetByteArrayElements(env, byteArray, NULL);
     jsize length = (*env)->GetArrayLength(env, byteArray);
 
-    // Allocate memory for the C string and copy the data
-    android_scanresults[i] = (char*)malloc(length + 1);
-    memcpy(android_scanresults[i], bytes, length);
-    android_scanresults[i][length] = '\0';
+    // Assign the Scan Result
+    ScanResult scan_result;
+    scan_result.rssi = rssi;
+
+    // Allocate memory for the mac_address and copy the data
+    scan_result.mac_address = (char*)malloc(sizeof(char)*(length + 1));
+    memcpy(scan_result.mac_address, bytes, length);
+    scan_result.mac_address[length] = '\0';
+
+    android_scanresults[i] = scan_result;
 
     // Release local references and memory
     (*env)->ReleaseByteArrayElements(env, byteArray, bytes, JNI_ABORT);
@@ -82,13 +130,11 @@ void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_scanEvent(JNIEnv* env, jobject 
     (*env)->DeleteLocalRef(env, result);
   }
 
-  print_java(85);
-
   // Set last pointer to NULL
-  android_scanresults[num_results] = NULL;
+  // android_scanresults[num_results] = NULL;
 }
 
-char** android_btle_startscan(){
+void android_btle_startscan(){
   JNIEnv *env = GetJNIEnv();
   jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
   if (env&&globalObj){
@@ -97,6 +143,21 @@ char** android_btle_startscan(){
   }
 }
 
-char** android_btle_scanresults(){
+ScanResult* android_get_scanresults(){
   return android_scanresults;
+}
+
+int android_get_numresults(){
+  return num_results;
+}
+
+ScanResult btle_scanresults_ref(ScanResult* results, int i){
+  return results[i];
+}
+
+char* btle_get_macaddress(ScanResult result){
+  return result.mac_address;
+}
+int btle_get_rssi(ScanResult result){
+  return result.rssi;
 }
