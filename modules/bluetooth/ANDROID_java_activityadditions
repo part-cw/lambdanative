@@ -8,11 +8,13 @@ public void startScan(){
   ScanCallback scanCallback = new ScanCallback() {
       @Override
       public void onScanResult(int callbackType, ScanResult result) {
-          System.out.println("LOGIT : Scan Result");
           super.onScanResult(callbackType, result);
           String macAddress = result.getDevice().getAddress();
-          //if(!macAddress.equals("F0:18:98:2B:4C:0C"))
-          //  return;
+          int rssi = result.getRssi();
+          if(rssi < -70)
+            return;
+          // System.out.println("LOGIT : Scan Result");
+          // System.out.println("LOGIT RSSI: " + rssi);
           // Check if a result with the same macAddress already exists
           boolean found = false;
           for (int i = 0; i < scanResults.size(); i++) {
@@ -38,6 +40,6 @@ public void startScan(){
   bluetoothLeScanner.startScan(scanCallback);
 }
 
-public void printJava(int line){
-  System.out.println("LOGIT : GOT TO " + line);
+public void printJava(String s, int i){
+  System.out.println("LOGIT: " + s + " " + i);
 }

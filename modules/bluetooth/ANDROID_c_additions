@@ -51,12 +51,13 @@ char* getDemoSAt(DemoStruct** ds, int i){
 ScanResult* android_scanresults;
 int num_results = 0;
 
-void print_java(int line){
+void print_java(char* s, int i){
   JNIEnv *env = GetJNIEnv();
   jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
   if (env&&globalObj){
-    jmethodID method = (*env)->GetMethodID(env, main_class, "printJava", "(I)V");
-    (*env)->CallVoidMethod(env, globalObj, method, line);
+    jmethodID method = (*env)->GetMethodID(env, main_class, "printJava", "(Ljava/lang/String;I)V");
+    jstring javaString = (*env)->NewStringUTF(env, s);
+    (*env)->CallVoidMethod(env, globalObj, method, javaString, i);
   }
 }
 
@@ -104,7 +105,7 @@ void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_scanEvent(JNIEnv* env, jobject 
   // Iterate through the input list and convert strings
   for (int i = 0; i < num_results; i++) {
     jobject result = (*env)->CallObjectMethod(env, resultList, listGet, i);
-    jbyte rssi = (jint)(*env)->CallObjectMethod(env, result, getRssiMethod);
+    int rssi = (*env)->CallIntMethod(env, result, getRssiMethod);
     jobject device = (*env)->CallObjectMethod(env, result, getDeviceMethod);
     jstring address = (jstring)(*env)->CallObjectMethod(env, device, getAddressMethod);
     jbyteArray byteArray = (jbyteArray)(*env)->CallObjectMethod(env, address, stringGetBytes);
@@ -114,6 +115,7 @@ void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_scanEvent(JNIEnv* env, jobject 
     // Assign the Scan Result
     ScanResult scan_result;
     scan_result.rssi = rssi;
+    //print_java("C RSSI", rssi);
 
     // Allocate memory for the mac_address and copy the data
     scan_result.mac_address = (char*)malloc(sizeof(char)*(length + 1));

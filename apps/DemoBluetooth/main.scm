@@ -80,9 +80,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (num-results (btle-get-numresults))
       (results (map (lambda (n) (btle-scanresults-ref results-ptr n))
         (make-list-natural 0 num-results)))
-      ; (results-sorted (sort results result-sort-proc))
-      (result-strs (map print-result results)))
-    (log-system result-strs)
+      (results-sorted (sort results result-sort-proc))
+      (result-strs (map print-result results-sorted)))
     (for-each
       (lambda (w res) (glgui-widget-set! gui w 'label res))
       scan-results (pad-strlist result-strs NUM-RESULTS)))
