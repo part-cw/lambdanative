@@ -35,7 +35,7 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |#
-;; helloworld example
+;; bluetooth module example
 
 (define gui #f)
 
@@ -61,46 +61,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (pad-strlist lst len)
   (if (fx>= (length lst) len)
-    lst
+    (sublist lst 0 len) 
     (pad-strlist (append lst (list "")) len)))
 
-(define (print-result result)
-  (let ((mac_address (btle-get-macaddress result))
-      (rssi (btle-get-rssi result)))
-  (log-system mac_address)
-  (if mac_address
-    (string-append
-      mac_address " (" (number->string rssi) ")")
-    "")))
+(define (get-rssi r)
+  (cdr (assoc "rssi" r)))
+
+(define (get-mac-address r)
+  (cdr (assoc "macAddress" r)))
 
 (define (result-sort-proc r1 r2)
-  (fx> (btle-get-rssi r1) (btle-get-rssi r2)))
+  (> (get-rssi r1) (get-rssi r2)))
+
+(define (print-result r)
+  (string-append
+    (get-mac-address r)
+    " (" (number->string (get-rssi r)) ")"))
 
 (define (refresh-results)
-  (let* (
-      (num-results (btle-get-numresults))
-      (results-ptr (btle-get-scanresults))
-      (nrl (log-system num-results))
-      (results (map (lambda (n) (btle-scanresults-ref results-ptr n))
-        (make-list-natural 0 num-results)))
-      (rpp (log-system results))
-      (rp (log-system (map print-result results)))
+  (let* ((results (vector->list (btle-get-scanresults)))
       (results-sorted (sort results result-sort-proc))
       (result-strs (map print-result results-sorted)))
     (for-each
       (lambda (w res) (glgui-widget-set! gui w 'label res))
-      scan-results (pad-strlist result-strs NUM-RESULTS)))
-)
-
-(define (refresh-results-debug)
-  (let* (
-      (num-results (btle-get-numresults))
-      (result-strs (map (lambda (n) (number->string n))
-        (make-list-natural 0 num-results))))
-    (for-each
-      (lambda (w res) (glgui-widget-set! gui w 'label res))
-      scan-results (pad-strlist result-strs NUM-RESULTS)))
-)
+      scan-results (pad-strlist result-strs NUM-RESULTS))))
 
 (define (scan-btn-cb g w t x y)
   (if (not scanning)
