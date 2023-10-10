@@ -1,11 +1,13 @@
 
 native void scanEvent(List<ScanResult> resultList);
 
+private ScanCallback scanCallback;
+
 public void startScan(){
   System.out.println("LOGIT : Starting Scan");
   List<ScanResult> scanResults = new ArrayList<>();
 
-  ScanCallback scanCallback = new ScanCallback() {
+  scanCallback = new ScanCallback() {
       @Override
       public void onScanResult(int callbackType, ScanResult result) {
           super.onScanResult(callbackType, result);
@@ -14,6 +16,7 @@ public void startScan(){
           if(rssi < -70)
             return;
           // System.out.println("LOGIT : Scan Result");
+          // System.out.println("LOGIT MAC: " + macAddress);
           // System.out.println("LOGIT RSSI: " + rssi);
           // Check if a result with the same macAddress already exists
           boolean found = false;
@@ -31,13 +34,20 @@ public void startScan(){
           if (!found) {
               scanResults.add(result);
           }
-          if(scanResults.size() > 10)
+          if(scanResults.size() > 100)
             scanResults.remove(0);
           scanEvent(scanResults);
       }
   };
 
   bluetoothLeScanner.startScan(scanCallback);
+}
+
+public void stopScan(){
+  if(scanCallback != null){
+    bluetoothLeScanner.stopScan(scanCallback);
+    scanCallback = null;
+  }
 }
 
 public void printJava(String s, int i){

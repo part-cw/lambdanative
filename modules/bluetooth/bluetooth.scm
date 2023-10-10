@@ -21,6 +21,7 @@ typedef struct DemoStruct {
 
 #ifdef ANDROID
   void android_btle_startscan(void);
+  void android_btle_stopscan(void);
   ScanResult* android_get_scanresults(void);
   int android_get_numresults(void);
   ScanResult btle_scanresults_ref(ScanResult* results, int i);
@@ -37,6 +38,14 @@ typedef struct DemoStruct {
 void btle_startscan(){
 #ifdef ANDROID
   return android_btle_startscan();
+#else
+  return;
+#endif
+}
+
+void btle_stopscan(){
+#ifdef ANDROID
+  return android_btle_stopscan();
 #else
   return;
 #endif
@@ -65,6 +74,7 @@ end-of-c-declare
 (c-define-type DemoStruct (pointer (struct "DemoStruct" #f "scheme_release_ds")))
 
 (define btle-startscan (c-lambda () void "btle_startscan"))
+(define btle-stopscan (c-lambda () void "btle_stopscan"))
 (define btle-get-scanresults (c-lambda () (pointer ScanResult) "btle_get_scanresults"))
 (define btle-get-numresults (c-lambda () int "btle_get_numresults"))
 (define btle-scanresults-ref (c-lambda ((pointer ScanResult) int) ScanResult "btle_scanresults_ref"))

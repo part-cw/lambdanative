@@ -67,6 +67,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (print-result result)
   (let ((mac_address (btle-get-macaddress result))
       (rssi (btle-get-rssi result)))
+  (log-system mac_address)
   (if mac_address
     (string-append
       mac_address " (" (number->string rssi) ")")
@@ -76,10 +77,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (fx> (btle-get-rssi r1) (btle-get-rssi r2)))
 
 (define (refresh-results)
-  (let* ((results-ptr (btle-get-scanresults))
+  (let* (
       (num-results (btle-get-numresults))
+      (results-ptr (btle-get-scanresults))
+      (nrl (log-system num-results))
       (results (map (lambda (n) (btle-scanresults-ref results-ptr n))
         (make-list-natural 0 num-results)))
+      (rpp (log-system results))
+      (rp (log-system (map print-result results)))
       (results-sorted (sort results result-sort-proc))
       (result-strs (map print-result results-sorted)))
     (for-each
@@ -87,9 +92,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       scan-results (pad-strlist result-strs NUM-RESULTS)))
 )
 
+(define (refresh-results-debug)
+  (let* (
+      (num-results (btle-get-numresults))
+      (result-strs (map (lambda (n) (number->string n))
+        (make-list-natural 0 num-results))))
+    (for-each
+      (lambda (w res) (glgui-widget-set! gui w 'label res))
+      scan-results (pad-strlist result-strs NUM-RESULTS)))
+)
+
 (define (scan-btn-cb g w t x y)
-  (btle-startscan)
+  (if (not scanning)
+    (btle-startscan))
   (set! scanning #t))
+
+(define (stop-btn-cb g w t x y)
+  (if scanning
+    (btle-stopscan))
+  (set! scanning #f))
 
 (main
 ;; initialization
@@ -107,7 +128,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (tx (/ (- (glgui-width-get) tw) 2.))
         (ty (- by 110)))
       (glgui-button-string gui bx by bw bh "Start Scan" ascii_18.fnt scan-btn-cb)
-      (glgui-button-string gui bx (- by 50) bw bh "Show Results" ascii_18.fnt results-btn-cb)
+      (glgui-button-string gui bx (- by 50) bw bh "Stop Scan" ascii_18.fnt stop-btn-cb)
       (results-init NUM-RESULTS gui tx ty tw th))
   )
 ;; events

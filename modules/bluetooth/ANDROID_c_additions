@@ -1,6 +1,6 @@
 
 typedef struct ScanResult {
-  char* mac_address;
+  char mac_address[20];
   int rssi;
 } ScanResult;
 
@@ -48,8 +48,12 @@ char* getDemoSAt(DemoStruct** ds, int i){
   return ds[i]->s;
 }
 
-ScanResult* android_scanresults;
+#define MAX_NUM_RESULTS 100
+ScanResult android_scanresults[MAX_NUM_RESULTS];
+ScanResult scheme_scanresults[MAX_NUM_RESULTS];
 int num_results = 0;
+
+int eventBlock = 0;
 
 void print_java(char* s, int i){
   JNIEnv *env = GetJNIEnv();
@@ -77,6 +81,10 @@ void free_scanresults(){
 
 void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_scanEvent(JNIEnv* env, jobject obj, jobject resultList) {
 
+  // Make sure the result list is not actively being copied to return to Scheme
+  if(eventBlock)
+    return;
+
   // Get the class and method IDs for List and its methods
   jclass listClass = (*env)->FindClass(env, "java/util/List");
   jmethodID listGet = (*env)->GetMethodID(env, listClass, "get", "(I)Ljava/lang/Object;");
@@ -89,51 +97,33 @@ void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_scanEvent(JNIEnv* env, jobject 
   jmethodID getDeviceMethod = (*env)->GetMethodID(env, scanResultClass, "getDevice", "()Landroid/bluetooth/BluetoothDevice;");
   jmethodID getAddressMethod = (*env)->GetMethodID(env, btDeviceClass, "getAddress", "()Ljava/lang/String;");
 
-  // Get the class and method IDs for String
-  jclass stringClass = (*env)->FindClass(env, "java/lang/String");
-  jmethodID stringGetBytes = (*env)->GetMethodID(env, stringClass, "getBytes", "()[B");
-
   // Free the old results
   // free_scanresults();
 
   // Get the input list size
   num_results = (*env)->CallIntMethod(env, resultList, listSize);
 
-  // Allocate memory for the char** array
-  android_scanresults = (ScanResult*)malloc(sizeof(ScanResult) * num_results);
-
   // Iterate through the input list and convert strings
   for (int i = 0; i < num_results; i++) {
     jobject result = (*env)->CallObjectMethod(env, resultList, listGet, i);
     int rssi = (*env)->CallIntMethod(env, result, getRssiMethod);
     jobject device = (*env)->CallObjectMethod(env, result, getDeviceMethod);
-    jstring address = (jstring)(*env)->CallObjectMethod(env, device, getAddressMethod);
-    jbyteArray byteArray = (jbyteArray)(*env)->CallObjectMethod(env, address, stringGetBytes);
-    jbyte* bytes = (*env)->GetByteArrayElements(env, byteArray, NULL);
-    jsize length = (*env)->GetArrayLength(env, byteArray);
+    jstring jaddress = (jstring)(*env)->CallObjectMethod(env, device, getAddressMethod);
+    char* address = (*env)->GetStringUTFChars(env, jaddress, 0);
+    // print_java(address, rssi);
 
     // Assign the Scan Result
-    ScanResult scan_result;
-    scan_result.rssi = rssi;
-    //print_java("C RSSI", rssi);
+    android_scanresults[i].rssi = rssi;
 
-    // Allocate memory for the mac_address and copy the data
-    scan_result.mac_address = (char*)malloc(sizeof(char)*(length + 1));
-    memcpy(scan_result.mac_address, bytes, length);
-    scan_result.mac_address[length] = '\0';
-
-    android_scanresults[i] = scan_result;
+    // Copy the mac address
+    strcpy(android_scanresults[i].mac_address, address);
 
     // Release local references and memory
-    (*env)->ReleaseByteArrayElements(env, byteArray, bytes, JNI_ABORT);
-    (*env)->DeleteLocalRef(env, byteArray);
-    (*env)->DeleteLocalRef(env, address);
+    (*env)->ReleaseStringUTFChars(env, jaddress, address);
+    (*env)->DeleteLocalRef(env, jaddress);
     (*env)->DeleteLocalRef(env, device);
     (*env)->DeleteLocalRef(env, result);
   }
-
-  // Set last pointer to NULL
-  // android_scanresults[num_results] = NULL;
 }
 
 void android_btle_startscan(){
@@ -145,21 +135,43 @@ void android_btle_startscan(){
   }
 }
 
+void android_btle_stopscan(){
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "stopScan", "()V");
+    (*env)->CallVoidMethod(env, globalObj, method);
+  }
+}
+
 ScanResult* android_get_scanresults(){
-  return android_scanresults;
+  print_java("CURRENT RESULTS", num_results);
+  for(int i = 0; i < num_results; i++){
+    print_java(android_scanresults[i].mac_address, android_scanresults[i].rssi);
+    // Copy from the internal array of scan results to the external array
+    scheme_scanresults[i].rssi = android_scanresults[i].rssi;
+    strcpy(scheme_scanresults[i].mac_address, android_scanresults[i].mac_address);
+  }
+  eventBlock = 0;
+  return scheme_scanresults;
 }
 
 int android_get_numresults(){
+  eventBlock = 1;
   return num_results;
 }
 
 ScanResult btle_scanresults_ref(ScanResult* results, int i){
+  print_java("RESULT", i);
+  print_java(results[i].mac_address, results[i].rssi);
   return results[i];
 }
 
 char* btle_get_macaddress(ScanResult result){
+  print_java(result.mac_address, 0);
   return result.mac_address;
 }
 int btle_get_rssi(ScanResult result){
+  print_java(result.mac_address, result.rssi);
   return result.rssi;
 }
