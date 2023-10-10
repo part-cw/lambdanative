@@ -1,0 +1,32 @@
+
+#define BTLE_SCAN_MAX_RESULTS 64
+#define BTLE_SCAN_MAX_RESULT_LEN 64
+char android_scanresults[BTLE_SCAN_MAX_RESULTS * BTLE_SCAN_MAX_RESULT_LEN] = "[]";
+
+void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_scanEvent(JNIEnv* env, jobject obj, jstring resultStr) {
+  const char* str = (*env)->GetStringUTFChars(env, resultStr, 0);
+  strcpy(android_scanresults, str);
+  (*env)->ReleaseStringUTFChars(env, resultStr, str);
+}
+
+void android_btle_startscan(){
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "startScan", "()V");
+    (*env)->CallVoidMethod(env, globalObj, method);
+  }
+}
+
+void android_btle_stopscan(){
+  JNIEnv *env = GetJNIEnv();
+  jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
+  if (env&&globalObj){
+    jmethodID method = (*env)->GetMethodID(env, main_class, "stopScan", "()V");
+    (*env)->CallVoidMethod(env, globalObj, method);
+  }
+}
+
+char* android_get_scanresults(){
+  return android_scanresults;
+}
