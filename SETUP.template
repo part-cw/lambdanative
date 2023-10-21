@@ -7,8 +7,8 @@ ANDROIDNDK=`find /usr/local/android-ndk-* /Applications/AndroidNDK*/Contents/NDK
 # minimum version to support (a matching target must be installed)
 ANDROIDAPI=21
 #android target cpu is now handled by target/android/host_* definitions
-# Java source and target version (default 1.5 when unset, set 1.6 to allow using Java 9/10)
-JAVAVERSION=1.6
+# Java source and target version (default 1.5 when unset, set 1.8 as older are no longer supported)
+JAVAVERSION=1.8
 # ------------------------------------
 ## Linux cross compiler (mac)
 LINUXSDK=`find /usr/local/i?86-linux-*  -maxdepth 0 -print 2> /dev/null | tail -n 1`
@@ -18,8 +18,8 @@ WIN32SDK=`find /usr/local/i?86-mingw32-*  -maxdepth 0 -print 2> /dev/null | tail
 # ------------------------------------
 ## iOS SDK (mac)
 # IOSROOT and IOSSDK get autodetected with xcrun in targets/ios/_host_macosx
-# minimum version to support [required by XCode 10]
-IOSVERSION=8.0
+# minimum version to support [required by XCode 12+]
+IOSVERSION=9
 # ------------------------------------
 ## Blackberry BB10 cross compiler (linux or mac)
 BB10SDK=/Applications/Momentics.app
