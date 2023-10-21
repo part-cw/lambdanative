@@ -47,6 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <LNCONFIG.h>
 
 @ANDROID_C_DEFINES@
+int JNI_forward_exception_to_gambit(JNIEnv*env);
 
 // event hook
 void Java_@SYS_PACKAGE_UNDERSCORE@_myRenderer_nativeEvent(JNIEnv* e, jobject o, jint t, jint x, jint y){
