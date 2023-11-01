@@ -216,6 +216,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;; Reducing the computational complexity of font operations improves
 ;;; rendering time.
 
+(define-type ln-ttf:glyph
+  macros: prefix: macro-
+  desc ;; for now legacy: (key (texcoord1..4) X Y Z)
+  width
+  height
+  texture
+  texcoords ;; generic 4 element vector of flownums
+  rect-texcoords ;; 4x2 element f32vector
+  ;; order is sorta important here
+  offsetx
+  advancex
+  offsety
+  )
+
+(define (ttf:glyph? obj) (macro-ln-ttf:glyph? obj))
+(define (ttf:glyph-desc obj) (macro-ln-ttf:glyph-desc obj))
+(define (ttf:glyph-width obj) (macro-ln-ttf:glyph-width obj))
+(define (ttf:glyph-height obj) (macro-ln-ttf:glyph-height obj))
+(define (ttf:glyph-image obj) (macro-ln-ttf:glyph-texture obj))
+(define (ttf:glyph-texcoords obj) (macro-ln-ttf:glyph-texcoords obj))
+(define (ttf:glyph-rect-texcoords obj) (macro-ln-ttf:glyph-rect-texcoords obj))
+(define (ttf:glyph-offsetx obj) (macro-ln-ttf:glyph-offsetx obj))
+(define (ttf:glyph-advancex obj) (macro-ln-ttf:glyph-advancex obj))
+(define (ttf:glyph-offsety obj) (macro-ln-ttf:glyph-offsety obj))
+
 (define-type ln-ttf:font
   macros: prefix: macro-
   desc ;; for now the legacy description of a font as a assoc-list
@@ -298,10 +323,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           (loop (fl+ x0 gax) (cdr cs))))))
 
 (define (glgui:fontheight fnt)
-  (let* ((g (assoc 0 fnt))
-         (i (if g (glgui:glyph-image g) #f))
-         (h (if i (glgui:image-h i)
-           (cadr (cadr (car fnt)))))) h))
+  (cond
+   ((macro-ln-ttf:font? fnt) (ttf:glyph-height (MATURITY+1:ln-ttf:font-ref fnt 0)))
+   ((find-font fnt) => glgui:fontheight)
+   (else ;; MATURITY -1 backward compatible, the old code
+    (let* ((g (assoc 0 fnt))
+           (i (if g (glgui:glyph-image g) #f))
+           (h (if i (glgui:image-h i)
+                  (cadr (cadr (car fnt)))))) h))))
 
 (define (glgui:stringheight txt fnt)
   (define font (find-font fnt))
