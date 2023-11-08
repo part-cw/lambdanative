@@ -1,6 +1,6 @@
 #!/bin/sh
 # LambdaNative - a cross-platform Scheme framework
-# Copyright (c) 2009-2020, University of British Columbia
+# Copyright (c) 2009-2023, University of British Columbia
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or
@@ -35,7 +35,36 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# search for a working API
+SYS_PLATFORM_VARIANT="-api${SYS_ANDROIDAPI}"
+if [ "X$ANDROIDARCH" = "Xarm64" ]; then
+  android_cross=`ls -1d $ANDROIDNDK/toolchains/llvm/prebuilt/*/bin/aarch64*$SYS_ANDROIDAPI-clang | head -n 1`
+else
+  android_cross=`ls -1d $ANDROIDNDK/toolchains/llvm/prebuilt/*/bin/${ANDROIDARCH}*$SYS_ANDROIDAPI-clang | head -n 1`
+fi
+android_chainpath=`dirname "$android_cross"`/
+SYS_CC=$android_cross" $SYS_DEBUGFLAG -fPIC -DANDROID $cflag_additions"
+SYS_CXX=$android_cross"++ $SYS_DEBUGFLAG -fPIC -DANDROID $cflag_additions"
+SYS_CPP=$android_cross" -E"
+SYS_AR=$android_chainpath"llvm-ar"
+SYS_AS=$android_chainpath"llvm-as"
+SYS_NM=$android_chainpath"llvm-nm"
+SYS_LD=$android_chainpath"lld"
+SYS_RANLIB=$android_chainpath"llvm-ranlib"
+SYS_STRIP=$android_chainpath"llvm-strip"
+SYS_OBJCOPY=$android_chainpath"llvm-objcopy"
+SYS_OBJDUMP=$android_chainpath"llvm-objdump"
+SYS_READELF=$android_chainpath"llvm-readelf"
+SYS_GPROF=
+SYS_WINDRES=
+SYS_EXEFIX=
+SYS_APPFIX=
+
+if [ -f "$android_cross" ]; then
+  vecho "Using pre-built Android toolchain"
+  return;
+fi
+
+# search for a working API using the legacy approach
 android_apichanged=
 while [ ${SYS_ANDROIDAPI} -ge 3 ]; do
   android_APIdir=`echo $ANDROIDNDK/platforms/android-${SYS_ANDROIDAPI}/arch-${ANDROIDARCH}`
@@ -49,7 +78,6 @@ assertfile "$android_APIdir"
 if [ ! "X$android_apichanged" = "X" ]; then
   echo "$android_apichanged"
 fi
-SYS_PLATFORM_VARIANT="-api${SYS_ANDROIDAPI}"
 
 if [ "X$ANDROIDARCH" = "Xarm64" ]; then
   android_chainpath=`ls -1d $ANDROIDNDK/toolchains/aarch64*-4.* | head -n 1`
