@@ -46,6 +46,8 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <sys/time.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -73,6 +75,7 @@ static Display *Dpy=0;
 static int Scrn=0;
 static char *copiedString = NULL;
 static int copiedStringLen = 0;
+static int x11_fd = 0;
 
 // window data structure
 typedef struct microglWindow {
@@ -107,11 +110,13 @@ void microgl_swapbuffers()
 
 void microgl_refresh()
 {
+/*
   XEvent event;
   event.type       = Expose;
   event.xany.window     = win.Win;
   XSendEvent(Dpy, win.Win, False, Expose, &event);
   XSync(Dpy, 0);
+*/
 }
 
 // https://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html
@@ -197,6 +202,29 @@ void microgl_pollevents(void)
   int expose=0;
   int motion=0;
 
+  // Create a File Description Set containing x11_fd
+  fd_set in_fds;
+  FD_ZERO(&in_fds);
+  FD_SET(x11_fd, &in_fds);
+
+  static struct timeval tv;
+  static uint64_t last_expose = 0;
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC,&ts);
+  uint64_t now = (uint64_t)ts.tv_sec*1000000L + (uint64_t)ts.tv_nsec/1000L;
+
+  // Set our timer to the next 10 ms - don't get fooled, this gives you
+  // a framerate near your actual X11 framerate, so most likely 16ms +- jitter
+  tv.tv_usec = (now-last_expose+10000) % 10000;
+  tv.tv_sec = 0;
+  //printf("%d\n",now-last_expose); // to debug framerate accuracy
+
+  // Wait for X Event or a Timeout
+  if (select(x11_fd+1, &in_fds, 0, 0, &tv)<=0) {
+    last_expose = now;
+    microgl_hook(EVENT_REDRAW,0,0);
+  }
+
   while( XPending( Dpy ) ) {
     XNextEvent( Dpy, &event );
     switch( event.type ) {
@@ -273,7 +301,8 @@ void microgl_pollevents(void)
   }  // Xpending
 
   if (expose) {  // process expose events
-     microgl_hook(EVENT_REDRAW,0,0); 
+    last_expose = now;
+    microgl_hook(EVENT_REDRAW,0,0);
   }
 
   if (motion) { // process motion events
@@ -508,6 +537,7 @@ void microgl_init(void)
   XGetWindowAttributes(Dpy,DefaultRootWindow(Dpy),&gwa);
   screen_width=gwa.width;
   screen_height=gwa.height;
+  x11_fd = ConnectionNumber(Dpy);
 }
 
 int microgl_screenwidth(void) { return screen_width; }
