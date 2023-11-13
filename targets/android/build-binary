@@ -409,12 +409,11 @@ keystore=`locatefile PROFILE | sed 's/PROFILE$/android\.keystore/'`
 if [ ! -f "$keystore" ]; then
   keystore=$SYS_TMPDIR/android.keystore
 fi
-keyerror=`keytool -list -keystore $keystore -alias $SYS_ORGDOMAIN_REVERSE_DOT -storepass "$SYS_ANDROIDPW" | grep "error"`
-if [ ! "X$keyerror" = "X" ]; then
+keytool -list -keystore $keystore -alias $SYS_ORGDOMAIN_REVERSE_DOT -storepass "$SYS_ANDROIDPW" > /dev/null || (
   echo " => generating keystore [$keystore].."
   keytool -genkey -v -keystore $keystore -dname "CN=$SYS_ORGDOMAIN_REVERSE_DOT" -alias "$SYS_ORGDOMAIN_REVERSE_DOT" -keyalg RSA -keysize 2048 -validity 10000 -storetype PKCS12 -storepass "$SYS_ANDROIDPW" -keypass "$SYS_ANDROIDPW"
   asserterror $?
-fi
+)
 
 echo " => zipaligning.."
 assertfile $fnlfile
