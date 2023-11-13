@@ -1,5 +1,5 @@
-PKGURL=https://www.openssl.org/source/openssl-1.1.1t.tar.gz
-PKGHASH=a06b067b7e3bd6a2cb52a06f087ff13346ce7360
+PKGURL=https://www.openssl.org/source/openssl-1.1.1w.tar.gz
+PKGHASH=76fbf3ca4370e12894a408ef75718f32cdab9671
 
 package_download $PKGURL $PKGHASH
 
@@ -36,6 +36,11 @@ android*)
   EXTRACONF="android-$SYS_CPU -D__ANDROID_API__=$SYS_ANDROIDAPI"
   export ANDROID_NDK_HOME=$android_customtoolchain
   PATH=$android_customtoolchain/bin:$PATH
+  if [ ! -d "$android_customtoolchain" ]; then
+    android_chainpath=`dirname "$android_cross"`/
+    android_chainpath=`dirname "$android_chainpath"`
+    export ANDROID_NDK_HOME=$android_chainpath
+  fi
 ;;
 ios*)
   SDK=`xcrun --sdk iphoneos --show-sdk-path`
