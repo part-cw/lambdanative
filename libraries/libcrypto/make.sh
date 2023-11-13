@@ -38,8 +38,8 @@ android*)
   PATH=$android_customtoolchain/bin:$PATH
   if [ ! -d "$android_customtoolchain" ]; then
     android_chainpath=`dirname "$android_cross"`/
-    android_chainpath=`dirname "$android_chainpath"`
-    export ANDROID_NDK_HOME=$android_chainpath
+    export ANDROID_NDK_HOME=$SYS_ANDROIDNDK
+    PATH=$SYS_ANDROIDNDK:$android_chainpath:$PATH
   fi
 ;;
 ios*)
