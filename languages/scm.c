@@ -28,6 +28,8 @@ ___setup_params_struct setup_params;
 int debug_settings = ___DEBUG_SETTINGS_INITIAL;
 
 void system_init();
+void  ___disable_heartbeat_interrupts();
+void ___cleanup_heartbeat_interrupt_handling();
 
 static int lambdanative_exit_call_count = -1;  /* System running when 0 */
 void lambdanative_payload_setup()
