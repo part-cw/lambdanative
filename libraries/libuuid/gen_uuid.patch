@@ -1,0 +1,12 @@
+--- gen_uuid.c.orig	2023-12-01 17:43:07.000000000 -0800
++++ gen_uuid.c	2023-12-01 17:44:27.000000000 -0800
+@@ -38,6 +38,9 @@
+  */
+ #define _SVID_SOURCE
+ 
++// Move this up as otherwise clang on Android won't include file.h
++#include "c.h"
++
+ #ifdef _WIN32
+ #define _WIN32_WINNT 0x0500
+ #include <windows.h>
