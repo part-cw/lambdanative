@@ -117,7 +117,7 @@ void serial_flush(int dev);
 int serial_getDTR(int dev);
 void serial_setDTR(int dev, int val);
 int serial_getRTS(int dev);
-void void_setRTS(int dev, int val);
+void serial_setRTS(int dev, int val);
 
 // error codes
 static int _serial_error, _serial_notready;
