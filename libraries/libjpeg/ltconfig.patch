@@ -1,0 +1,24 @@
+--- ltconfig.orig	2023-12-01 23:16:51.000000000 -0800
++++ ltconfig	2023-12-01 23:17:31.000000000 -0800
+@@ -585,7 +585,7 @@
+ 
+ echo $ac_n "checking if $compiler static flag $link_static_flag works... $ac_c" 1>&6
+ $rm conftest*
+-echo 'main(){return(0);}' > conftest.c
++echo 'int main(){return(0);}' > conftest.c
+ save_LDFLAGS="$LDFLAGS"
+ LDFLAGS="$LDFLAGS $link_static_flag"
+ echo "$progname:591: checking if $compiler static flag $link_static_flag works" >&5
+
+--- configure.orig	2023-12-01 23:22:29.000000000 -0800
++++ configure	2023-12-01 23:22:37.000000000 -0800
+@@ -623,7 +623,7 @@
+ cat > conftest.$ac_ext <<EOF
+ #line 625 "configure"
+ #include "confdefs.h"
+-main(){return(0);}
++int main(){return(0);}
+ EOF
+ if { (eval echo configure:629: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest; then
+   ac_cv_prog_cc_works=yes
+
