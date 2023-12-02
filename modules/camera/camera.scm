@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define camera:debuglevel 0)
 (define (camera:log level . x)
-   (if (>= camera:debuglevel level) 
+   (if (>= camera:debuglevel level)
       (apply log-system (append (list "camera: ") x))))
 
 ;; Maximum length of video in seconds
@@ -61,11 +61,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef IOS
   void ios_camera_start(char *);
   void ios_videocamera_start(char *, int);
-#endif 
+#endif
 
 #ifdef ANDROID
   void android_camera_start(char *, char *);
   void android_camera_start_video(char *, char *, int);
+  void android_videocamera_start(char *, char *, int);
 #endif
 
 static void camera_start(char *filename)
