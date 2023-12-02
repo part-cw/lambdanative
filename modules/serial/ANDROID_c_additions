@@ -10,6 +10,8 @@ static jmethodID s_serial_getdtr=NULL;
 static jmethodID s_serial_setdtr=NULL;
 static jmethodID s_serial_getrts=NULL;
 static jmethodID s_serial_setrts=NULL;
+void serial_error_set(int error);
+void serial_timeout_set(int timeout);
 
 int serial_init(){
   JNIEnv *env = GetJNIEnv();
