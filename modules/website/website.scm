@@ -52,7 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   string-replace-substring
   exception->string log:exception-handler
   log-error log-system
-  make-safe-thread
+  make-safe-thread app:android?
   u8vector->base64-string
   system-directory system-pathseparator string-contains
 ))
@@ -127,10 +127,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (website:server db port address)
   (let ((accept-port (open-tcp-server (list server-address: address port-number: port reuse-address: #t))))
     (let loop () (let ((connection (read accept-port)))
-        (if (not (eof-object? connection))
-            (begin (thread-start! (make-safe-thread (lambda ()
+      (if (not (eof-object? connection))
+        (begin
+          ;; With Gambit 4.9.2 (libgambit) Android doesn't like a thread in a thread, so it won't run otherwise
+          (if app:android?
+            (website:serve db connection)
+            (thread-start! (make-safe-thread (lambda ()
               (current-exception-handler log:exception-handler)
               (website:serve db connection) )))
+          )
      (loop)))))))
 
 (define (website:trim-string s)
@@ -267,9 +272,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define website:db (make-table))
 (define (website-getdb) website:db)
 
-(define (website-serve db port . bind) (thread-start! (make-safe-thread (lambda ()
-  (current-exception-handler log:exception-handler)
-  (website:server (if db db website:db) port (if (or (null? bind) (not (eq? (car bind) 'localonly))) "*" "127.0.0.1"))))))
+(define (website-serve db port . bind)
+  (thread-start! (make-safe-thread (lambda ()
+    (current-exception-handler log:exception-handler)
+    (website:server (if db db website:db) port (if (or (null? bind) (not (eq? (car bind) 'localonly))) "*" "127.0.0.1")))))
+  ;; It is unclear why this is needed, but without it Gambit 4.9.2 (libgambit) will not run the thread on Android at all
+  (if app:android? (thread-sleep! 0.01))
+)
 
 (define (website-addhook db document proc)
   (table-set! (if db db website:db)
