@@ -52,7 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   string-replace-substring
   exception->string log:exception-handler
   log-error log-system
-  make-safe-thread app:android?
+  make-safe-thread system-platform
   u8vector->base64-string
   system-directory system-pathseparator string-contains
 ))
@@ -130,7 +130,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (if (not (eof-object? connection))
         (begin
           ;; With Gambit 4.9.2 (libgambit) Android doesn't like a thread in a thread, so it won't run otherwise
-          (if app:android?
+          (if (string=? (system-platform) "android")
             (website:serve db connection)
             (thread-start! (make-safe-thread (lambda ()
               (current-exception-handler log:exception-handler)
@@ -277,7 +277,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (current-exception-handler log:exception-handler)
     (website:server (if db db website:db) port (if (or (null? bind) (not (eq? (car bind) 'localonly))) "*" "127.0.0.1")))))
   ;; It is unclear why this is needed, but without it Gambit 4.9.2 (libgambit) will not run the thread on Android at all
-  (if app:android? (thread-sleep! 0.01))
+  (if (string=? (system-platform) "android") (thread-sleep! 0.01))
 )
 
 (define (website-addhook db document proc)
