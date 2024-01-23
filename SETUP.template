@@ -6,7 +6,12 @@ ANDROIDSDK=`find /usr/local/android-sdk-*  -maxdepth 0 -print 2> /dev/null | tai
 ANDROIDNDK=`find /usr/local/android-ndk-* /Applications/AndroidNDK*/Contents/NDK -maxdepth 0 -print 2> /dev/null | tail -n 1`
 # minimum version to support (a matching target must be installed)
 ANDROIDAPI=21
-#android target cpu is now handled by target/android/host_* definitions
+# version of Android Build Tools to use to sign the apk if more than one
+# version is available.  It is optional to set this as if only one version
+# is available, that version will be used. Android Build Tools are located
+# in $ANDROIDSDK/build-tools/
+#ANDROIDBUILDTOOLS=21.1.2
+# android target cpu is now handled by target/android/host_* definitions
 # Java source and target version (default 1.5 when unset, set 1.8 as older are no longer supported)
 JAVAVERSION=1.8
 # ------------------------------------

@@ -418,7 +418,9 @@ keytool -list -keystore $keystore -alias $SYS_ORGDOMAIN_REVERSE_DOT -storepass "
 echo " => zipaligning.."
 assertfile $fnlfile
 mv $fnlfile $SYS_TMPDIR/tmp.apk
-if [ -x $ANDROIDSDK/tools/zipalign ]; then
+if [ -n ${ANDROIDBUILDTOOLS+x} ] &&  [ -x $ANDROIDSDK/build-tools/$ANDROIDBUILDTOOLS/zipalign ]; then
+  `ls -1 $ANDROIDSDK/build-tools/$ANDROIDBUILDTOOLS/zipalign | tail -n 1` -f 4 $SYS_TMPDIR/tmp.apk $fnlfile
+elif [ -x $ANDROIDSDK/tools/zipalign ]; then
   $ANDROIDSDK/tools/zipalign -f 4 $SYS_TMPDIR/tmp.apk $fnlfile
 else
   `ls -1 $ANDROIDSDK/build-tools/*/zipalign | tail -n 1` -f 4 $SYS_TMPDIR/tmp.apk $fnlfile
@@ -427,7 +429,11 @@ asserterror $?
 rmifexists $SYS_TMPDIR/tmp.apk
 
 echo " => signing application with keystore $keystore"
-$ANDROIDSDK/build-tools/*/apksigner sign -v --ks $keystore --ks-key-alias "$SYS_ORGDOMAIN_REVERSE_DOT" --ks-pass pass:"$SYS_ANDROIDPW" --v2-signing-enabled true $fnlfile
+if [ -n ${ANDROIDBUILDTOOLS+x} ] && [ -x $ANDROIDSDK/build-tools/$ANDROIDBUILDTOOLS/apksigner ]; then
+  $ANDROIDSDK/build-tools/$ANDROIDBUILDTOOLS/apksigner sign -v --ks $keystore --ks-key-alias "$SYS_ORGDOMAIN_REVERSE_DOT" --ks-pass pass:"$SYS_ANDROIDPW" --v2-signing-enabled true $fnlfile
+else
+  $ANDROIDSDK/build-tools/*/apksigner sign -v --ks $keystore --ks-key-alias "$SYS_ORGDOMAIN_REVERSE_DOT" --ks-pass pass:"$SYS_ANDROIDPW" --v2-signing-enabled true $fnlfile
+fi
 asserterror $?
 
 echo " => cleaning up.."
