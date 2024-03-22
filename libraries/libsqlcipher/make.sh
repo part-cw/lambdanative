@@ -1,6 +1,6 @@
-VERSION=v4.5.5
+VERSION=v4.5.6
 PKGURL="https://github.com/sqlcipher/sqlcipher/archive/refs/tags/${VERSION}.zip"
-PKGHASH=efec9eb215f0e9905272a20d8a99246e7ddac87d
+PKGHASH=76eb4248d50a79115a48acee415d3885259fcfd5
 
 package_download $PKGURL $PKGHASH
 package_patch

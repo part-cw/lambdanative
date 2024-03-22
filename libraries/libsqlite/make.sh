@@ -1,6 +1,6 @@
-VERSION=3210000
-PKGURL="https://www.sqlite.org/2017/sqlite-amalgamation-${VERSION}.zip"
-PKGHASH=ebe33c20d37a715db95288010c1009cd560f2452
+VERSION=3450200
+PKGURL="https://www.sqlite.org/2024/sqlite-amalgamation-${VERSION}.zip"
+PKGHASH=190c19d01e94298470ac3d7b17e6bb391b6c953a
 
 package_download $PKGURL $PKGHASH
 package_patch

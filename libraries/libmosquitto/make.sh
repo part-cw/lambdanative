@@ -11,10 +11,7 @@ options="-DWITH_TLS -DWITH_TLS_PSK"
 
 echo "==> Building library source..."
 cd lib
-
-echo $SYS_CC -DVERSION="\"${VERSION}\"" -DTIMESTAMP="\"${TIMESTAMP}\"" \
-  $options -c *.c -I. -I.. -I ../include -I ../deps -I$SYS_PREFIX/include
- $SYS_CC -DVERSION="\"${VERSION}\"" -DTIMESTAMP="\"${TIMESTAMP}\"" \
+$SYS_CC -DVERSION="\"${VERSION}\"" -DTIMESTAMP="\"${TIMESTAMP}\"" \
   $options -c *.c -I. -I.. -I ../include -I ../deps -I$SYS_PREFIX/include
 asserterror $? "compilation failed"
 $SYS_AR ru $SYS_PREFIX/lib/libmosquitto.a *.o 2> /dev/null
@@ -58,6 +55,6 @@ $SYS_CC -DVERSION="\"${VERSION}\"" -DTIMESTAMP="\"${TIMESTAMP}\"" \
 fi
 
 cd ..
-#package_cleanup
+package_cleanup
 
 #eof
