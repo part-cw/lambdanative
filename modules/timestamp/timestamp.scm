@@ -60,4 +60,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (let ((res (timestamp-data filename)))
     (if res (if (timestamp-tsr-save filename (cadr res)) (cadr res) #f) #f)))
 
+;; Unit tests
+(unit-test "timestamp-gettimestamp" "Requesting a trusted timestamp"
+  (lambda () (let* ((filename "LNtest_timestamp")
+                    (datalen (random-integer 100000))
+                    (data (random-u8vector datalen)))
+    (u8vector->file data filename)
+    (if (and (timestamp-gettimestamp filename) (file-exists? (string-append filename ".tsr")))
+      (begin
+        (delete-file filename)
+        (delete-file (string-append filename ".tsr"))
+        #t
+      )
+      #f
+    )
+  )))
+
+(unit-test "timestamp-verify" "Verifying a trusted timestamp"
+  (lambda () (let* ((filename "LNtest_timestamp2")
+                    (file (u8vector->file (u8vector 76 97 109 98 100 97 78 97 116 105 118 101) filename))
+                    (tsr (timestamp-gettimestamp filename))
+                    (cafile "cacert.pem"))
+    (if (timestamp-verify (sha512sum filename) tsr cafile)
+      (begin
+        (delete-file filename)
+        (delete-file (string-append filename ".tsr"))
+        #t
+      )
+      #f
+    )
+  )))
+
 ;; eof

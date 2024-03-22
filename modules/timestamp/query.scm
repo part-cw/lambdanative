@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (c-declare #<<end-of-c-declare
 #include <string.h>
 #include <openssl/ts.h>
+#include <openssl/evp.h>
 
 static TS_REQ *createTSQ(unsigned char *hash, int len){
   // Get proper type
