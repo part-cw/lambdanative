@@ -25,14 +25,19 @@ linux)
 ;;
 esac
 
-if [ "$SYS_PLATFORM" = "$SYS_HOSTPLATFORM" ]; then
-  EXTRACONF=
-fi
-
 package_configure --disable-tcl --disable-shared --enable-tempstore=always CFLAGS="-DSQLITE_HAS_CODEC" $EXTRACONF
 
-package_make
-package_make install
+if [ "$SYS_PLATFORM" = "$SYS_HOSTPLATFORM" ]; then
+  EXTRACONF=
+  package_make
+  package_make install
+else
+  package_make sqlite3.c
+  package_make lib_install
+  mkdir -p $SYS_PREFIX/include/sqlcipher
+  cp sqlite3.h $SYS_PREFIX/include/sqlcipher
+  cp sqlite3ext.h $SYS_PREFIX/include/sqlcipher
+fi
 
 package_cleanup
 
