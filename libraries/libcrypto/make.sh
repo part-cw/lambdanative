@@ -39,6 +39,7 @@ android*)
   if [ ! -d "$android_customtoolchain" ]; then
     android_chainpath=`dirname "$android_cross"`/
     export ANDROID_NDK_HOME=$SYS_ANDROIDNDK
+    export ANDROID_NDK_ROOT=$SYS_ANDROIDNDK
     PATH=$SYS_ANDROIDNDK:$android_chainpath:$PATH
   fi
 ;;
