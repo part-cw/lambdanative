@@ -43,26 +43,33 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    (if (>= sqlite:debuglevel level) (apply log-system (append (list "sqlite: ") x))))
 
 (c-declare  #<<end-of-c-declare
+#ifndef SQLITE_HAS_CODEC
+#define SQLITE_HAS_CODEC 1
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include <sqlite3.h>
+#include <sqlcipher/sqlite3.h>
 
 struct sqlite_db {
   sqlite3 *db;
   sqlite3_stmt *pst;
 };
 
-static struct sqlite_db *_sqlite_open(char *filename)
+static struct sqlite_db *_sqlite_open(char *filename, char *key, int len)
 {
   struct sqlite_db* d  = (struct sqlite_db *)malloc(sizeof(struct sqlite_db));
   int err = sqlite3_open(filename, &d->db);
   if (err!=SQLITE_OK) { free(d); d=0; }
+  if (len > 0){
+    err = sqlite3_key(d->db,key,len);
+    if (err!=SQLITE_OK) { free(d); d=0; }
+  }
   return d;
-}  
+}
 
 static void _sqlite_close(struct sqlite_db *d)
 {
@@ -111,7 +118,7 @@ static int _sqlite_query(struct sqlite_db *d, char* sql)
   const char *sql2;
   return sqlite3_prepare_v2(d->db, sql, strlen(sql), &d->pst, &sql2);
 }
- 
+
 static int _sqlite_finalize(struct sqlite_db *d)
 {
   return sqlite3_finalize(d->pst);
@@ -126,7 +133,7 @@ end-of-c-declare
 (define SQLITE_FLOAT ((c-lambda () int "___result = SQLITE_FLOAT;")))
 (define SQLITE_ROW ((c-lambda () int "___result = SQLITE_ROW;")))
 
-(define sqlite:open (c-lambda (char-string) (pointer void) "_sqlite_open"))
+(define sqlite:open (c-lambda (char-string char-string int) (pointer void) "_sqlite_open"))
 (define sqlite:close (c-lambda ((pointer void)) void "_sqlite_close"))
 (define sqlite:column-type (c-lambda ((pointer void) int) int "_sqlite_column_type"))
 (define sqlite:column-integer (c-lambda ((pointer void) int) int "_sqlite_column_integer"))
@@ -137,9 +144,14 @@ end-of-c-declare
 (define sqlite:query (c-lambda ((pointer void) char-string) int "_sqlite_query"))
 (define sqlite:finalize (c-lambda ((pointer void)) int "_sqlite_finalize"))
 
-(define (sqlite-open dbname)
+(define (sqlite-open dbname . key)
   (sqlite:log 1 "sqlite-open " dbname)
-  (sqlite:open dbname))
+  (if (fx= (length key) 1)
+    (let ((skey (car key)))
+      (sqlite:open dbname skey (string-length skey))
+    )
+    (sqlite:open dbname "" 0)
+  ))
 
 (define (sqlite-close db)
   (sqlite:log 1 "sqlite-close " db)
@@ -150,15 +162,15 @@ end-of-c-declare
   (if (fx= (sqlite:query db q) SQLITE_OK)
      (let loop ((res '()))
         (if (not (fx= (sqlite:step db) SQLITE_ROW)) (begin (sqlite:finalize db) res)
-           (loop (append res (list 
+           (loop (append res (list
              (let ((n (sqlite:data-count db)))
                (let loop2 ((i 0)(col '()))
                   (if (fx= i n) col
                     (let* ((type (sqlite:column-type db i))
-                           (data ((if (fx= type SQLITE_INTEGER) 
-                                    sqlite:column-integer 
-                                    (if (fx= type SQLITE_FLOAT) 
-                                      sqlite:column-float 
+                           (data ((if (fx= type SQLITE_INTEGER)
+                                    sqlite:column-integer
+                                    (if (fx= type SQLITE_FLOAT)
+                                      sqlite:column-float
                                       sqlite:column-string
                                     )) db i)))
                       (loop2 (fx+ i 1) (append col (list data)))))))))))) #f))
