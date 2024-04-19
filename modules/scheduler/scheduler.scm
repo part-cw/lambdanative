@@ -163,7 +163,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (if (scheduler:doinputs)
     (begin
       (for-each (lambda (s)
-        (if (fl>= (fl- ##now (store:instance-ref s "DispatchStart" 0.)) (store:instance-ref s "DispatchCount" 0.))
+        (if (and (store? s) (fl>= (fl- ##now (store:instance-ref s "DispatchStart" 0.)) (store:instance-ref s "DispatchCount" 0.)))
           ;; run every 1 second
           (begin
             (store:instance-set! s "DispatchCount" (fl+ (store:instance-ref s "DispatchCount" 0.) 1.))
