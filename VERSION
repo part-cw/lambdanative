@@ -13,6 +13,7 @@
 # 1.0.11: iOS updates, redcap updates, linux loader updates, bug fixes
 # 1.0.12: Gambit 4.9.2 support, library updates, android build improvements
 # 1.0.13: arm64 android, macOS codesigning, IPv6, OpenGL bugfixes
-# 1.1: android multiple api support, major ln_glgui renderloop timing change
+# 1.1: Android multiple api support, major ln_glgui renderloop timing change
 # 1.1.1: Bug fixes, better android support, ln_jScheme module
+# 1.1.2: Library updates, android toolchain revision, miscellaneous fixes
 1.0.10
