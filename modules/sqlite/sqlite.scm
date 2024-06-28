@@ -181,7 +181,7 @@ end-of-c-declare
     (sqlite-query db "create table tbl1(one varchar(10), two smallint)")
     (sqlite-query db "insert into tbl1 values('hello!',10)")
     (sqlite-query db "insert into tbl1 values('goodbye', 20)")
-    (sqlite-query db "insert into tbl1 values('one more', 2.3)")
+    (sqlite-query db "insert into tbl1 values('one more', 3)")
     (let ((res (sqlite-query db "select * from tbl1")))
       (sqlite-close db) res)))
 
