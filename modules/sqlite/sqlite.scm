@@ -185,4 +185,23 @@ end-of-c-declare
     (let ((res (sqlite-query db "select * from tbl1")))
       (sqlite-close db) res)))
 
+;; Unit test
+(unit-test "sqlite-rw" "Write and read an SQLite database"
+  (lambda () (let* ((filename "LNtest_sqlite.sqlite")
+                    (res '(("hello!" 10) ("goodbye" 20) ("one more" 2.3)))
+                    (db (sqlite-open filename)))
+    (sqlite-query db "CREATE TABLE tbl1(one VARCHAR(10), two NUMERIC)")
+    (sqlite-query db "INSERT INTO tbl1 VALUES('hello!',10)")
+    (sqlite-query db "INSERT INTO tbl1 VALUES('goodbye', 20)")
+    (sqlite-query db "INSERT INTO tbl1 VALUES('one more', 2.3)")
+    (if (equal? (sqlite-query db "SELECT * FROM tbl1") res)
+      (begin
+        (sqlite-close db)
+        (delete-file filename)
+        #t
+      )
+      #f
+    )
+  )))
+
 ;; eof
