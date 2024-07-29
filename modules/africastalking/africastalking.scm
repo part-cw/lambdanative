@@ -92,8 +92,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (list str (list)))))
 
 ;; For creating POST request to Africa's Talking
-(define (atalk:make-request-str host url username apikey number message)
-  (let ((request (string-append "username=" username "&to=" (atalk:percent-encode number) "&message=" (atalk:percent-encode message))))
+(define (atalk:make-request-str host url username apikey number message from)
+  (let* ((requestTo (string-append "username=" username "&to=" (atalk:percent-encode number)))
+         (requestFrom (if from (string-append "&from=" from) ""))
+         (request (string-append requestTo requestFrom "&message=" (atalk:percent-encode message))))
     (string-append "POST " url " HTTP/1.1" "\r\n"
       "Host: " host "\r\n"
       "Content-Length: " (number->string (string-length request)) "\r\n"
@@ -103,10 +105,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       "\r\n" request "\n")))
 
 ;; Send the message and return the response
-(define (atalk:sendSMS host url username apikey number message)
+(define (atalk:sendSMS host url username apikey number message . sender)
   (let* ((buf (##still-copy (make-u8vector 1024)))
         (conn (httpsclient-open host))
-        (request-str (atalk:make-request-str host url username apikey number message)))
+        (from (if (and (list? sender) (fx> (length sender) 0) (string? (car sender))) (car sender) #f))
+        (request-str (atalk:make-request-str host url username apikey number message from)))
     (httpsclient-send (string->u8vector request-str))
     (httpsclient-recv buf)
     (httpsclient-close)
