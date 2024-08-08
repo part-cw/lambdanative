@@ -110,6 +110,8 @@ if [ -x "$ANDROIDSDK/tools/bin/avdmanager" ]; then
     unzip -q ./ant_tools.zip
     rm ant_tools.zip
     mv tools tools.ant
+    cd tools.ant/lib
+    ln -s x86_64 aarch64
     cd "$dir_antbuild"
   fi
   # point us to the ant tools
