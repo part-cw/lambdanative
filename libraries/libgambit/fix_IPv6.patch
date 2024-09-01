@@ -49,7 +49,7 @@ Index: lib/os_io.c
 +typedef union ___device_tcp_addr_struct
 +  {
 +    struct sockaddr_in in;
-+    struct sockaddr_in6 in6
++    struct sockaddr_in6 in6;
 +} ___device_tcp_addr;
 
  typedef struct ___device_tcp_client_struct
