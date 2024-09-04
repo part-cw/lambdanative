@@ -649,7 +649,7 @@ cat > tmp.tex << __EOF
 \makeatother 
 \usepackage{fontspec}
 \usepackage{xunicode}
-%\fontspec [ Path = $fontpath ]{$fontname}
+\fontspec [ Path = $fontpath ]{$fontname}
 \setmainfont[$opt]{[$fontname.ttf]}
 \usepackage[margin=0.1in, paperwidth=40in, paperheight=2in]{geometry}
 \begin{document}
