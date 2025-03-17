@@ -1,5 +1,5 @@
-PKGURL=https://download.savannah.gnu.org/releases/freetype/freetype-2.10.1.tar.gz
-PKGHASH=3296b64ad1e7540289f22e4b6383e26e928b0a20
+PKGURL=https://download.savannah.gnu.org/releases/freetype/freetype-2.13.3.tar.gz
+PKGHASH=f976fa6f5020707e4e8d5a994c7fe27eb53264b3
 
 package_download $PKGURL $PKGHASH
 package_patch
