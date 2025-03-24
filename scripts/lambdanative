@@ -115,16 +115,16 @@ cat > ./Makefile << _EOF
 # Automatically generated. Do not edit
 
 all:
-	@cd $LAMBDANATIVE; SYS_PATH=$here make; cd $here
+	@cd $LAMBDANATIVE && SYS_PATH=$here make && cd $here
 
 clean:
-	@cd $LAMBDANATIVE; SYS_PATH=$here make clean; cd $here
+	@cd $LAMBDANATIVE && SYS_PATH=$here make clean && cd $here
 
 scrub:
-	@cd $LAMBDANATIVE; SYS_PATH=$here make scrub; cd $here
+	@cd $LAMBDANATIVE && SYS_PATH=$here make scrub && cd $here
 
 install:
-	@cd $LAMBDANATIVE; SYS_PATH=$here make install; cd $here
+	@cd $LAMBDANATIVE && SYS_PATH=$here make install && cd $here
 
 #eof
 _EOF
