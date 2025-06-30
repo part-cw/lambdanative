@@ -60,3 +60,6 @@ jobs:
        mkdir -p /home/build/.cache/lambdanative/android/support
        ./configure Calculator android debug
        make
+    - name: smoke tests
+      run: |
+       sh make.sh smoke
