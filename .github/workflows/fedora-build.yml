@@ -1,0 +1,62 @@
+name: fedora-build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: fedora
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:41
+
+    steps:
+    - uses: actions/checkout@v4
+    - run: cat /etc/os-release
+    - name: install dependencies
+      run: |
+        dnf -y install alsa-lib-devel ant autoconf automake bc curl gambit-c
+        dnf -y install gcc git ImageMagick-devel java-17-openjdk-devel
+        dnf -y install libtool libXext-devel make mesa-libGL-devel
+        dnf -y install mesa-libGLU-devel netpbm-devel patch perl-FindBin
+        dnf -y install portaudio python3-sdkmanager sed tar tcl-devel texlive
+        dnf -y install wget zip
+    - name: setup android
+      run: |
+       # https://stackoverflow.com/a/77215395
+       # https://computingforgeeks.com/install-and-use-android-studio-on-fedora/
+       mkdir -p /home/build/android-sdk
+       export ANDROID_HOME=/home/build/android-sdk
+       echo yes | sdkmanager --sdk_root=/home/build/android-sdk "platforms;android-28"
+       echo yes | sdkmanager --sdk_root=/home/build/android-sdk "build-tools;29.0.3"
+       echo yes | sdkmanager --sdk_root=/home/build/android-sdk "tools"
+       echo yes | sdkmanager --sdk_root=/home/build/android-sdk "extras;android;m2repository"
+       echo yes | sdkmanager --sdk_root=/home/build/android-sdk "ndk-bundle;r28"
+       echo yes | sdkmanager --sdk_root=/home/build/android-sdk "platform-tools"
+       echo yes | sdkmanager --sdk_root=/home/build/android-sdk --licenses
+       # https://coderwall.com/p/r09hoq/android-generate-release-debug-keystores
+       # https://stackoverflow.com/a/13578480
+       keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -noprompt -dname "CN=Unknown, OU=Unknown, O=Unknown, L=Unknown, S=Unknown, C=Unknown"
+    - name: prepare lambdanative
+      run : |
+       cp SETUP.template SETUP
+       sed -i 's/ANDROIDAPI=21/ANDROIDAPI=28/g' SETUP
+       sed -i 's|/usr/local/android-sdk-*|/home/build/android-sdk|g' SETUP
+       sed -i 's|/usr/local/android-ndk-*|/home/build/android-sdk/ndk-bundle|g' SETUP
+       cp PROFILE.template PROFILE
+       sed -i 's|SYS_ANDROIDPW="yoursecrethere"|SYS_ANDROIDPW="android"|g' PROFILE
+    - name: linux builds
+      run: |
+       ./configure Calculator
+       make
+    - name: android builds
+      run: |
+       # Fedora only provides Python3
+       sed -i 's/python/python3/g' targets/android/check-tools
+       # Make directory to avoid errors during build
+       mkdir -p /home/build/.cache/lambdanative/android/support
+       ./configure Calculator android debug
+       make
