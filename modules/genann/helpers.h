@@ -134,6 +134,3 @@ int randomSeed(){
 	srand(time(0));
 	return 0;
 }
-
-//dont forget to allow to set weights in scm
-
