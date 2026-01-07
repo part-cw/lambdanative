@@ -65,6 +65,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	(genann-train net (vector 1 0) (vector 1) .3)
 	(genann-train net (vector 1 1) (vector 0) .3)
 (loop (+ i 1)))) (newline)
+(display "AFTER TRAINING") (newline)
 (display "0   0  =>  ")
 (display (round (vector-ref (genann-run net (vector 0 0)) 0))) (newline)
 (display "0   1  =>  ")
