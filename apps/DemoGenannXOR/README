@@ -1,0 +1,84 @@
+;create a new genann instance
+;returns a genann object
+;(genann-init number-of-inputs number-of-hidden-layers number-of-neurons-per-hidden-layer number-of-output-neurons)
+
+;free the genann object
+;call this when you are done with the object
+;(genann-free)
+
+;save the genann object to a file
+;(genann-save ann "ann.net")
+
+;load a genann object into memory from a file
+;(genann-load "ann.net")
+;use it like this
+;(set! ann (genann-load "ann.net"))
+
+;randomize the weights in the neural network
+;(genann-randomize ann)
+;dont forget to call (random-seed!) before to make it more random
+
+;copy the genann object to a new object
+;useful for genetic algorithms when doing parent to child and then mutating the weights
+;use it like this
+;(set !annn (genann-copy ann))
+
+;get the number of inputs
+;use it like this
+;(set! n (get-n-inputs ann))
+
+;get the number of hidden layers
+;use it like this
+;(set! n (get-n-hidden-layers ann))
+
+;get the number of neurons per hidden layer
+;use it like this
+;(set! n (get-n-hidden ann))
+
+;get the number of outputs
+;use it like this
+;(set! n (get-n-outputs ann))
+
+;get the total number of weights in the neural network
+;use it like this
+;(set! n (get-n-total-weights ann))
+
+;get the number of total neurons in the network
+;use it like this
+;(set! n (get-n-total-neurons ann))
+
+;get a vector of all the weights in the network
+;use it like this
+;(set! weights (get-weights ann))
+
+;get a vector of the last output of the network
+;use it like this
+;(set! outputs (get-output ann))
+
+;get a vector of the delta of all the neurons of the network
+;use it like this
+;(set! delta (get-delta ann))
+
+;set a random seed with which genann-randomize will be used to initiate the weights
+;this is how its set in C srand(time(0))
+
+;train the neural network
+;this is where the main work is done
+;it takes two vectors, the first is inputs and second is expected outputs
+;last is rate, which determines how fast the network will learn
+;use it like this
+;(genann-train ann (vector 0 0) (vector 0 1) 0.1)
+;or
+;(genann-train ann training-input expected-output rate)
+
+;run some inputs through the network and get an output
+;use it like this
+;(set! output (genann-run input))
+;or
+;(set! output (genann-run (vector 1 1 4)))
+
+;update weight in the network
+;use it like this 
+;(update-weight ann index value)
+;or
+;(update-weight ann 4 24.5)
