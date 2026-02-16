@@ -19,7 +19,7 @@ jobs:
     - name: install dependencies
       run: |
         dnf -y install alsa-lib-devel ant autoconf automake bc curl gambit-c
-        dnf -y install gcc git ImageMagick-devel java-17-openjdk-devel
+        dnf -y install gcc gcc-c++ git ImageMagick-devel java-17-openjdk-devel
         dnf -y install libtool libXext-devel make mesa-libGL-devel
         dnf -y install mesa-libGLU-devel netpbm-devel patch perl-FindBin
         dnf -y install portaudio python3-sdkmanager sed tar tcl-devel texlive
