@@ -19,11 +19,11 @@ jobs:
     - name: install dependencies
       run: |
         dnf -y install alsa-lib-devel ant autoconf automake bc curl gambit-c
-        dnf -y install gcc gcc-c++ git ImageMagick-devel java-17-openjdk-devel
-        dnf -y install libtool libXext-devel make mesa-libGL-devel
-        dnf -y install mesa-libGLU-devel netpbm-devel patch perl-FindBin
-        dnf -y install portaudio python3-sdkmanager sed tar tcl-devel texlive
-        dnf -y install wget zip
+        dnf -y install gcc gcc-c++ git inkscape ImageMagick-devel
+        dnf -y install java-17-openjdk-devel libtool libXext-devel make
+        dnf -y install mesa-libGL-devel mesa-libGLU-devel netpbm-devel patch
+        dnf -y install perl-FindBin portaudio python3-sdkmanager sed tar tcl-devel
+        dnf -y install texlive wget zip
     - name: setup android
       run: |
        # https://stackoverflow.com/a/77215395
