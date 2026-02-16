@@ -1,55 +1,79 @@
+// Declare your native methods (implemented in native code)
 native void gpsEvent(double lat, double lon, double altitude, double accuracy, long timestamp);
+native void satelliteEvent(int satInView, int satInFix);
+
+// LocationListener implementation
 @Override
 public void onLocationChanged(Location location) {
-  gpsEvent(location.getLatitude(),location.getLongitude(),location.getAltitude(),location.getAccuracy(),location.getTime());
-}
-@Override
-public void onProviderDisabled(String provider) {
-}
-@Override
-public void onProviderEnabled(String provider) {
-}
-@Override
-public void onStatusChanged(String provider, int status, Bundle extras) {
+  gpsEvent(location.getLatitude(), location.getLongitude(), location.getAltitude(), location.getAccuracy(), location.getTime());
 }
 
-// status (1 = on, 0 = off)
+@Override
+public void onProviderDisabled(String provider) {
+  // Optional: handle provider disabled
+}
+
+@Override
+public void onProviderEnabled(String provider) {
+  // Optional: handle provider enabled
+}
+
+@Override
+public void onStatusChanged(String provider, int status, Bundle extras) {
+  // Deprecated but still required by interface
+}
+
+GnssStatus.Callback gnssCallback = new GnssStatus.Callback() {
+  @Override
+  public void onSatelliteStatusChanged(GnssStatus status) {
+    int satellitesInView = status.getSatelliteCount();
+    int satellitesInFix = 0;
+
+    for (int i = 0; i < satellitesInView; i++) {
+      if (status.usedInFix(i)) satellitesInFix++;
+    }
+
+    satelliteEvent(satellitesInView, satellitesInFix);
+  }
+};
+
 public void toggleGPS(int status){
   if (status == 1) {
     gpsStatus = 1;
-    // Enable GPS
     runOnUiThread(new Runnable() {
       public void run() {
-          runOnUiThread(new Runnable() {
-              public void run(){
-                  locationManager.requestLocationUpdates(provider, 1000, 1, locationlistener);
-                  locationManager.addGpsStatusListener(gpslistener);
+        locationManager.requestLocationUpdates(provider, 1000, 1, locationlistener);
+
+        if (gnssCallback == null) {
+          gnssCallback = new GnssStatus.Callback() {
+            @Override
+            public void onSatelliteStatusChanged(GnssStatus status) {
+              int satellites = status.getSatelliteCount();
+              int satellitesInFix = 0;
+              for (int i = 0; i < satellites; i++) {
+                if (status.usedInFix(i)) satellitesInFix++;
               }
-          });
-      }});
+              satelliteEvent(satellites, satellitesInFix);
+            }
+          };
+          locationManager.registerGnssStatusCallback(gnssCallback);
+        }
+      }
+    });
+
   } else {
     gpsStatus = 0;
-    // Disable GPS
     locationManager.removeUpdates(locationlistener);
-    locationManager.removeGpsStatusListener(gpslistener);
+    if (gnssCallback != null && locationManager != null) {
+      locationManager.unregisterGnssStatusCallback(gnssCallback);
+    }
   }
 }
 
-native void satelliteEvent(int satInView, int satInFix);
-public void onGpsStatusChanged(int event) {
-    int satellites = 0;
-    int satellitesInFix = 0;
-    int timetofix = locationManager.getGpsStatus(null).getTimeToFirstFix();
-    for (GpsSatellite sat : locationManager.getGpsStatus(null).getSatellites()) {
-        if(sat.usedInFix()) {
-            satellitesInFix++;
-        }
-        satellites++;
-    }
-    satelliteEvent(satellites, satellitesInFix);
-}
 
-public int isLocationServiceEnabled(){
-  String provider = Settings.Secure.getString(getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
-  return (provider == null || provider.equals("")) ? 0 : 1;
+
+// Check if location services are enabled on the device
+public int isLocationServiceEnabled() {
+  String enabledProviders = Settings.Secure.getString(getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
+  return (enabledProviders == null || enabledProviders.isEmpty()) ? 0 : 1;
 }

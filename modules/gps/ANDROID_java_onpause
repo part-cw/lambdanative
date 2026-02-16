@@ -1,1 +1,4 @@
 locationManager.removeUpdates(this);
+if (locationManager != null && gnssCallback != null) {
+  locationManager.unregisterGnssStatusCallback(gnssCallback);
+}

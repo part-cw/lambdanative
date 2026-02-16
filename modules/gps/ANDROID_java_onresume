@@ -1,4 +1,14 @@
-// Only resume gps if it was requested to do so previously before app was paused
-if (gpsStatus == 1){
-  toggleGPS(1);
+if (gpsStatus == 1) {
+  // Register the GNSS callback to listen for satellite status changes
+  if (gnssCallback != null) {
+    locationManager.registerGnssStatusCallback(gnssCallback);
   }
+
+  // Check if location permissions are granted before requesting location updates
+  if (ActivityCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+    locationManager.requestLocationUpdates(provider, 1000, 1, locationlistener);
+  } else {
+    // Request permissions if not already granted
+    ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+  }
+}
