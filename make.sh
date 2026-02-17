@@ -1526,11 +1526,8 @@ smoke_one()
      return
   fi
   ls $SYS_HOSTPREFIX
-  ls $SYS_HOSTPREFIX/${SYS_HOSTPLATFORM}
-  ls $SYS_HOSTPREFIX/${SYS_HOSTPLATFORM}/${SYS_APPNAME}${SYS_APPFIX}
-  tree /home/build
-  appdir=`ls -1d $SYS_HOSTPREFIX/${SYS_HOSTPLATFORM}/${SYS_APPNAME}${SYS_APPFIX}`
-  appexe=`ls -1 $SYS_HOSTPREFIX/${SYS_HOSTPLATFORM}/${SYS_APPNAME}${SYS_APPFIX}/${SYS_APPNAME}*`
+  appdir=`ls -1d $SYS_HOSTPREFIX/${SYS_APPNAME}${SYS_APPFIX}`
+  appexe=`ls -1 $SYS_HOSTPREFIX/${SYS_APPNAME}${SYS_APPFIX}/${SYS_APPNAME}*`
   appexelocal="./"`basename $appexe`
   if [ "X$appexe" = "X" ] || [ ! -x "$appexe" ]; then
      smoke_result $smoker "**FAIL"
