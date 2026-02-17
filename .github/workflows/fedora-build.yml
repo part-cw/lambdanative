@@ -22,8 +22,8 @@ jobs:
         dnf -y install gcc gcc-c++ git inkscape ImageMagick-devel
         dnf -y install java-17-openjdk-devel libtool libXext-devel make
         dnf -y install mesa-libGL-devel mesa-libGLU-devel netpbm-devel patch
-        dnf -y install perl-FindBin portaudio python3-sdkmanager sed tar tcl-devel
-        dnf -y install texlive tree wget zip
+        dnf -y install perl-FindBin portaudio procps-ng python3-sdkmanager sed
+        dnf -y install tar tcl-devel texlive tree xorg-x11-server-Xvfb wget zip
     - name: prepare lambdanative
       run : |
        # Make directory to avoid errors during build

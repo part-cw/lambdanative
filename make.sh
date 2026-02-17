@@ -1549,7 +1549,7 @@ smoke_one()
     ) &
   here=`pwd`
   cd "$appdir"
-  $appexelocal
+  xvfb-run $appexelocal
   res=$?
   cd $here
   if [ $res = 0 ] || [ $res = 137 ]; then
