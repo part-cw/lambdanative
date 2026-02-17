@@ -1525,11 +1525,8 @@ smoke_one()
      echo "ERROR: make executable failed"
      return
   fi
-  ls $SYS_HOSTPREFIX
   appdir=`ls -1d $SYS_HOSTPREFIX/${SYS_APPNAME}${SYS_APPFIX}`
-  echo $appdir
   appexe=`ls -1 $SYS_HOSTPREFIX/${SYS_APPNAME}${SYS_APPFIX}/${SYS_APPNAME}`
-  echo $appexe
   appexelocal="./"`basename $appexe`
   echo $appexelocal
   if [ "X$appexe" = "X" ] || [ ! -x "$appexe" ]; then
