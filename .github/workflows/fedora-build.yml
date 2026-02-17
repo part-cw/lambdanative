@@ -27,7 +27,7 @@ jobs:
     - name: prepare lambdanative
       run : |
        # Make directory to avoid errors during build
-       mkdir -p /home/build/.cache/lambdanative
+       mkdir -p /github/home/.lambdanative
        cp SETUP.template SETUP
        cp PROFILE.template PROFILE
     - name: smoke tests
