@@ -30,6 +30,7 @@ jobs:
        mkdir -p /github/home/.lambdanative
        cp SETUP.template SETUP
        cp PROFILE.template PROFILE
+       ./configure Calculator
     - name: smoke tests
       run: |
        sh make.sh smoke
