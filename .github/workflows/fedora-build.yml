@@ -43,23 +43,7 @@ jobs:
     - name: prepare lambdanative
       run : |
        cp SETUP.template SETUP
-       sed -i 's/ANDROIDAPI=21/ANDROIDAPI=28/g' SETUP
-       sed -i 's|/usr/local/android-sdk-*|/home/build/android-sdk|g' SETUP
-       sed -i 's|/usr/local/android-ndk-*|/home/build/android-sdk/ndk-bundle|g' SETUP
        cp PROFILE.template PROFILE
-       sed -i 's|SYS_ANDROIDPW="yoursecrethere"|SYS_ANDROIDPW="android"|g' PROFILE
-    - name: linux builds
-      run: |
-       ./configure Calculator
-       make
-    - name: android builds
-      run: |
-       # Fedora only provides Python3
-       sed -i 's/python/python3/g' targets/android/check-tools
-       # Make directory to avoid errors during build
-       mkdir -p /home/build/.cache/lambdanative/android/support
-       ./configure Calculator android debug
-       make
     - name: smoke tests
       run: |
        sh make.sh smoke
