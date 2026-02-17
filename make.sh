@@ -459,7 +459,7 @@ make_artwork()
           fi
         fi
         asserttool $inkscape
-        veval "$inkscape -z $svgsrc -w 1200 -e $pngtgt"
+        veval "$inkscape -z $svgsrc -w 1200 -o $pngtgt"
       fi
     else
       if [ "X$epssrc" = "X" ]; then
