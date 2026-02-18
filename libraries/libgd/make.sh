@@ -23,7 +23,7 @@ if [ "$SYS_PLATFORM" = "win32" ]; then
   fi
 fi
 
-package_configure $EXTRACONF --disable-shared --enable-static --with-png=$SYS_PREFIX --with-freetype=$SYS_PREFIX --with-jpeg=$SYS_PREFIX --without-tiff --without-xpm --without-fontconfig --without-x
+package_configure $EXTRACONF --disable-shared --enable-static --with-png=$SYS_PREFIX --with-freetype=$SYS_PREFIX --with-jpeg=$SYS_PREFIX --without-avif --without-heif --without-tiff --without-webp --without-xpm --without-fontconfig --without-x
 
 cd src
 package_make libgd.la
