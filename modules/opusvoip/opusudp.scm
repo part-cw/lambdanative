@@ -63,6 +63,7 @@ void opusvoip_phone_hangup();
   #include <sys/socket.h>
 #else
   #include <sys/fcntl.h>
+  #include <sys/unistd.h>
 #endif
 
 #ifdef IOS
@@ -164,7 +165,7 @@ int opusvoip_clear_buffers(){
 // ------------------------------------
 
 // Make UDP listening socket
-int init_udp_listener(voip){
+int init_udp_listener(){
   //Make a socket
   #ifdef WIN32
     WSADATA wsaData;

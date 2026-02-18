@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 #include "defs.h"
 
