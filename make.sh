@@ -459,7 +459,12 @@ make_artwork()
           fi
         fi
         asserttool $inkscape
-        veval "$inkscape -z $svgsrc -w 1200 -o $pngtgt"
+        inkscapemajorversion=`inkscape --version | cut -d' ' -f2 | cut -d'.' -f1`
+        if [ $inkscapemajorversion -ge 1 ]; then
+          veval "$inkscape -z $svgsrc -w 1200 -o $pngtgt"
+        else
+          veval "$inkscape -z $svgsrc -w 1200 -e $pngtgt"
+        fi
       fi
     else
       if [ "X$epssrc" = "X" ]; then
@@ -1528,7 +1533,6 @@ smoke_one()
   appdir=`ls -1d $SYS_HOSTPREFIX/${SYS_APPNAME}${SYS_APPFIX}`
   appexe=`ls -1 $SYS_HOSTPREFIX/${SYS_APPNAME}${SYS_APPFIX}/${SYS_APPNAME}`
   appexelocal="./"`basename $appexe`
-  echo $appexelocal
   if [ "X$appexe" = "X" ] || [ ! -x "$appexe" ]; then
      smoke_result $smoker "**FAIL"
      echo "ERROR: make failed"
@@ -1546,7 +1550,12 @@ smoke_one()
     ) &
   here=`pwd`
   cd "$appdir"
-  xvfb-run $appexelocal
+  if [ `havetool xvfb-run` = yes ]; then
+      runapp=`xvfb-run $appexelocal`
+  else
+      runapp=`$appexelocal`
+  fi
+  $runapp
   res=$?
   cd $here
   if [ $res = 0 ] || [ $res = 137 ]; then
