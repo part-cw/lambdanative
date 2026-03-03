@@ -1,5 +1,5 @@
-PKGURL=https://www.openssl.org/source/openssl-3.0.13.tar.gz
-PKGHASH=18b985dcd3fc0bab54cc4bfc10fa9a80ce9e345d
+PKGURL=https://www.openssl.org/source/openssl-3.0.19.tar.gz
+PKGHASH=4455564a4d5ce5d312e28377e35420d6357a66ee
 
 package_download $PKGURL $PKGHASH
 
@@ -27,9 +27,10 @@ linux*)
 ;;
 macosx)
   if [ "$KERNEL_BITS" = "32" ]; then
-      EXTRACONF="darwin-i386-cc"
-  else
-      EXTRACONF="darwin64-x86_64-cc"
+    EXTRACONF="darwin-i386-cc"
+  elseif
+    cpu=`$SYS_ROOT/config.guess | cut -f 1 -d "-"`
+    EXTRACONF="darwin64-$cpu-cc"
   fi
 ;;
 android*)
