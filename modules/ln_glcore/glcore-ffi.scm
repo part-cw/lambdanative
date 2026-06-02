@@ -45,7 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef MACOSX
 #include <Carbon/Carbon.h>
 #include <OpenGL/OpenGL.h>
-#include <AGL/agl.h>
+#include <OpenGL/gl.h>
 #endif
 
 #if defined(IOS)

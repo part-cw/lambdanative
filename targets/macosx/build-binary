@@ -125,7 +125,12 @@ else
     codesign -i $SYS_PACKAGE_DOT -fs - $apptgtdir
     asserterror $?
   else
-    veval "codesign --keychain ~/Library/Keychains/login.keychain -i $SYS_PACKAGE_DOT -fs $identity --options=runtime $apptgtdir"
+    if [ $SYS_MODE = release ]; then
+      veval "codesign --keychain ~/Library/Keychains/login.keychain -i $SYS_PACKAGE_DOT -fs $identity --options=runtime $apptgtdir"
+    else
+      veval "codesign --entitlements $here/loaders/macosx/Entitlements.plist --keychain ~/Library/Keychains/login.keychain \
+             -i $SYS_PACKAGE_DOT -fs $identity --options=runtime $apptgtdir"
+    fi
     asserterror $?
   fi
 
