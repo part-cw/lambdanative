@@ -41,7 +41,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;; (png->qrcodes "some.png") will output list of QR codes in image
 
 (c-declare  #<<end-of-c-declare
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -57,14 +56,30 @@ int _quirc_setup(struct quirc *q, int w0, int h0, unsigned char *src)
   int res = quirc_resize(q,w0,h0);
   if (res==QUIRC_SUCCESS) {
     unsigned char *dst = quirc_begin(q,&w,&h);
-    if (w==w0&&h==h0) { 
+    if (w==w0&&h==h0) {
       // png representation is flipped
-      int i;
-      for (i=0;i<h;i++) { memcpy(&dst[(h-i-1)*w],&src[i*w],w); }
+      for (int i=0;i<h;i++) { memcpy(&dst[(h-i-1)*w],&src[i*w],w); }
     }
     quirc_end(q);
   }
   return res;
+}
+
+int _quirc_extract_and_decode(struct quirc *q, int i)
+{
+  quirc_extract(q,i,&qc);
+  int res = quirc_decode(&qc,&qd);
+  if (res == QUIRC_ERROR_DATA_ECC) {
+      quirc_flip(&qc);
+      res = quirc_decode(&qc, &qd);
+  }
+  return res;
+}
+
+int _quirc_count(struct quirc *q)
+{
+  int detected_qrcodes = quirc_count(q);
+  return detected_qrcodes;
 }
 
 end-of-c-declare
@@ -87,29 +102,16 @@ end-of-c-declare
 (define quirc_setup (c-lambda ((pointer void) int int scheme-object) int
    "___result=_quirc_setup(___arg1,___arg2,___arg3,___CAST(void*,___BODY_AS(___arg4,___tSUBTYPED)));"))
 
-(define quirc_count (c-lambda ((pointer void)) int "quirc_count"))
+(define quirc_count (c-lambda ((pointer void)) int
+   "___result=_quirc_count(___arg1);"))
 
-(define quirc_extract_and_decode (c-lambda ((pointer void) int) int 
-  "quirc_extract(___arg1,___arg2,&qc); ___result=quirc_decode(&qc,&qd);"))
+(define quirc_extract_and_decode (c-lambda ((pointer void) int) int
+  "___result=_quirc_extract_and_decode(___arg1,___arg2);"))
 
 (define quirc_decoded_len (c-lambda () int "___result=qd.payload_len;"))
 
-(define quirc_decoded_data 
-   (c-lambda (scheme-object) void 
-      "memcpy(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)),qd.payload,qd.payload_len);"))
-
-(define (quirc_decode q)
-  (let ((n (quirc_count q)))
-    (let loop ((i 0)(res '()))
-      (if (= i n) res 
-        (let* ((decoderes (quirc_extract_and_decode q i))
-               (u8len (if (fx= decoderes QUIRC_SUCCESS) (quirc_decoded_len)
-                          (begin
-                            (log-debug "Quirc image nr " 1 n ": " ((c-lambda (int) char-string "quirc_strerror") decoderes))
-                            #f)))
-               (u8data (if u8len (make-u8vector u8len 0) #f)))
-          (if u8data (quirc_decoded_data u8data))
-          (loop (fx+ i 1) (append res (if u8data (list u8data) '()))))))))
+(define quirc_decoded_data (c-lambda () nonnull-char-string
+  "___result=qd.payload;"))
 
 (define (quirc:greyscale u8data w h)
   (let* ((u8len (u8vector-length u8data))
@@ -137,13 +139,27 @@ end-of-c-declare
                   (loop (fx+ i 1)))))))
       (else (log-error "quirc:greyscale: invalid factor [" factor "]") #f))))
 
+
 (define (png->qrcodes pngfile)
-  (if (file-exists? pngfile) 
+  (if (file-exists? pngfile)
     (let* ((w   (png-width pngfile))
            (h   (png-height pngfile))
            (data (quirc:greyscale (png->u8vector pngfile) w h))
            (q   (quirc_new))
-           (res (begin (quirc_setup q w h data) (quirc_decode q))))
-      (quirc_destroy q) (map u8vector->string res)) #f))
+           (ret (quirc_setup q w h data))
+	   (n (quirc_count q))
+           (result (let loop ((ret '()))
+             (if (= (length ret) n )
+               ret
+               (begin
+                 (if (= QUIRC_SUCCESS (quirc_extract_and_decode q (length ret)))
+                   (append ret (list (quirc_decoded_data)))
+                   (append ret (list "Decoding failed")))))))
+          )
+      (quirc_destroy q)
+      result
+      )
+    (list "Image file is missing")
+    ))
 
 ;; eof
