@@ -1,1 +1,1 @@
-libz libpng libjpeg libfreetype
+libz libpng libsharpyuv libwebp libjpeg libfreetype libtiff
