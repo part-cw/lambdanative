@@ -59,17 +59,10 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <tinymaix.h>
-#if TM_MDL_TYPE == TM_MDL_INT8
+//#if TM_MDL_TYPE == TM_MDL_INT8
 #include "mnist_valid_q.h"
-#elif TM_MDL_TYPE == TM_MDL_FP32
-#include "mnist_valid_f.h"
-#elif TM_MDL_TYPE == TM_MDL_FP16
-#include "mnist_valid_fp16.h"
-#elif TM_MDL_TYPE == TM_MDL_FP8_143
-#include "mnist_fp8_143.h"
-#elif TM_MDL_TYPE == TM_MDL_FP8_152
-#include "mnist_fp8_152.h"
-#endif
+//#include "mnist_resnet_q.h"
+
 
 static tm_err_t layer_cb(tm_mdl_t* mdl, tml_head_t* lh)
 {   //dump middle result
@@ -82,7 +75,6 @@ static tm_err_t layer_cb(tm_mdl_t* mdl, tml_head_t* lh)
 
 int _tinymaix_mnist_process(uint8_t pic[28*28], float probabilities[10])
 {
-  TM_DBGT_INIT();
   tm_mdl_t mdl;
   tm_mat_t in_uint8 = {3,28,28,1, {(mtype_t*)pic}};
   tm_mat_t in = {3,28,28,1, {NULL}};
@@ -93,7 +85,8 @@ int _tinymaix_mnist_process(uint8_t pic[28*28], float probabilities[10])
   if(res != TM_OK) {
     return -1;
   }
-  TM_DBGT_START();
+  res = tm_preprocess(&mdl, TMPP_UINT2INT, &in_uint8, &in);
+//  res = tm_preprocess(&mdl, TMPP_UINT2FP01, &in_uint8, &in);
   res = tm_run(&mdl, &in, outs);
   tm_unload(&mdl);
   if(res==TM_OK) {
@@ -112,9 +105,9 @@ end-of-c-declare
 )
 
 
-(define tinymaix_mnist_process (c-lambda ((pointer void) (pointer void)) int
-  "___result=_tinymaix_mnist_process(___arg1,___arg2);"))
-
+(define tinymaix_mnist_process (c-lambda (scheme-object scheme-object) int
+  "___result=_tinymaix_mnist_process(___CAST(uint8_t*,___BODY_AS(___arg1,___tSUBTYPED)),
+                                     ___CAST(float*,___BODY_AS(___arg2,___tSUBTYPED)));"))
 
 (define (tinymaix_mnist:greyscale u8data w h)
   (let* ((u8len (u8vector-length u8data))
@@ -148,10 +141,10 @@ end-of-c-declare
     (let* ((w   (png-width pngfile))
            (h   (png-height pngfile))
            (data (tinymaix_mnist:greyscale (png->u8vector pngfile) w h))
-           (q   (make-u8vector 10 0.0))
+           (q   (make-f32vector 10 0.0))
            (ret (tinymaix_mnist_process data q))
           )
-      q
+      (f32vector->list q)
       )
     (list "Image file is missing")
     ))
