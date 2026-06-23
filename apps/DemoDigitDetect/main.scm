@@ -60,8 +60,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
              (gd (gdImageCreateFromJpeg gdf))
              (w (gdImageSX gd))
              (h (gdImageSY gd))
-             (w2 32)
-             (h2 32)
+             (w2 28)
+             (h2 28)
              (gdf2 (gdFileOpen camera-image2 "w"))
              (gd2 (gdImageCreateTrueColor w2 h2)))
         (gdImageCopyResampled gd2 gd 0 0 0 0 w2 h2 w h)
@@ -76,8 +76,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       ))))
 
 (define (getdigit)
-  (let ((digits (if (file-exists? camera-image2) (png->number camera-image2) "No picture")))
-    (glgui-widget-set! gui digit-display 'label (string-mapconcat (vector->list digits) "\n"))))
+  (let ((digits (if (file-exists? camera-image2) (png->number camera-image2) (list "No picture"))))
+    (glgui-widget-set! gui digit-display 'label (string-mapconcat digits "\n"))))
 
 (main
 ;; initialization
@@ -91,7 +91,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       (let* ((bw 240) (bh 50)
             (bx (/ (- w bw) 2.))
             (by (/ (- h bh) 2.)))
-	(set! digit-display (glgui-label-wrapped gui bx (- by (* bh 5)) bw (* bh 2) "" ascii_18.fnt Black White))
+	(set! digit-display (glgui-label-wrapped gui bx (- by (* bh 5)) bw (* bh 5) "" ascii_18.fnt Black White))
 	(glgui-widget-set! gui digit-display 'align GUI_ALIGNCENTER)
 	(glgui-button-string gui bx (+ by (* bh 2)) bw bh "Take Picture" ascii_18.fnt
            (lambda (un . used) (camera-start camera-image)))
