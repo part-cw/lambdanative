@@ -47,6 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define camera-image (string-append (system-directory) (system-pathseparator) "vidcam.jpg"))
 (define camera-image2 (string-append (system-directory) (system-pathseparator) "vidcam.png"))
+(define bw-negative (string-append (system-directory) (system-pathseparator) "bwnegative.png"))
 
 (define lastmodtime 0.)
 
@@ -71,13 +72,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         (gdFileClose gdf)
         (gdFileClose gdf2)
         (let ((img (if (file-exists? camera-image2) (png->img camera-image2) #f)))
-           (glgui-widget-set! gui background 'image (if img img default:background)))
+	   (glgui-image gui (- (/ (glgui-width-get) 2) 14)
+			    (- (glgui-height-get) 38)
+			    28
+			    28
+			    (if img img default:background) White Black))
         (set! lastmodtime modtime)
       ))))
 
+(define (getbwnegative)
+  (if (file-exists? camera-image2)
+    (let* ((w   (png-width camera-image2))
+           (h   (png-height camera-image2))
+	   (data (tinymaix_mnist:bwnegative (png->u8vector camera-image2) w h)))
+      (u8vector->png data bw-negative w h)
+      (let ((img (if (file-exists? bw-negative) (png->img bw-negative) #f)))
+	 (glgui-image gui (- (/ (glgui-width-get) 2) 14)
+		      (- (glgui-height-get) 68)
+		      28
+		      28
+                      (if img img default:background) White Black)))
+    #f))
+
 (define (getdigit)
-  (let ((digits (if (file-exists? camera-image2) (png->number camera-image2) (list "No picture"))))
-    (glgui-widget-set! gui digit-display 'label (string-mapconcat digits "\n"))))
+  (let ((digits (if (file-exists? bw-negative) (png->number bw-negative) (list "No picture"))))
+    (glgui-widget-set! gui digit-display 'label (string-mapconcat
+						  (map string-append (list "0 :" "1 :" "2 :" "3 :" "4 :"
+									   "5 :" "6 :" "7 :" "8 :" "9 :")
+						       (map number->string
+							    (map (lambda (n) (/ (round (* 1000 n)) 1000.0)) digits))) "\n"))))
 
 (main
 ;; initialization
@@ -93,13 +116,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (by (/ (- h bh) 2.)))
 	(set! digit-display (glgui-label-wrapped gui bx (- by (* bh 5)) bw (* bh 5) "" ascii_18.fnt Black White))
 	(glgui-widget-set! gui digit-display 'align GUI_ALIGNCENTER)
-	(glgui-button-string gui bx (+ by (* bh 2)) bw bh "Take Picture" ascii_18.fnt
+	(glgui-button-string gui bx (+ by (* bh 2)) bw bh "Take picture" ascii_18.fnt
            (lambda (un . used) (camera-start camera-image)))
-	(glgui-button-string gui bx by bw bh "Get digit from picture" ascii_18.fnt
+	(glgui-button-string gui bx (+ by bh) bw bh "Picture to negative" ascii_18.fnt
+           (lambda (un . used) (getbwnegative)))
+	(glgui-button-string gui bx by bw bh "Digit from negative" ascii_18.fnt
            (lambda (un . used) (getdigit)))
 	))
     (if (file-exists? camera-image) (delete-file camera-image))
     (if (file-exists? camera-image2) (delete-file camera-image2))
+    (if (file-exists? bw-negative) (delete-file bw-negative))
     (let ((logdir (string-append (system-directory) "/log")))
       (if (not (file-exists? logdir)) (create-directory logdir)))
   )

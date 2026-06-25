@@ -59,9 +59,7 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 #include <tinymaix.h>
-//#if TM_MDL_TYPE == TM_MDL_INT8
-#include "mnist_valid_q.h"
-//#include "mnist_resnet_q.h"
+#include "mnist_resnet_fp32.h"
 
 
 static tm_err_t layer_cb(tm_mdl_t* mdl, tml_head_t* lh)
@@ -75,28 +73,33 @@ static tm_err_t layer_cb(tm_mdl_t* mdl, tml_head_t* lh)
 
 int _tinymaix_mnist_process(uint8_t pic[28*28], float probabilities[10])
 {
+  int h = 28;
+  int w = 28;
+  uint8_t* dst = (uint8_t *)malloc(sizeof(uint8_t) * h * w);
+  // png representation is flipped
+  for (int i=0;i<h;i++) { memcpy(&dst[(h-i-1)*w],&pic[i*w],w); }
   tm_mdl_t mdl;
-  tm_mat_t in_uint8 = {3,28,28,1, {(mtype_t*)pic}};
+  tm_mat_t in_uint8 = {3,28,28,1, {(mtype_t*)dst}};
   tm_mat_t in = {3,28,28,1, {NULL}};
   tm_mat_t outs[1];
   tm_err_t res;
+  int ret = -1;
 
   res = tm_load(&mdl, mdl_data, NULL, layer_cb, &in);
-  if(res != TM_OK) {
-    return -1;
+  if(res == TM_OK) { 
+//  res = tm_preprocess(&mdl, TMPP_UINT2INT, &in_uint8, &in);
+    res = tm_preprocess(&mdl, TMPP_UINT2FP01, &in_uint8, &in);
+    res = tm_run(&mdl, &in, outs);
+    if(res==TM_OK) {
+      tm_mat_t out = outs[0];
+      float* data  = out.dataf;
+      for(int i=0;i<10;i++) probabilities[i] = data[i];
+      ret = 0;
+    }
   }
-  res = tm_preprocess(&mdl, TMPP_UINT2INT, &in_uint8, &in);
-//  res = tm_preprocess(&mdl, TMPP_UINT2FP01, &in_uint8, &in);
-  res = tm_run(&mdl, &in, outs);
+  free(dst);
   tm_unload(&mdl);
-  if(res==TM_OK) {
-    tm_mat_t out = outs[0];
-    float* data  = out.dataf;
-    for(int i=0;i<10;i++) probabilities[i] = data[i];
-  }else{
-    return -1;
-  }
-  return 0;
+  return ret;
 }
 
 /* End Apache-2.0 licensed code */
@@ -109,12 +112,16 @@ end-of-c-declare
   "___result=_tinymaix_mnist_process(___CAST(uint8_t*,___BODY_AS(___arg1,___tSUBTYPED)),
                                      ___CAST(float*,___BODY_AS(___arg2,___tSUBTYPED)));"))
 
-(define (tinymaix_mnist:greyscale u8data w h)
+(define (tinymaix_mnist:bwnegative u8data w h)
   (let* ((u8len (u8vector-length u8data))
         (pixlen (* w h))
         (factor (fix (/ u8len pixlen))))
     (cond
-      ((= factor 1) u8data)
+      ((= factor 1) 
+         (let ((gdata (make-u8vector pixlen)))
+           (let loop ((i 0))
+              (if (fx= i pixlen) gdata
+                (u8vector-set! gdata i (if (< 100 (u8vector-ref u8data (fx* i 1))) 0 254))))))
       ((= factor 3) 
          (let ((gdata (make-u8vector pixlen)))
            (let loop ((i 0))
@@ -122,7 +129,7 @@ end-of-c-declare
                 (let ((r (u8vector-ref u8data (fx* i 3)))
                       (g (u8vector-ref u8data (fx+ (fx* i 3) 1)))
                       (b (u8vector-ref u8data (fx+ (fx* i 3) 2))))
-                  (u8vector-set! gdata i (fix (/ (+ r g b) 3)))
+                  (u8vector-set! gdata i (if (< 100 (fix (/ (+ r g b) 3))) 0 254)) 
                   (loop (fx+ i 1)))))))
       ((= factor 4) 
          (let ((gdata (make-u8vector pixlen)))
@@ -131,16 +138,15 @@ end-of-c-declare
                 (let ((r (u8vector-ref u8data (fx* i 4)))
                       (g (u8vector-ref u8data (fx+ (fx* i 4) 1)))
                       (b (u8vector-ref u8data (fx+ (fx* i 4) 2))))
-                  (u8vector-set! gdata i (fix (/ (+ r g b) 3)))
+                  (u8vector-set! gdata i (if (< 100 (fix (/ (+ r g b) 3))) 0 254))
                   (loop (fx+ i 1)))))))
-      (else (log-error "tinymaix_mnist:greyscale: invalid factor [" factor "]") #f))))
-
+      (else (log-error "tinymaix_mnist:bwnegative: invalid factor [" factor "]") #f))))
 
 (define (png->number pngfile)
   (if (file-exists? pngfile)
     (let* ((w   (png-width pngfile))
            (h   (png-height pngfile))
-           (data (tinymaix_mnist:greyscale (png->u8vector pngfile) w h))
+           (data (png->u8vector pngfile))
            (q   (make-f32vector 10 0.0))
            (ret (tinymaix_mnist_process data q))
           )
