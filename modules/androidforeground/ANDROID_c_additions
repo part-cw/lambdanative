@@ -1,0 +1,39 @@
+/* androidforeground -*-C-*- */
+
+int android_start_ln_foreground_service()
+{
+  JNIEnv *env = GetJNIEnv();
+  if (env&&globalObj){
+    jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
+    jmethodID method = main_class ? (*env)->GetMethodID(env, main_class, "startLnForegroundService", "()V") : NULL;
+    if(main_class) (*env)->DeleteLocalRef(env, main_class);
+    if(!method) {
+      JNI_forward_exception_to_gambit(env);
+      return -1;
+    }
+    (*env)->CallVoidMethod(env, globalObj, method);
+    (*env)->DeleteLocalRef(env, method);
+    if(JNI_forward_exception_to_gambit(env)) { return -2; }
+    return 0;
+  }
+}
+
+int android_stop_ln_foreground_service()
+{
+  JNIEnv *env = GetJNIEnv();
+  if (env&&globalObj){
+    jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
+    jmethodID method = main_class ? (*env)->GetMethodID(env, main_class, "stopLnForegroundService", "()V") : NULL;
+    if(main_class) (*env)->DeleteLocalRef(env, main_class);
+    if(!method) {
+      JNI_forward_exception_to_gambit(env);
+      return -1;
+    }
+    (*env)->CallVoidMethod(env, globalObj, method);
+    (*env)->DeleteLocalRef(env, method);
+    if(JNI_forward_exception_to_gambit(env)) { return -2; }
+    return 0;
+  }
+}
+
+/* EOF androidforeground */
