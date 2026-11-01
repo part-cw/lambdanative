@@ -62,7 +62,7 @@ static int run_flag=1;
 static int int_flag=0;
 
 // signal handler
-void signal_hook()
+void signal_hook(int signum)
 {
   run_flag=0;
   int_flag=1;
