@@ -1,5 +1,5 @@
-PKGURL=http://curl.haxx.se/download/curl-7.44.0.tar.gz
-PKGHASH=4dc36d2f3310585cc1f9211b5f5c71327c86fb61
+PKGURL=http://curl.haxx.se/download/curl-8.23.0.tar.gz
+PKGHASH=dde79cd20f6b0d6dc7f4dcc3dd71c472fc2ebcee
 
 package_download $PKGURL $PKGHASH
 
@@ -10,7 +10,7 @@ if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
   EXTRACONF=--host=$SYS_ARCH
 fi
 
-package_configure $EXTRACONF --disable-ldap --disable-shared --enable-static --without-librtmp --without-libidn --without-libssh2
+package_configure $EXTRACONF --without-libpsl --with-openssl --disable-ldap --disable-shared --enable-static --without-librtmp --without-libidn --without-libssh2
 
 package_make
 asserterror $? "compilation failed"
