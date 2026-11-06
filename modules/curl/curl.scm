@@ -90,6 +90,7 @@ static int curl_GET(char *url, char *header)
   int curlstatus = curl_easy_perform(curl);
   curl_easy_cleanup(curl);
   curl_slist_free_all(slist);
+  curl_global_cleanup();
   return curlstatus;
 }
 
@@ -120,6 +121,7 @@ static int curl_POST(char *url, char *header)
   int curlstatus = curl_easy_perform(curl);
   curl_easy_cleanup(curl);
   curl_slist_free_all(slist);
+  curl_global_cleanup();
   return curlstatus;
 }
 
