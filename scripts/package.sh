@@ -236,7 +236,7 @@ package_configure()
   GPROF=\"$SYS_GPROF\" \
   READELF=\"$SYS_READELF\" \
   OBJDUMP=\"$SYS_OBJDUMP\" \
-  ./configure --prefix=$SYS_PREFIX $pkg_conf_opt "
+  ${PKGCONFIGURE:-./configure} --prefix=$SYS_PREFIX $pkg_conf_opt "
   asserterror $? "configure failed"
 }
 
@@ -258,7 +258,7 @@ package_cmake()
     LDFLAGS=-L$SYS_PREFIX/lib \
     LD_LIBRARY_PATH=$SYS_PREFIX/lib \
     GPROF=\"$SYS_GPROF\" \
-    cmake . \
+    cmake  \
           -DCMAKE_TOOLCHAIN_FILE=\"$ANDROID_NDK/build/cmake/android.toolchain.cmake\"
           -DCMAKE_INSTALL_PREFIX=$SYS_PREFIX \
           -DCMAKE_BUILD_TYPE=Release
@@ -290,7 +290,7 @@ package_cmake()
     LDFLAGS=-L$SYS_PREFIX/lib \
     LD_LIBRARY_PATH=$SYS_PREFIX/lib \
     GPROF=\"$SYS_GPROF\" \
-    cmake . \
+    cmake  \
           -DCMAKE_INSTALL_PREFIX=$SYS_PREFIX \
           -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_C_COMPILER=\"$pkg_cc\" \

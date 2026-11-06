@@ -316,12 +316,16 @@ for abi in $SYS_ANDROID_ABIs; do
   if [ -f $lib ]; then
     mkdir $tmpmoddir/libpayload/$abi
     cp $lib $tmpmoddir/libpayload/$abi
+#    cp /home/benson/android-sdk/ndk/21.4.7075529/sources/cxx-stl/llvm-libc++/libs/${abi}/libc++_shared.so $tmpmoddir/libpayload/$abi
+#    cp /home/benson/android-sdk/ndk/21.4.7075529/sources/cxx-stl/llvm-libc++/libs/${abi}/libc++_static.a $tmpmoddir/libpayload/$abi
+#    cp /home/benson/android-sdk/ndk/21.4.7075529/sources/cxx-stl/llvm-libc++/libs/${abi}/libc++_abi.a $tmpmoddir/libpayload/$abi
   fi
 done
 
 echo " => preparing JNI.."
 mkdir $tmpdir/jni
 ac_output loaders/android/Android.mk.jni.in $tmpdir/jni/Android.mk
+ac_output loaders/android/Application.mk.jni.in $tmpdir/jni/Application.mk
 cp $SYS_PREFIX/include/LNCONFIG.h $tmpdir/jni
 ac_output loaders/android/bootstrap.c.in $tmpdir/jni/bootstrap.c
 cd $tmpdir
