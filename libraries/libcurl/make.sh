@@ -1,4 +1,4 @@
-PKGURL=http://curl.haxx.se/download/curl-8.23.0.tar.gz
+PKGURL=https://curl.haxx.se/download/curl-8.23.0.tar.gz
 PKGHASH=dde79cd20f6b0d6dc7f4dcc3dd71c472fc2ebcee
 
 package_download $PKGURL $PKGHASH
