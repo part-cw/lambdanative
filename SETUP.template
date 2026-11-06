@@ -18,8 +18,8 @@ WIN32SDK=`find /usr/local/i?86-mingw32-*  -maxdepth 0 -print 2> /dev/null | tail
 # ------------------------------------
 ## iOS SDK (mac)
 # IOSROOT and IOSSDK get autodetected with xcrun in targets/ios/_host_macosx
-# minimum version to support [required by XCode 12+]
-IOSVERSION=9
+# minimum version to support [required by XCode 27+]
+IOSVERSION=15
 # ------------------------------------
 ## Blackberry BB10 cross compiler (linux or mac)
 BB10SDK=/Applications/Momentics.app

@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.5)
 project (@SYS_APPNAME@)
 set(NAME @SYS_APPNAME@)
 file(GLOB headers *.h)
