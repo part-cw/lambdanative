@@ -255,7 +255,7 @@ package_cmake()
     CHOST=$SYS_ARCH \
     PKG_CONFIG_PATH=$SYS_PREFIX/lib/pkgconfig \
     PATH=\"$SYS_PREFIX/bin:${pkg_ccdir}:$PATH\" \
-    LDFLAGS=-L$SYS_PREFIX/lib \
+    LDFLAGS=\"-L$SYS_PREFIX/lib -lc++\" \
     LD_LIBRARY_PATH=$SYS_PREFIX/lib \
     GPROF=\"$SYS_GPROF\" \
     cmake  \
@@ -265,14 +265,14 @@ package_cmake()
           -DCMAKE_C_COMPILER=\"$pkg_cc\" \
           -DCMAKE_C_COMPILER_AR=\"$SYS_AR\" \
           -DCMAKE_C_COMPILER_RANLIB=\"$SYS_RANLIB\" \
-          -DCMAKE_C_FLAGS=\"$pkg_cc_flags -I$SYS_PREFIX/include\" \
+          -DCMAKE_C_FLAGS=\"$pkg_cc_flags -fno-lto -I$SYS_PREFIX/include\" \
           -DCMAKE_CXX_COMPILER=\"$pkg_cxx\" \
           -DCMAKE_CXX_COMPILER_AR=\"$SYS_AR\" \
           -DCMAKE_CXX_COMPILER_RANLIB=\"$SYS_RANLIB\" \
-          -DCMAKE_CXX_FLAGS=\"$pkg_cxx_flags -I$SYS_PREFIX/include\" \
+          -DCMAKE_CXX_FLAGS=\"$pkg_cxx_flags -stdlib=libc++ -I$SYS_PREFIX/include\" \
           -DCMAKE_LINKER=\"$SYS_LD\" \
-          -DCMAKE_EXE_LINKER_FLAGS=-L$SYS_PREFIX/lib \
-          -DCMAKE_SHARED_LINKER_FLAGS=-L$SYS_PREFIX/lib \
+          -DCMAKE_EXE_LINKER_FLAGS=\"-L$SYS_PREFIX/lib\" \
+          -DCMAKE_SHARED_LINKER_FLAGS=\"-L$SYS_PREFIX/lib\" \
           -DCMAKE_NM=\"$SYS_NM\" \
           -DCMAKE_OBJCOPY=\"$SYS_OBJCOPY\" \
           -DCMAKE_OBJDUMP=\"$SYS_OBJDUMP\" \
@@ -287,7 +287,7 @@ package_cmake()
     CHOST=$SYS_ARCH \
     PKG_CONFIG_PATH=$SYS_PREFIX/lib/pkgconfig \
     PATH=\"$SYS_PREFIX/bin:${pkg_ccdir}:$PATH\" \
-    LDFLAGS=-L$SYS_PREFIX/lib \
+    LDFLAGS=\"-L$SYS_PREFIX/lib -lc++\" \
     LD_LIBRARY_PATH=$SYS_PREFIX/lib \
     GPROF=\"$SYS_GPROF\" \
     cmake  \
@@ -300,10 +300,10 @@ package_cmake()
           -DCMAKE_CXX_COMPILER=\"$pkg_cxx\" \
           -DCMAKE_CXX_COMPILER_AR=\"$SYS_AR\" \
           -DCMAKE_CXX_COMPILER_RANLIB=\"$SYS_RANLIB\" \
-          -DCMAKE_CXX_FLAGS=\"$pkg_cxx_flags -I$SYS_PREFIX/include\" \
-          -DCMAKE_LINKER=\"$SYS_LD\" \
-          -DCMAKE_EXE_LINKER_FLAGS=-L$SYS_PREFIX/lib \
-          -DCMAKE_SHARED_LINKER_FLAGS=-L$SYS_PREFIX/lib \
+          -DCMAKE_CXX_FLAGS=\"$pkg_cxx_flags -stdlib=libc++ -I$SYS_PREFIX/include\" \
+	  -DCMAKE_LINKER=\"$SYS_LD\" \
+          -DCMAKE_EXE_LINKER_FLAGS=\"-L$SYS_PREFIX/lib\" \
+          -DCMAKE_SHARED_LINKER_FLAGS=\"-L$SYS_PREFIX/lib\" \
           -DCMAKE_NM=\"$SYS_NM\" \
           -DCMAKE_OBJCOPY=\"$SYS_OBJCOPY\" \
           -DCMAKE_OBJDUMP=\"$SYS_OBJDUMP\" \
