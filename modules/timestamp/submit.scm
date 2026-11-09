@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2015, University of British Columbia
+Copyright (c) 2009-2026, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -45,9 +45,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define timestamp:url "/")
 (define (timestamp-url-set! url) (set! timestamp:url url))
 
+;; Read binary response bytes without interpreting the timestamp DER as text.
+(define (timestamp-tsr-read-all p)
+  (let ((buf (make-u8vector 4096)))
+    (let loop ((data (u8vector)))
+      (let ((n (read-subu8vector buf 0 (u8vector-length buf) p)))
+        (if (and (integer? n) (> n 0))
+          (loop (u8vector-append data (subu8vector buf 0 n)))
+          data))))
+)
+
 ;; Make query to TTS server
 (define (timestamp-tsr-request-raw tsq)
-  (let* ((request-str (string-append "POST " timestamp:url " HTTP/1.0\r\n"
+  (if (not (u8vector? tsq))
+    #f
+    (let* ((request-str (string-append "POST " timestamp:url " HTTP/1.0\r\n"
            "Host: " timestamp:host "\r\n"
            "User-Agent: " (system-appname) "/" (system-appversion) "\r\n"
            "Content-Type: application/timestamp-query\r\n"
@@ -64,18 +76,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                  (write-subu8vector request-u8vec 0 request-len p)
                  (write-subu8vector tsq 0 (u8vector-length tsq) p)
                  (force-output p)
-                 (with-exception-catcher (lambda (e) #f)
-                   (lambda () (let ((data (read-all p read-char))) (close-port p) data)))
+                 (let ((data
+                         (with-exception-catcher (lambda (e) #f)
+                           (lambda () (timestamp-tsr-read-all p)))))
+                   (close-port p)
+                   data)
                ))
              )
            ))))
-    (if res (list->u8vector (map char->integer res)) #f)))
+      (if (u8vector? res) res #f))))
 
 (define-macro (V= idx match) `(fx= (u8vector-ref u8v ,idx) ,match))
 
 ;; seek to 0d-0a-0d-0a and trim
 (define (timestamp-tsr-request-parse u8v)
-  (if u8v (let ((len (u8vector-length u8v)))
+  (if (u8vector? u8v) (let ((len (u8vector-length u8v)))
     (if (> len 4) (let loop ((i 3))
       (if (= i len) #f
         (if (and (V= (- i 3) 13) (V= (- i 2) 10) (V= (- i 1) 13) (V= i 10))
@@ -83,7 +98,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             (loop (+ i 1))))) #f)) #f))
 
 (define  (timestamp-tsr-request tsq)
-  (let ((res (timestamp-tsr-request-raw tsq)))
-    (if res (timestamp-tsr-request-parse res))))
+  (if (u8vector? tsq)
+    (let ((res (timestamp-tsr-request-raw tsq)))
+      (if res (timestamp-tsr-request-parse res)))
+    #f))
 
 ;; eof

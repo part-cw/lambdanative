@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2015, University of British Columbia
+Copyright (c) 2009-2026, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -176,7 +176,7 @@ int get_tsr_msg(unsigned char *tsr, int len, unsigned char *msg){
   TS_MSG_IMPRINT *msg_imprint = TS_TST_INFO_get_msg_imprint(ts_info);
   ASN1_OCTET_STRING *str = TS_MSG_IMPRINT_get_msg(msg_imprint);
   ret = ASN1_STRING_length(str);
-  unsigned char *data = ASN1_STRING_data(str);
+  const unsigned char *data = ASN1_STRING_get0_data(str);
   int i;
   for (i=0;i<ret;i++){
     msg[i]=data[i];
@@ -231,10 +231,10 @@ int get_tsr_gentime(unsigned char *tsr, int len, unsigned char *msg){
   if (ts_resp==NULL)
     return 0;
   const ASN1_GENERALIZEDTIME *ts = TS_TST_INFO_get_time(ts_info);
-  ret = ts->length;
+  ret = ASN1_STRING_length(ts);
   if (ret < 12)
     return 0;
-  unsigned char *data = ts->data;
+  const unsigned char *data = ASN1_STRING_get0_data(ts);
   int i;
   for (i=0;i<ret;i++){
     msg[i]=data[i];

@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2015, University of British Columbia
+Copyright (c) 2009-2026, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -42,10 +42,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <openssl/ts.h>
 #include <openssl/evp.h>
+#include <openssl/rand.h>
 
 static TS_REQ *createTSQ(unsigned char *hash, int len){
-  // Get proper type
+  TS_REQ *ts_req = NULL;
+  X509_ALGOR *algo = NULL;
+  TS_MSG_IMPRINT *msg_imprint = NULL;
+  ASN1_INTEGER *nonce_asn1 = NULL;
+  ASN1_OBJECT *algorithm = NULL;
+  unsigned char nonce_bytes[4];
+  unsigned long nonce_value;
   const EVP_MD *md = NULL;
+  int ok = 0;
+
+  if (hash == NULL)
+    return NULL;
   if (len==SHA512_DIGEST_LENGTH)
     md=EVP_sha512();
   else if (len==SHA256_DIGEST_LENGTH)
@@ -53,115 +64,140 @@ static TS_REQ *createTSQ(unsigned char *hash, int len){
   else if (len==SHA_DIGEST_LENGTH)
     md=EVP_sha1();
   else
-    return 0;
-  // Define structures
-  TS_REQ *ts_req =  TS_REQ_new();
-  X509_ALGOR *algo = X509_ALGOR_new();
-  TS_MSG_IMPRINT *msg_imprint = TS_MSG_IMPRINT_new();
+    return NULL;
+
+  ts_req = TS_REQ_new();
+  algo = X509_ALGOR_new();
+  msg_imprint = TS_MSG_IMPRINT_new();
   if (ts_req==NULL || algo==NULL || msg_imprint==NULL)
-    return 0;
-  // Set request version and add hash algorithm identifier
-  TS_REQ_set_version(ts_req, 1);
-  algo->algorithm = OBJ_nid2obj(EVP_MD_type(md));
-  algo->parameter = ASN1_TYPE_new();
-  if (algo->algorithm == NULL || algo->parameter == NULL)
-    return 0;
-  algo->parameter->type = V_ASN1_NULL;
+    goto cleanup;
+
+  if (!TS_REQ_set_version(ts_req, 1))
+    goto cleanup;
+  algorithm = OBJ_dup(OBJ_nid2obj(EVP_MD_get_type(md)));
+  if (algorithm == NULL || !X509_ALGOR_set0(algo, algorithm, V_ASN1_NULL, NULL))
+    goto cleanup;
+  algorithm = NULL;
   if (!TS_MSG_IMPRINT_set_algo(msg_imprint, algo))
-    return 0;
-  // Add the hash
+    goto cleanup;
   if (!TS_MSG_IMPRINT_set_msg(msg_imprint, hash, len))
-    return 0;
+    goto cleanup;
   if (!TS_REQ_set_msg_imprint(ts_req, msg_imprint))
-    return 0;
-  // Add the nonce
-  ASN1_INTEGER *nonce_asn1 = ASN1_INTEGER_new();
-  time_t t;
-  srand((unsigned) time(&t));
-  ASN1_INTEGER_set(nonce_asn1, rand());
-  if (!TS_REQ_set_nonce(ts_req, nonce_asn1))
-    return 0;
-  // Add the certificate request
+    goto cleanup;
+
+  nonce_asn1 = ASN1_INTEGER_new();
+  if (nonce_asn1 == NULL || RAND_bytes(nonce_bytes, sizeof(nonce_bytes)) != 1)
+    goto cleanup;
+  nonce_value = ((unsigned long)nonce_bytes[0] << 24) | ((unsigned long)nonce_bytes[1] << 16) |
+                ((unsigned long)nonce_bytes[2] << 8) | (unsigned long)nonce_bytes[3];
+  nonce_value &= 0x7fffffffUL;
+  if (!ASN1_INTEGER_set(nonce_asn1, (long)nonce_value) || !TS_REQ_set_nonce(ts_req, nonce_asn1))
+    goto cleanup;
   if (!TS_REQ_set_cert_req(ts_req, 1))
-    return 0;
-  // Cleanup and return request
+    goto cleanup;
+  ok = 1;
+
+cleanup:
+  ASN1_OBJECT_free(algorithm);
+  ASN1_INTEGER_free(nonce_asn1);
   TS_MSG_IMPRINT_free(msg_imprint);
   X509_ALGOR_free(algo);
-  ASN1_INTEGER_free(nonce_asn1);
+  if (!ok) {
+    TS_REQ_free(ts_req);
+    return NULL;
+  }
   return ts_req;
 }
 
-int get_tsq(unsigned char* hash, int hashlen, unsigned char* result){
+static TS_REQ *decodeTSQ(const unsigned char *tsq, int len){
+  const unsigned char *t = tsq;
+  TS_REQ *ts_req;
+  if (tsq == NULL || len <= 0)
+    return NULL;
+  ts_req = d2i_TS_REQ(NULL, &t, len);
+  if (ts_req == NULL || t != tsq + len) {
+    TS_REQ_free(ts_req);
+    return NULL;
+  }
+  return ts_req;
+}
+
+int get_tsq(unsigned char *hash, int hashlen, unsigned char *result,
+            int result_capacity){
+  if (result == NULL || result_capacity <= 0)
+    return 0;
   TS_REQ *query = createTSQ(hash,hashlen);
+  if (query == NULL)
+    return 0;
   int len = i2d_TS_REQ(query,NULL);
-  i2d_TS_REQ(query,&result);
+  if (len <= 0 || len > result_capacity) {
+    TS_REQ_free(query);
+    return 0;
+  }
+  unsigned char *out = result;
+  int written = i2d_TS_REQ(query,&out);
   TS_REQ_free(query);
-  return len;
+  return written == len ? written : 0;
 }
 
 int get_tsq_version(unsigned char *tsq, int len){
-  int ret=0;
-  const unsigned char *t = tsq;
-  TS_REQ *ts_req =  TS_REQ_new();
-  d2i_TS_REQ(&ts_req, &t, len);
-  if (ts_req==NULL)
+  TS_REQ *ts_req = decodeTSQ(tsq, len);
+  if (ts_req == NULL)
     return 0;
-  ret=TS_REQ_get_version(ts_req);
+  int ret = TS_REQ_get_version(ts_req);
   TS_REQ_free(ts_req);
   return ret;
 }
 
 int get_tsq_nonce(unsigned char *tsq, int len){
-  int ret=0;
-  const unsigned char *t = tsq;
-  TS_REQ *ts_req =  TS_REQ_new();
-  d2i_TS_REQ(&ts_req, &t, len);
-  if (ts_req==NULL)
+  TS_REQ *ts_req = decodeTSQ(tsq, len);
+  if (ts_req == NULL)
     return 0;
   const ASN1_INTEGER *nonce = TS_REQ_get_nonce(ts_req);
-  ret = ASN1_INTEGER_get(nonce);
+  long value = nonce == NULL ? -1 : ASN1_INTEGER_get(nonce);
   TS_REQ_free(ts_req);
-  return ret;
+  return value >= 0 && value <= 0x7fffffffL ? (int)value : 0;
 }
 
-int get_tsq_msg(unsigned char *tsq, int len, unsigned char *msg){
-  int ret=0;
-  const unsigned char *t = tsq;
-  TS_REQ *ts_req =  TS_REQ_new();
-  d2i_TS_REQ(&ts_req, &t, len);
-  if (ts_req==NULL)
+int get_tsq_msg(unsigned char *tsq, int len, unsigned char *msg,
+                int msg_capacity){
+  TS_REQ *ts_req = decodeTSQ(tsq, len);
+  if (ts_req == NULL || msg == NULL || msg_capacity < 0) {
+    TS_REQ_free(ts_req);
     return 0;
+  }
   TS_MSG_IMPRINT *msg_imprint = TS_REQ_get_msg_imprint(ts_req);
-  ASN1_OCTET_STRING *str = TS_MSG_IMPRINT_get_msg(msg_imprint);
-  ret = ASN1_STRING_length(str);
-  unsigned char *data = ASN1_STRING_data(str);
-  int i;
-  for (i=0;i<ret;i++){
-    msg[i]=data[i];
+  ASN1_OCTET_STRING *str = msg_imprint == NULL ? NULL : TS_MSG_IMPRINT_get_msg(msg_imprint);
+  int ret = str == NULL ? -1 : ASN1_STRING_length(str);
+  const unsigned char *data = str == NULL ? NULL : ASN1_STRING_get0_data(str);
+  if (ret < 0 || ret > msg_capacity || (ret > 0 && data == NULL)) {
+    TS_REQ_free(ts_req);
+    return 0;
   }
+  if (ret > 0)
+    memcpy(msg, data, ret);
   TS_REQ_free(ts_req);
   return ret;
 }
 
-int get_tsq_policy(unsigned char *tsq, int len, unsigned char *msg){
-  int ret=0;
-  const unsigned char *t = tsq;
-  TS_REQ *ts_req =  TS_REQ_new();
-  d2i_TS_REQ(&ts_req, &t, len);
-  if (ts_req==NULL)
+int get_tsq_policy(unsigned char *tsq, int len, unsigned char *msg, int msg_capacity){
+  TS_REQ *ts_req = decodeTSQ(tsq, len);
+  if (ts_req == NULL || msg == NULL || msg_capacity <= 0) {
+    TS_REQ_free(ts_req);
     return 0;
-  ASN1_OBJECT *policy_id = TS_REQ_get_policy_id(ts_req);
-  if (policy_id == NULL){
-    msg = "";
-    ret = 0;
-  } else {
-    char obj_txt[128];
-    ret = OBJ_obj2txt(obj_txt, sizeof(obj_txt), policy_id, 0);
-    int i;
-    for (i=0;i<ret;i++){
-      msg[i]=obj_txt[i];
-    }
   }
+  ASN1_OBJECT *policy_id = TS_REQ_get_policy_id(ts_req);
+  if (policy_id == NULL) {
+    TS_REQ_free(ts_req);
+    return 0;
+  }
+  char obj_txt[128];
+  int ret = OBJ_obj2txt(obj_txt, sizeof(obj_txt), policy_id, 0);
+  if (ret <= 0 || ret >= (int)sizeof(obj_txt) || ret > msg_capacity) {
+    TS_REQ_free(ts_req);
+    return 0;
+  }
+  memcpy(msg, obj_txt, ret);
   TS_REQ_free(ts_req);
   return ret;
 }
@@ -172,10 +208,10 @@ end-of-c-declare
 ;; Scheme bindings
 (define (timestamp:gettsq hash)
   (let* ((v (make-u8vector 100))
-         (f ((c-lambda (scheme-object int scheme-object) int "___result=
+         (f ((c-lambda (scheme-object int scheme-object int) int "___result=
             get_tsq(___CAST(unsigned char*,___BODY_AS(___arg1,___tSUBTYPED)),___arg2,
-                    ___CAST(unsigned char*,___BODY_AS(___arg3,___tSUBTYPED)));")
-            hash (u8vector-length hash) v)))
+                    ___CAST(unsigned char*,___BODY_AS(___arg3,___tSUBTYPED)),___arg4);")
+            hash (u8vector-length hash) v (u8vector-length v))))
     (if f (subu8vector v 0 f) #f)
   ))
 
@@ -212,10 +248,10 @@ end-of-c-declare
 
 (define (timestamp-tsq-getpolicy tsq)
   (let* ((v (make-u8vector 128))
-         (f ((c-lambda (scheme-object int scheme-object) int "___result=
+         (f ((c-lambda (scheme-object int scheme-object int) int "___result=
             get_tsq_policy(___CAST(unsigned char*,___BODY_AS(___arg1,___tSUBTYPED)),___arg2,
-            ___CAST(unsigned char*,___BODY_AS(___arg3,___tSUBTYPED)));")
-            tsq (u8vector-length tsq) v)))
+            ___CAST(unsigned char*,___BODY_AS(___arg3,___tSUBTYPED)),___arg4);")
+            tsq (u8vector-length tsq) v (u8vector-length v))))
     (if f (u8vector->string (subu8vector v 0 f)) #f)
   ))
 
@@ -227,10 +263,10 @@ end-of-c-declare
 
 (define (timestamp-tsq-getmessage tsq)
   (let* ((v (make-u8vector 100))
-         (f ((c-lambda (scheme-object int scheme-object) int "___result=
+         (f ((c-lambda (scheme-object int scheme-object int) int "___result=
             get_tsq_msg(___CAST(unsigned char*,___BODY_AS(___arg1,___tSUBTYPED)),___arg2,
-            ___CAST(unsigned char*,___BODY_AS(___arg3,___tSUBTYPED)));")
-            tsq (u8vector-length tsq) v)))
+            ___CAST(unsigned char*,___BODY_AS(___arg3,___tSUBTYPED)),___arg4);")
+            tsq (u8vector-length tsq) v (u8vector-length v))))
     (if f (subu8vector v 0 f) #f)
   ))
 

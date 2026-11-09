@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2015, University of British Columbia
+Copyright (c) 2009-2026, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -41,64 +41,114 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (c-declare #<<end-of-c-declare
 #include <string.h>
 #include <openssl/bio.h>
+#include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/ts.h>
 void log_c(char *);
 
+static int log_openssl_error(const char *message, size_t len, void *arg){
+  (void)arg;
+  char text[1024];
+  if (len >= sizeof(text))
+    len = sizeof(text) - 1;
+  memcpy(text, message, len);
+  text[len] = '\0';
+  log_c(text);
+  return 1;
+}
+
 static int verify_cb(int ok, X509_STORE_CTX *ctx){
   if (ok==0){
-    const unsigned char *err= X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx));
+    const char *err = X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx));
     X509 *err_cert = X509_STORE_CTX_get_current_cert(ctx);
-    X509_NAME *subj = X509_get_subject_name(err_cert);
-    log_c(X509_NAME_oneline(subj,0,0));
-    log_c(err);
+    char subject[256];
+    if (err_cert != NULL) {
+      X509_NAME *subj = X509_get_subject_name(err_cert);
+      if (subj != NULL)
+        log_c(X509_NAME_oneline(subj, subject, sizeof(subject)));
+    }
+    log_c((char *)err);
   }
   return ok;
 }
 
 int hash_tsr_verify(unsigned char *hash, int hash_len, unsigned char *tsr, int tsr_len,
                     unsigned char *CAfile){
-  int ret=0;
-  int f=0;
-  const unsigned char *tr = tsr;
-  TS_RESP *ts_resp =  TS_RESP_new();
-  d2i_TS_RESP(&ts_resp, &tr, tsr_len);
-  if (ts_resp==NULL)
-    return 0;
+  int ret = 0;
+  TS_RESP *ts_resp = NULL;
   TS_VERIFY_CTX *ctx = TS_VERIFY_CTX_new();
-  if (ctx==NULL)
-    return 0;
-  long imprint_len;
-  f |= TS_VFY_IMPRINT;
-  if (TS_VERIFY_CTX_set_imprint(ctx, hash, hash_len)==NULL)
-    return 0;
-  TS_VERIFY_CTX_add_flags(ctx, f | TS_VFY_SIGNATURE);
-  X509_STORE *cert_ctx = X509_STORE_new();
+  X509_STORE *cert_ctx = NULL;
+  unsigned char *imprint = NULL;
+  const unsigned char *tr = tsr;
+  char *failure_reason = "Timestamp verification failed";
+
+  ERR_clear_error();
+  if (hash == NULL || hash_len <= 0 || tsr == NULL || tsr_len <= 0 ||
+      CAfile == NULL) {
+    failure_reason = "Invalid timestamp verification input";
+    goto cleanup;
+  }
+  if (ctx == NULL) {
+    failure_reason = "Unable to allocate timestamp verification context";
+    goto cleanup;
+  }
+  ts_resp = d2i_TS_RESP(NULL, &tr, tsr_len);
+  if (ts_resp == NULL) {
+    failure_reason = "Unable to decode timestamp response";
+    goto cleanup;
+  }
+  if (tr != tsr + tsr_len) {
+    failure_reason = "Trailing data after timestamp response";
+    goto cleanup;
+  }
+  imprint = OPENSSL_memdup(hash, (size_t)hash_len);
+  if (imprint == NULL) {
+    failure_reason = "Unable to copy timestamp message imprint";
+    goto cleanup;
+  }
+  if (TS_VERIFY_CTX_set0_imprint(ctx, imprint, hash_len) != 1) {
+    failure_reason = "Unable to set timestamp message imprint";
+    goto cleanup;
+  }
+  imprint = NULL;
+  int verify_flags = TS_VFY_IMPRINT | TS_VFY_SIGNATURE;
+  if ((TS_VERIFY_CTX_add_flags(ctx, verify_flags) & verify_flags) != verify_flags) {
+    failure_reason = "Unable to configure timestamp verification flags";
+    goto cleanup;
+  }
+  cert_ctx = X509_STORE_new();
+  if (cert_ctx == NULL) {
+    failure_reason = "Unable to allocate certificate store";
+    goto cleanup;
+  }
   X509_STORE_set_verify_cb(cert_ctx, verify_cb);
   X509_LOOKUP *lookup = X509_STORE_add_lookup(cert_ctx, X509_LOOKUP_file());
-  if (lookup == NULL)
-    return 0;
-
-  int pass = X509_LOOKUP_load_file(lookup, CAfile, X509_FILETYPE_PEM);
-  if (!pass)
-    return 0;
-
-  if (TS_VERIFY_CTX_set_store(ctx, cert_ctx)== NULL)
-    return 0;
-
-  // If this isn't here verification fails ... OpenSSL_add_all_algorithms(); works too
-  OpenSSL_add_all_digests();
-  ret = TS_RESP_verify_response(ctx, ts_resp);
-  if (!ret) {
-    BIO *bio = BIO_new(BIO_s_mem());
-    ERR_print_errors(bio);
-    char *err = NULL;
-    size_t len = BIO_get_mem_data (bio, &err);
-    log_c(err);
-    BIO_free (bio);
+  if (lookup == NULL) {
+    failure_reason = "Unable to create certificate file lookup";
+    goto cleanup;
   }
+  if (X509_LOOKUP_load_file(lookup, CAfile, X509_FILETYPE_PEM) != 1) {
+    failure_reason = "Unable to load timestamp CA certificate file";
+    goto cleanup;
+  }
+  if (TS_VERIFY_CTX_set0_store(ctx, cert_ctx) != 1) {
+    failure_reason = "Unable to set timestamp certificate store";
+    goto cleanup;
+  }
+  cert_ctx = NULL;
+  ret = TS_RESP_verify_response(ctx, ts_resp);
+  if (!ret)
+    failure_reason = "Timestamp response verification failed";
+
+cleanup:
+  if (!ret) {
+    log_c(failure_reason);
+    ERR_print_errors_cb(log_openssl_error, NULL);
+  }
+  OPENSSL_free(imprint);
+  X509_STORE_free(cert_ctx);
+  TS_VERIFY_CTX_free(ctx);
   TS_RESP_free(ts_resp);
-  EVP_cleanup();
   return ret;
 }
 

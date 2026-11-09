@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2015, University of British Columbia
+Copyright (c) 2009-2026, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -47,13 +47,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (define (timestamp-data filename)
   (if (and (file-exists? filename) (eq? (file-type filename) 'regular)
            (fx> (file-info-size (file-info filename)) 0))
-    (let* ((csum (sha512sum filename))
-           (tsq (timestamp-tsq-generate-sha512sum csum))
-           (tsr (timestamp-tsr-request tsq)))
-      (if (and tsq tsr (timestamp-tsr-granted? tsr)
-            (fx= (timestamp-tsq-getnonce tsq) (timestamp-tsr-getnonce tsr))
-            (equal? (timestamp-tsq-getmessage tsq) (timestamp-tsr-getmessage tsr)))
-        (list csum tsr) #f)) #f))
+    (let ((csum (sha512sum filename)))
+      (if (u8vector? csum)
+        (let* ((tsq (timestamp-tsq-generate-sha512sum csum))
+               (tsr (and tsq (timestamp-tsr-request tsq))))
+          (if (and tsq tsr (timestamp-tsr-granted? tsr)
+                   (fx= (timestamp-tsq-getnonce tsq) (timestamp-tsr-getnonce tsr))
+                   (equal? (timestamp-tsq-getmessage tsq)
+                           (timestamp-tsr-getmessage tsr)))
+            (list csum tsr)
+            #f))
+        #f))
+    #f))
 
 ;; perform timestamp and save+return tsr
 (define (timestamp-gettimestamp filename)
