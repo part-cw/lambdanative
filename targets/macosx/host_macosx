@@ -1,6 +1,6 @@
 #!/bin/sh
 # LambdaNative - a cross-platform Scheme framework
-# Copyright (c) 2009-2020, University of British Columbia
+# Copyright (c) 2009-2026, University of British Columbia
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or
@@ -41,9 +41,9 @@ if [ "X$SYS_ABI" = "X" ]; then
 fi
 
 SYS_HOST_CC="gcc $SYS_DEBUGFLAG -DMACOSX -m$SYS_ABI"
-export MACOSX_DEPLOYMENT_TARGET=10.6
+export MACOSX_DEPLOYMENT_TARGET=10.15
 if [ "$cflag_additions" == "${cflag_additions%mmacosx-version-min*}" ]; then
-  cflag_additions="$cflag_additions -mmacosx-version-min=10.6"
+  cflag_additions="$cflag_additions -mmacosx-version-min=10.15"
 fi
 
 SDKROOT=`ls -1d $SYS_PREFIXROOT/gcc/$SYS_HOSTPLATFORM/gcc-* 2> /dev/null`
