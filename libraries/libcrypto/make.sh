@@ -1,5 +1,5 @@
-PKGURL=https://www.openssl.org/source/openssl-3.0.19.tar.gz
-PKGHASH=4455564a4d5ce5d312e28377e35420d6357a66ee
+PKGURL=https://www.openssl.org/source/openssl-3.5.9.tar.gz
+PKGHASH=fb3b907a6bcb1deb01ac399a849f4d5b03dbe473
 
 package_download $PKGURL $PKGHASH
 
