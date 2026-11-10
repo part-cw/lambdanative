@@ -155,10 +155,12 @@ static int httpsclient_open(char *host, int port, int use_keys, char *cert, char
   if ( ssl == NULL ){ return 0; }
   ret = SSL_set_fd(ssl, s);
   if ( ret == 0 ){ return 0; }
-  ret = SSL_set_tlsext_host_name(ssl,host);
-  if (!ret) { return 0; }
-  ret = SSL_set1_host(ssl, host);
-  if (!ret) { return 0; }
+  if (check_chain == 1) {
+    ret = SSL_set_tlsext_host_name(ssl,host);
+    if (!ret) { return 0; }
+    ret = SSL_set1_host(ssl, host);
+    if (!ret) { return 0; }
+  }
 
   int retries = 0;
   while (1) {
