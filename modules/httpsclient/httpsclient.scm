@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2026, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -56,7 +56,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <openssl/crypto.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
-#include <openssl/rand.h>
 void log_c(char *);
 
 static   int s=0;
@@ -129,15 +128,11 @@ static int httpsclient_open(char *host, int port, int use_keys, char *cert, char
   }
   SSL_load_error_strings();
   SSL_library_init();
-#if OPENSSL_VERSION_NUMBER < 0x1010103fL
-  ctx = SSL_CTX_new(SSLv23_client_method());
-#else
   ctx = SSL_CTX_new(TLS_client_method());
-#endif
   if ( ctx == NULL ) { return 0; }
-  SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2); //disable SSLv2
-  SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3);
-  //SSL_CTX_set_min_proto_version(ctx, TLS1_VERSION);
+  ret = SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
+  ret = SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
+  if (ret <= 0) { return 0; }
 
   // If we want to use key for authentication.
   if (use_keys == 1) {
@@ -160,16 +155,11 @@ static int httpsclient_open(char *host, int port, int use_keys, char *cert, char
   if ( ssl == NULL ){ return 0; }
   ret = SSL_set_fd(ssl, s);
   if ( ret == 0 ){ return 0; }
-  if (check_chain == 1) {
-    ret = SSL_set_tlsext_host_name(ssl,host);
-    if (!ret) { return 0; }
-  }
+  ret = SSL_set_tlsext_host_name(ssl,host);
+  if (!ret) { return 0; }
+  ret = SSL_set1_host(ssl, host);
+  if (!ret) { return 0; }
 
-  RAND_poll();
-  while ( RAND_status() == 0 ){
-    unsigned short rand_ret = rand() % 65536;
-    RAND_seed(&rand_ret, sizeof(rand_ret));
-  }
   int retries = 0;
   while (1) {
     ret=SSL_connect(ssl);
@@ -258,4 +248,17 @@ end-of-c-declare
   )
 )
 
+(unit-test "httpsclient-validation" "Verifying httpsclient accepts and rejects clients correctly"
+  (lambda () (let ((goodhost (list "sha256.badssl.com" #t))
+                   (wronghost (list "wrong.host.badssl.com" #f))
+                   (untrustedroot (list "untrusted-root.badssl.com" #f)))
+    (define (httpsclient:test-handshake h)
+      (let* ((host (car h))
+             (expected (cadr h))
+             (ret (httpsclient-open host)))
+        (httpsclient-close)
+        (eq? (= ret 1) expected)
+      ))
+    (and (httpsclient:test-handshake goodhost) (httpsclient:test-handshake wronghost) (httpsclient:test-handshake untrustedroot))
+  )))
 ;; eof
