@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2023, University of British Columbia
+Copyright (c) 2009-2026, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -138,13 +138,13 @@ end-of-c-declare
       (continuation-capture
        (lambda (cont)
          (display-exception-in-context e cont port)
-         (let ((all-frames #t)  ;; gambit default: #f
-               (display-env #t) ;; gambit default: #f
+         (let ((detail-level 6) ;; gambit default: 1 -- we'd like all frames with lexical and dynamic environments
+               (highlight-source-level (##repl-highlight-source-level)) ;; gambit default: 1
                (max-head 10)    ;; gambit default: 10
                (max-tail 4)     ;; gambit default: 4
                (offset -2)      ;; gambit default: 0 -- nesting level of this expression
                )
-           (display-continuation-backtrace cont port all-frames display-env max-head max-tail offset)))))))
+           (display-continuation-backtrace cont port detail-level highlight-source-level offset max-head max-tail)))))))
   (log-error "HALT pid " ((c-lambda () int "getpid")))
   (exit 70))
 
