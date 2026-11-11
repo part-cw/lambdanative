@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2015, University of British Columbia
+Copyright (c) 2009-2026, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -45,70 +45,81 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (c-declare #<<end-of-c-declare
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <openssl/ec.h>
+#include <openssl/ecdsa.h>
+#include <openssl/obj_mac.h>
+#include <openssl/sha.h>
 
-#include "p256ecdsa/dsa_sig.h"
-#include "p256ecdsa/p256.h"
-#include "p256ecdsa/p256_ecdsa.h"
-#include "p256ecdsa/sha256.h"
+static int p256_ecdsa_verify_hash(const unsigned char *key_x, int key_x_len,
+                                  const unsigned char *key_y, int key_y_len,
+                                  const unsigned char *hash, int hash_len,
+                                  const unsigned char *signature, int signature_len) {
+  int result = -1;
+  EC_KEY *key = NULL;
+  EC_POINT *public_key = NULL;
+  BIGNUM *x = NULL;
+  BIGNUM *y = NULL;
+  ECDSA_SIG *parsed_signature = NULL;
+  const unsigned char *signature_cursor = signature;
+
+  if (key_x_len != 32 || key_y_len != 32 || hash_len != SHA256_DIGEST_LENGTH ||
+      signature_len <= 0)
+    return -1;
+
+  key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+  if (key == NULL)
+    goto cleanup;
+
+  public_key = EC_POINT_new(EC_KEY_get0_group(key));
+  x = BN_bin2bn(key_x, key_x_len, NULL);
+  y = BN_bin2bn(key_y, key_y_len, NULL);
+  parsed_signature = d2i_ECDSA_SIG(NULL, &signature_cursor, signature_len);
+  if (public_key == NULL || x == NULL || y == NULL || parsed_signature == NULL ||
+      signature_cursor != signature + signature_len ||
+      EC_POINT_set_affine_coordinates_GFp(EC_KEY_get0_group(key), public_key, x, y, NULL) != 1 ||
+      EC_KEY_set_public_key(key, public_key) != 1 || EC_KEY_check_key(key) != 1)
+    goto cleanup;
+
+  result = ECDSA_do_verify(hash, hash_len, parsed_signature, key);
+
+cleanup:
+  ECDSA_SIG_free(parsed_signature);
+  BN_free(x);
+  BN_free(y);
+  EC_POINT_free(public_key);
+  EC_KEY_free(key);
+  return result;
+}
 
 end-of-c-declare
 )
 
-(c-define-type p256_int "p256_int")
-(c-define-type p256_int* (pointer p256_int))
-
-(define make-p256-int (c-lambda () p256_int* "___result=(p256_int*)malloc(sizeof(p256_int));"))
-(define free-p256-int (c-lambda (p256_int*) void "free(___arg1);"))
-
-(define (p256-from-bin u8v)
-  (let ((x (make-p256-int)))
-    ((c-lambda (scheme-object p256_int*) void
-       "p256_from_bin(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)),___arg2);") u8v x)
-      x))
-
-(define (dsa-sig-unpack sig)
-  (let* ((r (make-p256-int))
-         (s (make-p256-int))
-         (sig-len (u8vector-length sig))
-         (res ((c-lambda (scheme-object int p256_int* p256_int*) int
-             "___result=dsa_sig_unpack(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)),___arg2,___arg3,___arg4);")
-               sig sig-len r s)))
-   (if (not (= 0 res)) (list r s) (begin
-     (free-p256-int r) (free-p256-int s) #f))))
-
 (define (sha256-hash data)
-  (let ((len (u8vector-length data))
-        (digest (make-u8vector 32)))
+  (let ((digest (make-u8vector 32)))
     ((c-lambda (scheme-object int scheme-object) void
-         "SHA256_hash(___CAST(void*,___BODY_AS(___arg1,___tSUBTYPED)),___arg2, ___CAST(void*,___BODY_AS(___arg3,___tSUBTYPED)));")
-            data len digest)
+       "SHA256(___CAST(const unsigned char*,___BODY_AS(___arg1,___tSUBTYPED)),___arg2,___CAST(unsigned char*,___BODY_AS(___arg3,___tSUBTYPED)));")
+     data (u8vector-length data) digest)
     digest))
 
-(define (p256-from-hash data) (p256-from-bin (sha256-hash data)))
-
-(define (p256-to-bin p256)
-  (let ((data (make-u8vector 32)))
-    ((c-lambda (p256_int* scheme-object) void 
-       "p256_to_bin(___arg1,___CAST(void*,___BODY_AS(___arg2,___tSUBTYPED)));") p256 data)
-    data))
-
-;; ---------
+(define p256-ecdsa-verify-hash-raw
+  (c-lambda (scheme-object int scheme-object int scheme-object int scheme-object int) int
+    "___result=p256_ecdsa_verify_hash(
+      ___CAST(const unsigned char*,___BODY_AS(___arg1,___tSUBTYPED)),___arg2,
+      ___CAST(const unsigned char*,___BODY_AS(___arg3,___tSUBTYPED)),___arg4,
+      ___CAST(const unsigned char*,___BODY_AS(___arg5,___tSUBTYPED)),___arg6,
+      ___CAST(const unsigned char*,___BODY_AS(___arg7,___tSUBTYPED)),___arg8);"))
 
 (define (p256-ecdsa-verify-hash key-x key-y hash signature)
-  (let* ((x (p256-from-bin key-x))
-         (y (p256-from-bin key-y))
-         (h (p256-from-bin hash))
-         (s (dsa-sig-unpack signature))
-         (args (append (list x y h) (if s s '())))
-         (res (if s (apply (c-lambda (p256_int* p256_int* p256_int* p256_int* p256_int*) int "p256_ecdsa_verify") args) #f)))
-   (for-each free-p256-int args)
-   (if res (> res 0) res)))
+  (let ((result (p256-ecdsa-verify-hash-raw key-x (u8vector-length key-x) 
+          key-y (u8vector-length key-y)
+          hash (u8vector-length hash) 
+          signature (u8vector-length signature))))
+    (cond ((= result 1) #t)
+          ((= result 0) #f)
+          (else #f))))
 
 (define (p256-ecdsa-verify-msg key-x key-y msg signature)
-  (p256-ecdsa-verify-hash key-x key-y (sha256-hash msg) signature)) 
+  (p256-ecdsa-verify-hash key-x key-y (sha256-hash msg) signature))
 
 ;; ---------
 ;; unit test
