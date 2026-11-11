@@ -1,0 +1,12 @@
+--- CMakeLists.txt	2026-10-30 10:24:05.000000000 +0300
++++ CMakeLists-mod.txt	2026-11-02 14:12:32.671649230 +0300
+@@ -77,6 +77,9 @@
+     if(CMAKE_CONFIGURATION_TYPES)
+         message(STATUS "Multi-config generator detected. Use '--config Release' to avoid Debug builds.")
+     endif()
++elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
++    # Clang is used for cross-compilation on android and cannot use -mtune-native for cross-compilation
++    add_compile_options(-O2 -pthread)
+ elseif(APPLE)
+     # Keep the historical local optimization defaults for non-MSVC builds.
+     add_compile_options(-O2 -mtune=native -pthread)
