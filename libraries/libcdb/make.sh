@@ -1,5 +1,5 @@
-PKGURL=http://archive.ubuntu.com/ubuntu/pool/main/t/tinycdb/tinycdb_0.78build1.tar.gz
-PKGHASH=32350cf3ac2b6ab5ea671702df8e90ee1837c5af
+PKGURL=https://archive.ubuntu.com/ubuntu/pool/main/t/tinycdb/tinycdb_0.81.orig.tar.gz
+PKGHASH=759f89cc7051d932ebe67cca9d94457be8c04b5d
 
 package_download $PKGURL $PKGHASH
 

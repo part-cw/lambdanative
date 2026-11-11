@@ -71,7 +71,7 @@ struct cdb_make *_make_cdb(char *fname)
 int _cdb_make_merge(struct cdb_make *cdbm, char *fname)
 {
   int tmpfd = open(fname,O_RDONLY);
-  if (!tmpfd) return 0;
+  if (tmpfd < 0) return 0;
   struct cdb tmpcdb;
   if (cdb_init(&tmpcdb, tmpfd)<0) return 0;
   unsigned int cpos;
@@ -96,7 +96,7 @@ int _cdb_make_finish(struct cdb_make *cdbm)
 {
   int fd = cdbm->cdb_fd;
   int res = cdb_make_finish(cdbm);
-  if (fd) close(fd);
+  if (fd >= 0) close(fd);
   return res;
 } 
 
@@ -117,7 +117,7 @@ void _cdb_finish(struct cdb *cdb)
 {
   int fd = cdb->cdb_fd;
   cdb_free(cdb);
-  if (fd) close(fd);
+  if (fd >= 0) close(fd);
 }
 
 static struct cdb_find cdbf;
