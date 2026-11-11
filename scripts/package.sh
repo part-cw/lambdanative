@@ -26,20 +26,22 @@ package_copy_to_cache()
 package_valid()
 {
   pkg_valid_file="$1"
-  pkg_valid_hash=$2
+  pkg_valid_hash="$2"
   pkg_valid=no
-  if [ -f $pkg ]; then
-    if [ $SYS_HOSTPLATFORM = openbsd ]; then
-      if [ `sha1 -q $pkg_valid_file` = "$pkg_valid_hash" ]; then
-        pkg_valid=yes
-      fi
+
+  if [ -f "$pkg_valid_file" ]; then
+    if [ "$SYS_HOSTPLATFORM" = "openbsd" ]; then
+      pkg_valid_actual=$(sha1 -q "$pkg_valid_file")
     else
-      if [ `shasum $pkg_valid_file | cut -f 1 -d " "` = "$pkg_valid_hash" ]; then
-        pkg_valid=yes
-      fi
+      pkg_valid_actual=$(shasum "$pkg_valid_file" | cut -f 1 -d " ")
+    fi
+
+    if [ "$pkg_valid_actual" = "$pkg_valid_hash" ]; then
+      pkg_valid=yes
     fi
   fi
-  echo $pkg_valid
+
+  printf '%s\n' "$pkg_valid"
 }
 
 package_unpack()
@@ -150,28 +152,28 @@ package_download_ball()
   else 
     asserttool shasum
   fi
-  if [ `package_valid "$pkg" $pkg_hash` = no ]; then
+  if [ "$(package_valid "$pkg" "$pkg_hash")" = "no" ]; then
     echo " => downloading ${pkg_url}.."
-    rmifexists $pkg
+    rmifexists "$pkg"
     asserttool wget
     wget_quiet=-q
     if [ ! "X$SYS_VERBOSE" = "X" ]; then
       wget_quiet=
     fi
-    wget $pkg_url $wget_quiet -O $pkg
+    wget "$pkg_url" $wget_quiet -O "$pkg"
     if [ ! $? = 0 ]; then
        echo "WARNING: wget failed, retrying without certificate check.."
-       rmifexists $pkg
-       wget $pkg_url $wget_quiet --no-check-certificate -O $pkg
+       rmifexists "$pkg"
+       wget "$pkg_url" $wget_quiet --no-check-certificate -O "$pkg"
     fi
     asserterror $?  "download of $pkg_url failed"
-    if [ $SYS_HOSTPLATFORM = openbsd ]; then
-      echo " == hash "`sha1 -q $pkg`
+    if [ "$SYS_HOSTPLATFORM" = "openbsd" ]; then
+      echo " == hash "$(sha1 -q "$pkg")
     else
-      echo " == hash "`shasum $pkg | cut -f 1 -d " "`
+      echo " == hash "$(shasum "$pkg" | cut -f 1 -d " ")
     fi
-    if [ `package_valid "$pkg" $pkg_hash` = no ]; then
-      rmifexists $pkg
+    if [ "$(package_valid "$pkg" "$pkg_hash")" = "no" ]; then
+      rmifexists "$pkg"
       assert "Unable to proceed! package download failed (checksum error)"
     fi
   fi
@@ -260,8 +262,10 @@ package_cmake()
     GPROF=\"$SYS_GPROF\" \
     cmake . \
           -DCMAKE_TOOLCHAIN_FILE=\"$ANDROID_NDK/build/cmake/android.toolchain.cmake\" \
+          -DANDROID_ABI=\"$SYS_ANDROID_ABI\" \
+          -DANDROID_PLATFORM=\"android-$SYS_ANDROIDAPI\" \
           -DCMAKE_INSTALL_PREFIX=\"$SYS_PREFIX\" \
-          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_C_COMPILER=\"$pkg_cc\" \
           -DCMAKE_C_COMPILER_AR=\"$SYS_AR\" \
           -DCMAKE_C_COMPILER_RANLIB=\"$SYS_RANLIB\" \
