@@ -1,5 +1,5 @@
-PKGURL=https://chipmunk-physics.net/release/Chipmunk-6.x/Chipmunk-6.2.2.tgz
-PKGHASH=7b3c23953ec4157c7eb79bd883f23136cb9c5b3a
+PKGURL=https://github.com/slembcke/Chipmunk2D/archive/refs/tags/Chipmunk-6.2.2.tar.gz
+PKGHASH=45fee9759bb492201b1e05e191ea4a3b3c35caa7
 package_download $PKGURL $PKGHASH
 
 case $SYS_PLATFORM in
