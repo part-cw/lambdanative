@@ -45,7 +45,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 }
 - (void)actionDrawView:(EAGLView*)view;
 - (void)actionSetupView:(EAGLView*)view;
+- (void)startRender;
+- (void)stopRender;
 
 @end
-
 

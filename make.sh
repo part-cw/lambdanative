@@ -1045,6 +1045,10 @@ make_setup_target()
   ac_subst SYS_IOSVERSION
   ac_subst SYS_IOSSDK
   ac_subst SYS_IOSPROVISIONING
+  ac_subst SYS_IOS_SIMULATOR
+  ac_subst SYS_CPU
+  SYS_CMAKE_ARCHS=`echo "$SYS_CPUs" | awk '{$1=$1; gsub(/ /, ";"); print}'`
+  ac_subst SYS_CMAKE_ARCHS
   ac_subst SYS_PLATFORM
   ac_subst SYS_HOSTPLATFORM
   ac_subst SYS_ROOT
@@ -1090,7 +1094,11 @@ make_setup_target()
 make_setup()
 {
   make_setup_profile $@
-  make_setup_target `ls -1 targets/$SYS_PLATFORM/host_${SYS_HOSTPLATFORM}* | tail -n 1`
+  if [ "$make_argument" = "simulator" ] && [ "$SYS_PLATFORM" = "ios" ]; then
+    make_setup_target targets/ios/simulator_host_macosx_arm64
+  else
+    make_setup_target `ls -1 targets/$SYS_PLATFORM/host_${SYS_HOSTPLATFORM}* | tail -n 1`
+  fi
 }
 
 make_loader()
@@ -1640,7 +1648,7 @@ _EOF
 
 usage()
 {
-  echo "usage: make.sh <clean|tools|resources|libraries|payload|executable|all|install|package|info>"
+  echo "usage: make.sh <clean|tools|resources|libraries|payload|executable|all|simulator|install|package|info>"
   exit 0;
 }
 
@@ -1741,6 +1749,24 @@ executable)
 if [ `is_gui_app` = "yes" ]; then
   make_artwork
 fi
+  make_executable
+;;
+simulator)
+  SYS_CPUs=
+  for target in targets/ios/simulator_host_macosx_*; do
+    rm -rf $SYS_TMPDIR/tmp.?????? 2> /dev/null
+    make_setup_target "$target"
+    make_libraries
+    if [ `is_gui_app` = "yes" ]; then
+      make_artwork
+      make_textures
+      make_fonts
+      make_strings
+    fi
+    make_embeds
+    make_webassets
+    make_payload
+  done
   make_executable
 ;;
 all)

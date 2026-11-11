@@ -1,5 +1,5 @@
 IOS_PLATFORM_TYPE=iphoneos
 SYS_CPU=arm64
 SYS_CPUs="$SYS_CPUs $SYS_CPU"
+SYS_IOS_SIMULATOR=no
 . $SYS_ROOT/targets/ios/_host_macosx
-

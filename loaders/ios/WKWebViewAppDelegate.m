@@ -38,29 +38,7 @@
 @synthesize controller;
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-  CGRect screenSize = [[UIScreen mainScreen] bounds];
-  window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] applicationFrame]];
-  WKWebViewController *theController = [[WKWebViewController alloc] init];
-  self.controller = theController;
-  [theController release];
-  [self.window setRootViewController:self.controller];
-  [window makeKeyAndVisible];
-  ffi_event(EVENT_INIT,screenSize.size.width,screenSize.size.height);
   return YES;
-}
-
-- (void)applicationWillResignActive:(UIApplication *)application {
-  ffi_event(EVENT_SUSPEND,0,0);
-}
-
-- (void)applicationDidEnterBackground:(UIApplication *)application {
-}
-
-- (void)applicationWillEnterForeground:(UIApplication *)application {
-}
-
-- (void)applicationDidBecomeActive:(UIApplication *)application {
-  ffi_event(EVENT_RESUME,0,0);
 }
 
 - (void)applicationWillTerminate:(UIApplication *)application {
@@ -77,4 +55,3 @@
 @end
 
 #endif // USE_HYBRID
-

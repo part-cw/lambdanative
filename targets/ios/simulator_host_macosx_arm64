@@ -1,0 +1,6 @@
+IOS_PLATFORM_TYPE=iphonesimulator
+SYS_CPU=arm64
+SYS_CPUs="$SYS_CPUs $SYS_CPU"
+SYS_PLATFORM_VARIANT="-simulator"
+SYS_IOS_SIMULATOR=yes
+. $SYS_ROOT/targets/ios/_host_macosx

@@ -19,6 +19,9 @@ package:
 executable:
 	@ ./make.sh executable 
 
+simulator:
+	@ ./make.sh simulator
+
 payload:
 	@ ./make.sh payload
 

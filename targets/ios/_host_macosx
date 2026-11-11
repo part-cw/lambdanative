@@ -40,7 +40,11 @@ SYS_IOSVERSION=$IOSVERSION
 SYS_CC=`xcrun -find -sdk $IOS_PLATFORM_TYPE clang`" -arch $SYS_CPU"
 assertfile $SYS_CC
 # -DIOS is needed to build gambit
-SYS_CC="$SYS_CC $SYS_DEBUGFLAG -isysroot $SYS_IOSSDK -DIOS -miphoneos-version-min=$SYS_IOSVERSION"
+if [ "$IOS_PLATFORM_TYPE" = "iphonesimulator" ]; then
+  SYS_CC="$SYS_CC $SYS_DEBUGFLAG -isysroot $SYS_IOSSDK -DIOS -mios-simulator-version-min=$SYS_IOSVERSION"
+else
+  SYS_CC="$SYS_CC $SYS_DEBUGFLAG -isysroot $SYS_IOSSDK -DIOS -miphoneos-version-min=$SYS_IOSVERSION"
+fi
 SYS_CC="$SYS_CC -fPIC -fsigned-char -fomit-frame-pointer $cflag_additions"
 SYS_CXX=`echo $SYS_CC | sed 's/clang/clang++/'`
 SYS_AR=`xcrun -find -sdk $IOS_PLATFORM_TYPE ar`

@@ -70,6 +70,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   DMSG("GLViewController: actionDrawView");
 }
 
+- (void)startRender {
+  [glView startRender];
+}
+
+- (void)stopRender {
+  [glView stopRender];
+}
+
 - (void)didReceiveMemoryWarning 
 {
   DMSG("GLViewController: didReceiveMemoryWarning");

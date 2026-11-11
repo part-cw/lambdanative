@@ -7,7 +7,11 @@ package_download $PKGURL $PKGHASH
 EXTRACONF=
 if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
   if [ $SYS_PLATFORM = ios ]; then
-    EXTRACONF=--host=arm-apple-darwin
+    if [ "$SYS_CPU" = "x86_64" ]; then
+      EXTRACONF=--host=x86_64-apple-darwin
+    else
+      EXTRACONF=--host=arm-apple-darwin
+    fi
   else
     EXTRACONF=--host=$SYS_ARCH
   fi
