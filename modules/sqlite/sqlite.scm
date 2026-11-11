@@ -52,7 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <unistd.h>
 
-#include <sqlcipher/sqlite3.h>
+#include <sqlite3.h>
 
 struct sqlite_db {
   sqlite3 *db;
@@ -61,12 +61,24 @@ struct sqlite_db {
 
 static struct sqlite_db *_sqlite_open(char *filename, char *key, int len)
 {
-  struct sqlite_db* d  = (struct sqlite_db *)malloc(sizeof(struct sqlite_db));
-  int err = sqlite3_open(filename, &d->db);
-  if (err!=SQLITE_OK) { free(d); d=0; }
-  if (len > 0){
+  struct sqlite_db* d = (struct sqlite_db *)malloc(sizeof(struct sqlite_db));
+  int err;
+  if (!d) return 0;
+  d->db = 0;
+  d->pst = 0;
+  err = sqlite3_open(filename, &d->db);
+  if (err != SQLITE_OK) {
+    if (d->db) sqlite3_close(d->db);
+    free(d);
+    return 0;
+  }
+  if (len > 0) {
     err = sqlite3_key(d->db,key,len);
-    if (err!=SQLITE_OK) { free(d); d=0; }
+    if (err != SQLITE_OK) {
+      sqlite3_close(d->db);
+      free(d);
+      return 0;
+    }
   }
   return d;
 }
