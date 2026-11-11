@@ -1,0 +1,5 @@
+--- include/mosquitto/libmosquitto.h
++++ include/mosquitto/libmosquitto.h
+@@ -66 +66 @@
+-#define LIBMOSQUITTO_REVISION 0
++#define LIBMOSQUITTO_REVISION 2

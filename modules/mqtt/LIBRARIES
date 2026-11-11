@@ -1,1 +1,1 @@
-libcrypto libssl libpahomqtt libmosquitto
+libcrypto libssl libpahomqtt libmosquitto libcjson
