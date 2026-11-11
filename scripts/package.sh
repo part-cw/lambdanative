@@ -286,6 +286,26 @@ package_cmake()
 	  $pkg_conf_opt \
 	  -B build"
     asserterror $? "cmake setup failed"
+  elif [[ $SYS_PLATFORM = ios ]]; then
+    veval "\
+    PKG_CONFIG_PATH=\"$SYS_PREFIX/lib/pkgconfig\" \
+    PATH=\"$SYS_PREFIX/bin:${pkg_ccdir}:$PATH\" \
+    LDFLAGS=\"-L$SYS_PREFIX/lib\" \
+    cmake . \
+          -DCMAKE_SYSTEM_NAME=iOS \
+          -DCMAKE_OSX_SYSROOT=\"$SYS_IOSSDK\" \
+          -DCMAKE_OSX_ARCHITECTURES=\"$SYS_CPU\" \
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=\"$SYS_IOSVERSION\" \
+          -DCMAKE_INSTALL_PREFIX=\"$SYS_PREFIX\" \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_FLAGS=\"$pkg_cc_flags -I$SYS_PREFIX/include\" \
+          -DCMAKE_CXX_FLAGS=\"$pkg_cxx_flags -I$SYS_PREFIX/include\" \
+          -DCMAKE_EXE_LINKER_FLAGS=\"-L$SYS_PREFIX/lib\" \
+          -DCMAKE_SHARED_LINKER_FLAGS=\"-L$SYS_PREFIX/lib\" \
+          -G \"Unix Makefiles\" \
+          $pkg_conf_opt \
+          -B build"
+    asserterror $? "cmake setup failed"
   else
     veval "\
     CHOST=\"$SYS_ARCH\" \
