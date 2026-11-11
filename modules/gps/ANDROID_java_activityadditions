@@ -37,36 +37,77 @@ GnssStatus.Callback gnssCallback = new GnssStatus.Callback() {
   }
 };
 
+private boolean initializeLocationProvider(boolean openSettings) {
+  if (locationManager == null ||
+      ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+    return false;
+  }
+
+  if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+    Toast.makeText(this, "Please enable GPS", Toast.LENGTH_LONG).show();
+    if (openSettings) {
+      startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+    }
+    return false;
+  }
+
+  if (provider == null) {
+    Criteria criteria = new Criteria();
+    criteria.setAccuracy(Criteria.ACCURACY_FINE);
+    provider = locationManager.getBestProvider(criteria, true);
+  }
+
+  if (provider == null) {
+    Toast.makeText(this, "No enabled location provider", Toast.LENGTH_LONG).show();
+    return false;
+  }
+
+  return true;
+}
+
+private void startGpsUpdates() {
+  if (gpsStatus != 1 || !initializeLocationProvider(false)) return;
+
+  if (!locationUpdatesRegistered) {
+    locationManager.requestLocationUpdates(provider, 1000, 1, locationlistener);
+    locationUpdatesRegistered = true;
+  }
+
+  if (!gnssStatusRegistered && gnssCallback != null) {
+    gnssStatusRegistered = locationManager.registerGnssStatusCallback(gnssCallback);
+  }
+}
+
+private void stopGpsUpdates() {
+  if (locationManager == null) return;
+
+  if (locationUpdatesRegistered) {
+    locationManager.removeUpdates(locationlistener);
+    locationUpdatesRegistered = false;
+  }
+
+  if (gnssStatusRegistered && gnssCallback != null) {
+    locationManager.unregisterGnssStatusCallback(gnssCallback);
+    gnssStatusRegistered = false;
+  }
+}
+
 public void toggleGPS(int status){
   if (status == 1) {
     gpsStatus = 1;
     runOnUiThread(new Runnable() {
       public void run() {
-        locationManager.requestLocationUpdates(provider, 1000, 1, locationlistener);
-
-        if (gnssCallback == null) {
-          gnssCallback = new GnssStatus.Callback() {
-            @Override
-            public void onSatelliteStatusChanged(GnssStatus status) {
-              int satellites = status.getSatelliteCount();
-              int satellitesInFix = 0;
-              for (int i = 0; i < satellites; i++) {
-                if (status.usedInFix(i)) satellitesInFix++;
-              }
-              satelliteEvent(satellites, satellitesInFix);
-            }
-          };
-          locationManager.registerGnssStatusCallback(gnssCallback);
-        }
+        startGpsUpdates();
       }
     });
 
   } else {
     gpsStatus = 0;
-    locationManager.removeUpdates(locationlistener);
-    if (gnssCallback != null && locationManager != null) {
-      locationManager.unregisterGnssStatusCallback(gnssCallback);
-    }
+    runOnUiThread(new Runnable() {
+      public void run() {
+        stopGpsUpdates();
+      }
+    });
   }
 }
 

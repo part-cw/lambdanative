@@ -16,20 +16,38 @@ void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_satelliteEvent(JNIEnv* e, jobje
 
 void android_location_toggleGPS(int status){
   JNIEnv *env = GetJNIEnv();
+  if (!env || !globalObj) return;
+
   jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
-  if (env&&globalObj){
-    jmethodID method = (*env)->GetMethodID(env, main_class, "toggleGPS", "(I)V");
+  if (!main_class) {
+    JNI_forward_exception_to_gambit(env);
+    return;
+  }
+
+  jmethodID method = (*env)->GetMethodID(env, main_class, "toggleGPS", "(I)V");
+  if (method) {
     (*env)->CallVoidMethod(env, globalObj, method, status);
   }
+  JNI_forward_exception_to_gambit(env);
+  (*env)->DeleteLocalRef(env, main_class);
 }
 
 int android_location_service(){
   JNIEnv *env = GetJNIEnv();
+  if (!env || !globalObj) return -1;
+
   jclass main_class = (*env)->FindClass(env, "@SYS_PACKAGE_SLASH@/@SYS_APPNAME@");
-  if (env&&globalObj){
-    jmethodID method = (*env)->GetMethodID(env, main_class, "isLocationServiceEnabled", "()I");
-    return (int)(*env)->CallIntMethod(env,globalObj,method);
-  } else { return -1; }
+  if (!main_class) {
+    JNI_forward_exception_to_gambit(env);
+    return -1;
+  }
+
+  int result = -1;
+  jmethodID method = (*env)->GetMethodID(env, main_class, "isLocationServiceEnabled", "()I");
+  if (method) result = (int)(*env)->CallIntMethod(env, globalObj, method);
+  if (JNI_forward_exception_to_gambit(env)) result = -1;
+  (*env)->DeleteLocalRef(env, main_class);
+  return result;
 }
 
 double android_location_getlatitude(){ return gps_lat; }

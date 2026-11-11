@@ -1,4 +1,6 @@
     locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+    locationlistener = this;
+    gpsStatus = 1;
 
     // Check location permission first
     if (ActivityCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -6,18 +8,7 @@
         return;
     }
 
-    // Check if GPS provider is enabled
-    boolean isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-    if (!isGpsEnabled) {
-        Toast.makeText(this, "Please enable GPS", Toast.LENGTH_LONG).show();
-        startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
-        return;
-    }
-
-    // Set criteria for best provider
-    Criteria criteria = new Criteria();
-    criteria.setAccuracy(Criteria.ACCURACY_FINE);
-    provider = locationManager.getBestProvider(criteria, true);
+    if (!initializeLocationProvider(true)) return;
 
     // Try to get the last known location
     Location location = locationManager.getLastKnownLocation(provider);
@@ -26,23 +17,3 @@
     } else {
         Toast.makeText(this, "Waiting for location fix...", Toast.LENGTH_SHORT).show();
     }
-
-    // Register for location updates
-    locationManager.requestLocationUpdates(provider, 1000, 1, this);
-
-    // GNSS callback for satellite info
-    gnssCallback = new GnssStatus.Callback() {
-        @Override
-        public void onSatelliteStatusChanged(GnssStatus status) {
-            int inFix = 0;
-            int inView = status.getSatelliteCount();
-            for (int i = 0; i < inView; i++) {
-                if (status.usedInFix(i)) inFix++;
-            }
-            satelliteEvent(inView, inFix);
-        }
-    };
-
-    locationManager.registerGnssStatusCallback(gnssCallback);
-    gpsStatus = 1;
-    locationlistener = this;
