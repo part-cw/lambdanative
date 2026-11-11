@@ -240,6 +240,83 @@ package_configure()
   asserterror $? "configure failed"
 }
 
+package_cmake()
+{
+  echo " => Generating bulid files with CMake" `pwd` "..."
+  pkg_conf_opt=$@
+  pkg_ccdir=`echo "$SYS_CC" | cut -f 1 -d " "`
+  pkg_ccdir=`dirname ${pkg_ccdir}`
+  pkg_cc=`echo "$SYS_CC" | cut -f 1 -d " "`
+  pkg_cc_flags=`echo "$SYS_CC" | cut -f 2- -d " "`
+  pkg_cxx=`echo "$SYS_CXX" | cut -f 1 -d " "`
+  pkg_cxx_flags=`echo "$SYS_CXX" | cut -f 2- -d " "`
+  if [[ $SYSPLATFORM = android ]]; then
+    veval "\
+    CHOST=$SYS_ARCH \
+    PKG_CONFIG_PATH=$SYS_PREFIX/lib/pkgconfig \
+    PATH=\"$SYS_PREFIX/bin:${pkg_ccdir}:$PATH\" \
+    LDFLAGS=-L$SYS_PREFIX/lib \
+    LD_LIBRARY_PATH=$SYS_PREFIX/lib \
+    GPROF=\"$SYS_GPROF\" \
+    cmake . \
+          -DCMAKE_TOOLCHAIN_FILE=\"$ANDROID_NDK/build/cmake/android.toolchain.cmake\"
+          -DCMAKE_INSTALL_PREFIX=$SYS_PREFIX \
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER=\"$pkg_cc\" \
+          -DCMAKE_C_COMPILER_AR=\"$SYS_AR\" \
+          -DCMAKE_C_COMPILER_RANLIB=\"$SYS_RANLIB\" \
+          -DCMAKE_C_FLAGS=\"$pkg_cc_flags -I$SYS_PREFIX/include\" \
+          -DCMAKE_CXX_COMPILER=\"$pkg_cxx\" \
+          -DCMAKE_CXX_COMPILER_AR=\"$SYS_AR\" \
+          -DCMAKE_CXX_COMPILER_RANLIB=\"$SYS_RANLIB\" \
+          -DCMAKE_CXX_FLAGS=\"$pkg_cxx_flags -I$SYS_PREFIX/include\" \
+          -DCMAKE_LINKER=\"$SYS_LD\" \
+          -DCMAKE_EXE_LINKER_FLAGS=-L$SYS_PREFIX/lib \
+          -DCMAKE_SHARED_LINKER_FLAGS=-L$SYS_PREFIX/lib \
+          -DCMAKE_NM=\"$SYS_NM\" \
+          -DCMAKE_OBJCOPY=\"$SYS_OBJCOPY\" \
+          -DCMAKE_OBJDUMP=\"$SYS_OBJDUMP\" \
+          -DCMAKE_RANLIB=\"$SYS_RANLIB\" \
+          -DCMAKE_READELF=\"$SYS_READELF\" \
+          -DCMAKE_STRIP=\"$SYS_STRIP\" \
+	  $pkg_conf_opt \
+	  -B build"
+    asserterror $? "cmake setup failed"
+  else
+    veval "\
+    CHOST=$SYS_ARCH \
+    PKG_CONFIG_PATH=$SYS_PREFIX/lib/pkgconfig \
+    PATH=\"$SYS_PREFIX/bin:${pkg_ccdir}:$PATH\" \
+    LDFLAGS=-L$SYS_PREFIX/lib \
+    LD_LIBRARY_PATH=$SYS_PREFIX/lib \
+    GPROF=\"$SYS_GPROF\" \
+    cmake . \
+          -DCMAKE_INSTALL_PREFIX=$SYS_PREFIX \
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER=\"$pkg_cc\" \
+          -DCMAKE_C_COMPILER_AR=\"$SYS_AR\" \
+          -DCMAKE_C_COMPILER_RANLIB=\"$SYS_RANLIB\" \
+          -DCMAKE_C_FLAGS=\"$pkg_cc_flags -I$SYS_PREFIX/include\" \
+          -DCMAKE_CXX_COMPILER=\"$pkg_cxx\" \
+          -DCMAKE_CXX_COMPILER_AR=\"$SYS_AR\" \
+          -DCMAKE_CXX_COMPILER_RANLIB=\"$SYS_RANLIB\" \
+          -DCMAKE_CXX_FLAGS=\"$pkg_cxx_flags -I$SYS_PREFIX/include\" \
+          -DCMAKE_LINKER=\"$SYS_LD\" \
+          -DCMAKE_EXE_LINKER_FLAGS=-L$SYS_PREFIX/lib \
+          -DCMAKE_SHARED_LINKER_FLAGS=-L$SYS_PREFIX/lib \
+          -DCMAKE_NM=\"$SYS_NM\" \
+          -DCMAKE_OBJCOPY=\"$SYS_OBJCOPY\" \
+          -DCMAKE_OBJDUMP=\"$SYS_OBJDUMP\" \
+          -DCMAKE_RANLIB=\"$SYS_RANLIB\" \
+          -DCMAKE_READELF=\"$SYS_READELF\" \
+          -DCMAKE_STRIP=\"$SYS_STRIP\" \
+	  -G \"Unix Makefiles\" \
+          $pkg_conf_opt \
+	  -B build"
+    asserterror $? "cmake setup failed"
+  fi
+}
+
 package_make()
 {
   pkg_make=make
@@ -264,6 +341,24 @@ package_make()
   RANLIB=$SYS_RANLIB \
   $pkg_make $pkg_make_opt"
   asserterror $? "$pkg_make failed"
+}
+
+package_cmake_build()
+{
+  echo " => Compiling with CMake" `pwd` "..."
+  pkg_ccdir=`dirname ${pkg_ccdir}`
+  veval "\
+  cmake --build build"
+  asserterror $? "cmake build failed"
+}
+
+package_cmake_install()
+{
+  echo " => Installing with CMake" `pwd` "..."
+  pkg_ccdir=`dirname ${pkg_ccdir}`
+  veval "\
+  cmake --build build --target install"
+  asserterror $? "cmake install failed"
 }
 
 package_cleanup()
