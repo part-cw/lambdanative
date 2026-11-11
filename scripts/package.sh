@@ -250,17 +250,17 @@ package_cmake()
   pkg_cc_flags=`echo "$SYS_CC" | cut -f 2- -d " "`
   pkg_cxx=`echo "$SYS_CXX" | cut -f 1 -d " "`
   pkg_cxx_flags=`echo "$SYS_CXX" | cut -f 2- -d " "`
-  if [[ $SYSPLATFORM = android ]]; then
+  if [[ $SYS_PLATFORM = android ]]; then
     veval "\
-    CHOST=$SYS_ARCH \
-    PKG_CONFIG_PATH=$SYS_PREFIX/lib/pkgconfig \
+    CHOST=\"$SYS_ARCH\" \
+    PKG_CONFIG_PATH=\"$SYS_PREFIX/lib/pkgconfig\" \
     PATH=\"$SYS_PREFIX/bin:${pkg_ccdir}:$PATH\" \
-    LDFLAGS=-L$SYS_PREFIX/lib \
-    LD_LIBRARY_PATH=$SYS_PREFIX/lib \
+    LDFLAGS=\"-L$SYS_PREFIX/lib\" \
+    LD_LIBRARY_PATH=\"$SYS_PREFIX/lib\" \
     GPROF=\"$SYS_GPROF\" \
     cmake . \
-          -DCMAKE_TOOLCHAIN_FILE=\"$ANDROID_NDK/build/cmake/android.toolchain.cmake\"
-          -DCMAKE_INSTALL_PREFIX=$SYS_PREFIX \
+          -DCMAKE_TOOLCHAIN_FILE=\"$ANDROID_NDK/build/cmake/android.toolchain.cmake\" \
+          -DCMAKE_INSTALL_PREFIX=\"$SYS_PREFIX\" \
           -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_C_COMPILER=\"$pkg_cc\" \
           -DCMAKE_C_COMPILER_AR=\"$SYS_AR\" \
@@ -271,8 +271,8 @@ package_cmake()
           -DCMAKE_CXX_COMPILER_RANLIB=\"$SYS_RANLIB\" \
           -DCMAKE_CXX_FLAGS=\"$pkg_cxx_flags -I$SYS_PREFIX/include\" \
           -DCMAKE_LINKER=\"$SYS_LD\" \
-          -DCMAKE_EXE_LINKER_FLAGS=-L$SYS_PREFIX/lib \
-          -DCMAKE_SHARED_LINKER_FLAGS=-L$SYS_PREFIX/lib \
+          -DCMAKE_EXE_LINKER_FLAGS=\"-L$SYS_PREFIX/lib\" \
+          -DCMAKE_SHARED_LINKER_FLAGS=\"-L$SYS_PREFIX/lib\" \
           -DCMAKE_NM=\"$SYS_NM\" \
           -DCMAKE_OBJCOPY=\"$SYS_OBJCOPY\" \
           -DCMAKE_OBJDUMP=\"$SYS_OBJDUMP\" \
@@ -284,15 +284,15 @@ package_cmake()
     asserterror $? "cmake setup failed"
   else
     veval "\
-    CHOST=$SYS_ARCH \
-    PKG_CONFIG_PATH=$SYS_PREFIX/lib/pkgconfig \
+    CHOST=\"$SYS_ARCH\" \
+    PKG_CONFIG_PATH=\"$SYS_PREFIX/lib/pkgconfig\" \
     PATH=\"$SYS_PREFIX/bin:${pkg_ccdir}:$PATH\" \
-    LDFLAGS=-L$SYS_PREFIX/lib \
-    LD_LIBRARY_PATH=$SYS_PREFIX/lib \
+    LDFLAGS=\"-L$SYS_PREFIX/lib\" \
+    LD_LIBRARY_PATH=\"$SYS_PREFIX/lib\" \
     GPROF=\"$SYS_GPROF\" \
     cmake . \
-          -DCMAKE_INSTALL_PREFIX=$SYS_PREFIX \
-          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_INSTALL_PREFIX=\"$SYS_PREFIX\" \
+          -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_C_COMPILER=\"$pkg_cc\" \
           -DCMAKE_C_COMPILER_AR=\"$SYS_AR\" \
           -DCMAKE_C_COMPILER_RANLIB=\"$SYS_RANLIB\" \
@@ -302,8 +302,8 @@ package_cmake()
           -DCMAKE_CXX_COMPILER_RANLIB=\"$SYS_RANLIB\" \
           -DCMAKE_CXX_FLAGS=\"$pkg_cxx_flags -I$SYS_PREFIX/include\" \
           -DCMAKE_LINKER=\"$SYS_LD\" \
-          -DCMAKE_EXE_LINKER_FLAGS=-L$SYS_PREFIX/lib \
-          -DCMAKE_SHARED_LINKER_FLAGS=-L$SYS_PREFIX/lib \
+          -DCMAKE_EXE_LINKER_FLAGS=\"-L$SYS_PREFIX/lib\" \
+          -DCMAKE_SHARED_LINKER_FLAGS=\"-L$SYS_PREFIX/lib\" \
           -DCMAKE_NM=\"$SYS_NM\" \
           -DCMAKE_OBJCOPY=\"$SYS_OBJCOPY\" \
           -DCMAKE_OBJDUMP=\"$SYS_OBJDUMP\" \
