@@ -459,7 +459,7 @@ make_artwork()
           fi
         fi
         asserttool $inkscape
-        inkscapemajorversion=`inkscape --version | cut -d' ' -f2 | cut -d'.' -f1`
+        inkscapemajorversion=`$inkscape --version | cut -d' ' -f2 | cut -d'.' -f1`
         if [ $inkscapemajorversion -ge 1 ]; then
           veval "$inkscape -z $svgsrc -w 1200 -o $pngtgt"
         else
