@@ -45,10 +45,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	(c-lambda (int int int int) (pointer void) "genann_init")
 )
 
-(define genann-free
-	(c-lambda ((pointer void)) void "genann_free")
-)
-
 (define genannRun
 	(c-lambda ((pointer void) (pointer double)) (pointer double) "genannRun")
 )
@@ -58,7 +54,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 )
 
 (define arrayPeek
-	(c-lambda((pointer double) int) double "peek")
+	(c-lambda((pointer double) int int) double "peek")
 )
 
 (define arrayFree
@@ -127,7 +123,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define update-weight(lambda(net index value)
 	(set! weights (pseudo-get-weights net))
-	(array-insert weights index (/ value 1.))
+	(array-insert weights index (exact->inexact value))
 ))
 
 (define get-weights(lambda(net)
@@ -136,7 +132,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	(set! ret (make-vector weightsLen))
 	(let loop ((i 0))
 		(when (< i weightsLen)
-		(vector-set! ret i (arrayPeek weights i))
+		(vector-set! ret i (arrayPeek weights i weightsLen))
 		(loop (+ i 1))) ret)	
 ))
 
@@ -150,7 +146,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	(set! ret (make-vector outputsLen))
 	(let loop ((i 0))
 		(when (< i outputsLen)
-		(vector-set! ret i (arrayPeek outputs i))
+		(vector-set! ret i (arrayPeek outputs i outputsLen))
 		(loop (+ i 1))) ret)	
 ))
 
@@ -164,7 +160,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	(set! ret (make-vector deltaLen))
 	(let loop ((i 0))
 		(when (< i deltaLen)
-		(vector-set! ret i (arrayPeek delta i))
+		(vector-set! ret i (arrayPeek delta i deltaLen))
 		(loop (+ i 1))) ret)	
 ))
 
@@ -177,17 +173,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	(set! inputArr (newArray iLen)) 
 	(let loop ((i 0))
 		(when (< i iLen)
-		(array-insert inputArr i (/ (vector-ref inputs i) 1. ))
+		(array-insert inputArr i (exact->inexact (vector-ref inputs i)))
 		(loop (+ i 1))))
 	(set! oLen (vector-length outputs))
 	(set! outputArr (newArray oLen))
 	(let loop ((i 0))
 		(when (< i oLen)
-		(array-insert outputArr i (/ (vector-ref outputs i) 1. ))
+		(array-insert outputArr i (exact->inexact (vector-ref outputs i)))
 		(loop (+ i 1))))
 	(show-array inputArr iLen)
 	(show-array outputArr oLen)
-	(genannTrain net inputArr iLen outputArr oLen (/ rate 1.))
+	(genannTrain net inputArr iLen outputArr oLen (exact->inexact rate))
 	(arrayFree inputArr)
 	(arrayFree outputArr)
 ))
@@ -197,7 +193,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	(define arr (newArray len))
 	(let loop ((i 0))
 		(when (< i len)
-		(array-insert arr i (/ (vector-ref inputs i) 1.))
+		(array-insert arr i (exact->inexact (vector-ref inputs i)))
 		(loop (+ i 1))))
 	(set! outputs (genannRun net arr))
 	(arrayFree arr)
@@ -205,7 +201,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	(set! ret (make-vector outputsLen))
 	(let loop ((i 0))
 		(when (< i outputsLen)
-		(vector-set! ret i (arrayPeek outputs i))
+		(vector-set! ret i (arrayPeek outputs i outputsLen))
 		(loop (+ i 1))) ret)
 ))
 

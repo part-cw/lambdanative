@@ -1,7 +1,3 @@
-# DON'T TRY 4.9.3 gambit issue #384 define-syntax is broken
-# see https://github.com/gambit/gambit/issues/384
-# PKGURL=https://www.iro.umontreal.ca/~gambit/download/gambit/v4.9/source/gambit-v4_9_3.tgz
-# PKGHASH=a3f836f732f367601d0df8bedb8e1324a14c413b
 PKGURL=https://github.com/gambit/gambit/archive/v4.9.8/gambit-v4.9.8.tar.gz
 PKGHASH=a42e699c0872c68a36214e8cc22f504f03ce6daa
 

@@ -105,8 +105,8 @@ int arrayFree(double *arr){
 	return 0;
 }
 
-double peek(double *arr, int i){ 
-	if (i < sizeof(arr)){ 
+double peek(double *arr, int i, int len){
+	if (arr != 0 && i >= 0 && i < len){
 		return arr[i];
 	} return 0;
 }

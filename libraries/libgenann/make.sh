@@ -1,5 +1,5 @@
-PKGURL=https://github.com/codeplea/genann/archive/refs/tags/v1.0.0.tar.gz
-PKGHASH=d8547e43c135cb85a88b5de6208e352852232500
+PKGURL=https://github.com/codeplea/genann/archive/refs/tags/v1.1.1.tar.gz
+PKGHASH=56a87b3f4b791ed3673df7d169847ce24f80943a
 
 package_download $PKGURL $PKGHASH
 
