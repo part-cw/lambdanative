@@ -61,7 +61,9 @@ end-of-c-declare
 (define EGAROUCID_ERROR_UNSUPPORTED ((c-lambda () int "___result = EGAROUCID_ERROR_UNSUPPORTED;")))
 
 (define egaroucid-version (c-lambda () char-string "egaroucid_version"))
-(define egaroucid-init (c-lambda ((pointer void)) int "egaroucid_global_init"))
+(define egaroucid-init (c-lambda (char-string) int "egaroucid_global_init"))
+(define egaroucid-get-resource-size (c-lambda (char-string) int "egaroucid_get_resource_size"))
+(define egaroucid-get-resource-byte (c-lambda (char-string int) unsigned-int "egaroucid_get_resource_byte"))
 (define egaroucid-create (c-lambda () (pointer void) "egaroucid_create"))
 (define egaroucid-destroy (c-lambda ((pointer void)) void "egaroucid_destroy"))
 (define egaroucid-search_array (c-lambda ((pointer void) (pointer void) int (pointer void) (pointer void)) int "egaroucid_search_array"))

@@ -1,0 +1,12 @@
+--- include/egaroucid/egaroucid.h	2026-11-10 13:27:41.006381198 +0300
++++ include//egaroucid/egaroucid-mod.h	2026-11-11 09:58:51.772803694 +0300
+@@ -58,6 +58,9 @@
+ 
+ EGAROUCID_API egaroucid_status egaroucid_global_init(const char *resource_dir);
+ 
++EGAROUCID_API int egaroucid_get_resource_size(const char *resource_name);
++EGAROUCID_API uint8_t egaroucid_get_resource_byte(const char *resource_name, int resource_byte);
++
+ EGAROUCID_API egaroucid_engine *egaroucid_create(void);
+ EGAROUCID_API void egaroucid_destroy(egaroucid_engine *engine);
+ 

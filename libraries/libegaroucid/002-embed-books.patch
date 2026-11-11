@@ -1,0 +1,118 @@
+--- src/lib/egaroucid_c_api.cpp	2026-11-08 20:04:05.964913542 +0300
++++ src/lib/egaroucid_c_api-mod.cpp	2026-11-11 09:58:10.553027883 +0300
+@@ -1,4 +1,5 @@
+ #include <algorithm>
++#include <cstdio>
+ #include <filesystem>
+ #include <mutex>
+ #include <new>
+@@ -157,6 +158,25 @@
+     return count;
+ }
+ 
++
++std::string copy_resource_file_to_storage(const std::string directory_path, const char *file_name, const uint8_t data_binary[], const size_t data_binary_size) {
++      const size_t bufsize = snprintf(NULL, 0, directory_path.c_str(), "/", file_name);
++      char *buffer;
++      buffer = new char[bufsize+1];
++      snprintf(buffer, sizeof(buffer), directory_path.c_str(), "/", file_name);
++      const int a[] = {1, 2, 3, 4, 5};
++      const size_t n = sizeof(a) / sizeof(a[0]);
++      FILE * pFile = fopen(buffer, "wb");
++      if(pFile) {
++//      fwrite (a, sizeof(int), n, pFile);
++        fclose (pFile);
++      }
++      delete[] buffer;
++      std::string errmsg = strerror(errno);
++    return errmsg;
++}
++
++
+ }  // namespace
+ 
+ extern "C" {
+@@ -195,12 +215,13 @@
+         }
+         g_book_available = book_init(book_file, false);
+         g_initialized = true;
+-        return EGAROUCID_OK;
++        return EGAROUCID_OK; 
+     } catch (...) {
+         g_initialized = false;
+-        g_book_available = false;
+-        return EGAROUCID_ERROR_NOT_INITIALIZED;
+-    }
++        g_book_available = false; 
++    	return EGAROUCID_ERROR_NOT_INITIALIZED;
++    } 
++
+ }
+ 
+ egaroucid_engine *egaroucid_create(void) {
+@@ -384,4 +405,65 @@
+     }
+ }
+ 
++const uint8_t eval_binary[] =
++{
++  #embed "../../bin/resources/eval.egev2"
++};
++const uint8_t eval_move_ordering_end_binary[] =
++{
++  #embed "../../bin/resources/eval_move_ordering_end.egev"
++};
++const uint8_t book_binary[] =
++{
++  #embed "../../bin/resources/book.egbk3"
++};
++const uint8_t hash25_binary[] =
++{
++  #embed "../../bin/resources/hash/hash25.eghs"
++};
++const uint8_t hash26_binary[] =
++{
++  #embed "../../bin/resources/hash/hash26.eghs"
++};
++const uint8_t hash27_binary[] =
++{
++  #embed "../../bin/resources/hash/hash27.eghs"
++};
++ 
++int egaroucid_get_resource_size(const char* resource_name) {
++    int resource_size;
++    if (strcmp(resource_name, "eval")) {
++        resource_size = sizeof(eval_binary)/sizeof(uint8_t);
++    }else if (strcmp(resource_name, "eval_move_ordering_end")) {
++        resource_size = sizeof(eval_move_ordering_end_binary)/sizeof(uint8_t);
++    }else if (strcmp(resource_name, "book")) {
++        resource_size = sizeof(book_binary)/sizeof(uint8_t);
++    }else if (strcmp(resource_name, "hash25")) {
++        resource_size = sizeof(hash25_binary)/sizeof(uint8_t);
++    }else if (strcmp(resource_name, "hash26")) {
++        resource_size = sizeof(hash26_binary)/sizeof(uint8_t);
++    }else if (strcmp(resource_name, "hash27")) {
++        resource_size = sizeof(hash27_binary)/sizeof(uint8_t);
++    }
++    return resource_size;
++}
++
++uint8_t egaroucid_get_resource_byte(const char* resource_name, int resource_byte) {
++    uint8_t byte;
++    if (strcmp(resource_name, "eval")) {
++        byte = eval_binary[resource_byte];
++    }else if (strcmp(resource_name, "eval_move_ordering_end")) {
++        byte = eval_move_ordering_end_binary[resource_byte];
++   }else if (strcmp(resource_name, "book")) {
++        byte = book_binary[resource_byte];
++   }else if (strcmp(resource_name, "hash25")) {
++        byte = hash25_binary[resource_byte];
++   }else if (strcmp(resource_name, "hash26")) {
++        byte = hash26_binary[resource_byte];
++    }else if (strcmp(resource_name, "hash27")) {
++        byte = hash27_binary[resource_byte];
++    }
++    return byte;
++}
++
+ }  // extern "C"
