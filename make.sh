@@ -166,54 +166,45 @@ stringhash()
 
 isnewer()
 {
-  result=no
   if [ ! -e "$2" ]; then
-    result=yes
-  else
-    if `test "$1" -nt "$2"`; then
-      result=yes
-    fi
+    return 0
   fi
-  echo $result
+  [ "$1" -nt "$2" ]
 }
 
 newersourceindir()
 {
-  result="no"
-  tgt="$2"
-  dir=`dirname $1`
-  srcfiles=
+  case "$1" in
+    */*) dir=${1%/*} ;;
+    *) dir=. ;;
+  esac
   for l in $languages; do
-    srcfiles="$srcfiles "`ls -1 $dir/*.$l 2> /dev/null` 
+    for src in "$dir"/*."$l"; do
+      [ -e "$src" ] || continue
+      [ "$src" -nt "$2" ] && return 0
+    done
   done
-  for src in $srcfiles; do
-    if `test "$src" -nt "$tgt"`; then
-      result="yes"
-    fi
-  done
-  echo $result
+  return 1
 }
 
 newerindir()
 {
-  result="no"
   if [ ! -e "$2" ]; then
-    result=yes
-  else
-    tgt="$2"
-    if [ -d $1 ]; then
-      dir=$1
-    else
-      dir=`dirname $1`
-    fi
-    srcfiles=`ls -1 $dir/*`
-    for src in $srcfiles; do
-      if `test "$src" -nt "$tgt"`; then
-        result="yes"
-      fi
-    done
+    return 0
   fi
-  echo $result
+  if [ -d "$1" ]; then
+    dir=$1
+  else
+    case "$1" in
+      */*) dir=${1%/*} ;;
+      *) dir=. ;;
+    esac
+  fi
+  for src in "$dir"/*; do
+    [ -e "$src" ] || continue
+    [ "$src" -nt "$2" ] && return 0
+  done
+  return 1
 }
 
 #################################
@@ -414,7 +405,7 @@ explode_library()
   libfile="$SYS_PREFIX/lib/$libname.a"
   libdir="$SYS_PREFIX/build/$libname"
   if [ -f $libfile ]; then
-    if [ `isnewer $libfile $libdir` = "yes" ]; then
+    if isnewer "$libfile" "$libdir"; then
       rmifexists "$libdir"
       echo " => exploding library $libname.."
       mkdir -p "$libdir"
@@ -447,7 +438,7 @@ make_artwork()
   pngsrc=`locatefile "apps/$SYS_APPNAME/artwork.png" silent`
   if [ "X$pngsrc" = "X" ]; then
     if [ ! "X$svgsrc" = "X" ]; then
-      if [ `isnewer $svgsrc $pngtgt` = "yes" ]; then
+      if isnewer "$svgsrc" "$pngtgt"; then
         echo " => generating master pixmap from SVG.."
         inkscape=inkscape
         if [ $SYS_HOSTPLATFORM = macosx ]; then
@@ -475,7 +466,7 @@ make_artwork()
         assertfile $objsrc
         epssrc=`echo $objsrc | sed 's/obj$/eps/'`
       fi
-      if [ `isnewer $objsrc $epssrc` = "yes" ]; then
+      if isnewer "$objsrc" "$epssrc"; then
         if [ ! "X$objsrc" = "X" ]; then
           assertfile $objsrc
           echo " => generating eps artwork.."
@@ -485,7 +476,7 @@ make_artwork()
       fi
       assertfile $epssrc
       tmpfile="$SYS_PREFIXROOT/build/$SYS_APPNAME/tmp.png"
-      if [ `isnewer $epssrc $pngtgt` = "yes" ]; then
+      if isnewer "$epssrc" "$pngtgt"; then
         echo " => generating master pixmap from EPS.."
         gspostfix=
         if [ $SYS_HOSTPLATFORM = win32 ]; then
@@ -508,7 +499,7 @@ make_artwork()
     . targets/$SYS_PLATFORM/icon-sizes
     for s in $sizes; do
       tgt="$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-$s.png"
-      if [ `isnewer $epssrc $tgt` = "yes" ]; then
+      if isnewer "$epssrc" "$tgt"; then
         echo " => generating "$s"x"$s" pixmap.."
         veval "$SYS_HOSTPREFIX/bin/pngtool scale $pngtgt $s $tgt"
         assertfile $tgt
@@ -525,9 +516,10 @@ make_texturedir()
   if [ -d "$srcdir" ]; then
     images=`ls -1 "$srcdir"/*.png 2> /dev/null`
     for imgfile in $images; do
-      scmfile=$SYS_PREFIXROOT/build/$SYS_APPNAME/textures/"$prefix"`basename $imgfile | sed 's/png$/scm/'`
+      imgname=${imgfile##*/}
+      scmfile=$SYS_PREFIXROOT/build/$SYS_APPNAME/textures/"$prefix"${imgname%.png}.scm
       texture_srcs="$texture_srcs $scmfile"
-      if [ `isnewer $imgfile $scmfile` = "yes" ]; then
+      if isnewer "$imgfile" "$scmfile"; then
         echo " => $imgfile.."
         $SYS_HOSTPREFIX/bin/pngtool png2scm "$imgfile" > "$scmfile"
       fi
@@ -558,7 +550,7 @@ make_fontfile()
 {
   srcfile=$1
   prefix=$2
-  if [ `isnewer $srcfile $incfile` = "yes" ]; then
+  if isnewer "$srcfile" "$incfile"; then
     while read line; do
       fline=`echo "$line" | sed '/^#/d'`
       if [ "$fline" ]; then 
@@ -579,7 +571,7 @@ make_fontfile()
         name=`echo "$fline" | cut -f 4 -d " "`
         scmfile=$tgtdir/${prefix}${name}.scm
         font_srcs="$font_srcs $scmfile"
-        if [ `isnewer $srcfile $scmfile` = "yes" ]; then
+        if isnewer "$srcfile" "$scmfile"; then
            echo " => $name using glyph set $bits.."
            veval "$SYS_HOSTPREFIX/bin/ttftool fnt2scm $font \"$bits\" $sizes $name > $scmfile"
            assertfile $scmfile
@@ -702,7 +694,7 @@ make_stringfile()
       opt=`eval "getparam 5 $fline"`
       scmfile=$tgtdir/${prefix}${name}.scm
       string_srcs="$string_srcs $scmfile"
-      if [ `isnewer $srcfile $scmfile` = "yes" ]; then
+      if isnewer "$srcfile" "$scmfile"; then
          echo " => $name.."
          if [ "$USE_XETEX" = "yes" ]; then 
            make_string_latex $font $size "$label" $name $scmfile $opt
@@ -1294,7 +1286,7 @@ make_library()
   libname=$1
   libdir=`locatedir libraries/$libname`
   libfile="$SYS_PREFIX/lib/$libname.a"
-  if [ "$libname" = "liblambdanative" ] || [ `newerindir $libdir $libfile` = "yes" ]; then
+  if [ "$libname" = "liblambdanative" ] || newerindir "$libdir" "$libfile"; then
     echo " => $libname.."
     cd $libdir
     if [ -f make.sh ]; then
@@ -1418,7 +1410,7 @@ make_lntoolcheck()
   rmifexists $SYS_TMPDIR/tmp.config.cache
   lntools="pngtool packtool ttftool lngtool webassettool"
   for tool in $lntools; do
-    if [ ! -x $SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX ] || [ `newerindir apps/$tool $SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX` = "yes" ]; then
+    if [ ! -x $SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX ] || newerindir "apps/$tool" "$SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX"; then
       echo " => building lambdanative tool $tool.."
       if [ ! -f $SYS_TMPDIR/tmp.config.cache ]; then
         cp $SYS_TMPDIR/config.cache $SYS_TMPDIR/tmp.config.cache
@@ -1559,11 +1551,10 @@ smoke_one()
   here=`pwd`
   cd "$appdir"
   if [ `havetool xvfb-run` = yes ]; then
-      runapp=`xvfb-run $appexelocal`
+      xvfb-run $appexelocal
   else
-      runapp=`$appexelocal`
+      $appexelocal
   fi
-  $runapp
   res=$?
   cd $here
   if [ $res = 0 ] || [ $res = 137 ]; then
