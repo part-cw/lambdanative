@@ -106,7 +106,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     (let ((aw (glgui-width-get))
           (ah (glgui-height-get)))
       (glgui-box gui 0 0 aw ah DarkGreen)
-      (set! form (glgui-uiform gui 0 0 aw ah)))
+      (set! form (glgui-uiform gui 0 0 aw ah #t)))
 
     ;; Set the sandbox up to be the current directory and use the above example as the script
     (glgui-widget-set! gui form 'sandbox (system-directory))
@@ -120,6 +120,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     ;; Create the table to store data (default location for widget values)
     (glgui-widget-set! gui form 'database (make-table))
+    (glgui-widget-set! gui form 'hidden #f)
 
   )
 ;; events

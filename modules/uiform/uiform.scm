@@ -1969,15 +1969,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (uiset 'nodemap '())
 )
 
-(define (glgui-uiform g x y w h)
-  (let ((wgt (glgui-widget-add g
+(define (glgui-uiform g x y w h . initially-hidden)
+  (let* ((initially-hidden
+          (cond
+            ((null? initially-hidden) #f)
+            ((null? (cdr initially-hidden)) (car initially-hidden))
+            (else (error "glgui-uiform: expected at most one optional hidden argument"))))
+         (wgt (glgui-widget-add g
      'x x
      'y y
      'w w
      'h h
      'draw-handle  glgui:uiform-draw
      'input-handle glgui:uiform-input
-     'hidden #f
+     'hidden initially-hidden
      'nodes '()
      'back-node #f
      'next-node #f

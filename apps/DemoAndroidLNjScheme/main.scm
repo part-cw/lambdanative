@@ -83,7 +83,7 @@
    (let ((aw (glgui-width-get))
          (ah (glgui-height-get)))
      (glgui-box gui 0 0 aw ah DarkGreen)
-     (set! form (glgui-uiform gui 0 0 aw ah)))
+     (set! form (glgui-uiform gui 0 0 aw ah #t)))
    
    (glgui-widget-set! gui form 'uiform (list->table (make-uiforms)))
 
@@ -95,6 +95,7 @@
 
    ;; Create the table to store data (default location for widget values)
    (glgui-widget-set! gui form 'database (make-table))
+   (glgui-widget-set! gui form 'hidden #f)
 
    )
  ;; events
