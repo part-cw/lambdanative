@@ -19,7 +19,7 @@ jobs:
     - name: install dependencies
       run: |
         dnf -y install alsa-lib-devel ant autoconf automake bc cmake curl
-        dnf -y install gambit-c gcc gcc-c++ ghostscript git inkscape
+        dnf -y install gambit-c gcc gcc-c++ ghostscript git grep inkscape
         dnf -y install ImageMagick-devel java-25-openjdk-devel libtool
         dnf -y install libXext-devel make mesa-libGL-devel mesa-libGLU-devel
         dnf -y install netpbm-devel patch perl-FindBin poppler-utils portaudio
