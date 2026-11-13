@@ -15,16 +15,24 @@ jobs:
     - uses: actions/checkout@v4
     - name: install dependencies
       run: |
-        brew install autoconf automake cmake ghostscript imagemagick inkscape libtool wget
+        brew install autoconf automake ghostscript imagemagick inkscape libtool
         echo "$(brew --prefix libtool)/libexec/gnubin" >> "$GITHUB_PATH"
+    - name: install XeTeX
+      run: |
+        brew install --cask basictex
+        echo "/Library/TeX/texbin" >> "$GITHUB_PATH"
+        export PATH="/Library/TeX/texbin:$PATH"
+        sudo tlmgr update --self
+        sudo tlmgr install fontspec geometry
     - name: prepare lambdanative
       run: |
         mkdir -p "$HOME/Library/Caches/lambdanative"
         cp SETUP.template SETUP
         cp PROFILE.template PROFILE
-    - name: configure Calculator for macOS
+    - name: build DemoConsole for macOS (to build the toolchain)
       run: |
-        ./configure Calculator macosx
+        ./configure DemoConsole macosx
+        sh make.sh all
     - name: smoke test all apps
       run: |
         sh make.sh smoke | tee "$RUNNER_TEMP/lambdanative-smoke.log"

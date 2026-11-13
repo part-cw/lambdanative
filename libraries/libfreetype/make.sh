@@ -27,7 +27,7 @@ if [ "$SYS_PLATFORM" = "macosx" ] || [ "$SYS_PLATFORM" = "ios" ]; then
   export ac_cv_header_hvf_Scaler_h=no
 fi
 
-package_configure $EXTRACONF --enable-static --disable-shared --without-png --without-harfbuzz --without-zlib --without-bzip2 --enable-freetype-config
+package_configure $EXTRACONF --enable-static --disable-shared --without-png --without-harfbuzz --without-zlib --without-bzip2 --without-brotli --enable-freetype-config
 
 if [ "$SYS_PLATFORM" = "macosx" ] || [ "$SYS_PLATFORM" = "ios" ]; then
   unset ac_cv_header_hvf_Scaler_h
