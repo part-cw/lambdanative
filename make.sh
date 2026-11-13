@@ -290,42 +290,35 @@ is_standalone_app()
 filter_entries()
 {
   filter=$1
-  entries=`echo "$@ " | cut -f 2- -d " "`
-  if [ "X$entries" = "X" ] || [ "X$filter" = "X" ]; then
-    echo ""
-  fi
+  shift
   res=
-  for e in $entries; do
-    entry=`echo "$e" | cut -f 1 -d "!" | cut -f 1 -d "+" `
-    includes=`echo "$e+" | cut -f 2- -d "+"`
-    if [ ! "X$includes" = "X" ]; then
-      included=no
-      for tmp in `echo "$includes" | tr '+' ' '`; do
-        if [ "X$tmp" = "X$filter" ]; then 
-          included=yes
-        fi
-      done
-      if [ $included = yes ]; then
-        res="$res $entry"
-      fi
-    fi
-    excludes=`echo "$e!" | cut -f 2- -d "!"`
-    if [ ! "X$excludes" = "X" ]; then
-      excluded=no
-      for tmp in `echo "$excludes" | tr '!' ' '`; do
-        if [ "X$tmp" = "X$filter" ]; then 
-          excluded=yes
-        fi
-      done
-      if [ $excluded = no ]; then
-        res="$res $entry"
-      fi
-    fi
-    if [ "X$includes" = "X" ] && [ "X$excludes" = "X" ]; then
-      res="$res $entry"
+  for e in $*; do
+    entry=${e%%[+!]*}
+    include_entry=no
+    case "$e" in
+      *+*)
+        case "+${e#*+}+" in
+          *"+$filter+"*) include_entry=yes ;;
+        esac
+        ;;
+      *!*)
+        case "!${e#*!}!" in
+          *"!$filter!"*) ;;
+          *) include_entry=yes ;;
+        esac
+        ;;
+      *)
+        include_entry=yes
+        ;;
+    esac
+    if [ $include_entry = yes ]; then
+      case " $res " in
+        *" $entry "*) ;;
+        *) res="${res:+$res }$entry" ;;
+      esac
     fi
   done
-  echo $res
+  echo "$res"
 }
 
 ###########################
