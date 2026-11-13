@@ -1,0 +1,31 @@
+name: macos-build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: macos
+    runs-on: macos-26
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: install dependencies
+      run: |
+        brew install autoconf automake cmake ghostscript imagemagick inkscape libtool wget
+        echo "$(brew --prefix libtool)/libexec/gnubin" >> "$GITHUB_PATH"
+    - name: prepare lambdanative
+      run: |
+        mkdir -p "$HOME/Library/Caches/lambdanative"
+        cp SETUP.template SETUP
+        cp PROFILE.template PROFILE
+    - name: configure Calculator for macOS
+      run: |
+        ./configure Calculator macosx
+    - name: smoke test all apps
+      run: |
+        sh make.sh smoke | tee "$RUNNER_TEMP/lambdanative-smoke.log"
+        grep -q 'SMOKED .* apps of which 0 failed' "$RUNNER_TEMP/lambdanative-smoke.log"
