@@ -1543,6 +1543,7 @@ smoke_one()
     ) &
   here=`pwd`
   cd "$appdir"
+  mkdir -p "$appdir/log"
   launch_output="$SYS_TMPDIR/$SYS_APPNAME.launch.log"
   if [ `havetool xvfb-run` = yes ]; then
       xvfb-run "$appexelocal" > "$launch_output" 2>&1
