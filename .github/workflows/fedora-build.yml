@@ -14,16 +14,16 @@ jobs:
       image: fedora:41
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - run: cat /etc/os-release
     - name: install dependencies
       run: |
-        dnf -y install alsa-lib-devel ant autoconf automake bc curl gambit-c
-        dnf -y install gcc gcc-c++ ghostscript git inkscape ImageMagick-devel
-        dnf -y install java-17-openjdk-devel libtool libXext-devel make
-        dnf -y install mesa-libGL-devel mesa-libGLU-devel netpbm-devel patch
-        dnf -y install perl-FindBin poppler-utils portaudio procps-ng
-        dnf -y install python3-sdkmanager sed tar tcl-devel texlive 
+        dnf -y install alsa-lib-devel ant autoconf automake bc cmake curl
+        dnf -y install gambit-c gcc gcc-c++ ghostscript git inkscape
+        dnf -y install ImageMagick-devel java-17-openjdk-devel libtool
+        dnf -y install libXext-devel make mesa-libGL-devel mesa-libGLU-devel
+        dnf -y install netpbm-devel patch perl-FindBin poppler-utils portaudio
+        dnf -y install procps-ng python3-sdkmanager sed tar tcl-devel texlive
         dnf -y install texlive-ps2eps tree xorg-x11-server-Xvfb wget zip
     - name: prepare lambdanative
       run : |
