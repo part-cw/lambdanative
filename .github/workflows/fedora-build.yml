@@ -19,7 +19,7 @@ jobs:
     - name: install dependencies
       run: |
         dnf -y install alsa-lib-devel ant autoconf automake bc cmake curl
-        dnf -y install gambit-c gcc gcc-c++ ghostscript git grep inkscape
+        dnf -y install gambit-c gcc14 gcc14-c++ ghostscript git grep inkscape
         dnf -y install ImageMagick-devel java-25-openjdk-devel libtool
         dnf -y install libXext-devel make mesa-libGL-devel mesa-libGLU-devel
         dnf -y install netpbm-devel patch perl-FindBin poppler-utils portaudio
@@ -31,6 +31,11 @@ jobs:
        mkdir -p /github/home/.cache/lambdanative
        cp SETUP.template SETUP
        cp PROFILE.template PROFILE
+       # Use older compiler until
+       # https://github.com/part-cw/lambdanative/issues/492
+       # is resolved
+       sed -i 's|SYS_CC="gcc $SYS|SYS_CC="gcc-14 $SYS|g' targets/linux/host_linux
+       sed -i 's|SYS_CXX="g++ $SYS|SYS_CXX="g++-14 $SYS|g' targets/linux/host_linux
     - name: build DemoConsole
       run: |
        ./configure DemoConsole
