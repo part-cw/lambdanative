@@ -125,4 +125,37 @@ end-of-c-declare
     (if data (begin (with-output-to-file dst (lambda ()
         (write-subu8vector data 0 datalen))) #t) #f)))
 
+;; unit test
+
+(define zip:test-archive
+  '#u8(80 75 3 4 10 0 0 0 0 0 206 96 204 70 42 136 95 80 8 0 0 0 8 0 0 0 6 0 28 0
+    116 101 115 116 109 101 85 84 9 0 3 179 45 123 85 179 45 123 85 117 120 11 0 1 4
+    245 1 0 0 4 20 0 0 0 84 69 83 84 32 77 69 10 80 75 1 2 30 3 10 0 0 0 0 0 206 96
+    204 70 42 136 95 80 8 0 0 0 8 0 0 0 6 0 24 0 0 0 0 0 1 0 0 0 164 129 0 0 0 0 116
+    101 115 116 109 101 85 84 5 0 3 179 45 123 85 117 120 11 0 1 4 245 1 0 0 4 20 0 0
+    0 80 75 5 6 0 0 0 0 1 0 1 0 76 0 0 0 72 0 0 0 0 0))
+
+(unit-test "zip" "list and read entries from an archive"
+  (lambda ()
+    (let* ((testzip (string-append (system-directory) (system-pathseparator) "zip-unittest.zip"))
+           (testfile (string-append (system-directory) (system-pathseparator) "zip-unittest.txt")))
+      (if (file-exists? testzip) (delete-file testzip))
+      (if (file-exists? testfile) (delete-file testfile))
+      (with-output-to-file testzip
+        (lambda () (write-subu8vector zip:test-archive 0 (u8vector-length zip:test-archive))))
+      (let* ((entries (zip-dir testzip))
+             (data (zipentry->u8vector testzip "testme"))
+             (extracted (and (zipentry->file testzip "testme" testfile)
+                             (file-exists? testfile)))
+             (filedata (if extracted
+                           (with-input-from-file testfile (lambda () (read-line)))
+                           #f))
+             (result (and (equal? entries '("testme"))
+                          (equal? data (string->u8vector "TEST ME\n"))
+                          extracted
+                          (equal? filedata "TEST ME"))))
+        (if (file-exists? testzip) (delete-file testzip))
+        (if (file-exists? testfile) (delete-file testfile))
+        result))))
+
 ;; eof

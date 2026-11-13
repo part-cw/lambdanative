@@ -31,9 +31,17 @@ package_valid()
 
   if [ -f "$pkg_valid_file" ]; then
     if [ "$SYS_HOSTPLATFORM" = "openbsd" ]; then
-      pkg_valid_actual=$(sha1 -q "$pkg_valid_file")
+      if [ ${#pkg_valid_hash} = 64 ]; then
+        pkg_valid_actual=$(sha256 -q "$pkg_valid_file")
+      else
+        pkg_valid_actual=$(sha1 -q "$pkg_valid_file")
+      fi
     else
-      pkg_valid_actual=$(shasum "$pkg_valid_file" | cut -f 1 -d " ")
+      if [ ${#pkg_valid_hash} = 64 ]; then
+        pkg_valid_actual=$(shasum -a 256 "$pkg_valid_file" | cut -f 1 -d " ")
+      else
+        pkg_valid_actual=$(shasum "$pkg_valid_file" | cut -f 1 -d " ")
+      fi
     fi
 
     if [ "$pkg_valid_actual" = "$pkg_valid_hash" ]; then
@@ -148,7 +156,11 @@ package_download_ball()
   fi
   pkg=$SYS_PREFIXROOT/packages/$pkg_basename
   if [ $SYS_HOSTPLATFORM = openbsd ]; then
-    asserttool sha1
+    if [ ${#pkg_hash} = 64 ]; then
+      asserttool sha256
+    else
+      asserttool sha1
+    fi
   else 
     asserttool shasum
   fi
@@ -168,9 +180,17 @@ package_download_ball()
     fi
     asserterror $?  "download of $pkg_url failed"
     if [ "$SYS_HOSTPLATFORM" = "openbsd" ]; then
-      echo " == hash "$(sha1 -q "$pkg")
+      if [ ${#pkg_hash} = 64 ]; then
+        echo " == hash "$(sha256 -q "$pkg")
+      else
+        echo " == hash "$(sha1 -q "$pkg")
+      fi
     else
-      echo " == hash "$(shasum "$pkg" | cut -f 1 -d " ")
+      if [ ${#pkg_hash} = 64 ]; then
+        echo " == hash "$(shasum -a 256 "$pkg" | cut -f 1 -d " ")
+      else
+        echo " == hash "$(shasum "$pkg" | cut -f 1 -d " ")
+      fi
     fi
     if [ "$(package_valid "$pkg" "$pkg_hash")" = "no" ]; then
       rmifexists "$pkg"
@@ -252,6 +272,12 @@ package_cmake()
   pkg_cc_flags=`echo "$SYS_CC" | cut -f 2- -d " "`
   pkg_cxx=`echo "$SYS_CXX" | cut -f 1 -d " "`
   pkg_cxx_flags=`echo "$SYS_CXX" | cut -f 2- -d " "`
+  pkg_ranlib=`which "$SYS_RANLIB" 2> /dev/null`
+  asserterror $? "ranlib not found: $SYS_RANLIB"
+  case "$pkg_ranlib" in
+    /*) ;;
+    *) pkg_ranlib=`cd "$(dirname "$pkg_ranlib")" && pwd`/`basename "$pkg_ranlib"` ;;
+  esac
   if [[ $SYS_PLATFORM = android ]]; then
     veval "\
     CHOST=\"$SYS_ARCH\" \
@@ -268,11 +294,11 @@ package_cmake()
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_C_COMPILER=\"$pkg_cc\" \
           -DCMAKE_C_COMPILER_AR=\"$SYS_AR\" \
-          -DCMAKE_C_COMPILER_RANLIB=\"$SYS_RANLIB\" \
+          -DCMAKE_C_COMPILER_RANLIB=\"$pkg_ranlib\" \
           -DCMAKE_C_FLAGS=\"$pkg_cc_flags -I$SYS_PREFIX/include\" \
           -DCMAKE_CXX_COMPILER=\"$pkg_cxx\" \
           -DCMAKE_CXX_COMPILER_AR=\"$SYS_AR\" \
-          -DCMAKE_CXX_COMPILER_RANLIB=\"$SYS_RANLIB\" \
+          -DCMAKE_CXX_COMPILER_RANLIB=\"$pkg_ranlib\" \
           -DCMAKE_CXX_FLAGS=\"$pkg_cxx_flags -I$SYS_PREFIX/include\" \
           -DCMAKE_LINKER=\"$SYS_LD\" \
           -DCMAKE_EXE_LINKER_FLAGS=\"-L$SYS_PREFIX/lib\" \
@@ -280,7 +306,7 @@ package_cmake()
           -DCMAKE_NM=\"$SYS_NM\" \
           -DCMAKE_OBJCOPY=\"$SYS_OBJCOPY\" \
           -DCMAKE_OBJDUMP=\"$SYS_OBJDUMP\" \
-          -DCMAKE_RANLIB=\"$SYS_RANLIB\" \
+          -DCMAKE_RANLIB=\"$pkg_ranlib\" \
           -DCMAKE_READELF=\"$SYS_READELF\" \
           -DCMAKE_STRIP=\"$SYS_STRIP\" \
 	  $pkg_conf_opt \
@@ -319,11 +345,11 @@ package_cmake()
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_C_COMPILER=\"$pkg_cc\" \
           -DCMAKE_C_COMPILER_AR=\"$SYS_AR\" \
-          -DCMAKE_C_COMPILER_RANLIB=\"$SYS_RANLIB\" \
+          -DCMAKE_C_COMPILER_RANLIB=\"$pkg_ranlib\" \
           -DCMAKE_C_FLAGS=\"$pkg_cc_flags -I$SYS_PREFIX/include\" \
           -DCMAKE_CXX_COMPILER=\"$pkg_cxx\" \
           -DCMAKE_CXX_COMPILER_AR=\"$SYS_AR\" \
-          -DCMAKE_CXX_COMPILER_RANLIB=\"$SYS_RANLIB\" \
+          -DCMAKE_CXX_COMPILER_RANLIB=\"$pkg_ranlib\" \
           -DCMAKE_CXX_FLAGS=\"$pkg_cxx_flags -I$SYS_PREFIX/include\" \
           -DCMAKE_LINKER=\"$SYS_LD\" \
           -DCMAKE_EXE_LINKER_FLAGS=\"-L$SYS_PREFIX/lib\" \
@@ -331,7 +357,7 @@ package_cmake()
           -DCMAKE_NM=\"$SYS_NM\" \
           -DCMAKE_OBJCOPY=\"$SYS_OBJCOPY\" \
           -DCMAKE_OBJDUMP=\"$SYS_OBJDUMP\" \
-          -DCMAKE_RANLIB=\"$SYS_RANLIB\" \
+          -DCMAKE_RANLIB=\"$pkg_ranlib\" \
           -DCMAKE_READELF=\"$SYS_READELF\" \
           -DCMAKE_STRIP=\"$SYS_STRIP\" \
 	  -G \"Unix Makefiles\" \
