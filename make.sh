@@ -1543,17 +1543,35 @@ smoke_one()
     ) &
   here=`pwd`
   cd "$appdir"
+  launch_output="$SYS_TMPDIR/$SYS_APPNAME.launch.log"
   if [ `havetool xvfb-run` = yes ]; then
-      xvfb-run $appexelocal
+      xvfb-run "$appexelocal" > "$launch_output" 2>&1
   else
-      $appexelocal
+      "$appexelocal" > "$launch_output" 2>&1
   fi
   res=$?
+  cat "$launch_output"
+  rmifexists "$launch_output"
   cd $here
   if [ $res = 0 ] || [ $res = 137 ]; then
      smoke_result $smoker "PASS"
   else
-     echo "ERROR: launch failed"
+     echo "ERROR: launch failed (exit status $res)"
+     if [ -d "$appdir/log" ]; then
+       found_log=no
+       for logfile in "$appdir"/log/*; do
+         if [ -f "$logfile" ]; then
+           found_log=yes
+           echo "---- $logfile (last 200 lines) ----"
+           tail -n 200 "$logfile"
+         fi
+       done
+       if [ "$found_log" = no ]; then
+         echo "No application log files found in $appdir/log"
+       fi
+     else
+       echo "No application log directory found at $appdir/log"
+     fi
      smoke_result $smoker "**FAIL"
   fi
 }
