@@ -1,4 +1,4 @@
-PKGURL=https://download.savannah.gnu.org/releases/freetype/freetype-2.15.0.tar.gz
+PKGURL=https://download-mirror.savannah.gnu.org/releases/freetype/freetype-2.15.0.tar.gz
 PKGHASH=9186627467a616d9a9e3e574748ac0c45fa77398e6364edef3041a8ba8d92f64
 
 package_download $PKGURL $PKGHASH
