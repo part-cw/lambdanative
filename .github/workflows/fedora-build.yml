@@ -24,7 +24,7 @@ jobs:
         dnf -y install libXext-devel make mesa-libGL-devel mesa-libGLU-devel
         dnf -y install netpbm-devel patch perl-FindBin poppler-utils portaudio
         dnf -y install procps-ng python3-sdkmanager sed tar tcl-devel texlive
-        dnf -y install texlive-ps2eps tree xorg-x11-server-Xvfb wget zip
+        dnf -y install texlive-ps2eps tree xorg-x11-server-Xvfb wget which zip
     - name: prepare lambdanative
       run : |
        # Make directory to avoid errors during build
