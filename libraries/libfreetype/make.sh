@@ -1,5 +1,5 @@
-PKGURL=https://download.savannah.gnu.org/releases/freetype/freetype-2.10.1.tar.gz
-PKGHASH=3296b64ad1e7540289f22e4b6383e26e928b0a20
+PKGURL=https://download.savannah.gnu.org/releases/freetype/freetype-2.15.0.tar.gz
+PKGHASH=9186627467a616d9a9e3e574748ac0c45fa77398e6364edef3041a8ba8d92f64
 
 package_download $PKGURL $PKGHASH
 package_patch
@@ -23,10 +23,15 @@ if [ "$SYS_PLATFORM" = "win32" ]; then
   fi
 fi
 
+if [ "$SYS_PLATFORM" = "macosx" ] || [ "$SYS_PLATFORM" = "ios" ]; then
+  export ac_cv_header_hvf_Scaler_h=no
+fi
 
 package_configure $EXTRACONF --enable-static --disable-shared --without-png --without-harfbuzz --without-zlib --without-bzip2 --enable-freetype-config
 
-
+if [ "$SYS_PLATFORM" = "macosx" ] || [ "$SYS_PLATFORM" = "ios" ]; then
+  unset ac_cv_header_hvf_Scaler_h
+fi
 
 package_make
 package_make install
