@@ -16,7 +16,7 @@ splash_update=no
 if [ ! -f "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default.png" ]; then
   splash_update=yes
 fi
-if [ -f "$splash_src" ] && [ `isnewer "$splash_src" "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default.png"` = yes ]; then
+if [ -f "$splash_src" ] && isnewer "$splash_src" "$SYS_PREFIXROOT/build/$SYS_APPNAME/Default.png"; then
   splash_update=yes
 fi
 

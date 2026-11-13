@@ -60,7 +60,7 @@ if [ `is_gui_app` = yes ]; then
   for size in $sizes; do
     srcimg=${srcprefix}-${size}.png
     assertfile "$srcimg"
-    if [ `isnewer "$srcimg" "$tgtimg"` = yes ]; then
+    if isnewer "$srcimg" "$tgtimg"; then
       update=yes
     fi
   done

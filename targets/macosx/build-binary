@@ -59,7 +59,7 @@ if [ `is_gui_app` = "yes" ]; then
     srcimg=$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-$size.png
     tgtimg=$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-$size.tif
     assertfile $srcimg
-    if [ `isnewer $srcimg $tgtimg` = "yes" ]; then
+    if isnewer "$srcimg" "$tgtimg"; then
       echo " => generating $tgtimg.."
       convert $srcimg $tgtimg
       dirty=yes

@@ -102,15 +102,15 @@ compile_payload_scm()
         scm_topdir=`dirname $scm_src`
         scm_topdir=`basename $scm_topdir`
         if [ "X$scm_topdir" = "Xtextures" ] || [ "X$scm_topdir" = "Xstrings" ] || [ "Xscm_$topdir" = "Xfonts" ]; then
-          if [ `isnewer "$scm_src" "$scm_otgt"` = "yes" ]; then
+          if isnewer "$scm_src" "$scm_otgt"; then
             scm_dirty=yes
           fi
         else
-          if [ `newersourceindir "$scm_src" "$scm_otgt"` = "yes" ]; then
+          if newersourceindir "$scm_src" "$scm_otgt"; then
             scm_dirty=yes
           fi
 	  # This is actually much too less, should test all included/loaded files too.
-          if [ -f $scm_hdr -a `isnewer "$scm_hdr" "$scm_otgt"` = "yes" ]; then
+          if [ -f "$scm_hdr" ] && isnewer "$scm_hdr" "$scm_otgt"; then
             scm_dirty=yes
           fi
 	  # ln_repl module special-case: always re-compile to make global macro changes available
