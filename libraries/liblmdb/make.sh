@@ -1,9 +1,8 @@
 
-PKGURL=git://git.openldap.org/openldap.git
-PKGBRANCH=mdb.master
-PKGHASH=
+PKGURL=https://www.openldap.org/software/download/OpenLDAP/openldap-release/openldap-2.6.16.tgz
+PKGHASH=8d8452bc3f56aa7a392c62dd377733f83d1314eed6c52fe44028439a3bb4df18
 
-package_download $PKGURL $PKGHASH $PKGBRANCH
+package_download $PKGURL $PKGHASH
 
 package_patch
 
