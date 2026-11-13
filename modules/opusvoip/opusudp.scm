@@ -55,6 +55,8 @@ void opusvoip_phone_hangup();
   #include <winsock2.h>
 #else
   #include <netinet/in.h>
+  #include <sys/select.h>
+  #include <unistd.h>
 #endif
 #include <sys/types.h>
 #include <opus/opus.h>
@@ -63,12 +65,6 @@ void opusvoip_phone_hangup();
   #include <sys/socket.h>
 #else
   #include <sys/fcntl.h>
-  #include <sys/unistd.h>
-#endif
-
-#ifdef IOS
-  #include <sys/select.h>
-  #include <unistd.h>
 #endif
 
 // OPUS PORT
