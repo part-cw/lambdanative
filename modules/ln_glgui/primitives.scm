@@ -202,7 +202,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (define (glgui-utf8-set! flag)
   (if flag (begin
-    (set! glgui:string->glyphs utf8string->unicode)
+    (set! glgui:string->glyphs utf8string->unicode/fallback)
     (set! glgui:glyphs->string unicode->utf8string)
   ) (begin
     (set! glgui:string->glyphs (lambda (s) (map char->integer (string->list s))))
@@ -210,6 +210,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   )))
 
 (glgui-utf8-set! #t)
+
+(unit-test "glgui-utf8" "Unicode and UTF-8 strings"
+  (lambda ()
+    (let* ((codepoints '(#x090f #x0915 #x20 #x0939 #x092b #x094d #x0924 #x0947))
+           (unicode-string (list->string (map integer->char codepoints)))
+           (utf8-string (list->string
+                         (map integer->char
+                              '(#xe0 #xa4 #x8f #xe0 #xa4 #x95 #x20
+                                #xe0 #xa4 #xb9 #xe0 #xa4 #xab
+                                #xe0 #xa5 #x8d #xe0 #xa4 #xa4
+                                #xe0 #xa5 #x87)))))
+      (and (equal? (glgui:string->glyphs unicode-string) codepoints)
+           (equal? (glgui:string->glyphs utf8-string) codepoints)))))
 
 ;;; BEGIN CODE TRANSITION
 ;;;
