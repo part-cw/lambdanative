@@ -1,8 +1,8 @@
-[![fedora-build](https://github.com/part-cw/lambdanative/actions/workflows/fedora-build.yml/badge.svg)](https://github.com/part-cw/lambdanative/actions/workflows/fedora-build.yml) [![macos-build](https://github.com/part-cw/lambdanative/actions/workflows/macos-build.yml/badge.svg)](https://github.com/part-cw/lambdanative/actions/workflows/macos-build.yml)
+[![fedora-build](https://github.com/part-cw/lambdanative/actions/workflows/fedora-build.yml/badge.svg)](https://github.com/part-cw/lambdanative/actions/workflows/fedora-build.yml) [![macos-build](https://github.com/part-cw/lambdanative/actions/workflows/macos-build.yml/badge.svg)](https://github.com/part-cw/lambdanative/actions/workflows/macos-build.yml) [![windows-build](https://github.com/part-cw/lambdanative/actions/workflows/windows-build.yml/badge.svg)](https://github.com/part-cw/lambdanative/actions/workflows/windows-build.yml)
 
 # LambdaNative is in need of new maintainers. Please see https://github.com/part-cw/lambdanative/issues/475 for details
 
-## Introduction 
+## Introduction
 LambdaNative is an open-source (BSD licensed) cross-platform development environment written in Scheme ([Gambit-C](https://github.com/feeley/gambit)), supporting Android, iOS, BlackBerry 10, OS X, Linux, Windows, OpenBSD, NetBSD, FreeBSD and OpenWrt.
 
 If you use the LambdaNative framework for your own work, please reference this [ICFP paper](https://github.com/part-cw/lambdanative/blob/master/docs/lambdanative_icfp13.pdf?raw=true).
@@ -10,7 +10,7 @@ A slideshow describing the LambdaNative framework is available [here](https://gi
 
 The repository contains a number of [demonstration programs](apps), inlcuding the games [uSquish](apps/USquish) and [LineDrop](apps/LineDrop), and a [Calculator](apps/Calculator).
 
-## Documentation 
+## Documentation
 Instructions for getting started and API documentation can be found in the wiki:
 [ **LambdaNative Documentation and Support** ](../../wiki/Home)
 

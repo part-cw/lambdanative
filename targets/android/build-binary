@@ -84,40 +84,6 @@ if [ "X$ANDROIDSDK" = "X" ]; then
   exit
 fi
 
-use_android_tool=yes
-
-if [ -x "$ANDROIDSDK/tools/bin/avdmanager" ]; then
-  echo " == this SDK is gradle based, adjusting for ant build.."
-  touch $ANDROIDSDK/testwr
-  assertfile $ANDROIDSDK/testwr "Unsupported sdk tools, and sdk not writable. Giving up."
-  rm $ANDROIDSDK/testwr
-  if [ ! -d $ANDROIDSDK/tools.gradle ]; then
-    mv $ANDROIDSDK/tools $ANDROIDSDK/tools.gradle
-  fi
-  if [ -e $ANDROIDSDK/tools ]; then
-    rm $ANDROIDSDK/tools
-  fi
-  # get the latest supported ant build version
-  if [ ! -d $ANDROIDSDK/tools.ant ]; then
-    echo " == downloading tools for ant build.."
-    dir_antbuild=`pwd`
-    cd $ANDROIDSDK
-    if [ -f ant_tools.zip ]; then
-      rm ant_tools.zip
-    fi
-    wget http://dl.google.com/android/repository/tools_r25.2.5-$SYS_HOSTPLATFORM.zip -O ant_tools.zip
-    asserterror $? "download failed"
-    unzip -q ./ant_tools.zip
-    rm ant_tools.zip
-    mv tools tools.ant
-    cd tools.ant/lib
-    ln -s x86_64 aarch64
-    cd "$dir_antbuild"
-  fi
-  # point us to the ant tools
-  ln -s $ANDROIDSDK/tools.ant $ANDROIDSDK/tools
-fi
-
 echo " => creating android project.."
 #tmpdir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
 tmpdir="$SYS_TMPDIR/tmp_build"
@@ -126,100 +92,26 @@ if [ -d "$tmpdir" ]; then
 fi
 mkdir -p "$tmpdir"
 
-if [ $use_android_tool = no ]; then
-  ANDROIDSDKTARGET=`$ANDROIDSDK/tools/bin/avdmanager list target | grep "^id:" | grep "android-$SYS_ANDROIDAPI" | cut -f 2 -d " "`
-else
-  ANDROIDSDKTARGET=`$ANDROIDSDK/tools/android list targets | grep "^id:" | grep "android-$SYS_ANDROIDAPI" | cut -f 2 -d " "`
-fi
-if [ "X$ANDROIDSDKTARGET" = "X" ]; then
-  echo "ERROR: API $SYS_ANDROIDAPI not a target."
-  exit
-else
-  echo " => using target $ANDROIDSDKTARGET [API $SYS_ANDROIDAPI]"
-fi
-
-if [ $use_android_tool = yes ]; then
-$ANDROIDSDK/tools/android --silent create project \
-  --target $ANDROIDSDKTARGET --name $SYS_APPNAME --path $tmpdir \
-  --activity $SYS_APPNAME --package $SYS_PACKAGE_DOT
-else
-assert "### Gradle is not supported"
-fi
-
-# try to include support.v4 library
-if [ -f $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar ]; then
-  cp -r $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar $tmpdir/libs
-  echo " => support-v4 library loaded"
-else
-  # look for support-v4 in alternate location
-  # special support for API 19
-  if [ $SYS_ANDROIDAPI -eq "19" ]; then
-    if [ -f $ANDROIDSDK/extras/android/m2repository/com/android/support/support-v4/19.1.0/support-v4-19.1.0.jar ]; then
-      cp -r $ANDROIDSDK/extras/android/m2repository/com/android/support/support-v4/19.1.0/support-v4-19.1.0.jar $tmpdir/libs
-      echo " => support-v4 library loaded (version 19)"
-    fi
-  else
-  # Find the directory containing the support-v4 AAR file
-  # Only folders from 20 - 23 have the full AAR file needed
-    supportv4version=$SYS_ANDROIDAPI
-    if [ $supportv4version -gt 23 ]; then
-      supportv4version="23"
-    fi
-    v4dir=""
-    while [ $supportv4version -gt "19" ]; do
-      v4dir=`find $ANDROIDSDK/extras/android/m2repository/com/android/support/support-v4 -name "$supportv4version*" | grep -v -e "alpha" -e "beta" | sort | tail -1`
-      if [ ! "X$v4dir" = "X" ]; then
-        break
-      fi
-      supportv4version=`expr ${supportv4version} - 1`
-    done
-    # If a directory is found, check if classes.jar has already been extracted. If not, extract it from the AAR
-    if [ ! "X$v4dir" = "X" ]; then
-      v4file=`find $v4dir -name classes.jar`
-      if [ ! -s "$v4file" ]; then
-        if [ -d $SYS_PREFIXROOT/android/support ]; then
-          v4file=`find $SYS_PREFIXROOT/android/support -name $supportv4version-classes.jar`
-        fi
-      fi
-      if [ ! -s "$v4file" ]; then
-        v4aar=`find $v4dir -name support-v4*.aar`
-        if [ -s "$v4aar" ]; then
-          unzip $v4aar classes.jar -d $SYS_PREFIXROOT/android/support > /dev/null && mv $SYS_PREFIXROOT/android/support/classes.jar $SYS_PREFIXROOT/android/support/$supportv4version-classes.jar
-          v4file=`find $SYS_PREFIXROOT/android/support -name $supportv4version-classes.jar`
-        fi
-      fi
-      # If a classes.jar file has been found, copy it to libs
-      if [ -s "$v4file" ]; then
-        cp -r $v4file $tmpdir/libs/classes.jar
-        echo " => support-v4 library loaded (version $supportv4version)"
-      else
-        echo " => warning: support-v4 library not found"
-      fi
-    else
-      echo " => warning: support-v4 library not found"
-    fi
-  fi
-fi
-
+ANDROID_GRADLE_DEPENDENCIES="implementation 'com.android.support:support-v4:28.0.0'"
 if [ "$NEED_GCM" = "yes" ]; then
-  cp -r $ANDROIDSDK/extras/google/google_play_services/libproject/google-play-services_lib $tmpdir
-  cp -r $ANDROIDSDK/extras/android/support/v4/android-support-v4.jar $tmpdir/libs
-  cp $tmpdir/build.xml $tmpdir/google-play-services_lib
-  cp $tmpdir/local.properties $tmpdir/google-play-services_lib
-
-  if [ $use_android_tool = yes ]; then
-    $ANDROIDSDK/tools/android --silent update project \
-      --target $ANDROIDSDKTARGET --path $tmpdir \
-      --library ./google-play-services_lib
-  else
-    assert "### gradle is not supported"
-  fi
-
+  ANDROID_GRADLE_DEPENDENCIES="$ANDROID_GRADLE_DEPENDENCIES; implementation 'com.google.android.gms:play-services-gcm:17.0.0'"
 fi
+
+ANDROID_SETTINGS_INCLUDES=
+if [ `has_module hybridapp-xwalk` = yes ]; then
+  ANDROID_SETTINGS_INCLUDES="include ':libxwalk'; project(':libxwalk').projectDir = file('libxwalk')"
+  ANDROID_GRADLE_DEPENDENCIES="$ANDROID_GRADLE_DEPENDENCIES; implementation project(':libxwalk')"
+fi
+ANDROID_JAVA_VERSION=${JAVAVERSION:-1.8}
+ac_subst ANDROID_GRADLE_DEPENDENCIES "$ANDROID_GRADLE_DEPENDENCIES"
+ac_subst ANDROID_SETTINGS_INCLUDES "$ANDROID_SETTINGS_INCLUDES"
+ac_subst ANDROID_JAVA_VERSION "$ANDROID_JAVA_VERSION"
 
 echo " => preparing icons.."
 mkdir -p $tmpdir/res/drawable
+mkdir -p "$tmpdir/res/values"
 cp $SYS_PREFIXROOT/build/$SYS_APPNAME/artwork-72.png $tmpdir/res/drawable/icon.png
+ac_output loaders/android/strings.xml.in $tmpdir/res/values/strings.xml
 
 # transfering sound files
 make_soundfile_android()
@@ -257,6 +149,7 @@ fi
 
 echo " => transferring java hook.."
 appdir=$tmpdir/src/$SYS_PACKAGE_SLASH
+mkdir -p "$appdir"
 ac_output loaders/android/bootstrap.java.in $appdir/$SYS_APPNAME.java
 
 echo " => transferring java public classes and jars from modules.."
@@ -328,10 +221,10 @@ cd $tmpdir
 
 if [ $SYS_MODE = "debug" ]; then
   echo " => compiling payload module with debug options.."
-  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build APP_ABI=\"$SYS_ANDROID_ABIs\" NDK_LOG=1 NDK_DEBUG=1"
+  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build APP_PLATFORM=android-$SYS_ANDROIDAPI APP_ABI=\"$SYS_ANDROID_ABIs\" NDK_LOG=1 NDK_DEBUG=1"
 else
   echo " => compiling payload module.."
-  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build --silent APP_ABI=\"$SYS_ANDROID_ABIs\""
+  veval "NDK_MODULE_PATH=$tmpmoddir $ANDROIDNDK/ndk-build --silent APP_PLATFORM=android-$SYS_ANDROIDAPI APP_ABI=\"$SYS_ANDROID_ABIs\""
 fi
 asserterror $?
 
@@ -345,6 +238,7 @@ done
 # manage hybrid apps
 if [ `has_module hybridapp` = yes ]; then
   echo " => adding webview.."
+  mkdir -p $tmpdir/res/layout
 cat > $tmpdir/res/layout/main.xml << __EOF
 <WebView
   xmlns:android="http://schemas.android.com/apk/res/android"
@@ -358,19 +252,12 @@ fi
 if [ `has_module hybridapp-xwalk` = yes ]; then
   echo " => adding crosswalk.."
   if [ -d $SYS_PREFIX/lib/libxwalk ]; then
-    rmifexists "$SYS_TMPDIR/libxwalk"
-    cp -R -f $SYS_PREFIX/lib/libxwalk $SYS_TMPDIR/
-    if [ ! -d $SYS_TMPDIR/libxwalk/libs/armeabi ] && [ $SYS_ANDROID_ABI = armeabi ]; then
-      mv $SYS_TMPDIR/libxwalk/libs/armeabi-v7a $SYS_TMPDIR/libxwalk/libs/armeabi
+    cp -R -f $SYS_PREFIX/lib/libxwalk $tmpdir/
+    if [ ! -d $tmpdir/libxwalk/libs/armeabi ] && [ $SYS_ANDROID_ABI = armeabi ]; then
+      mv $tmpdir/libxwalk/libs/armeabi-v7a $tmpdir/libxwalk/libs/armeabi
     fi
-    xwalk_here=`pwd`
-    cd $tmpdir
-    if [ $use_android_tool = yes ]; then
-      $ANDROIDSDK/tools/android --silent update project --target $ANDROIDSDKTARGET --path $tmpdir --library ../libxwalk
-    else 
-      assert "## gradle is not supported"
-    fi
-    cd "$xwalk_here"
+    ac_output "$SYS_ROOT/loaders/android/xwalk-build.gradle.in" "$tmpdir/libxwalk/build.gradle"
+    mkdir -p $tmpdir/res/layout
 cat > $tmpdir/res/layout/main.xml << __EOF
 <org.xwalk.core.XWalkView android:id="@+id/xwalk_main"
   xmlns:android="http://schemas.android.com/apk/res/android"
@@ -391,14 +278,15 @@ if [ `has_module hybridapp hybridapp-xwalk` = yes ]; then
 fi
 
 echo " => compiling application.."
-if [ -n "$JAVAVERSION" ]; then
-  echo "java.target = $JAVAVERSION" >> $tmpdir/ant.properties
-  echo "java.source = $JAVAVERSION" >> $tmpdir/ant.properties
-fi
-veval "ant release"
+ac_output "$SYS_ROOT/loaders/android/build.gradle.in" "$tmpdir/build.gradle"
+ac_output "$SYS_ROOT/loaders/android/settings.gradle.in" "$tmpdir/settings.gradle"
+ANDROID_HOME="$ANDROIDSDK"
+ANDROID_SDK_ROOT="$ANDROIDSDK"
+export ANDROID_HOME ANDROID_SDK_ROOT
+veval "gradle --no-daemon assembleRelease"
 asserterror $?
 cd $here
-pkgfile="$tmpdir/bin/$(echo $SYS_APPNAME)-release-unsigned.apk"
+pkgfile="$tmpdir/build/outputs/apk/release/$SYS_APPNAME-release-unsigned.apk"
 assertfile "$pkgfile"
 
 echo " => transferring application.."
@@ -420,16 +308,16 @@ keytool -list -keystore $keystore -alias $SYS_ORGDOMAIN_REVERSE_DOT -storepass "
 echo " => zipaligning.."
 assertfile $fnlfile
 mv $fnlfile $SYS_TMPDIR/tmp.apk
-if [ -x $ANDROIDSDK/tools/zipalign ]; then
-  $ANDROIDSDK/tools/zipalign -f 4 $SYS_TMPDIR/tmp.apk $fnlfile
-else
-  `ls -1 $ANDROIDSDK/build-tools/*/zipalign | tail -n 1` -f 4 $SYS_TMPDIR/tmp.apk $fnlfile
-fi
+android_build_tools=`ls -1d $ANDROIDSDK/build-tools/* | tail -n 1`
+assertfile "$android_build_tools/zipalign"
+"$android_build_tools/zipalign" -f 4 $SYS_TMPDIR/tmp.apk $fnlfile
 asserterror $?
 rmifexists $SYS_TMPDIR/tmp.apk
 
 echo " => signing application with keystore $keystore"
-$ANDROIDSDK/build-tools/*/apksigner sign -v --ks $keystore --ks-key-alias "$SYS_ORGDOMAIN_REVERSE_DOT" --ks-pass pass:"$SYS_ANDROIDPW" --v2-signing-enabled true $fnlfile
+assertfile "$android_build_tools/apksigner"
+"$android_build_tools/apksigner" sign -v --ks $keystore --ks-key-alias "$SYS_ORGDOMAIN_REVERSE_DOT" --ks-pass pass:"$SYS_ANDROIDPW" --v2-signing-enabled true $fnlfile
+#$ANDROIDSDK/build-tools/*/apksigner sign -v --ks $keystore --ks-key-alias bccw --ks-pass pass:"$SYS_ANDROIDPW" --v2-signing-enabled true $fnlfile
 asserterror $?
 
 echo " => cleaning up.."
@@ -438,12 +326,6 @@ if [ $SYS_MODE = "debug" ]; then
   echo "DEBUG: android build is in $tmpdir"
 else
   rm -rf $tmpdir
-fi
-
-if [ -d  $ANDROIDSDK/tools.gradle ]; then
-  echo " == restoring gradle build."
-  rm $ANDROIDSDK/tools
-  ln -s $ANDROIDSDK/tools.gradle $ANDROIDSDK/tools
 fi
 
 #eof

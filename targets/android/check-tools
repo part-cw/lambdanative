@@ -35,6 +35,43 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-asserttool bc ant jarsigner python
+asserttool bc gradle python
+
+if [ -n "$JAVA_HOME" ]; then
+  assertfile "$JAVA_HOME/bin/java" "JAVA_HOME must point to a JDK installation."
+  assertfile "$JAVA_HOME/bin/javac" "JAVA_HOME must point to a JDK installation."
+  android_java="$JAVA_HOME/bin/java"
+else
+  asserttool java javac
+  android_java=java
+fi
+
+java_version=`"$android_java" -version 2>&1 | sed -n 's/.*version "\([0-9][0-9]*\)\(\.[0-9][0-9]*\)*".*/\1/p' | head -n 1`
+case "$java_version" in
+  ''|*[!0-9]*)
+    assert "Could not determine Java version from $android_java -version."
+    ;;
+esac
+if [ "$java_version" -lt 17 ]; then
+  assert "Android builds require JDK 17 or newer for Android Gradle Plugin 9.5.0 (found Java $java_version)."
+fi
+
+gradle_version=`gradle --version 2>&1 | sed -n 's/^Gradle \([0-9][0-9.]*\).*/\1/p' | head -n 1`
+gradle_major=`echo "$gradle_version" | cut -d . -f 1`
+gradle_minor=`echo "$gradle_version" | cut -s -d . -f 2`
+case "$gradle_major:$gradle_minor" in
+  *[!0-9:]*|:*)
+    assert "Could not determine Gradle version from 'gradle --version'."
+    ;;
+esac
+if [ "$gradle_major" -lt 9 ] || { [ "$gradle_major" -eq 9 ] && [ "$gradle_minor" -lt 8 ]; }; then
+  assert "Android builds require Gradle 9.8 or newer for Java 27 and Android Gradle Plugin 9.5.0 (found Gradle ${gradle_version:-unknown})."
+fi
+
+if [ -z "$ANDROIDSDK" ]; then
+  assert "ANDROIDSDK is empty; set it in SETUP before building for Android."
+fi
+assertfile "$ANDROIDSDK/platforms/android-35/android.jar" \
+  "Install Android SDK Platform 35 using the Android SDK Manager."
 
 #eof
