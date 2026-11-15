@@ -564,7 +564,7 @@ make_fontfile()
         name=`echo "$fline" | cut -f 4 -d " "`
         scmfile=$tgtdir/${prefix}${name}.scm
         font_srcs="$font_srcs $scmfile"
-        if isnewer "$srcfile" "$scmfile"; then
+        if isnewer "$srcfile" "$scmfile" || isnewer "$SYS_HOSTPREFIX/bin/ttftool" "$scmfile"; then
            echo " => $name using glyph set $bits.."
            veval "$SYS_HOSTPREFIX/bin/ttftool fnt2scm $font \"$bits\" $sizes $name > $scmfile"
            assertfile $scmfile
@@ -1403,7 +1403,16 @@ make_lntoolcheck()
   rmifexists $SYS_TMPDIR/tmp.config.cache
   lntools="pngtool packtool ttftool lngtool webassettool"
   for tool in $lntools; do
-    if [ ! -x $SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX ] || newerindir "apps/$tool" "$SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX"; then
+    toolbin="$SYS_HOSTPREFIX/bin/$tool$SYS_HOSTEXEFIX"
+    rebuild_tool=no
+    if [ ! -x "$toolbin" ] || newerindir "apps/$tool" "$toolbin"; then
+      rebuild_tool=yes
+    fi
+    if [ "$tool" = "ttftool" ] &&
+       { newerindir "modules/ttf" "$toolbin" || newerindir "libraries/libfreetype" "$toolbin"; }; then
+      rebuild_tool=yes
+    fi
+    if [ "$rebuild_tool" = "yes" ]; then
       echo " => building lambdanative tool $tool.."
       if [ ! -f $SYS_TMPDIR/tmp.config.cache ]; then
         cp $SYS_TMPDIR/config.cache $SYS_TMPDIR/tmp.config.cache

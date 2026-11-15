@@ -485,44 +485,49 @@ const struct {
 } FT_Errors[] =
 #include FT_ERRORS_H
 
+static const char * texture_font_error_message( FT_Error error )
+{
+  size_t i;
+  for( i=0; FT_Errors[i].message; ++i ) {
+    if( FT_Errors[i].code == error ) {
+      return FT_Errors[i].message;
+    }
+  }
+  return "unknown error";
+}
+
 static int texture_font_load_face( FT_Library * library, const char * filename, const float size, FT_Face * face )
 {
   assert( library );
   assert( filename );
   assert( size );
-  size_t hres = 64;
   FT_Error error;
-  FT_Matrix matrix = { (int)((1.0/hres) * 0x10000L),
-                       (int)((0.0)      * 0x10000L),
-                       (int)((0.0)      * 0x10000L),
-                       (int)((1.0)      * 0x10000L) };
   error = FT_Init_FreeType( library );
   if( error ) {
-    fprintf(stderr, "FT_Error (0x%02x) : %s\n", FT_Errors[error].code, FT_Errors[error].message);
+    fprintf(stderr, "FT_Error (0x%02x) : %s\n", error, texture_font_error_message( error ));
     return 0;
   }
   error = FT_New_Face( *library, filename, 0, face );
   if( error ) {
-    fprintf( stderr, "FT_Error (line %d, code 0x%02x) : %s\n", __LINE__, FT_Errors[error].code, FT_Errors[error].message);
+    fprintf( stderr, "FT_Error (line %d, code 0x%02x) : %s\n", __LINE__, error, texture_font_error_message( error ));
     FT_Done_FreeType( *library );
     return 0;
   }
   error = FT_Select_Charmap( *face, FT_ENCODING_UNICODE );
   if( error ) {
     fprintf( stderr, "FT_Error (line %d, code 0x%02x) : %s\n",
-             __LINE__, FT_Errors[error].code, FT_Errors[error].message );
+             __LINE__, error, texture_font_error_message( error ));
     FT_Done_Face( *face );
     FT_Done_FreeType( *library );
     return 0;
   }
-  error = FT_Set_Char_Size( *face, (int)(size*64), 0, 72*hres, 72 );
+  error = FT_Set_Char_Size( *face, (int)(size*64), 0, 72, 72 );
   if( error ) {
-    fprintf( stderr, "FT_Error (line %d, code 0x%02x) : %s\n", __LINE__, FT_Errors[error].code, FT_Errors[error].message );
+    fprintf( stderr, "FT_Error (line %d, code 0x%02x) : %s\n", __LINE__, error, texture_font_error_message( error ));
     FT_Done_Face( *face );
     FT_Done_FreeType( *library );
     return 0;
   }
-  FT_Set_Transform( *face, &matrix, NULL );
   return 1;
 }
 
@@ -710,7 +715,7 @@ static size_t texture_font_load_glyphs( texture_font_t * self, const wchar_t * c
     }
     error = FT_Load_Glyph( face, glyph_index, flags );
     if( error ) {
-      fprintf( stderr, "FT_Error (line %d, code 0x%02x) : %s\n", __LINE__, FT_Errors[error].code, FT_Errors[error].message );
+      fprintf( stderr, "FT_Error (line %d, code 0x%02x) : %s\n", __LINE__, error, texture_font_error_message( error ));
       FT_Done_FreeType( library );
       return wcslen(charcodes)-i;
     }
@@ -731,14 +736,14 @@ static size_t texture_font_load_glyphs( texture_font_t * self, const wchar_t * c
       FT_Stroker stroker;
       error = FT_Stroker_New( library, &stroker );
       if( error ) {
-        fprintf(stderr, "FT_Error (0x%02x) : %s\n", FT_Errors[error].code, FT_Errors[error].message);
+        fprintf(stderr, "FT_Error (0x%02x) : %s\n", error, texture_font_error_message( error ));
         return 0;
       }
       FT_Stroker_Set( stroker, (int)(self->outline_thickness *64),
           FT_STROKER_LINECAP_ROUND, FT_STROKER_LINEJOIN_ROUND, 0);
       error = FT_Get_Glyph( face->glyph, &ft_glyph);
       if( error ) {
-        fprintf(stderr, "FT_Error (0x%02x) : %s\n", FT_Errors[error].code, FT_Errors[error].message);
+        fprintf(stderr, "FT_Error (0x%02x) : %s\n", error, texture_font_error_message( error ));
         return 0;
       }
       if( self->outline_type == 1 ) {
@@ -748,19 +753,19 @@ static size_t texture_font_load_glyphs( texture_font_t * self, const wchar_t * c
       } else if ( self->outline_type == 3 ) {
         error = FT_Glyph_StrokeBorder( &ft_glyph, stroker, 1, 1 );
       } if( error ) {
-        fprintf(stderr, "FT_Error (0x%02x) : %s\n", FT_Errors[error].code, FT_Errors[error].message);
+        fprintf(stderr, "FT_Error (0x%02x) : %s\n", error, texture_font_error_message( error ));
         return 0;
       }
       if( depth == 1) {
         error = FT_Glyph_To_Bitmap( &ft_glyph, FT_RENDER_MODE_NORMAL, 0, 1);
         if( error ) {
-          fprintf(stderr, "FT_Error (0x%02x) : %s\n", FT_Errors[error].code, FT_Errors[error].message);
+          fprintf(stderr, "FT_Error (0x%02x) : %s\n", error, texture_font_error_message( error ));
           return 0;
         }
       } else {
         error = FT_Glyph_To_Bitmap( &ft_glyph, FT_RENDER_MODE_LCD, 0, 1);
         if( error ) {
-          fprintf(stderr, "FT_Error (0x%02x) : %s\n", FT_Errors[error].code, FT_Errors[error].message);
+          fprintf(stderr, "FT_Error (0x%02x) : %s\n", error, texture_font_error_message( error ));
           return 0;
         }
       }
