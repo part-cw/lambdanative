@@ -1520,7 +1520,7 @@ smoke_one()
     make_fonts
     make_strings
   fi
-  make_embedfile
+  make_embeds
   make_payload
   if [ `is_gui_app` = "yes" ]; then
     make_artwork
