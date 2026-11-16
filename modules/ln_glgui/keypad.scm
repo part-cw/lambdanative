@@ -196,20 +196,36 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ))
 
 (define (keypad:lookup mx my x y w h pad)
-  (let* ((ncols (flo (length (car pad))))
-         (nrows (flo (length pad)))
-         (wchar (/ w ncols))
-         (hchar (/ h nrows))
-         (mn (fix (- nrows 1 (fix (/ (- my y) hchar))))))
+  ;; FIXME: unconfirmed: errors out in list-ref.
+  ;; FIXME: COMPLEXITY: O(n^2) - use of list-ref in loop
+  (let* ((ncols
+          ;; ??? what if that's not the longest line?
+          ;;
+          ;; refs: {wchar} -- `flo` in order to make `wchar` a FP?
+          (flo (length (car pad))))
+         (nrows
+          ;; refs: {hchar,nm} -- `flo` in order to make `hchar` a FP?
+          ;;
+          ;; what about `nrows` in commented-out code?
+          (flo (length pad)))
+         (wchar (/ w ncols)) ;; inexact, with of character fields
+         (hchar (/ h nrows)) ;; inexact, height of character fields
+         (mn ;; ??? XXX row index
+          (fix (- nrows 1 (fix (/ (- my y) hchar))))))
     (if (and (> my y) (< my (+ y h))) ;; (and (> mn -1) (< mn nrows))
-      (let* ((units (keypad:rowwidth (list-ref pad mn)))
-             (padx  (/ (- w (* units wchar)) 2.)))
-        (let loop ((xx (+ x padx))(data (list-ref pad mn)))
-          (if (= (length data) 0) #f
-            (let ((keyw (* wchar (keypad:keywidth (car data)))))
-              (if (and (> mx xx) (< mx (+ xx keyw))) (car data)
-                (loop (+ xx keyw) (cdr data)))))))
-      #f)))
+        (let* ((units
+                ;; TBD: COMPLEXITY: O(n) - use of list-ref
+                ;; FIXME: COMPLEXITY: O(n^2) - use of keypad:rowwidth on O(n) value
+                (keypad:rowwidth (list-ref pad mn)))
+               (padx  (/ (- w (* units wchar)) 2.)))
+          (let loop ((xx (+ x padx)) (data (list-ref pad mn)))
+            (if (= (length data) 0) ;; FIXME: COMPLEXITY: O(n^2) - use of `length` in loop
+                #f
+                ;; FIXME: COMPLEXITY: O(n^2) - use of length within `keypad:keywidth`
+                (let ((keyw (* wchar (keypad:keywidth (car data)))))
+                  (if (and (> mx xx) (< mx (+ xx keyw))) (car data)
+                      (loop (+ xx keyw) (cdr data)))))))
+        #f)))
 
 (define (glgui:keypad-input g wgt type mx my)
   (let* ((x (glgui-widget-get-dyn g wgt 'x))
