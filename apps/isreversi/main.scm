@@ -1,5 +1,10 @@
 ;; SPDX identifier GPL-3.0-or-later
 
+(c-declare "#include \"data.c\"")
+
+(define get-resource-size (c-lambda (char-string)  int "get_resource_size"))
+(define get-resource-bytes (c-lambda (char-string int int scheme-object) int
+    "___result=get_resource_bytes(___arg1,___arg2,___arg3,___CAST(uint8_t*,___BODY_AS(___arg4,___tSUBTYPED)));"))
 
 ;; -1 empty
 ;;  1 white
@@ -24,8 +29,8 @@
     #f #f #f #f #f #f #f #f
     #f #f #f #f #f #f #f #f))
 
-(define download-books-button #f)
-
+(define books-setup #f)
+(define egaroucid-initialize #f)
 (define gui #f)
 (define reversi-display #f)
 (define reversi-subdisplay #f)
@@ -99,66 +104,73 @@
 			    button-callback))
   )
 
+
 (define (save-resource path resource resource-size)
-    (if (file-exists? path)
-      (delete-file path))
-    (set! vector-copy-size 1024)
+    (if (file-exists? path) (delete-file path))
+    (set! vector-copy-size 4096)
     (set! vector-copy-iterations (fxquotient resource-size vector-copy-size))
-    (set! scalar-copy-start (- resource-size (fxremainder resource-size vector-copy-size)))
+    (set! remainder-size (fxremainder resource-size vector-copy-size))
+    (set! remainder-copy-start (- resource-size remainder-size))
     (set! fh (open-output-file path))
-    (set! u8 (make-u8vector vector-copy-size))
-    ; Vector loop to allow for fewer stores
+    (set! u8 (make-u8vector vector-copy-size 0))
+    ; Full vector loop to allow for fewer stores
     (let loop((iteration-number 0))
-        (if (= iteration-number vector-copy-iterations)
-            (set! iteration-number vector-copy-iterations) ; exit
-          (begin (let vectorloop((vector-iteration 0))
-                  (if (= vector-iteration vector-copy-size)
-                     (write-subu8vector u8 0 vector-copy-size fh)
-                     (begin (u8vector-set! u8
-					   vector-iteration
-                                           (egaroucid-get-resource-byte resource
-                                               (+ vector-iteration (* iteration-number vector-copy-size))))
-		            (vectorloop (+ vector-iteration 1)))))
-                 (loop (+ iteration-number 1)))))
-    ; Scalar remainder loop
-    (let loop((iteration-number scalar-copy-start))
-        (if (= iteration-number resource-size)
-            (set! iteration-number resource-size) ; exit
-          (begin (set! byte-data (egaroucid-get-resource-byte resource iteration-number))
-                 (write-u8 byte-data fh)
-                 (loop (+ iteration-number 1)))))
+       (if (= iteration-number vector-copy-iterations)
+         (set! iteration-number vector-copy-iterations) ; exit
+          (begin
+           (set! copy-check (get-resource-bytes resource (* iteration-number vector-copy-size) vector-copy-size u8))
+           (write-subu8vector u8 0 vector-copy-size fh)
+           (loop (+ iteration-number 1)))))
+    ; Remainder
+    (set! copy-check (get-resource-bytes resource remainder-copy-start remainder-size u8))
+    (write-subu8vector u8 0 remainder-size fh)
     (close-output-port fh))
 
-;; Books have not currently been setup for persistent downloads
 (define (initialize-egaroucid)
-  (glgui-widget-set! gui reversi-subdisplay 'label "Initializing Egaroucid...")
-  ;; Create directories if not yet created
+  (glgui-widget-set! gui reversi-subdisplay 'label "Setting up books...")
   (set! appdir (android-get-filesdir))
   (if (not (file-exists? appdir)) (create-directory appdir))
-  (set! resourcedir (string-append appdir (system-pathseparator) "resources"))
+  (set! resourcedir (string-append appdir
+                                   (system-pathseparator)
+                                   "resources"
+                                   (system-pathseparator)))
   (if (not (file-exists? resourcedir)) (create-directory resourcedir))
-  (set! hashdir (string-append resourcedir (system-pathseparator) "hash"))
+  (set! hashdir (string-append resourcedir
+                               "hash"
+                               (system-pathseparator)))
   (if (not (file-exists? hashdir)) (create-directory hashdir))
-  (set! booksize (egaroucid-get-resource-size "book"))
-  (glgui-widget-set! gui reversi-subdisplay 'label "Reading in book")
-  (save-resource (string-append resourcedir (system-pathseparator) "book.egbk3") "book" booksize)
-  (set! evalsize (egaroucid-get-resource-size "eval"))
-  (glgui-widget-set! gui reversi-subdisplay 'label "Reading in eval")
-  (save-resource (string-append resourcedir (system-pathseparator) "eval.egev2") "eval" evalsize)
-  (set! eval_move_ordering_endsize (egaroucid-get-resource-size "eval_move_ordering_end"))
-  (glgui-widget-set! gui reversi-subdisplay 'label "Reading in eval_move_ordering_end")
-  (save-resource (string-append resourcedir (system-pathseparator) "eval.egev2") "eval_move_ordering_end" evalsize)
-  (set! hash25size (egaroucid-get-resource-size "hash25"))
-  (glgui-widget-set! gui reversi-subdisplay 'label "Reading in hash25")
+  (glgui-widget-set! gui reversi-subdisplay 'label "Reading in books...")
+  (set! booksize (get-resource-size "book"))
+  (glgui-widget-set! gui reversi-subdisplay 'label (string-append "Reading in book, size:" (number->string booksize) " bytes"))
+  (save-resource (string-append resourcedir "book.egbk3") "book" booksize)
+  (set! evalsize (get-resource-size "eval"))
+  (glgui-widget-set! gui reversi-subdisplay 'label (string-append "Reading in eval, size:" (number->string evalsize) " bytes"))
+  (save-resource (string-append resourcedir "eval.egev2") "eval" evalsize)
+  (set! evalendsize (get-resource-size "evalend"))
+  (glgui-widget-set! gui reversi-subdisplay 'label (string-append "Reading in evalend, size:"
+                                                                  (number->string evalendsize) " bytes"))
+  (save-resource (string-append resourcedir
+                                (system-pathseparator)
+                                "eval_move_ordering_end.egev")
+                  "evalend"
+                  evalendsize)
+  (set! hash25size (get-resource-size "hash25"))
+  (glgui-widget-set! gui reversi-subdisplay 'label (string-append "Reading in hash25, size:" (number->string hash25size) " bytes"))
   (save-resource (string-append hashdir (system-pathseparator) "hash25.eghs") "hash25" hash25size)
-  (set! hash26size (egaroucid-get-resource-size "hash26"))
-  (glgui-widget-set! gui reversi-subdisplay 'label "Reading in hash26")
+  (set! hash26size (get-resource-size "hash26"))
+  (glgui-widget-set! gui reversi-subdisplay 'label (string-append "Reading in hash26, size:" (number->string hash26size) " bytes"))
   (save-resource (string-append hashdir (system-pathseparator) "hash26.eghs") "hash26" hash26size)
-  (set! hash27size (egaroucid-get-resource-size "hash27"))
-  (glgui-widget-set! gui reversi-subdisplay 'label "Reading in hash27")
+  (set! hash27size (get-resource-size "hash27"))
+  (glgui-widget-set! gui reversi-subdisplay 'label (string-append "Reading in hash27, size:" (number->string hash27size) " bytes"))
   (save-resource (string-append hashdir (system-pathseparator) "hash27.eghs") "hash27" hash27size)
-  ;(set! egaroucid-init-status (egaroucid-init resourcedir))
-  (glgui-widget-set! gui reversi-subdisplay 'label "Readin books"))
+  (glgui-widget-set! gui reversi-subdisplay 'label "Books read in, initializing Egaroucid"))
+;  (set! initialized (egaroucid-global-init resourcedir))
+;  (cond
+;    ((= initialized  EGAROUCID_OK)
+;     (glgui-widget-set! gui reversi-subdisplay 'label "Egaroucid initialized, press a square to play")
+;     (set! initialize-egaroucid-button #f))
+;    (else
+;      (glgui-widget-set! gui reversi-subdisplay 'label "Egaroucid initialization failed"))))
 
 
 (main
@@ -170,15 +182,14 @@
     (let* ((w (glgui-width-get))
            (h (glgui-height-get)))
       (set! reversi-subdisplay (glgui-label gui 0 (- h 75) w  30
-					    "Press a square to play" ascii_14.fnt Orange))
+					    "" ascii_14.fnt Orange))
       (glgui-widget-set! gui reversi-subdisplay 'align GUI_ALIGNLEFT)
-      (set! reversi-display (glgui-label gui 0 (- h 45) w 40 "isREVERsi" ascii_18.fnt White))
+      (set! reversi-display (glgui-label gui 0 (- h 45) w 40 "ISReversi" ascii_18.fnt White))
       (glgui-widget-set! gui reversi-display 'align GUI_ALIGNCENTER)
       (set! egaroucid-version-display (glgui-label gui 0 5 w 40
 						   (string-append "Egaroucid engine " (egaroucid-version))
 						   ascii_14.fnt DarkGreen))
       (glgui-widget-set! gui egaroucid-version-display 'align GUI_ALIGNCENTER)
-      ;; Download books
       (set! initialize-egaroucid-button (glgui-button-string gui 90 50 140 15 "Initialize Egaroucid" ascii_14.fnt
            (lambda (un . used) (initialize-egaroucid))))
       (glgui-widget-set! gui initialize-egaroucid-button 'align GUI_ALIGNCENTER)

@@ -54,21 +54,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 end-of-c-declare
 )
 
-(define EGAROUCID_OK ((c-lambda () int "___result = EGAROUCID_OK;")))
-(define EGAROUCID_ERROR_INVALID_ARGUMENT ((c-lambda () int "___result = EGAROUCID_ERROR_INVALID_ARGUMENT;")))
-(define EGAROUCID_ERROR_NOT_INITIALIZED ((c-lambda () int "___result = EGAROUCID_ERROR_NOT_INITIALIZED;")))
-(define EGAROUCID_ERROR_SEARCH_FAILED ((c-lambda () int "___result = EGAROUCID_ERROR_SEARCH_FAILED;")))
-(define EGAROUCID_ERROR_UNSUPPORTED ((c-lambda () int "___result = EGAROUCID_ERROR_UNSUPPORTED;")))
+(c-define-type egaroucid_status  int)
+(define EGAROUCID_OK ((c-lambda () egaroucid_status "___result = EGAROUCID_OK;")))
+(define EGAROUCID_ERROR_INVALID_ARGUMENT ((c-lambda () egaroucid_status "___result = EGAROUCID_ERROR_INVALID_ARGUMENT;")))
+(define EGAROUCID_ERROR_NOT_INITIALIZED ((c-lambda () egaroucid_status "___result = EGAROUCID_ERROR_NOT_INITIALIZED;")))
+(define EGAROUCID_ERROR_SEARCH_FAILED ((c-lambda () egaroucid_status "___result = EGAROUCID_ERROR_SEARCH_FAILED;")))
+(define EGAROUCID_ERROR_UNSUPPORTED ((c-lambda () egaroucid_status "___result = EGAROUCID_ERROR_UNSUPPORTED;")))
 
 (define egaroucid-version (c-lambda () char-string "egaroucid_version"))
-(define egaroucid-init (c-lambda (char-string) int "egaroucid_global_init"))
-(define egaroucid-get-resource-size (c-lambda (char-string) int "egaroucid_get_resource_size"))
-(define egaroucid-get-resource-byte (c-lambda (char-string int) unsigned-int "egaroucid_get_resource_byte"))
+(define egaroucid-global-init (c-lambda (char-string) egaroucid_status "egaroucid_global_init"))
 (define egaroucid-create (c-lambda () (pointer void) "egaroucid_create"))
 (define egaroucid-destroy (c-lambda ((pointer void)) void "egaroucid_destroy"))
-(define egaroucid-search_array (c-lambda ((pointer void) (pointer void) int (pointer void) (pointer void)) int "egaroucid_search_array"))
-(define egaroucid-get-legal-moves (c-lambda ((pointer void) int (pointer void) (pointer void) (pointer void)) int "egaroucid_get_legal_moves"))
-(define egaroucid-get-flipped-discs (c-lambda ((pointer void) int int (pointer void) (pointer void) (pointer void)) int "egaroucid_get_flipped_discs"))
+(define egaroucid-search-array (c-lambda ((pointer void) (pointer void) int (pointer void) (pointer void)) egaroucid_status "egaroucid_search_array"))
+(define egaroucid-get-legal-moves (c-lambda ((pointer void) int (pointer void) (pointer void) (pointer void)) egaroucid_status "egaroucid_get_legal_moves"))
+(define egaroucid-get-flipped-discs (c-lambda ((pointer void) int int (pointer void) (pointer void) (pointer void)) egaroucid_status "egaroucid_get_flipped_discs"))
 (define egaroucid-stop (c-lambda ((pointer void)) void "egaroucid_stop"))
 
 ;; eof
