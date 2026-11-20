@@ -91,6 +91,12 @@ if [ -d "$tmpdir" ]; then
   rm -rf "$tmpdir"
 fi
 mkdir -p "$tmpdir"
+mkdir -p "$tmpdir/gradle/wrapper"
+cp "$SYS_ROOT/loaders/android/gradlew" "$tmpdir/gradlew"
+chmod +x "$tmpdir/gradlew"
+cp "$SYS_ROOT/loaders/android/gradle/wrapper/gradle-wrapper.jar" \
+  "$SYS_ROOT/loaders/android/gradle/wrapper/gradle-wrapper.properties" \
+  "$tmpdir/gradle/wrapper/"
 
 ANDROID_GRADLE_DEPENDENCIES="implementation 'com.android.support:support-v4:28.0.0'"
 if [ "$NEED_GCM" = "yes" ]; then
@@ -283,7 +289,7 @@ ac_output "$SYS_ROOT/loaders/android/settings.gradle.in" "$tmpdir/settings.gradl
 ANDROID_HOME="$ANDROIDSDK"
 ANDROID_SDK_ROOT="$ANDROIDSDK"
 export ANDROID_HOME ANDROID_SDK_ROOT
-veval "gradle --no-daemon assembleRelease"
+veval "./gradlew --no-daemon assembleRelease"
 asserterror $?
 cd $here
 pkgfile="$tmpdir/build/outputs/apk/release/$SYS_APPNAME-release-unsigned.apk"
