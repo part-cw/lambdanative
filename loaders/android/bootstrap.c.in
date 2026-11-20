@@ -99,23 +99,16 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved){
 }
 
 JNIEnv* GetJNIEnv(){
-  int error=0;
   JNIEnv* env = NULL;
-  /* static `env` does NOT work!  Once in a while we should ponder if
-     it still does not work or why.
-
-  if(env) {
-    if((*env)->ExceptionCheck(env)) (*env)->ExceptionClear(env);
-    return env;
-  }
-  */
-  if(s_vm) error=(*s_vm)->AttachCurrentThread(s_vm, &env, NULL);
-  if(!error) error = JNI_forward_exception_to_gambit(env);
-  return (error?NULL:env);
+  if(!s_vm) return NULL;
+  if((*s_vm)->AttachCurrentThread(s_vm, &env, NULL) != JNI_OK || !env) return NULL;
+  if(JNI_forward_exception_to_gambit(env)) return NULL;
+  return env;
 }
 
 int JNI_forward_exception_to_gambit(JNIEnv*env) {
   // TBD: actually forward, not only clear!
+  if(!env) return 1;
   if((*env)->ExceptionCheck(env)) {
     (*env)->ExceptionClear(env);
     return 1;
@@ -142,4 +135,3 @@ void android_launch_url(char* urlstring){
 
 // Add code here if needed for modules, such as GPS.
 @ANDROID_C_ADDITIONS@
-
