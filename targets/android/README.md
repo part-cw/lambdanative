@@ -1,5 +1,5 @@
 # Android build requirements
-Android application packaging uses Android Gradle Plugin 9.5.0. Install JDK 17 or newer, Gradle 9.8 or newer, Android SDK Platform 35, and the NDK configured by LambdaNative. Gradle 9.8 is the minimum here because it supports running on Java 27; the target checks minimum versions and does not reject newer releases.
-The build downloads the Android Gradle Plugin and Android support/GCM dependencies from Google Maven, so the first build needs network access.
+Android application packaging uses Android Gradle Plugin 9.5.0 and the Gradle Wrapper pinned to Gradle 9.9.2. Install JDK 17 or newer, Android SDK Platform 35, and the NDK configured by LambdaNative. A system Gradle installation is not required.
+The wrapper downloads and verifies Gradle 9.9.2 on the first build. The build also downloads the Android Gradle Plugin and Android support/GCM dependencies from Google Maven, so the first build needs network access.
 
 The configured Android API remains the app's minimum SDK and the native toolchain API. The target SDK is 35; changing it does not raise the minimum supported Android version, but may affect runtime behavior on newer Android releases. APKs keep the existing output name and package location. The legacy Crosswalk module is built as a local Gradle library project.
