@@ -264,7 +264,7 @@ package_configure()
 
 package_cmake()
 {
-  echo " => Generating bulid files with CMake" `pwd` "..."
+  echo " => Generating build files with CMake" `pwd` "..."
   pkg_conf_opt=$@
   pkg_ccdir=`echo "$SYS_CC" | cut -f 1 -d " "`
   pkg_ccdir=`dirname ${pkg_ccdir}`

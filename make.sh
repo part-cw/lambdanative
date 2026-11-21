@@ -1499,7 +1499,7 @@ smoke_one()
   echo "SMOKING $smoker.."
   rmifexists $SYS_TMPDIR/tmp.subst
   rmifexists $SYS_TMPDIR/config.cache
-  ./configure $smoker > /dev/null
+  ./configure $smoker verbose > /dev/null
   if [ ! "X$?" = "X0" ]; then
     smoke_result $smoker "**FAIL"
     echo "ERROR: configure failed"
