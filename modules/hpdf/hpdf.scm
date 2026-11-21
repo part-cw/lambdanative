@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2026, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -484,7 +484,7 @@ end-of-c-declare
 (define HPDF_Page_SetLineCap (c-lambda (HPDF_Page HPDF_LineCap) HPDF_STATUS "HPDF_Page_SetLineCap"))
 (define HPDF_Page_SetLineJoin (c-lambda (HPDF_Page HPDF_LineJoin) HPDF_STATUS "HPDF_Page_SetLineJoin"))
 (define HPDF_Page_SetMiterLimit (c-lambda (HPDF_Page HPDF_REAL) HPDF_STATUS "HPDF_Page_SetMiterLimit"))
-(define HPDF_Page_SetDash (c-lambda (HPDF_Page HPDF_UINT16* HPDF_UINT HPDF_UINT) HPDF_STATUS "HPDF_Page_SetDash"))
+(define HPDF_Page_SetDash (c-lambda (HPDF_Page HPDF_REAL HPDF_UINT HPDF_REAL) HPDF_STATUS "HPDF_Page_SetDash"))
 (define HPDF_Page_SetFlat (c-lambda (HPDF_Page HPDF_REAL) HPDF_STATUS "HPDF_Page_SetFlat"))
 (define HPDF_Page_SetExtGState (c-lambda (HPDF_Page HPDF_ExtGState) HPDF_STATUS "HPDF_Page_SetExtGState"))
 
