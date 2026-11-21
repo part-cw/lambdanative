@@ -484,7 +484,7 @@ end-of-c-declare
 (define HPDF_Page_SetLineCap (c-lambda (HPDF_Page HPDF_LineCap) HPDF_STATUS "HPDF_Page_SetLineCap"))
 (define HPDF_Page_SetLineJoin (c-lambda (HPDF_Page HPDF_LineJoin) HPDF_STATUS "HPDF_Page_SetLineJoin"))
 (define HPDF_Page_SetMiterLimit (c-lambda (HPDF_Page HPDF_REAL) HPDF_STATUS "HPDF_Page_SetMiterLimit"))
-(define HPDF_Page_SetDash (c-lambda (HPDF_Page HPDF_REAL HPDF_UINT HPDF_REAL) HPDF_STATUS "HPDF_Page_SetDash"))
+(define HPDF_Page_SetDash (c-lambda (HPDF_Page HPDF_REAL* HPDF_UINT HPDF_REAL) HPDF_STATUS "HPDF_Page_SetDash"))
 (define HPDF_Page_SetFlat (c-lambda (HPDF_Page HPDF_REAL) HPDF_STATUS "HPDF_Page_SetFlat"))
 (define HPDF_Page_SetExtGState (c-lambda (HPDF_Page HPDF_ExtGState) HPDF_STATUS "HPDF_Page_SetExtGState"))
 
