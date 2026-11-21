@@ -11,6 +11,7 @@ fi
 asserttool cmake
 package_cmake \
   -DBUILD_SHARED_LIBS=OFF \
+  -DCMAKE_INSTALL_LIBDIR=lib \
   -DCMAKE_DISABLE_FIND_PACKAGE_ZLIB=TRUE \
   -DCMAKE_DISABLE_FIND_PACKAGE_PNG=TRUE
 package_cmake_build
