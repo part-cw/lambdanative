@@ -61,7 +61,7 @@ if [ `is_gui_app` = "yes" ]; then
     assertfile $srcimg
     if isnewer "$srcimg" "$tgtimg"; then
       echo " => generating $tgtimg.."
-      convert $srcimg $tgtimg
+      magick $srcimg $tgtimg
       dirty=yes
     fi
     tiffs="$tiffs $tgtimg"

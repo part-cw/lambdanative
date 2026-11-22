@@ -478,8 +478,8 @@ make_artwork()
         asserttool gs${gspostfix}
         veval "gs${gspostfix} -r600 -dNOPAUSE -sDEVICE=png16m -dEPSCrop -sOutputFile=$tmpfile $epssrc quit.ps"
         assertfile $tmpfile
-        asserttool convert
-        veval "convert $tmpfile -trim -transparent \"#00ff00\" $pngtgt"
+        asserttool magick
+        veval "magick $tmpfile -trim -transparent \"#00ff00\" $pngtgt"
         rm $tmpfile
       fi
     fi
@@ -664,7 +664,7 @@ __EOF
   fi
   veval "gs${gspostfix} -r300 -dNOPAUSE -sDEVICE=pnggray -dEPSCrop -sOutputFile=$name.png tmp.eps quit.ps"
   assertfile $name.png
-  veval "convert $name.png -bordercolor White -border 5x5 -negate -scale 25% $name.png"
+  veval "magick $name.png -bordercolor White -border 5x5 -negate -scale 25% $name.png"
   $SYS_HOSTPREFIX/bin/pngtool png2scm $name.png > $scmfile
   cd $oldpath
   rm -rf $newpath
@@ -1351,10 +1351,10 @@ END
     echo "** WARNING: xelatex environment is not complete. Consider installing necessary XeTeX packages."
   else
     if [ `havetool pdf2ps` = yes ] || [ `havetool pdftops` = yes ]; then
-      if [ `havetool ps2eps convert gs${gspostfix}` = yes ]; then
+      if [ `havetool ps2eps magick gs${gspostfix}` = yes ]; then
         USE_XETEX=yes
       else
-        echo "** WARNING: xelatex rendering needs ps2eps, convert, gs${gspostfix}, and pdf2ps/pdftops, some of which are missing."
+        echo "** WARNING: xelatex rendering needs ps2eps, magick, gs${gspostfix}, and pdf2ps/pdftops, some of which are missing."
       fi
     fi
   fi

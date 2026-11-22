@@ -67,7 +67,7 @@ if [ `is_gui_app` = yes ]; then
   tgtimg=$SYS_PREFIXROOT/build/$SYS_APPNAME/artwork.ico
   if [ ! -e $tgtimg ] || [ $update = yes ]; then
     echo " => preparing icon.."
-    veval "convert \"${srcprefix}-256.png\" \"${srcprefix}-48.png\" \"${srcprefix}-32.png\" \"${srcprefix}-24.png\" \"${srcprefix}-16.png\" -depth 8 -channel Alpha  \"$tgtimg\""
+    veval "magick \"${srcprefix}-256.png\" \"${srcprefix}-48.png\" \"${srcprefix}-32.png\" \"${srcprefix}-24.png\" \"${srcprefix}-16.png\" -depth 8 -channel Alpha  \"$tgtimg\""
     asserterror $?
   fi
   assertfile $tgtimg
@@ -83,16 +83,16 @@ tgt=$apptgtdir/$SYS_APPNAME$SYS_EXEFIX
 if [ `is_standalone_app` = "yes" ]; then
   veval "$SYS_CC -I$SYS_PREFIX/include \
     $cflag_additions -DUSECONSOLE -o $tgt \
-    -L$SYS_PREFIX/lib -lpayload $ldflag_additions -lgdi32 -lwinmm -lwsock32 -lws2_32 -lnetapi32 -lrpcrt4 -lcrypt32 -lm -liconv"
+    -L$SYS_PREFIX/lib -lpayload $ldflag_additions -lgdi32 -lwinmm -lwsock32 -lws2_32 -lnetapi32 -lrpcrt4 -lcrypt32 -lm"
 else
   if [ `is_gui_app` = yes ]; then
     veval "$SYS_CC -I$SYS_PREFIX/include \
       $cflag_additions -mwindows win32_microgl.c main.c icon.o -o $tgt \
-      -L$SYS_PREFIX/lib -lpayload $ldflag_additions -lglu32 -lopengl32 -lgdi32 -lwinmm -lwsock32 -lws2_32 -lnetapi32 -lrpcrt4 -lcrypt32 -lm -liconv"
+      -L$SYS_PREFIX/lib -lpayload $ldflag_additions -lglu32 -lopengl32 -lgdi32 -lwinmm -lwsock32 -lws2_32 -lnetapi32 -lrpcrt4 -lcrypt32 -lm"
   else
     veval "$SYS_CC -I$SYS_PREFIX/include \
       $cflag_additions -DUSECONSOLE main.c -o $tgt \
-      -L$SYS_PREFIX/lib -lpayload $ldflag_additions -lgdi32 -lwinmm -lwsock32 -lws2_32 -lnetapi32 -lrpcrt4 -lcrypt32 -lm -liconv"
+      -L$SYS_PREFIX/lib -lpayload $ldflag_additions -lgdi32 -lwinmm -lwsock32 -lws2_32 -lnetapi32 -lrpcrt4 -lcrypt32 -lm"
   fi
 fi
 asserterror $?
