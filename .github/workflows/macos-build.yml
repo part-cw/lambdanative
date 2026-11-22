@@ -26,6 +26,7 @@ jobs:
         echo "HOMEBREW_CURL_PATH=$RUNNER_TEMP/curl-http1" >> "$GITHUB_ENV"
     - name: install dependencies
       run: |
+        export HOMEBREW_CURL_RETRIES=3
         brew install autoconf automake ghostscript imagemagick inkscape libtool
         echo "$(brew --prefix libtool)/libexec/gnubin" >> "$GITHUB_PATH"
     - name: install XeTeX

@@ -124,7 +124,7 @@ static int _microgl_key(WPARAM wParam, LPARAM lParam, int modifier, int action)
 }
 
 // timer callback
-static VOID CALLBACK event_timer_callback(HWND hWnd, UINT uMsg, UINT idTimer, DWORD dwTime){
+static VOID CALLBACK event_timer_callback(HWND hWnd, UINT uMsg, UINT_PTR idTimer, DWORD dwTime){
   ffi_event(EVENT_IDLE,0,0);
 }
 
