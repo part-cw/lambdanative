@@ -19,7 +19,7 @@ jobs:
     - name: Install dependencies
       shell: pwsh
       run: |
-        choco install -y wget autohotkey ghostscript.app inkscape tinytex
+        choco install -y --no-progress wget autohotkey ghostscript.app inkscape tinytex
 
     - name: Prepare lambdanative
       shell: bash
