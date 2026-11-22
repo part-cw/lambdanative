@@ -18,7 +18,7 @@ jobs:
 
     - uses: msys2/setup-msys2@v2
       with:
-        msystem: MSYS
+        msystem: MINGW64
         update: true
         install: >-
           autoconf
@@ -27,6 +27,16 @@ jobs:
           m4
           libtool
           zip
+          mingw-w64-x86_64-gcc
+
+    - name: Diagnose compiler
+      shell: msys2 {0}
+      run: |
+        echo "PATH=$PATH"
+        command -v gcc || true
+        gcc --version || true
+        gcc -dumpmachine || true
+        command -v make || true
 
     - name: Install dependencies
       shell: pwsh
