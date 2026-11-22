@@ -22,6 +22,7 @@ jobs:
         exec /usr/bin/curl "$@" --http1.1
         EOF
         chmod +x "$RUNNER_TEMP/curl-http1"
+        echo "HOMEBREW_DEVELOPER=1" >> "$GITHUB_ENV"
         echo "HOMEBREW_CURL_PATH=$RUNNER_TEMP/curl-http1" >> "$GITHUB_ENV"
     - name: install dependencies
       run: |
