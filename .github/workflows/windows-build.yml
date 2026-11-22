@@ -24,9 +24,12 @@ jobs:
           autoconf
           automake
           make
+          cmake
           m4
           libtool
           zip
+          git
+          patch
           mingw-w64-x86_64-gcc
 
     - name: Diagnose compiler
