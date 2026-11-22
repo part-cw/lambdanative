@@ -16,26 +16,39 @@ jobs:
     - name: Show Windows version
       run: systeminfo
 
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: MSYS
+        update: true
+        install: >-
+          autoconf
+          automake
+          make
+          m4
+          libtool
+          wget
+          zip
+
     - name: Install dependencies
       shell: pwsh
       run: |
-        choco install -y --no-progress wget zip autohotkey ghostscript.app inkscape tinytex
+        choco install -y --no-progress autohotkey ghostscript.app inkscape tinytex
 
     - name: Prepare lambdanative
-      shell: bash
+      shell: msys2 {0}
       run: |
         mkdir -p "$HOME/.cache/lambdanative"
         cp SETUP.template SETUP
         cp PROFILE.template PROFILE
 
     - name: Build DemoConsole
-      shell: bash
+      shell: msys2 {0}
       run: |
         ./configure DemoConsole verbose
         sh make.sh all
 
     - name: Smoke test all apps
-      shell: bash
+      shell: msys2 {0}
       run: |
         sh make.sh smoke | tee "$RUNNER_TEMP/lambdanative-smoke.log"
         grep -q 'SMOKED .* apps of which 0 failed' "$RUNNER_TEMP/lambdanative-smoke.log"
