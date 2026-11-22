@@ -1,11 +1,7 @@
-PKGURL=http://downloads.sourceforge.net/project/libjpeg/libjpeg/6b/jpegsrc.v6b.tar.gz
-PKGHASH=7079f0d6c42fad0cfba382cf6ad322add1ace8f9
+PKGURL=https://jpegclub.org/reference/wp-content/uploads/2026/01/jpegsrc.v10.tar.gz
+PKGHASH=73eab5302331c845d3d4b02b83fc1d22c4b276c9
 
 package_download $PKGURL $PKGHASH
-
-cp $SYS_ROOT/config.guess .
-veval "wget -O config.sub 'https://raw.githubusercontent.com/gcc-mirror/gcc/refs/heads/master/config.sub'"
-
 package_patch
 
 EXTRACONF=
@@ -13,21 +9,13 @@ if [ ! $SYS_PLATFORM = $SYS_HOSTPLATFORM ]; then
   EXTRACONF=--host=$SYS_ARCH
 fi
 
-LIBTOOL=`which libtool`
-cp $LIBTOOL .
-
-if [ "$SYS_PLATFORM" = "win32" ]; then
-  cp configure configure.tmp
-  cat configure.tmp | sed 's/test -s conftest/test -s conftest.exe/g' > configure
-fi
-
 package_configure $EXTRACONF --disable-shared --enable-static 
 asserterror $? "configuration failed"
 
-package_make libjpeg.a
+package_make libjpeg.la
 asserterror $? "compilation failed"
 
-package_make install-lib
+package_make install-libLTLIBRARIES
 
 package_cleanup
 
