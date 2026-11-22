@@ -18,7 +18,8 @@ jobs:
       run: |
         cat > "$RUNNER_TEMP/curl-http1" <<'EOF'
         #!/bin/bash
-        exec /usr/bin/curl --http1.1 "$@"
+        echo "curl wrapper invoked: $*" >&2
+        exec /usr/bin/curl "$@" --http1.1
         EOF
         chmod +x "$RUNNER_TEMP/curl-http1"
         echo "HOMEBREW_CURL_PATH=$RUNNER_TEMP/curl-http1" >> "$GITHUB_ENV"
