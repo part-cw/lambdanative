@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2018, University of British Columbia
+Copyright (c) 2009-2026, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -126,31 +126,40 @@ char* clipboard_paste(){
 #endif
 #ifdef WIN32
   char *str = NULL;
-  if (!IsClipboardFormatAvailable(CF_TEXT)){
+
+  UINT format = IsClipboardFormatAvailable(CF_UNICODETEXT) ? CF_UNICODETEXT : CF_TEXT;
+  if (!IsClipboardFormatAvailable(format)){
     return "";
   }
   if (!OpenClipboard(NULL)){
     return "";
   }
-  HGLOBAL hglb = GetClipboardData(CF_TEXT);
+  HGLOBAL hglb = GetClipboardData(format);
   if (hglb != NULL) {
-    LPTSTR lptstr = GlobalLock(hglb);
-    if (lptstr != NULL){
-      // Figure out if Unicode
-      if (sizeof(TCHAR) == sizeof(char)){
-        size_t size = strlen(lptstr);
-        str = malloc(size+1);
-        strcpy(str, lptstr);
-      } else {
-        size_t size = wcstombs(NULL, lptstr, 0);
-        str = malloc(size+1);
-        wcstombs(str, lptstr, size+1);
+    if (format == CF_UNICODETEXT) {
+      const wchar_t *text = GlobalLock(hglb);
+      if (text != NULL) {
+        int size = WideCharToMultiByte(CP_UTF8, 0, text, -1, NULL, 0, NULL, NULL);
+        if (size > 0) {
+          str = malloc((size_t)size);
+          if (str != NULL)
+            WideCharToMultiByte(CP_UTF8, 0, text, -1, str, size, NULL, NULL);
+        }
+        GlobalUnlock(hglb);
       }
-      GlobalUnlock(hglb);
+    } else {
+      const char *text = GlobalLock(hglb);
+      if (text != NULL) {
+        size_t size = strlen(text) + 1;
+        str = malloc(size);
+        if (str != NULL)
+          memcpy(str, text, size);
+        GlobalUnlock(hglb);
+      }
     }
   }
   CloseClipboard();
-  return str;
+  return str != NULL ? str : "";
 #endif
 #ifdef MACOSX
   return macosx_clipboard_paste();
@@ -257,7 +266,7 @@ end-of-c-declare
 )
 
 ;; Function prototypes/bindings
-(define clipboard-clear (c-lambda (char-string) bool "clipboard_clear"))
+(define clipboard-clear (c-lambda () bool "clipboard_clear"))
 (define (clipboard-copy str)
   ((c-lambda (char-string int) bool "clipboard_copy")
    str (string-length str)))
