@@ -16,6 +16,8 @@ package_make libjpeg.la
 asserterror $? "compilation failed"
 
 package_make install-libLTLIBRARIES
+package_make install-includeHEADERS
+package_make install-data-local
 
 package_cleanup
 
