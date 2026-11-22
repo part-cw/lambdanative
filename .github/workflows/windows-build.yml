@@ -26,7 +26,6 @@ jobs:
           make
           m4
           libtool
-          wget
           zip
 
     - name: Install dependencies
