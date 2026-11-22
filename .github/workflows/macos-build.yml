@@ -40,7 +40,7 @@ jobs:
         cp PROFILE.template PROFILE
     - name: build DemoConsole for macOS (to build the toolchain)
       run: |
-        ./configure DemoConsole macosx
+        ./configure DemoConsole verbose
         sh make.sh all
     - name: smoke test all apps
       run: |

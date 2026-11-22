@@ -1,4 +1,6 @@
-# LambdaNative is Sunset and in need of new maintainers. Please see https://github.com/part-cw/lambdanative/issues/475 for details
+[![fedora-build](https://github.com/part-cw/lambdanative/actions/workflows/fedora-build.yml/badge.svg)](https://github.com/part-cw/lambdanative/actions/workflows/fedora-build.yml) [![macos-build](https://github.com/part-cw/lambdanative/actions/workflows/macos-build.yml/badge.svg)](https://github.com/part-cw/lambdanative/actions/workflows/macos-build.yml)
+
+# LambdaNative is in need of new maintainers. Please see https://github.com/part-cw/lambdanative/issues/475 for details
 
 ## Introduction 
 LambdaNative is an open-source (BSD licensed) cross-platform development environment written in Scheme ([Gambit-C](https://github.com/feeley/gambit)), supporting Android, iOS, BlackBerry 10, OS X, Linux, Windows, OpenBSD, NetBSD, FreeBSD and OpenWrt.
