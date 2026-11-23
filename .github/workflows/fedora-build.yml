@@ -16,15 +16,23 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - run: cat /etc/os-release
+    - name: Cache DNF downloads
+      uses: actions/cache@v4
+      with:
+        path: /var/cache/dnf
+        key: fedora-${{ runner.arch }}-dnf-v1
+        restore-keys: |
+          fedora-${{ runner.arch }}-dnf-
+
     - name: install dependencies
       run: |
-        dnf -y install alsa-lib-devel ant autoconf automake bc cmake curl
-        dnf -y install gambit-c gcc14 gcc14-c++ ghostscript git grep inkscape
-        dnf -y install ImageMagick-devel java-25-openjdk-devel libtool
-        dnf -y install libXext-devel make mesa-libGL-devel mesa-libGLU-devel
-        dnf -y install netpbm-devel patch perl-FindBin poppler-utils portaudio
-        dnf -y install procps-ng python3-sdkmanager sed tar tcl-devel texlive
-        dnf -y install texlive-ps2eps tree xorg-x11-server-Xvfb wget which zip
+        dnf --setopt=keepcache=True -y install alsa-lib-devel ant autoconf automake bc cmake curl
+        dnf --setopt=keepcache=True -y install gambit-c gcc14 gcc14-c++ ghostscript git grep inkscape
+        dnf --setopt=keepcache=True -y install ImageMagick-devel java-25-openjdk-devel libtool
+        dnf --setopt=keepcache=True -y install libXext-devel make mesa-libGL-devel mesa-libGLU-devel
+        dnf --setopt=keepcache=True -y install netpbm-devel patch perl-FindBin poppler-utils portaudio
+        dnf --setopt=keepcache=True -y install procps-ng python3-sdkmanager sed tar tcl-devel texlive
+        dnf --setopt=keepcache=True -y install texlive-ps2eps tree xorg-x11-server-Xvfb wget which zip
     - name: prepare lambdanative
       run : |
        # Make directory to avoid errors during build

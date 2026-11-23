@@ -17,6 +17,13 @@ jobs:
       run: |
         printf 'http1.1\n' >> "$HOME/.curlrc"
         echo "HOMEBREW_CURLRC=1" >> "$GITHUB_ENV"
+    - name: Cache Homebrew downloads
+      uses: actions/cache@v4
+      with:
+        path: ${{ runner.temp }}/homebrew-cache
+        key: ${{ runner.os }}-${{ runner.arch }}-homebrew-v1
+        restore-keys: |
+          ${{ runner.os }}-${{ runner.arch }}-homebrew-
     - name: install dependencies
       run: |
         brew install autoconf automake ghostscript imagemagick inkscape libtool
