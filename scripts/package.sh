@@ -245,8 +245,8 @@ package_configure()
   LDFLAGS=-L$SYS_PREFIX/lib \
   LD_LIBRARY_PATH=$SYS_PREFIX/lib \
   CPPFLAGS=-I$SYS_PREFIX/include \
-  CC=\"$SYS_CC -I$SYS_PREFIX/include -L$SYS_PREFIX/lib\" \
-  CXX=\"$SYS_CXX -I$SYS_PREFIX/include -L$SYS_PREFIX/lib\" \
+  CC=\"$SYS_CC -I$SYS_PREFIX/include\" \
+  CXX=\"$SYS_CXX -I$SYS_PREFIX/include\" \
   AR=\"$SYS_AR\" \
   RANLIB=\"$SYS_RANLIB\" \
   NM=\"$SYS_NM\" \
