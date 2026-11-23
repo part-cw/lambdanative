@@ -31,6 +31,7 @@ jobs:
           git
           patch
           mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-imagemagick
 
     - name: Diagnose compiler
       shell: msys2 {0}

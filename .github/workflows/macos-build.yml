@@ -13,20 +13,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v7
-    - name: Configure Homebrew curl (downloads using HTTP/2 fail due to nginx CVE mitigation)
-      shell: bash
+    - name: Configure curl for Homebrew
       run: |
-        cat > "$RUNNER_TEMP/curl-http1" <<'EOF'
-        #!/bin/bash
-        echo "curl wrapper invoked: $*" >&2
-        exec /usr/bin/curl "$@" --http1.1
-        EOF
-        chmod +x "$RUNNER_TEMP/curl-http1"
-        echo "HOMEBREW_DEVELOPER=1" >> "$GITHUB_ENV"
-        echo "HOMEBREW_CURL_PATH=$RUNNER_TEMP/curl-http1" >> "$GITHUB_ENV"
+        printf 'http1.1\n' >> "$HOME/.curlrc"
+        echo "HOMEBREW_CURLRC=1" >> "$GITHUB_ENV"
     - name: install dependencies
       run: |
-        export HOMEBREW_CURL_RETRIES=3
         brew install autoconf automake ghostscript imagemagick inkscape libtool
         echo "$(brew --prefix libtool)/libexec/gnubin" >> "$GITHUB_PATH"
     - name: install XeTeX
