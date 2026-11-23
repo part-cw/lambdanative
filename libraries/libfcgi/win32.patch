@@ -1,0 +1,28 @@
+--- libfcgi/os_win32.c
++++ libfcgi/os_win32.c
+@@ -225 +225 @@
+-    unsigned long fd;
++    ULONG_PTR fd;
+@@ -1470 +1470 @@
+-    unsigned long fd;
++    ULONG_PTR fd;
+@@ -1549 +1549 @@
+-                                     DWORD     data)
++                                     DWORD_PTR data)
+@@ -1681 +1681 @@
+-                          (DWORD) webServerAddrs);
++                          (DWORD_PTR) webServerAddrs);
+
+--- libfcgi/fcgiapp.c
++++ libfcgi/fcgiapp.c
+@@ -1,0 +1 @@
++#include <stdint.h>
+@@ -1323,5 +1324,5 @@
+ static unsigned char *AlignPtr8(unsigned char *p) {
+-    unsigned long u = (unsigned long) p;
+-    u = ((u + 7) & (ULONG_MAX - 7)) - u;
+-    return p + u;
++    uintptr_t address = (uintptr_t)p;
++    uintptr_t padding = (8 - (address & 7)) & 7;
++    return p + padding;
+ }

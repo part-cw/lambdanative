@@ -1,5 +1,5 @@
-PKGURL=https://github.com/FastCGI-Archives/FastCGI.com/raw/master/original_snapshot/fcgi-2.4.1-SNAP-0910052249.tar.gz
-PKGHASH=4360b48782d757bdad301aa1769540e3f5d0d5c5
+PKGURL=https://github.com/FastCGI-Archives/fcgi2/archive/refs/tags/2.4.7.tar.gz
+PKGHASH=72f3c8a17ef1d534fc9a1a003e9e292bc2a473d0
 package_download $PKGURL $PKGHASH
 
 EXTRACONF=
@@ -8,14 +8,11 @@ if [ ! "$SYS_PLATFORM" = "$SYS_HOSTPLATFORM" ]; then
 fi
 
 if [ "$SYS_PLATFORM" = "win32" ]; then
-  if grep microsoft /proc/version -i -q; then
-    EXTRACONF="$EXTRACONF --build=x86_64-unknown-linux-gnu"
-  fi
+  package_patch
 fi
 
-# the shipping config.guess is out of date, fix that
-cp $SYS_ROOT/config.guess .
-cp $SYS_ROOT/libraries/libfcgi/config.sub .
+# The configure doesn't come shipped
+./autogen.sh
 package_configure $EXTRACONF --disable-shared --enable-static
 
 cd libfcgi
