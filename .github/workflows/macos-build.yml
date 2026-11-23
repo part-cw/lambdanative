@@ -56,8 +56,8 @@ jobs:
       if: steps.cache-texlive.outputs.cache-hit != 'true'
       run: |
         brew install --cask basictex
-        sudo tlmgr update --self
-        sudo tlmgr install fontspec geometry
+        sudo env "PATH=/Library/TeX/texbin:$PATH" /Library/TeX/texbin/tlmgr update --self
+        sudo env "PATH=/Library/TeX/texbin:$PATH" /Library/TeX/texbin/tlmgr install fontspec geometry
 
     - name: Add TeX Live to PATH
       run: echo "/Library/TeX/texbin" >> "$GITHUB_PATH"
