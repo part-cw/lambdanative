@@ -3,10 +3,16 @@ PKGHASH=759f89cc7051d932ebe67cca9d94457be8c04b5d
 
 package_download $PKGURL $PKGHASH
 
+EXTRACONF=
+
+if [ "$SYS_PLATFORM" = "win32" ]; then
+  EXTRACONF="-include io.h -Dfsync=_commit"
+fi
+
 srcs=`ls -1 cdb_*.c`
 
 rm *.o 2> /dev/null
-veval "$SYS_CC -D_FILE_OFFSET_BITS=64 -c $srcs"
+veval "$SYS_CC -D_FILE_OFFSET_BITS=64 $EXTRACONF -c $srcs"
 asserterror $? "compilation failed"
 veval "$SYS_AR ru libcdb.a *.o"
 asserterror $? "compilation failed"
