@@ -15,6 +15,7 @@ fi
 
 # the shipping config.guess is out of date, fix that
 cp $SYS_ROOT/config.guess .
+cp $SYS_ROOT/libraries/libfcgi/config.sub .
 package_configure $EXTRACONF --disable-shared --enable-static
 
 cd libfcgi
