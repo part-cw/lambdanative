@@ -17,10 +17,10 @@ android)
   EXTRACONF=--host=arm-eabi
 ;;
 win32*)
-  EXTRACONF=--host=i386-mingw32
+  EXTRACONF="--host=$SYS_ARCH"
 ;;
 linux*)
-  EXTRACONF=--host=i386-linux
+  EXTRACONF="--host=$SYS_ARCH"
 ;;
 *)
   EXTRACONF=
