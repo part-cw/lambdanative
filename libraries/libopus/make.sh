@@ -28,7 +28,13 @@ if [ "$SYS_PLATFORM" = "$SYS_HOSTPLATFORM" ]; then
   EXTRACONF=
 fi
 
-package_configure $EXTRACONF  --enable-static --disable-shared
+case $SYS_PLATFORM in
+win32*)
+  export CFLAGS="$CFLAGS -DVAR_ARRAYS"
+;;
+esac
+
+package_configure $EXTRACONF --enable-static --disable-shared
 
 package_make
 package_make install
