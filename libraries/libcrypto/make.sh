@@ -9,7 +9,21 @@ rmifexists $SYS_PREFIX/include/openssl
 EXTRACONF=
 case $SYS_PLATFORM in
 win32*)
-  EXTRACONF="no-engine mingw"
+  case "$SYS_ARCH" in
+    x86_64-w64-mingw32)
+      EXTRACONF="no-engine mingw64"
+      ;;
+    aarch64-w64-mingw32)
+      EXTRACONF="no-engine mingwarm64"
+      ;;
+    i[3-6]86-w64-mingw32|i[3-6]86-mingw32)
+      EXTRACONF="no-engine mingw"
+      ;;
+    *)
+      echo "Unsupported Windows architecture: $SYS_ARCH" >&2
+      exit 1
+      ;;
+  esac
 ;;
 linux486*)
   EXTRACONF=linux-generic32
