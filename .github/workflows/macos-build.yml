@@ -10,40 +10,69 @@ jobs:
   build:
     name: macos
     runs-on: macos-26
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      HOMEBREW_NO_INSTALL_CLEANUP: 1
 
     steps:
     - uses: actions/checkout@v7
+
     - name: Configure curl for Homebrew
       run: |
         printf 'http1.1\n' >> "$HOME/.curlrc"
         echo "HOMEBREW_CURLRC=1" >> "$GITHUB_ENV"
+
     - name: Cache Homebrew downloads
       uses: actions/cache@v4
       with:
-        path: ${{ runner.temp }}/homebrew-cache
-        key: ${{ runner.os }}-${{ runner.arch }}-homebrew-v1
+        path: ~/Library/Caches/Homebrew
+        key: ${{ runner.os }}-${{ runner.arch }}-homebrew-${{ hashFiles('.github/workflows/macos-build.yml') }}
         restore-keys: |
           ${{ runner.os }}-${{ runner.arch }}-homebrew-
+
+    - name: Cache TeX Live
+      id: cache-texlive
+      uses: actions/cache@v4
+      with:
+        path: |
+          /usr/local/texlive
+          /Library/TeX
+        key: ${{ runner.os }}-${{ runner.arch }}-texlive-${{ hashFiles('.github/workflows/macos-build.yml') }}
+
+    - name: Cache LambdaNative packages
+      uses: actions/cache@v4
+      with:
+        path: ~/Library/Caches/lambdanative/packages
+        key: ${{ runner.os }}-lambdanative-packages-${{ hashFiles('libraries/**/make.sh', 'SETUP.template') }}
+        restore-keys: |
+          ${{ runner.os }}-lambdanative-packages-
+
     - name: install dependencies
       run: |
         brew install autoconf automake ghostscript imagemagick inkscape libtool
         echo "$(brew --prefix libtool)/libexec/gnubin" >> "$GITHUB_PATH"
+
     - name: install XeTeX
+      if: steps.cache-texlive.outputs.cache-hit != 'true'
       run: |
         brew install --cask basictex
-        echo "/Library/TeX/texbin" >> "$GITHUB_PATH"
-        export PATH="/Library/TeX/texbin:$PATH"
         sudo tlmgr update --self
         sudo tlmgr install fontspec geometry
+
+    - name: Add TeX Live to PATH
+      run: echo "/Library/TeX/texbin" >> "$GITHUB_PATH"
+
     - name: prepare lambdanative
       run: |
         mkdir -p "$HOME/Library/Caches/lambdanative"
         cp SETUP.template SETUP
         cp PROFILE.template PROFILE
+
     - name: build DemoConsole for macOS (to build the toolchain)
       run: |
         ./configure DemoConsole verbose
         sh make.sh all
+
     - name: smoke test all apps
       run: |
         sh make.sh smoke | tee "$RUNNER_TEMP/lambdanative-smoke.log"

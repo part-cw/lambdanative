@@ -20,6 +20,7 @@ jobs:
       with:
         msystem: MINGW64
         update: true
+        cache: true
         install: >-
           autoconf
           automake
@@ -33,14 +34,26 @@ jobs:
           mingw-w64-x86_64-gcc
           mingw-w64-x86_64-imagemagick
 
-    - name: Diagnose compiler
+    - name: Cache Chocolatey downloads
+      uses: actions/cache@v4
+      with:
+        path: C:\Users\runneradmin\AppData\Local\Temp\chocolatey
+        key: ${{ runner.os }}-choco-${{ hashFiles('.github/workflows/windows-build.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-choco-
+
+    - name: Get MSYS2 cache path
+      id: msys2-cache
       shell: msys2 {0}
-      run: |
-        echo "PATH=$PATH"
-        command -v gcc || true
-        gcc --version || true
-        gcc -dumpmachine || true
-        command -v make || true
+      run: echo "dir=$(cygpath -w "$HOME/.cache/lambdanative/packages")" >> "$GITHUB_OUTPUT"
+
+    - name: Cache LambdaNative packages
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.msys2-cache.outputs.dir }}
+        key: lambdanative-packages-${{ hashFiles('libraries/**/make.sh', 'SETUP.template') }}
+        restore-keys: |
+          lambdanative-packages-
 
     - name: Install dependencies
       shell: pwsh

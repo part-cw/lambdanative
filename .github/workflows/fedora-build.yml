@@ -16,23 +16,34 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - run: cat /etc/os-release
+
     - name: Cache DNF downloads
       uses: actions/cache@v4
       with:
-        path: /var/cache/dnf
-        key: fedora-${{ runner.arch }}-dnf-v1
+        path: /var/cache/libdnf5
+        key: fedora43-${{ runner.arch }}-dnf-${{ hashFiles('.github/workflows/fedora-build.yml') }}
         restore-keys: |
-          fedora-${{ runner.arch }}-dnf-
+          fedora43-${{ runner.arch }}-dnf-
+
+    - name: Cache LambdaNative packages
+      uses: actions/cache@v4
+      with:
+        path: /github/home/.cache/lambdanative/packages
+        key: lambdanative-packages-${{ hashFiles('libraries/**/make.sh', 'SETUP.template') }}
+        restore-keys: |
+          lambdanative-packages-
 
     - name: install dependencies
       run: |
-        dnf --setopt=keepcache=True -y install alsa-lib-devel ant autoconf automake bc cmake curl
-        dnf --setopt=keepcache=True -y install gambit-c gcc14 gcc14-c++ ghostscript git grep inkscape
-        dnf --setopt=keepcache=True -y install ImageMagick-devel java-25-openjdk-devel libtool
-        dnf --setopt=keepcache=True -y install libXext-devel make mesa-libGL-devel mesa-libGLU-devel
-        dnf --setopt=keepcache=True -y install netpbm-devel patch perl-FindBin poppler-utils portaudio
-        dnf --setopt=keepcache=True -y install procps-ng python3-sdkmanager sed tar tcl-devel texlive
-        dnf --setopt=keepcache=True -y install texlive-ps2eps tree xorg-x11-server-Xvfb wget which zip
+        dnf --setopt=keepcache=True -y install \
+          alsa-lib-devel ant autoconf automake bc cmake curl \
+          gambit-c gcc14 gcc14-c++ ghostscript git grep inkscape \
+          ImageMagick-devel java-25-openjdk-devel libtool \
+          libXext-devel make mesa-libGL-devel mesa-libGLU-devel \
+          netpbm-devel patch perl-FindBin poppler-utils portaudio \
+          procps-ng python3-sdkmanager sed tar tcl-devel texlive \
+          texlive-ps2eps tree xorg-x11-server-Xvfb wget which zip
+
     - name: prepare lambdanative
       run : |
        # Make directory to avoid errors during build
@@ -44,10 +55,12 @@ jobs:
        # is resolved
        sed -i 's|SYS_CC="gcc $SYS|SYS_CC="gcc-14 $SYS|g' targets/linux/host_linux
        sed -i 's|SYS_CXX="g++ $SYS|SYS_CXX="g++-14 $SYS|g' targets/linux/host_linux
+
     - name: build DemoConsole
       run: |
        ./configure DemoConsole verbose
        sh make.sh all
+
     - name: smoke tests
       run: |
        sh make.sh smoke
