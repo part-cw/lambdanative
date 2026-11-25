@@ -29,7 +29,10 @@ fi
 
 case $SYS_PLATFORM in
 win32*)
-  export CFLAGS="$CFLAGS -DVAR_ARRAYS"
+  export CFLAGS="$CFLAGS -DVAR_ARRAYS -DOPUS_BUILD"
+;;
+*)
+  export CFLAGS="$CFLAGS -DOPUS_BUILD"
 ;;
 esac
 
