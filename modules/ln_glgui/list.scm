@@ -1,6 +1,6 @@
 #|
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2026, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -172,8 +172,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                (index (glgui-widget-get g wgt 'current)))
            (if (and kcb index) (kcb mx index)))
        )
+       ((and inside (or (fx= type EVENT_WHEELUP) (fx= type EVENT_WHEELDOWN)))
+         (let* ((step (if (fx= type EVENT_WHEELUP) -1. 1.))
+                (offset (fl+ (flfloor (fl+ val 0.5)) step)))
+           (glgui-widget-set! g wgt 'offset (flmax valmin (flmin valmax offset))))
+       )
        (else (if (not inside) (glgui-widget-set! g wgt 'old #f)))
-    )
+     )
   inside
 ))
 

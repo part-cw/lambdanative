@@ -83,6 +83,8 @@ end-of-c-declare
 (define EVENT_RESUME ((c-lambda () int "___result = EVENT_RESUME;")))
 (define EVENT_ORIENTATION ((c-lambda () int "___result = EVENT_ORIENTATION;")))
 (define EVENT_MULTITOUCH ((c-lambda () int "___result = EVENT_MULTITOUCH;")))
+(define EVENT_WHEELUP ((c-lambda () int "___result = EVENT_WHEELUP;")))
+(define EVENT_WHEELDOWN ((c-lambda () int "___result = EVENT_WHEELDOWN;")))
 (define EVENT_DEBUG ((c-lambda () int "___result = EVENT_DEBUG;")))
 (define EVENT_IDLE ((c-lambda () int "___result = EVENT_IDLE;")))
 (define EVENT_NOTIFICATION ((c-lambda () int "___result = EVENT_NOTIFICATION;")))

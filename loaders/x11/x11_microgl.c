@@ -1,6 +1,6 @@
 /*
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2026, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -251,6 +251,12 @@ void microgl_pollevents(void)
            win.mouse_y = win.h - event.xbutton.y - 1;
            microgl_hook(EVENT_BUTTON3DOWN, win.mouse_x, win.mouse_y); 
              break;
+          case Button4:
+          case Button5:
+            win.mouse_x = event.xbutton.x;
+            win.mouse_y = win.h - event.xbutton.y - 1;
+            microgl_hook(event.xbutton.button == Button4 ? EVENT_WHEELUP : EVENT_WHEELDOWN, win.mouse_x, win.mouse_y);
+            break;
         }
         break;
       case ButtonRelease:

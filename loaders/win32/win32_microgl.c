@@ -1,6 +1,6 @@
 /*
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2013, University of British Columbia
+Copyright (c) 2009-2026, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -202,6 +202,13 @@ static LRESULT CALLBACK _microgl_callback( HWND hWnd, UINT uMsg, WPARAM wParam, 
       }
   //      microgl_hook(EVENT_MOTION, new_x, new_y);
   //    }
+      return 0;
+    case WM_MOUSEWHEEL:
+      POINT point = { (int)((short)LOWORD(lParam)), (int)((short)HIWORD(lParam)) };
+      ScreenToClient(hWnd, &point);
+      win.mouse_x = point.x;
+      win.mouse_y = point.y;
+      microgl_hook((short)HIWORD(wParam) > 0 ? EVENT_WHEELUP : EVENT_WHEELDOWN, win.mouse_x, win.h-win.mouse_y);
       return 0;
     case WM_SIZE:
       if ( (int)LOWORD(lParam)!=win.full_w || (int)HIWORD(lParam)!= win.full_h)

@@ -1,6 +1,6 @@
 /*
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2020, University of British Columbia
+Copyright (c) 2009-2026, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -61,6 +61,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define EVENT_BATTERY	  32
 #define EVENT_ORIENTATION 33
+
+#define EVENT_WHEELUP     41
+#define EVENT_WHEELDOWN   42
 
 #define EVENT_DEBUG       64
 

@@ -102,6 +102,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   ffi_event(EVENT_BUTTON1UP,location.x,location.y);
 } 
 
+- (void) scrollWheel:(NSEvent *)theEvent {
+  if (theEvent.deltaY == 0) return;
+  NSPoint location = [self convertPoint:[theEvent locationInWindow] fromView:nil];
+  ffi_event(theEvent.deltaY > 0 ? EVENT_WHEELUP : EVENT_WHEELDOWN, location.x, location.y);
+}
+
 - (BOOL) acceptsFirstResponder
 {
   return (YES);
