@@ -27,12 +27,10 @@ if [ "$SYS_PLATFORM" = "$SYS_HOSTPLATFORM" ]; then
   EXTRACONF=
 fi
 
+export CFLAGS="$CFLAGS -DHAVE_CONFIG_H -DOPUS_BUILD -I."
 case $SYS_PLATFORM in
 win32*)
   export CFLAGS="$CFLAGS -DVAR_ARRAYS -DOPUS_BUILD"
-;;
-*)
-  export CFLAGS="$CFLAGS -DOPUS_BUILD"
 ;;
 esac
 
