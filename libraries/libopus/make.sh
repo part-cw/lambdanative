@@ -4,7 +4,6 @@ PKGHASH=74612396b53f0c0240d2f81d4c7b0eaa14620402
 package_download $PKGURL $PKGHASH
 
 package_patch
-autoconf
 
 case $SYS_PLATFORM in
 ios)
