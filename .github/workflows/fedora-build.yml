@@ -15,6 +15,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v7
+    - uses: actions/checkout@v7
+      with:
+        repository: part-cw/LNhealth
+        path: LNhealth
     - run: cat /etc/os-release
 
     - name: Cache DNF downloads
@@ -29,7 +33,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: /github/home/.cache/lambdanative/packages
-        key: lambdanative-packages-${{ hashFiles('libraries/**/make.sh', 'SETUP.template') }}
+        key: lambdanative-packages-${{ hashFiles('libraries/**/make.sh', 'LNhealth/libraries/**/make.sh', 'SETUP.template') }}
         restore-keys: |
           lambdanative-packages-
 
@@ -50,6 +54,7 @@ jobs:
        mkdir -p /github/home/.cache/lambdanative
        cp SETUP.template SETUP
        cp PROFILE.template PROFILE
+       echo "OVERLAY_PATH=$GITHUB_WORKSPACE/LNhealth" >> SETUP
        # Use older compiler until
        # https://github.com/part-cw/lambdanative/issues/492
        # is resolved
