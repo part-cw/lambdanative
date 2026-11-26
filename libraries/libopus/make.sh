@@ -30,7 +30,8 @@ fi
 export CFLAGS="$CFLAGS -DHAVE_CONFIG_H -DOPUS_BUILD -I."
 case $SYS_PLATFORM in
 win32*)
-  export CFLAGS="$CFLAGS -DVAR_ARRAYS -DOPUS_BUILD"
+  export CFLAGS="$CFLAGS -DVAR_ARRAYS"
+  EXTRACONF="$EXTRACONF --disable-intrinsics"
 ;;
 esac
 
