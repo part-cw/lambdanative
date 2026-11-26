@@ -34,6 +34,7 @@ jobs:
           mingw-w64-x86_64-gcc
           mingw-w64-x86_64-imagemagick
           mingw-w64-x86_64-ghostscript
+          mingw-w64-x86_64-inkscape
 
     - name: Cache Chocolatey downloads
       uses: actions/cache@v4
@@ -59,7 +60,7 @@ jobs:
     - name: Install dependencies
       shell: pwsh
       run: |
-        choco install -y --no-progress autohotkey inkscape tinytex
+        choco install -y --no-progress autohotkey tinytex
 
     - name: Prepare lambdanative
       shell: msys2 {0}
