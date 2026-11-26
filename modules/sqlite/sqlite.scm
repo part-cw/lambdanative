@@ -151,7 +151,9 @@ end-of-c-declare
 (define (sqlite-open dbname . key)
   (sqlite:log 1 "sqlite-open " dbname)
   (if (fx= (length key) 1)
-    (sqlite:log 1 "Use sqlcipher for encrypted databases")
+    (begin
+      (log-error "Use sqlcipher for encrypted databases")
+      #f)
     (sqlite:open dbname "" 0)
   ))
 
