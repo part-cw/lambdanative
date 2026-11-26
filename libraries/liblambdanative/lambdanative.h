@@ -8,6 +8,7 @@
 // system.c
 char *system_dir(void);
 char *system_appdir(void);
+char *system_shareddir(void);
 char *system_platform(void);
 char *system_appname(void);
 char *system_appversion(void);

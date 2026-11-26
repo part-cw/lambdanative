@@ -1,6 +1,6 @@
 /*
 LambdaNative - a cross-platform Scheme framework
-Copyright (c) 2009-2020, University of British Columbia
+Copyright (c) 2009-2026, University of British Columbia
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or
@@ -64,6 +64,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #if  defined(IOS)
 extern char* iphone_directory;
+extern char* iphone_shareddirectory;
 #endif
 
 #endif // !USECONSOLE
@@ -80,6 +81,7 @@ int cmd_argc;
 
 static char *sys_appdir=0;
 static char *sys_dir=0;
+static char *sys_shareddir=0;
 
 static void find_directories()
 {
@@ -140,9 +142,13 @@ static void find_directories()
     fclose(fd);
     remove("/var/mobile/tmp.341231");
     sys_dir= strdup(path);
+    sys_shareddir= strdup(path);
   } else {
     // point to the folder that is shared through iTunes
     sys_dir= strdup(iphone_directory);
+    if (iphone_shareddirectory) {
+      sys_shareddir=strdup(iphone_shareddirectory);
+    }
   }
 #else
   sys_dir=strdup(path);
@@ -152,6 +158,7 @@ static void find_directories()
 // we put files on the sdcard, that's the only sane place (?)
   extern char* android_getFilesDir();
   extern char* android_getExternalFilesDir();
+  extern char* android_getExternalDocumentsDir();
   extern char* android_getPackageCodePath();
   char path[1024];
   sprintf(path,"/sdcard/%s", SYS_APPNAME);
@@ -159,6 +166,11 @@ static void find_directories()
 // The previous location doesn't work with API 31+ anymore, so we can't get to /sdcard
   sys_dir=android_getExternalFilesDir();
   sys_appdir=android_getFilesDir();
+  char *docs=android_getExternalDocumentsDir();
+  if (docs && docs[0]) {
+    snprintf(path, sizeof(path), "%s/%s", docs, SYS_APPNAME);
+    sys_shareddir=strdup(path);
+  }
   //sys_appdir=android_getPackageCodePath(); // This would be closer to iOS use
 #endif
 #if defined(BB10) || defined(PLAYBOOK)
@@ -169,6 +181,10 @@ static void find_directories()
   sprintf(path,"%s/data", cwd);
   sys_dir=strdup(path);
 #endif
+// Default shared directory to sys_dir on platforms without a separate public Documents root
+if (!sys_shareddir && sys_dir) {
+  sys_shareddir=strdup(sys_dir);
+}
 }
 
 static unsigned int sys_buildepoch;
@@ -197,6 +213,7 @@ char system_pathseparator(void) { return PATH_SEPARATOR; }
 // report the system info
 char *system_dir(void) { return sys_dir; }
 char *system_appdir(void) { return sys_appdir; }
+char *system_shareddir(void) { return sys_shareddir; }
 char *system_platform(void) { return sys_platform; }
 char *system_appname(void) { return sys_appname; }
 char *system_appversion(void) { return sys_appversion; }

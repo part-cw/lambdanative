@@ -120,9 +120,16 @@ fi
 cat $SYS_TMPDIR/tmp.xml | sed '/^#/d' > "$SYS_PREFIXROOT/build/$SYS_APPNAME/Info.plist"
 
 echo " => preparing custom config.."
+ac_subst SYS_IOSAPPGROUP
 headersrc=loaders/ios/config_custom.h.in
 ac_output loaders/ios/config_custom.h.in "$cmakedir/config_custom.h"
 assertfile "$cmakedir/config_custom.h"
+
+XCODE_ENTITLEMENTS=""
+if [ -n "$SYS_IOSAPPGROUP" ]; then
+  ac_output loaders/ios/Entitlements.plist.in "$cmakedir/$SYS_APPNAME.entitlements"
+  XCODE_ENTITLEMENTS="CODE_SIGN_ENTITLEMENTS=$cmakedir/$SYS_APPNAME.entitlements"
+fi
 
 echo " => building loader.."
 xcodedir=`mktemp -d $SYS_TMPDIR/tmp.XXXXXX`
@@ -132,7 +139,7 @@ asserterror $?
 if [ "$SYS_IOS_SIMULATOR" = "yes" ]; then
   veval "xcodebuild -configuration Release -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO"
 else
-  veval "xcodebuild -configuration Release -allowProvisioningUpdates"
+  veval "xcodebuild -configuration Release -allowProvisioningUpdates $XCODE_ENTITLEMENTS"
 fi
 asserterror $?
 cd $here
@@ -182,7 +189,7 @@ mkdir "$xcodedir/$SYS_APPNAME.xcodeproj/xcshareddata"
 mkdir "$xcodedir/$SYS_APPNAME.xcodeproj/xcshareddata/xcschemes"
 cat $SYS_TMPDIR/tmp.xcscheme | sed '/^#/d' > "$xcodedir/$SYS_APPNAME.xcodeproj/xcshareddata/xcschemes/$SYS_APPNAME.xcscheme"
 cd $xcodedir
-veval "xcodebuild -scheme $SYS_APPNAME archive -archivePath $SYS_PREFIX/$SYS_APPNAME-$SYS_APPVERSION.xcarchive -allowProvisioningUpdates"
+veval "xcodebuild -scheme $SYS_APPNAME archive -archivePath $SYS_PREFIX/$SYS_APPNAME-$SYS_APPVERSION.xcarchive -allowProvisioningUpdates $XCODE_ENTITLEMENTS"
 cd $here
 assertfile $SYS_PREFIX/$SYS_APPNAME-$SYS_APPVERSION.xcarchive
 

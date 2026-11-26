@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <LNCONFIG.h>
+#include "config_custom.h"
 
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
@@ -48,6 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif // USE_HYBRID
 
 const char *iphone_directory;
+char *iphone_shareddirectory = NULL;
 
 // there are two places to save files on a jailed iphone:
 // the application support directory and Documents directory
@@ -69,13 +71,34 @@ void find_iphone_documents_directory() {
   NSString *path = nil;
   NSArray *paths = NSSearchPathForDirectoriesInDomains(
       NSDocumentDirectory, NSUserDomainMask, YES);
-  if ([paths count]) { path = [paths objectAtIndex:0]; }
-  iphone_directory=[path UTF8String];
+  if ([paths count]) {
+    path = [paths objectAtIndex:0];
+    iphone_directory = strdup([path UTF8String]);
+  }
+}
+
+void find_iphone_shared_directory() {
+#ifdef SYS_IOSAPPGROUP
+  NSString *groupId = @SYS_IOSAPPGROUP;
+  if ([groupId length] > 0 && ![groupId hasPrefix:@"@"]) {
+    NSURL *groupURL = [[NSFileManager defaultManager]
+        containerURLForSecurityApplicationGroupIdentifier:groupId];
+    if (groupURL != nil) {
+      NSString *sharedPath = [[groupURL path] stringByAppendingPathComponent:@SYS_APPNAME];
+      iphone_shareddirectory = strdup([sharedPath UTF8String]);
+      return;
+    }
+  }
+#endif
+  if (iphone_directory) {
+    iphone_shareddirectory = strdup(iphone_directory);
+  }
 }
 
 int main(int argc, char *argv[]) {
   NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
   find_iphone_documents_directory();
+  find_iphone_shared_directory();
 #ifdef USE_HYBRID
   int retVal = UIApplicationMain(argc, argv, nil, NSStringFromClass([WKWebViewAppDelegate class]));
 #else

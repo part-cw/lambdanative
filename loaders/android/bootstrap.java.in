@@ -193,7 +193,9 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     if(mGLView==null) { // once only!
       mGLView = new xGLSurfaceView(this);
       // This may better before other pieces
-      nativeInstanceInit(getApplicationContext().getPackageCodePath().toString(), getFilesDir().toString(), getExternalFilesDir(null).toString());
+      java.io.File docsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS);
+      nativeInstanceInit(getApplicationContext().getPackageCodePath().toString(), getFilesDir().toString(),
+        getExternalFilesDir(null).toString(), docsDir != null ? docsDir.toString() : "");
     }
 
     mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
@@ -279,7 +281,7 @@ public class @SYS_APPNAME@ extends Activity implements @ANDROID_JAVA_IMPLEMENTS@
     }
   }
 
-  native void nativeInstanceInit(String packageCodePath, String filesDir, String externalFilesDir);
+  native void nativeInstanceInit(String packageCodePath, String filesDir, String externalFilesDir, String externalDocumentsDir);
 }
 
 class  xGLSurfaceView extends GLSurfaceView {

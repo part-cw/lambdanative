@@ -47,6 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef ANDROID
   extern char* android_getFilesDir();
   extern char* android_getExternalFilesDir();
+ extern char* android_getExternalDocumentsDir();
   extern char* android_getPackageCodePath();
 #else
   char* android_getFilesDir(){
@@ -54,6 +55,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     return buf;
   }
   char* android_getExternalFilesDir(){
+    char* buf="";
+    return buf;
+  }
+  char* android_getExternalDocumentsDir(){
     char* buf="";
     return buf;
   }
@@ -78,6 +83,7 @@ end-of-c-declare
 
 (define (system-directory) ((c-lambda () char-string "system_dir")))
 (define (system-appdirectory) ((c-lambda () char-string "system_appdir")))
+(define (system-shareddirectory) ((c-lambda () char-string "system_shareddir")))
 (define (system-platform) ((c-lambda () char-string "system_platform")))
 (define (system-appname) ((c-lambda () char-string "system_appname")))
 (define (system-appversion) ((c-lambda () char-string "system_appversion")))
@@ -115,6 +121,7 @@ end-of-c-declare
 ;; Gain access to Android app_directory_files, app_external_directory_files and app_code_path
 (define android-get-filesdir (c-lambda () char-string "android_getFilesDir"))
 (define android-get-externalfilesdir (c-lambda () char-string "android_getExternalFilesDir"))
+(define android-get-externaldocumentsdir (c-lambda () char-string "android_getExternalDocumentsDir"))
 (define android-get-codepath (c-lambda () char-string "android_getPackageCodePath"))
 
 ;; eof

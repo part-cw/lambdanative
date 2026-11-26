@@ -65,9 +65,10 @@ static jobject globalObj=NULL;
 static JavaVM* s_vm = NULL;
 static const char* app_directory_files = NULL;
 static const char* app_external_directory_files = NULL;
+static const char* app_external_directory_documents = NULL;
 static const char* app_code_path = NULL;
 
-void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeInstanceInit(JNIEnv* env, jobject thiz, jstring codePath, jstring directoryFiles, jstring externalDirectoryFiles){
+void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeInstanceInit(JNIEnv* env, jobject thiz, jstring codePath, jstring directoryFiles, jstring externalDirectoryFiles, jstring externalDirectoryDocuments){
   const char* tmp;
   globalObj = (*env)->NewGlobalRef(env,thiz);
   tmp = (*env)->GetStringUTFChars(env, directoryFiles, 0);
@@ -76,6 +77,9 @@ void Java_@SYS_PACKAGE_UNDERSCORE@_@SYS_APPNAME@_nativeInstanceInit(JNIEnv* env,
   tmp = (*env)->GetStringUTFChars(env, externalDirectoryFiles, 0);
   app_external_directory_files = strdup(tmp);
   (*env)->ReleaseStringUTFChars(env, externalDirectoryFiles, tmp);
+  tmp = (*env)->GetStringUTFChars(env, externalDirectoryDocuments, 0);
+  app_external_directory_documents = strdup(tmp);
+  (*env)->ReleaseStringUTFChars(env, externalDirectoryDocuments, tmp);
   tmp = (*env)->GetStringUTFChars(env, codePath, 0);
   app_code_path = strdup(tmp);
   (*env)->ReleaseStringUTFChars(env, codePath, tmp);
@@ -86,6 +90,9 @@ char* android_getFilesDir() {
 }
 char* android_getExternalFilesDir() {
   return (char*) app_external_directory_files;
+}
+char* android_getExternalDocumentsDir() {
+  return (char*) app_external_directory_documents;
 }
 char* android_getPackageCodePath() {
   return (char*) app_code_path;
@@ -99,23 +106,16 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved){
 }
 
 JNIEnv* GetJNIEnv(){
-  int error=0;
   JNIEnv* env = NULL;
-  /* static `env` does NOT work!  Once in a while we should ponder if
-     it still does not work or why.
-
-  if(env) {
-    if((*env)->ExceptionCheck(env)) (*env)->ExceptionClear(env);
-    return env;
-  }
-  */
-  if(s_vm) error=(*s_vm)->AttachCurrentThread(s_vm, &env, NULL);
-  if(!error) error = JNI_forward_exception_to_gambit(env);
-  return (error?NULL:env);
+  if(!s_vm) return NULL;
+  if((*s_vm)->AttachCurrentThread(s_vm, &env, NULL) != JNI_OK || !env) return NULL;
+  if(JNI_forward_exception_to_gambit(env)) return NULL;
+  return env;
 }
 
 int JNI_forward_exception_to_gambit(JNIEnv*env) {
   // TBD: actually forward, not only clear!
+  if(!env) return 1;
   if((*env)->ExceptionCheck(env)) {
     (*env)->ExceptionClear(env);
     return 1;
@@ -142,4 +142,3 @@ void android_launch_url(char* urlstring){
 
 // Add code here if needed for modules, such as GPS.
 @ANDROID_C_ADDITIONS@
-

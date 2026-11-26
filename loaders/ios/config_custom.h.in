@@ -1,6 +1,7 @@
 
 #include "debug.h"
 
+#define SYS_IOSAPPGROUP "@SYS_IOSAPPGROUP@"
 // custom defines go here
 @IOS_OBJC_DEFINES@
 
