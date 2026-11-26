@@ -462,9 +462,13 @@ make_artwork()
       if isnewer "$objsrc" "$epssrc"; then
         if [ ! "X$objsrc" = "X" ]; then
           assertfile $objsrc
-          echo " => generating eps artwork.."
-          asserttool tgif
-          tgif -print -stdout -eps -color $objsrc > $epssrc
+          if [ -f "$epssrc" ] && ! which tgif >/dev/null 2>&1; then
+            echo " => WARNING: tgif not found, using existing $epssrc.."
+          else
+            echo " => generating eps artwork.."
+            asserttool tgif
+            tgif -print -stdout -eps -color $objsrc > $epssrc
+          fi
         fi
       fi
       assertfile $epssrc
@@ -473,7 +477,15 @@ make_artwork()
         echo " => generating master pixmap from EPS.."
         gspostfix=
         if [ $SYS_HOSTPLATFORM = win32 ]; then
-          gspostfix=win32
+          if which gs >/dev/null 2>&1; then
+            gspostfix=
+          elif which gswin64c >/dev/null 2>&1; then
+            gspostfix=win64c
+          elif which gswin32c >/dev/null 2>&1; then
+            gspostfix=win32c
+          else
+            gspostfix=win32
+          fi
         fi
         asserttool gs${gspostfix}
         veval "gs${gspostfix} -r600 -dNOPAUSE -sDEVICE=png16m -dEPSCrop -sOutputFile=$tmpfile $epssrc quit.ps"
