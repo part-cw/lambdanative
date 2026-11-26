@@ -1609,7 +1609,13 @@ make_smoke()
   fi
   rmifexists $SYS_TMPDIR/smoke.result
   touch $SYS_TMPDIR/smoke.result
-  apps=`ls -1d apps/* | sed 's:apps/::'`
+  apps=""
+  for p in `echo "$SYS_PATH" | tr ':' ' '`; do
+    if [ -d "$p/apps" ]; then
+      p_apps=`ls -1d "$p"/apps/* 2>/dev/null | sed "s:$p/apps/::"`
+      apps="$apps $p_apps"
+    fi
+  done
   for smoke_app in $apps; do
     smoke_one $smoke_app
   done
