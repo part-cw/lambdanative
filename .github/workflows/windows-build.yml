@@ -33,6 +33,7 @@ jobs:
           patch
           mingw-w64-x86_64-gcc
           mingw-w64-x86_64-imagemagick
+          mingw-w64-x86_64-ghostscript
 
     - name: Cache Chocolatey downloads
       uses: actions/cache@v4
@@ -58,11 +59,12 @@ jobs:
     - name: Install dependencies
       shell: pwsh
       run: |
-        choco install -y --no-progress autohotkey ghostscript.app inkscape tinytex
+        choco install -y --no-progress autohotkey inkscape tinytex
 
     - name: Prepare lambdanative
       shell: msys2 {0}
       run: |
+        ln -sf /mingw64/bin/gs.exe /mingw64/bin/gswin32.exe
         mkdir -p "$HOME/.cache/lambdanative"
         cp SETUP.template SETUP
         cp PROFILE.template PROFILE
