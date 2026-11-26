@@ -3,7 +3,6 @@ PKGHASH=745fddd5e310b5d855a5f960fc92171d071ef907
 
 package_download $PKGURL $PKGHASH
 package_patch
-#rmifexists $SYS_PREFIX/include/sqlite3*.h
 
 case $SYS_PLATFORM in
 ios)
@@ -28,7 +27,7 @@ package_configure --disable-tcl --disable-shared --with-tempstore=yes CFLAGS=\"-
 
 if [ "$SYS_PLATFORM" = "$SYS_HOSTPLATFORM" ]; then
   EXTRACONF=
-  package_make
+  package_make lib
 else
   package_make lib
 fi
