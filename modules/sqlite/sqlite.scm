@@ -72,15 +72,7 @@ static struct sqlite_db *_sqlite_open(char *filename, char *key, int len)
     free(d);
     return 0;
   }
-  if (len > 0) {
-    err = sqlite3_key(d->db,key,len);
-    if (err != SQLITE_OK) {
-      sqlite3_close(d->db);
-      free(d);
-      return 0;
-    }
-  }
-  return d;
+ return d;
 }
 
 static void _sqlite_close(struct sqlite_db *d)
@@ -159,9 +151,9 @@ end-of-c-declare
 (define (sqlite-open dbname . key)
   (sqlite:log 1 "sqlite-open " dbname)
   (if (fx= (length key) 1)
-    (let ((skey (car key)))
-      (sqlite:open dbname skey (string-length skey))
-    )
+    (begin
+      (log-error "Use sqlcipher for encrypted databases")
+      #f)
     (sqlite:open dbname "" 0)
   ))
 

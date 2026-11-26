@@ -3,7 +3,6 @@ PKGHASH=745fddd5e310b5d855a5f960fc92171d071ef907
 
 package_download $PKGURL $PKGHASH
 package_patch
-rmifexists $SYS_PREFIX/include/sqlite3*.h
 
 case $SYS_PLATFORM in
 ios)
@@ -28,19 +27,16 @@ package_configure --disable-tcl --disable-shared --with-tempstore=yes CFLAGS=\"-
 
 if [ "$SYS_PLATFORM" = "$SYS_HOSTPLATFORM" ]; then
   EXTRACONF=
-  package_make
-  package_make install
+  package_make lib
 else
-  package_make sqlite3.c
-  package_make lib_install
-  mkdir -p $SYS_PREFIX/include/sqlcipher
-  cp sqlite3.h $SYS_PREFIX/include/sqlcipher
-  cp sqlite3ext.h $SYS_PREFIX/include/sqlcipher
+  package_make lib
 fi
 
-assertfile "$SYS_PREFIX/lib/libsqlite3.a" "SQLCipher did not install its static library"
-mv "$SYS_PREFIX/lib/libsqlite3.a" "$SYS_PREFIX/lib/libsqlcipher.a"
-asserterror $? "could not rename libsqlite3.a to libsqlcipher.a"
+mkdir -p $SYS_PREFIX/include/sqlcipher
+cp libsqlite3.a $SYS_PREFIX/lib/libsqlcipher.a
+cp sqlite3.h $SYS_PREFIX/include/sqlcipher
+cp sqlite3ext.h $SYS_PREFIX/include/sqlcipher
+assertfile "$SYS_PREFIX/lib/libsqlcipher.a" "SQLCipher did not install its static library"
 
 package_cleanup
 
