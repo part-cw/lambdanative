@@ -440,6 +440,11 @@ make_artwork()
           elif [ -f /Applications/Inkscape.app/Contents/MacOS/inkscape ]; then
             inkscape=/Applications/Inkscape.app/Contents/MacOS/inkscape
             veval "$inkscape -z $svgsrc -w 1200 -o $pngtgt"
+        elif [ $SYS_HOSTPLATFORM = win32 ]; then
+          if [ -f "/c/Program Files/Inkscape/bin/inkscape.exe" ]; then
+            inkscape="/c/Program Files/Inkscape/bin/inkscape.exe"
+          elif [ -f "/c/Program Files (x86)/Inkscape/bin/inkscape.exe" ]; then
+            inkscape="/c/Program Files (x86)/Inkscape/bin/inkscape.exe"
           fi
         fi
         asserttool $inkscape

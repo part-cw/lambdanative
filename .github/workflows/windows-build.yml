@@ -19,7 +19,6 @@ jobs:
     - uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW64
-        path-type: inherit
         update: true
         cache: true
         install: >-
@@ -72,6 +71,7 @@ jobs:
         mkdir -p "$HOME/.cache/lambdanative"
         cp SETUP.template SETUP
         cp PROFILE.template PROFILE
+        echo 'export PATH="$PATH:/c/Program Files/Inkscape/bin:/c/ProgramData/chocolatey/bin"' >> SETUP
 
     - name: Build DemoConsole
       shell: msys2 {0}
