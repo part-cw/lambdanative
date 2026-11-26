@@ -54,7 +54,8 @@ jobs:
        mkdir -p /github/home/.cache/lambdanative
        cp SETUP.template SETUP
        cp PROFILE.template PROFILE
-       echo "OVERLAY_PATH=$GITHUB_WORKSPACE/LNhealth" >> SETUP
+       # Also test LNhealth apps (disabled for now)
+       # echo "OVERLAY_PATH=$GITHUB_WORKSPACE/LNhealth" >> SETUP
        # Use older compiler until
        # https://github.com/part-cw/lambdanative/issues/492
        # is resolved

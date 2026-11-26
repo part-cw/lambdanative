@@ -19,6 +19,7 @@ jobs:
     - uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW64
+        path-type: inherit
         update: true
         cache: true
         install: >-
