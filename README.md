@@ -14,5 +14,11 @@ The repository contains a number of [demonstration programs](apps), inlcuding th
 Instructions for getting started and API documentation can be found in the wiki:
 [ **LambdaNative Documentation and Support** ](../../wiki/Home)
 
+## Android builds
+Android builds require JDK 17 or newer and Android SDK Platform 35. The Gradle Wrapper downloads the pinned Gradle version automatically. See the [Android build requirements](targets/android/README.md) for SDK/NDK details.
+
 ## Feedback and Contributions
 Please help contribute bug reports, code fixes (ideally in the form of pull requests), corrections and missing information about API calls using the project's [issue tracker](https://github.com/part-cw/lambdanative/issues?direction=desc&page=1&sort=created&state=open). You might find solutions to past problems in the [closed issues](https://github.com/part-cw/lambdanative/issues?q=is%3Aissue+is%3Aclosed). We also recently added a beta [GitHub Discussions](https://github.com/part-cw/lambdanative/discussions) feature for general discussions. Finally, to contribute documentation and examples, please modify the [wiki](../../wiki/Home) directly. - Your contributions are much appreciated!
+
+## Acknowledgements
+Contributions by John Adjei (@AgoeZero) and Benson Muite (@bkmgit) from 2024-26 were generously supported by [NLnet](https://nlnet.nl/) through the [NGI Mobifree Fund](https://nlnet.nl/mobifree), a fund established with financial support from the European Commission's [Next Generation Internet](https://ngi.eu/) program.
