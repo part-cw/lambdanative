@@ -1,0 +1,35 @@
+plugins {
+  id 'com.android.application'
+}
+
+android {
+  namespace '@SYS_PACKAGE_DOT@'
+  compileSdk 35
+
+  defaultConfig {
+    applicationId '@SYS_PACKAGE_DOT@'
+    minSdk @SYS_ANDROIDAPI@
+    targetSdk 35
+    versionCode '@SYS_APPVERSIONCODE@'.toInteger()
+    versionName '@SYS_APPVERSION@'
+  }
+
+  sourceSets {
+    main {
+      manifest.srcFile 'AndroidManifest.xml'
+      java.srcDirs = ['src']
+      res.srcDirs = ['res']
+      jniLibs.srcDirs = ['libs']
+    }
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.toVersion('@ANDROID_JAVA_VERSION@')
+    targetCompatibility JavaVersion.toVersion('@ANDROID_JAVA_VERSION@')
+  }
+}
+
+dependencies {
+  implementation fileTree(dir: 'libs', include: ['*.jar'])
+  @ANDROID_GRADLE_DEPENDENCIES@
+}
