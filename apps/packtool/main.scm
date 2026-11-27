@@ -51,7 +51,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        `(packtool-unpack ,file ',cdata ,overwrite))))
 
 (if (file-exists? srcfile)
-  (let* ((srcfiles (string-split (string-trim (with-input-from-file srcfile (lambda () (read-line)))) #\space))
+  (let* ((rawline (list->string (map (lambda (c) (if (char=? c #\return) #\space c))
+                    (string->list (with-input-from-file srcfile (lambda () (read-line)))))))
+         (srcfiles (string-split (string-trim rawline) #\space))
          (tgttime (if (file-exists? tgtfile) (time->seconds (file-last-modification-time tgtfile)) 0.))
          (srcfile-updated? (> (time->seconds (file-last-modification-time srcfile)) tgttime))
          (dirty (let loop ((files srcfiles)(flag srcfile-updated?))
