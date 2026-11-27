@@ -333,6 +333,10 @@ package_cmake()
           -B build"
     asserterror $? "cmake setup failed"
   else
+    pkg_cmake_extra=""
+    case $SYS_PLATFORM in
+      win32*) pkg_cmake_extra="-DCMAKE_SYSTEM_NAME=Windows" ;;
+    esac
     veval "\
     CHOST=\"$SYS_ARCH\" \
     PKG_CONFIG_PATH=\"$SYS_PREFIX/lib/pkgconfig\" \
@@ -341,6 +345,7 @@ package_cmake()
     LD_LIBRARY_PATH=\"$SYS_PREFIX/lib\" \
     GPROF=\"$SYS_GPROF\" \
     cmake . \
+          $pkg_cmake_extra \
           -DCMAKE_INSTALL_PREFIX=\"$SYS_PREFIX\" \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_C_COMPILER=\"$pkg_cc\" \

@@ -405,6 +405,9 @@ explode_library()
       here=`pwd`
       cd "$libdir"
       $SYS_AR -x $libfile
+      if [ "$SYS_PLATFORM" = "win32" ]; then
+        for f in *.obj; do [ -f "$f" ] && mv "$f" "${f%.obj}.o"; done
+      fi
       cd "$here"
     fi
   else
