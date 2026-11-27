@@ -323,7 +323,6 @@ rmifexists $SYS_TMPDIR/tmp.apk
 echo " => signing application with keystore $keystore"
 assertfile "$android_build_tools/apksigner"
 "$android_build_tools/apksigner" sign -v --ks $keystore --ks-key-alias "$SYS_ORGDOMAIN_REVERSE_DOT" --ks-pass pass:"$SYS_ANDROIDPW" --v2-signing-enabled true $fnlfile
-#$ANDROIDSDK/build-tools/*/apksigner sign -v --ks $keystore --ks-key-alias bccw --ks-pass pass:"$SYS_ANDROIDPW" --v2-signing-enabled true $fnlfile
 asserterror $?
 
 echo " => cleaning up.."
