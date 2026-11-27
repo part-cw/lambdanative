@@ -25,7 +25,7 @@ jobs:
           autoconf
           automake
           make
-          cmake
+          mingw-w64-x86_64-cmake
           m4
           libtool
           zip
